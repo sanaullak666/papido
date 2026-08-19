@@ -3,6 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "cd apps/admin_web && npm install && npm run build"
+    "build": "cd apps/admin_web && npm install && npm run build && cd ../.. && node -e \"const fs=require('fs'); fs.cpSync('apps/admin_web/dist', 'public', {recursive:true}); fs.cpSync('apps/admin_web/dist', 'dist', {recursive:true});\""
   }
 }

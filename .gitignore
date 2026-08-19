@@ -12,6 +12,8 @@ dist/
 */dist/
 build/
 */build/
+public/
+*/public/
 
 # Database files
 backend/data/*.db
