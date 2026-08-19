@@ -16,11 +16,23 @@ router.get('/rides', AdminController.listRides);
 router.get('/payments', AdminController.listPayments);
 router.get('/fare-settings', AdminController.getFareConfigurations);
 router.patch('/fare-settings/:vehicleType', AdminController.updateFareConfiguration);
+
+// Categories & Lists
+router.get('/campus-categories', AdminController.getCampusCategories);
+router.post('/campus-categories', AdminController.saveCampusCategory);
+router.delete('/campus-categories/all', AdminController.deleteAllCampusCategories);
+router.delete('/campus-categories/:id', AdminController.deleteCampusCategory);
+
+// Campus Stops & Locations
 router.get('/campus-stops', AdminController.getCampusStops);
 router.post('/campus-stops', AdminController.saveCampusStop);
+router.delete('/campus-stops/all', AdminController.deleteAllCampusStops);
 router.delete('/campus-stops/:id', AdminController.deleteCampusStop);
+
+// Campus Route Fares & Group Rules
 router.get('/route-fares', AdminController.getRouteFares);
 router.post('/route-fares', AdminController.saveRouteFare);
+router.delete('/route-fares/all', AdminController.deleteAllRouteFares);
 router.delete('/route-fares/:id', AdminController.deleteRouteFare);
 router.post('/route-fares/test', AdminController.testRouteFare);
 router.get('/split-rules', AdminController.getSplitRules);

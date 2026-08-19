@@ -256,13 +256,65 @@ const AdminController = {
   },
 
   /**
+   * Campus Categories & Lists Management
+   */
+  async getCampusCategories(req, res, next) {
+    try {
+      const categories = await FareModel.getAllAdminCategories();
+      return success(res, 'Campus categories and lists fetched.', categories);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async saveCampusCategory(req, res, next) {
+    try {
+      const { id, category_key, label, token, icon, color, bg_color, display_order, is_active } = req.body;
+      if (!label || label.trim().length === 0) {
+        return error(res, 'Category name/label is required.', 400);
+      }
+      if (id) {
+        const updated = await FareModel.updateCategory(id, { category_key, label, token, icon, color, bg_color, display_order, is_active });
+        return success(res, 'Category updated successfully.', updated);
+      } else {
+        const created = await FareModel.createCategory({ category_key, label, token, icon, color, bg_color, display_order, is_active });
+        return success(res, 'Category created successfully.', created, 201);
+      }
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async deleteCampusCategory(req, res, next) {
+    try {
+      const id = req.params.id;
+      const deleteStops = req.query.deleteStops === 'true' || req.body?.deleteStops === true;
+      const result = await FareModel.deleteCategory(id, { deleteStops });
+      return success(res, 'Campus category deleted successfully.', result);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async deleteAllCampusCategories(req, res, next) {
+    try {
+      const deleteStops = req.query.deleteStops === 'true' || req.body?.deleteStops === true;
+      await FareModel.deleteAllCategories({ deleteStops });
+      return success(res, 'All campus categories deleted successfully.');
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
    * Campus Stops & Location Lists Management
    */
   async getCampusStops(req, res, next) {
     try {
       const stops = await FareModel.getAllAdminCampusStops();
       const grouped = await FareModel.getGroupedCampusStops();
-      return success(res, 'Campus stops and categories fetched.', { stops, grouped });
+      const categories = await FareModel.getAllAdminCategories();
+      return success(res, 'Campus stops and categories fetched.', { stops, grouped, categories });
     } catch (err) {
       next(err);
     }
@@ -291,6 +343,16 @@ const AdminController = {
       const id = req.params.id;
       await FareModel.deleteCampusStop(id);
       return success(res, 'Campus stop deleted successfully.');
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async deleteAllCampusStops(req, res, next) {
+    try {
+      const category = req.query.category || req.body?.category || null;
+      await FareModel.deleteAllCampusStops({ category });
+      return success(res, category ? `Stops in category ${category} deleted.` : 'All campus stops deleted.');
     } catch (err) {
       next(err);
     }
@@ -331,6 +393,15 @@ const AdminController = {
       const id = req.params.id;
       await FareModel.deleteRouteFare(id);
       return success(res, 'Route fare deleted successfully.');
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async deleteAllRouteFares(req, res, next) {
+    try {
+      await FareModel.deleteAllRouteFares();
+      return success(res, 'All route fare rules deleted successfully.');
     } catch (err) {
       next(err);
     }

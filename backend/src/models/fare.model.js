@@ -1,14 +1,17 @@
 const db = require('../config/database');
 const { CAMPUS_CATEGORIES } = require('../config/constants');
 
-const CATEGORY_MAP = {
-  GIRLS_HOSTEL: { label: 'Girls Hostels', token: '[Girls Hostels]', icon: '👧' },
-  BOYS_HOSTEL: { label: 'Boys Hostels', token: '[Boys Hostels]', icon: '👦' },
-  DEPARTMENT: { label: 'Departments & Schools', token: '[Departments & Schools]', icon: '🏛️' },
-  GATE_HUB: { label: 'Gates & Hubs', token: '[Gates & Hubs]', icon: '🚪' }
+const DEFAULT_CATEGORY_MAP = {
+  GIRLS_HOSTEL: { label: 'Girls Hostels', token: '[Girls Hostels]', icon: '👧', color: '#EC4899', bg_color: 'rgba(236, 72, 153, 0.12)' },
+  BOYS_HOSTEL: { label: 'Boys Hostels', token: '[Boys Hostels]', icon: '👦', color: '#3B82F6', bg_color: 'rgba(59, 130, 246, 0.12)' },
+  DEPARTMENT: { label: 'Departments & Schools', token: '[Departments & Schools]', icon: '🏛️', color: '#10B981', bg_color: 'rgba(16, 185, 129, 0.12)' },
+  GATE_HUB: { label: 'Gates & Campus Hubs', token: '[Gates & Hubs]', icon: '🚪', color: '#F59E0B', bg_color: 'rgba(245, 158, 11, 0.12)' }
 };
 
 const FareModel = {
+  // ==========================================
+  // VEHICLE FARE CONFIGURATIONS
+  // ==========================================
   async getFareConfiguration(vehicleType) {
     return db.queryOne('SELECT * FROM fare_configurations WHERE vehicle_type = ? AND is_active = 1', [vehicleType]);
   },
@@ -43,9 +46,167 @@ const FareModel = {
   },
 
   // ==========================================
-  // CAMPUS STOPS & CATEGORY MANAGEMENT
+  // CAMPUS CATEGORIES & LIST MANAGEMENT
   // ==========================================
+  async getAllCategories() {
+    try {
+      return await db.query('SELECT * FROM campus_categories WHERE is_active = 1 ORDER BY display_order ASC, id ASC');
+    } catch (_) {
+      return Object.entries(DEFAULT_CATEGORY_MAP).map(([k, v], idx) => ({
+        id: idx + 1,
+        category_key: k,
+        label: v.label,
+        token: v.token,
+        icon: v.icon,
+        color: v.color,
+        bg_color: v.bg_color,
+        display_order: idx + 1,
+        is_active: 1
+      }));
+    }
+  },
 
+  async getAllAdminCategories() {
+    try {
+      const categories = await db.query('SELECT * FROM campus_categories ORDER BY display_order ASC, id ASC');
+      // Count stops per category
+      const stopCounts = await db.query('SELECT category, COUNT(*) as count FROM campus_stops GROUP BY category');
+      const countMap = {};
+      (stopCounts || []).forEach(sc => {
+        if (sc.category) {
+          countMap[sc.category] = sc.count;
+          countMap[sc.category.toLowerCase()] = sc.count;
+          countMap[sc.category.toUpperCase()] = sc.count;
+        }
+      });
+
+      return (categories || []).map(cat => ({
+        ...cat,
+        stopsCount: countMap[cat.category_key] || countMap[cat.category_key?.toUpperCase()] || countMap[cat.category_key?.toLowerCase()] || 0
+      }));
+    } catch (_) {
+      return Object.entries(DEFAULT_CATEGORY_MAP).map(([k, v], idx) => ({
+        id: idx + 1,
+        category_key: k,
+        label: v.label,
+        token: v.token,
+        icon: v.icon,
+        color: v.color,
+        bg_color: v.bg_color,
+        display_order: idx + 1,
+        is_active: 1,
+        stopsCount: 0
+      }));
+    }
+  },
+
+  async getCategoryById(id) {
+    return db.queryOne('SELECT * FROM campus_categories WHERE id = ?', [id]);
+  },
+
+  async getCategoryByKey(key) {
+    return db.queryOne('SELECT * FROM campus_categories WHERE category_key = ?', [key]);
+  },
+
+  async createCategory({ category_key, label, token, icon, color, bg_color, display_order = 0, is_active = 1 }) {
+    const rawLabel = (label || '').trim();
+    const derivedKey = (category_key || rawLabel.toUpperCase().replace(/[^A-Z0-9]/g, '_').slice(0, 45) || `CAT_${Date.now()}`).trim();
+    let derivedToken = (token || `[${rawLabel}]`).trim();
+    if (!derivedToken.startsWith('[')) derivedToken = `[${derivedToken}`;
+    if (!derivedToken.endsWith(']')) derivedToken = `${derivedToken}]`;
+
+    const iconVal = icon || '📍';
+    const colorVal = color || '#3B82F6';
+    const bgVal = bg_color || `rgba(59, 130, 246, 0.12)`;
+
+    const res = await db.query(
+      `INSERT INTO campus_categories (category_key, label, token, icon, color, bg_color, display_order, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [derivedKey, rawLabel, derivedToken, iconVal, colorVal, bgVal, parseInt(display_order) || 0, is_active ? 1 : 0]
+    );
+
+    const insertedId = res?.insertId;
+    if (insertedId) {
+      return db.queryOne('SELECT * FROM campus_categories WHERE id = ?', [insertedId]);
+    }
+    return db.queryOne('SELECT * FROM campus_categories WHERE category_key = ?', [derivedKey]);
+  },
+
+  async updateCategory(id, { category_key, label, token, icon, color, bg_color, display_order, is_active }) {
+    const current = await this.getCategoryById(id);
+    if (!current) return null;
+
+    let derivedToken = token ? token.trim() : current.token;
+    if (derivedToken && !derivedToken.startsWith('[')) derivedToken = `[${derivedToken}`;
+    if (derivedToken && !derivedToken.endsWith(']')) derivedToken = `${derivedToken}]`;
+
+    const updatedKey = category_key ? category_key.trim() : current.category_key;
+    const updatedLabel = label ? label.trim() : current.label;
+
+    await db.query(
+      `UPDATE campus_categories
+       SET category_key = COALESCE(?, category_key),
+           label = COALESCE(?, label),
+           token = COALESCE(?, token),
+           icon = COALESCE(?, icon),
+           color = COALESCE(?, color),
+           bg_color = COALESCE(?, bg_color),
+           display_order = COALESCE(?, display_order),
+           is_active = COALESCE(?, is_active)
+       WHERE id = ?`,
+      [
+        updatedKey,
+        updatedLabel,
+        derivedToken,
+        icon || null,
+        color || null,
+        bg_color || null,
+        display_order !== undefined ? parseInt(display_order) : null,
+        is_active !== undefined ? (is_active ? 1 : 0) : null,
+        id
+      ]
+    );
+
+    // If key or label changed, synchronize campus_stops
+    if (current.category_key !== updatedKey || current.label !== updatedLabel) {
+      try {
+        await db.query(
+          `UPDATE campus_stops 
+           SET category = ?, category_label = ? 
+           WHERE category = ? OR category = ?`,
+          [updatedKey, updatedLabel, current.category_key, current.category_key.toLowerCase()]
+        );
+      } catch (_) {}
+    }
+
+    return this.getCategoryById(id);
+  },
+
+  async deleteCategory(id, { deleteStops = false } = {}) {
+    const category = await this.getCategoryById(id);
+    if (!category) return { success: false, message: 'Category not found' };
+
+    if (deleteStops) {
+      await db.query('DELETE FROM campus_stops WHERE category = ? OR category = ?', [category.category_key, category.category_key.toLowerCase()]);
+    } else {
+      await db.query('UPDATE campus_stops SET category = ?, category_label = ? WHERE category = ? OR category = ?', ['GATE_HUB', 'Gates & Campus Hubs', category.category_key, category.category_key.toLowerCase()]);
+    }
+
+    await db.query('DELETE FROM campus_categories WHERE id = ?', [id]);
+    return { success: true, deletedCategory: category };
+  },
+
+  async deleteAllCategories({ deleteStops = false } = {}) {
+    if (deleteStops) {
+      await db.query('DELETE FROM campus_stops');
+    }
+    await db.query('DELETE FROM campus_categories');
+    return { success: true };
+  },
+
+  // ==========================================
+  // CAMPUS STOPS MANAGEMENT
+  // ==========================================
   async getAllCampusStops() {
     return db.query('SELECT * FROM campus_stops WHERE is_active = 1 ORDER BY display_order ASC, name ASC');
   },
@@ -55,27 +216,86 @@ const FareModel = {
   },
 
   async getGroupedCampusStops() {
-    const stops = await this.getAllCampusStops();
-    const grouped = {
-      GIRLS_HOSTEL: { key: 'GIRLS_HOSTEL', label: 'Girls Hostels', token: '[Girls Hostels]', icon: '👧', stops: [] },
-      BOYS_HOSTEL: { key: 'BOYS_HOSTEL', label: 'Boys Hostels', token: '[Boys Hostels]', icon: '👦', stops: [] },
-      DEPARTMENT: { key: 'DEPARTMENT', label: 'Departments & School Blocks', token: '[Departments & Schools]', icon: '🏛️', stops: [] },
-      GATE_HUB: { key: 'GATE_HUB', label: 'Gates & Campus Hubs', token: '[Gates & Hubs]', icon: '🚪', stops: [] }
-    };
+    let categories = [];
+    try {
+      categories = await this.getAllCategories();
+    } catch (_) {}
 
+    const stops = await this.getAllAdminCampusStops();
+    const groupedMap = {};
+
+    // 1. Initialize groups from dynamic categories
+    if (categories && categories.length > 0) {
+      categories.forEach(cat => {
+        groupedMap[cat.category_key] = {
+          id: cat.id,
+          key: cat.category_key,
+          label: cat.label,
+          token: cat.token,
+          icon: cat.icon || '📍',
+          color: cat.color || '#3B82F6',
+          bg: cat.bg_color || 'rgba(59, 130, 246, 0.12)',
+          display_order: cat.display_order || 0,
+          stops: []
+        };
+      });
+    } else {
+      Object.entries(DEFAULT_CATEGORY_MAP).forEach(([k, v], idx) => {
+        groupedMap[k] = {
+          id: idx + 1,
+          key: k,
+          label: v.label,
+          token: v.token,
+          icon: v.icon,
+          color: v.color,
+          bg: v.bg_color,
+          display_order: idx + 1,
+          stops: []
+        };
+      });
+    }
+
+    // 2. Distribute stops into groups
+    let otherGroup = null;
     (stops || []).forEach(s => {
       const cat = s.category || 'GATE_HUB';
-      if (!grouped[cat]) {
-        grouped[cat] = { key: cat, label: s.category_label || cat, token: `[${s.category_label || cat}]`, icon: '📍', stops: [] };
+      const matchedKey = Object.keys(groupedMap).find(k => k.toLowerCase() === cat.toLowerCase());
+      if (matchedKey) {
+        groupedMap[matchedKey].stops.push(s);
+      } else if (groupedMap[cat]) {
+        groupedMap[cat].stops.push(s);
+      } else {
+        if (!otherGroup) {
+          otherGroup = {
+            id: 'OTHER',
+            key: 'OTHER',
+            label: 'Other Campus Locations',
+            token: '[Other Locations]',
+            icon: '📍',
+            color: '#64748B',
+            bg: 'rgba(100, 116, 139, 0.12)',
+            display_order: 999,
+            stops: []
+          };
+        }
+        otherGroup.stops.push(s);
       }
-      grouped[cat].stops.push(s);
     });
 
-    return Object.values(grouped);
+    const result = Object.values(groupedMap);
+    if (otherGroup && otherGroup.stops.length > 0) {
+      result.push(otherGroup);
+    }
+    return result;
   },
 
   async createCampusStop({ name, category, category_label, latitude, longitude, display_order = 0 }) {
-    const label = category_label || CATEGORY_MAP[category]?.label || 'Campus Location';
+    let label = category_label;
+    if (!label) {
+      const cat = await this.getCategoryByKey(category);
+      label = cat ? cat.label : (DEFAULT_CATEGORY_MAP[category]?.label || 'Campus Location');
+    }
+
     await db.query(
       `INSERT INTO campus_stops (name, category, category_label, latitude, longitude, display_order, is_active)
        VALUES (?, ?, ?, ?, ?, ?, 1)`,
@@ -85,7 +305,12 @@ const FareModel = {
   },
 
   async updateCampusStop(id, { name, category, category_label, latitude, longitude, display_order, is_active }) {
-    const label = category_label || (category ? CATEGORY_MAP[category]?.label : null);
+    let label = category_label;
+    if (!label && category) {
+      const cat = await this.getCategoryByKey(category);
+      label = cat ? cat.label : (DEFAULT_CATEGORY_MAP[category]?.label || 'Campus Location');
+    }
+
     await db.query(
       `UPDATE campus_stops
        SET name = COALESCE(?, name),
@@ -114,44 +339,77 @@ const FareModel = {
     return db.query('DELETE FROM campus_stops WHERE id = ?', [id]);
   },
 
-  // Helper to detect or lookup category for any stop string
+  async deleteAllCampusStops({ category = null } = {}) {
+    if (category) {
+      return db.query('DELETE FROM campus_stops WHERE category = ? OR category = ?', [category, category.toLowerCase()]);
+    }
+    return db.query('DELETE FROM campus_stops');
+  },
+
+  // Dynamic Stop Category Resolver
   async resolveStopCategory(stopName) {
     if (!stopName) return null;
     const clean = stopName.trim().toLowerCase();
 
-    // 1. Direct DB lookup
+    // 1. Direct DB lookup in campus_stops
     const stopRow = await db.queryOne('SELECT * FROM campus_stops WHERE LOWER(TRIM(name)) = ?', [clean]);
+    let categories = [];
+    try {
+      categories = await this.getAllCategories();
+    } catch (_) {}
+
+    const catMap = {};
+    for (const c of (categories || [])) {
+      catMap[c.category_key] = c;
+      catMap[c.category_key.toLowerCase()] = c;
+      if (c.token) catMap[c.token.toLowerCase()] = c;
+      if (c.label) catMap[c.label.toLowerCase()] = c;
+    }
+
     if (stopRow) {
+      const matchedCat = catMap[stopRow.category] || catMap[stopRow.category.toLowerCase()];
       return {
         category: stopRow.category,
-        categoryLabel: stopRow.category_label,
-        token: CATEGORY_MAP[stopRow.category]?.token || `[${stopRow.category_label}]`
+        categoryLabel: stopRow.category_label || (matchedCat ? matchedCat.label : stopRow.category),
+        token: matchedCat ? matchedCat.token : (DEFAULT_CATEGORY_MAP[stopRow.category]?.token || `[${stopRow.category_label || stopRow.category}]`)
       };
     }
 
-    // 2. Check if string is already a group token
-    if (clean.includes('girls') && (clean.includes('hostel') || clean.includes('['))) {
-      return { category: 'GIRLS_HOSTEL', categoryLabel: 'Girls Hostels', token: '[Girls Hostels]' };
-    }
-    if (clean.includes('boys') && (clean.includes('hostel') || clean.includes('['))) {
-      return { category: 'BOYS_HOSTEL', categoryLabel: 'Boys Hostels', token: '[Boys Hostels]' };
-    }
-    if (clean.includes('department') || clean.includes('school') || clean.includes('science') || clean.includes('math')) {
-      return { category: 'DEPARTMENT', categoryLabel: 'Departments & Schools', token: '[Departments & Schools]' };
-    }
-    if (clean.includes('gate') || clean.includes('library') || clean.includes('canteen') || clean.includes('admin')) {
-      return { category: 'GATE_HUB', categoryLabel: 'Gates & Hubs', token: '[Gates & Hubs]' };
+    // 2. Check if string is already a group token or label
+    for (const c of (categories || [])) {
+      const tLower = (c.token || '').toLowerCase();
+      const lLower = (c.label || '').toLowerCase();
+      const kLower = (c.category_key || '').toLowerCase();
+      if (clean === tLower || clean === `[${kLower}]` || clean === lLower) {
+        return { category: c.category_key, categoryLabel: c.label, token: c.token };
+      }
     }
 
-    // 3. Keyword matching for hostels / buildings
+    // 3. Partial Token matching
+    for (const c of (categories || [])) {
+      const tLower = (c.token || '').toLowerCase();
+      const lLower = (c.label || '').toLowerCase();
+      if ((clean.startsWith('[') && clean.endsWith(']') && clean.includes(lLower)) || clean.includes(tLower)) {
+        return { category: c.category_key, categoryLabel: c.label, token: c.token };
+      }
+    }
+
+    // 4. Keyword Fallbacks
     if (/curie|teresa|ganga|yamuna|sarojini|cauvery|saraswathi/i.test(clean)) {
-      return { category: 'GIRLS_HOSTEL', categoryLabel: 'Girls Hostels', token: '[Girls Hostels]' };
+      const c = catMap['GIRLS_HOSTEL'] || catMap['girls_hostel'];
+      return { category: 'GIRLS_HOSTEL', categoryLabel: c ? c.label : 'Girls Hostels', token: c ? c.token : '[Girls Hostels]' };
     }
     if (/silver|jubilee|sjc|bharathidasan|kabilar|subramania|kalidas|valmiki/i.test(clean)) {
-      return { category: 'BOYS_HOSTEL', categoryLabel: 'Boys Hostels', token: '[Boys Hostels]' };
+      const c = catMap['BOYS_HOSTEL'] || catMap['boys_hostel'];
+      return { category: 'BOYS_HOSTEL', categoryLabel: c ? c.label : 'Boys Hostels', token: c ? c.token : '[Boys Hostels]' };
     }
-    if (/physics|management|som|humanities|biotech|engineering|media/i.test(clean)) {
-      return { category: 'DEPARTMENT', categoryLabel: 'Departments & Schools', token: '[Departments & Schools]' };
+    if (/physics|management|som|humanities|biotech|engineering|media|science|math|department|school/i.test(clean)) {
+      const c = catMap['DEPARTMENT'] || catMap['department'];
+      return { category: 'DEPARTMENT', categoryLabel: c ? c.label : 'Departments & Schools', token: c ? c.token : '[Departments & Schools]' };
+    }
+    if (/gate|library|canteen|admin|shopping|stadium|hub/i.test(clean)) {
+      const c = catMap['GATE_HUB'] || catMap['gate_hub'];
+      return { category: 'GATE_HUB', categoryLabel: c ? c.label : 'Gates & Hubs', token: c ? c.token : '[Gates & Hubs]' };
     }
 
     return null;
@@ -409,6 +667,10 @@ const FareModel = {
 
   async deleteRouteFare(id) {
     return db.query('DELETE FROM route_fares WHERE id = ?', [id]);
+  },
+
+  async deleteAllRouteFares() {
+    return db.query('DELETE FROM route_fares');
   }
 };
 

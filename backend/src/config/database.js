@@ -172,6 +172,21 @@ async function bootstrapMysqlSchema(targetPool) {
     `);
 
     await targetPool.query(`
+      CREATE TABLE IF NOT EXISTS campus_categories (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        category_key VARCHAR(50) NOT NULL UNIQUE,
+        label VARCHAR(100) NOT NULL,
+        token VARCHAR(100) NOT NULL UNIQUE,
+        icon VARCHAR(20) DEFAULT '📍',
+        color VARCHAR(30) DEFAULT '#3B82F6',
+        bg_color VARCHAR(50) DEFAULT 'rgba(59, 130, 246, 0.12)',
+        display_order INT DEFAULT 0,
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    await targetPool.query(`
       CREATE TABLE IF NOT EXISTS campus_stops (
         id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(150) NOT NULL UNIQUE,
@@ -630,6 +645,19 @@ function bootstrapSqliteSchema() {
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS campus_categories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      category_key TEXT NOT NULL UNIQUE,
+      label TEXT NOT NULL,
+      token TEXT NOT NULL UNIQUE,
+      icon TEXT DEFAULT '📍',
+      color TEXT DEFAULT '#3B82F6',
+      bg_color TEXT DEFAULT 'rgba(59, 130, 246, 0.12)',
+      display_order INTEGER DEFAULT 0,
+      is_active INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS campus_stops (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,
@@ -953,7 +981,23 @@ async function seedCampusStopsAndGroupRoutes(targetDb, isSqlite) {
     { from: 'PU Main Gate (Gate 1)', to: 'Gate 2 (East Coast Road / ECR)', fare: 30.00, dist: 2.5 }
   ];
 
+  const DEFAULT_CAMPUS_CATEGORIES = [
+    { key: 'GIRLS_HOSTEL', label: 'Girls Hostels', token: '[Girls Hostels]', icon: '👧', color: '#EC4899', bg_color: 'rgba(236, 72, 153, 0.12)', order: 1 },
+    { key: 'BOYS_HOSTEL', label: 'Boys Hostels', token: '[Boys Hostels]', icon: '👦', color: '#3B82F6', bg_color: 'rgba(59, 130, 246, 0.12)', order: 2 },
+    { key: 'DEPARTMENT', label: 'Departments & Schools', token: '[Departments & Schools]', icon: '🏛️', color: '#10B981', bg_color: 'rgba(16, 185, 129, 0.12)', order: 3 },
+    { key: 'GATE_HUB', label: 'Gates & Campus Hubs', token: '[Gates & Hubs]', icon: '🚪', color: '#F59E0B', bg_color: 'rgba(245, 158, 11, 0.12)', order: 4 }
+  ];
+
   if (isSqlite && targetDb) {
+    // 0. Seed campus_categories in SQLite
+    const insertCatStmt = targetDb.prepare(`
+      INSERT OR IGNORE INTO campus_categories (category_key, label, token, icon, color, bg_color, display_order, is_active)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+    `);
+    for (const cat of DEFAULT_CAMPUS_CATEGORIES) {
+      insertCatStmt.run(cat.key, cat.label, cat.token, cat.icon, cat.color, cat.bg_color, cat.order);
+    }
+
     // 1. Seed campus_stops in SQLite
     const insertStopStmt = targetDb.prepare(`
       INSERT OR IGNORE INTO campus_stops (name, category, category_label, latitude, longitude, is_active, display_order)
@@ -972,6 +1016,15 @@ async function seedCampusStopsAndGroupRoutes(targetDb, isSqlite) {
       insertRouteStmt.run(r.from, r.to, r.fare, r.dist);
     }
   } else if (!isSqlite && targetDb) {
+    // 0. Seed campus_categories in MySQL
+    for (const cat of DEFAULT_CAMPUS_CATEGORIES) {
+      await targetDb.query(`
+        INSERT INTO campus_categories (category_key, label, token, icon, color, bg_color, display_order, is_active)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+        ON DUPLICATE KEY UPDATE label = VALUES(label)
+      `, [cat.key, cat.label, cat.token, cat.icon, cat.color, cat.bg_color, cat.order]);
+    }
+
     // 1. Seed campus_stops in MySQL
     for (const stop of DEFAULT_CAMPUS_STOPS) {
       await targetDb.query(`
