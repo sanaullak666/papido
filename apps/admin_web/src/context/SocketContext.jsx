@@ -9,7 +9,23 @@ export function SocketProvider({ children }) {
 
   useEffect(() => {
     const token = localStorage.getItem('papido_admin_token') || localStorage.getItem('papido_user_token');
-    const socketUrl = window.location.port === '5173' ? 'http://localhost:5000' : window.location.origin;
+    const getSocketUrl = () => {
+      if (import.meta.env.VITE_SOCKET_URL) {
+        return import.meta.env.VITE_SOCKET_URL;
+      }
+      if (import.meta.env.VITE_API_URL) {
+        return import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '');
+      }
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return 'http://localhost:5000';
+      }
+      if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(window.location.hostname)) {
+        return `http://${window.location.hostname}:5000`;
+      }
+      return window.location.origin;
+    };
+
+    const socketUrl = getSocketUrl();
     const newSocket = io(socketUrl, {
       auth: { token },
       reconnectionAttempts: 15,

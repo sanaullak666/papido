@@ -1,4 +1,19 @@
-const BASE_URL = window.location.port === '5173' ? '/api' : 'http://localhost:5000/api';
+const getBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) {
+    const url = import.meta.env.VITE_API_URL.replace(/\/+$/, '');
+    return url.endsWith('/api') ? url : `${url}/api`;
+  }
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return window.location.port === '5173' ? '/api' : 'http://localhost:5000/api';
+  }
+  // Mobile / LAN testing e.g. 10.10.58.105
+  if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(window.location.hostname)) {
+    return `http://${window.location.hostname}:5000/api`;
+  }
+  return '/api';
+};
+
+const BASE_URL = getBaseUrl();
 
 export async function apiRequest(endpoint, method = 'GET', body = null, token = null) {
   const headers = {
