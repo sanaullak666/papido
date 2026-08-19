@@ -256,6 +256,47 @@ const AdminController = {
   },
 
   /**
+   * Campus Stops & Location Lists Management
+   */
+  async getCampusStops(req, res, next) {
+    try {
+      const stops = await FareModel.getAllAdminCampusStops();
+      const grouped = await FareModel.getGroupedCampusStops();
+      return success(res, 'Campus stops and categories fetched.', { stops, grouped });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async saveCampusStop(req, res, next) {
+    try {
+      const { id, name, category, category_label, latitude, longitude, display_order, is_active } = req.body;
+      if (!name || !category) {
+        return error(res, 'Stop name and category are required.', 400);
+      }
+      if (id) {
+        const updated = await FareModel.updateCampusStop(id, { name, category, category_label, latitude, longitude, display_order, is_active });
+        return success(res, 'Campus stop updated successfully.', updated);
+      } else {
+        const created = await FareModel.createCampusStop({ name, category, category_label, latitude, longitude, display_order });
+        return success(res, 'Campus stop created successfully.', created, 201);
+      }
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async deleteCampusStop(req, res, next) {
+    try {
+      const id = req.params.id;
+      await FareModel.deleteCampusStop(id);
+      return success(res, 'Campus stop deleted successfully.');
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
    * Campus Route Fares
    */
   async getRouteFares(req, res, next) {
@@ -271,7 +312,7 @@ const AdminController = {
     try {
       const { id, pickupStop, destinationStop, fareAmount, distanceKm, isActive } = req.body;
       if (id) {
-        const updated = await FareModel.updateRouteFareById(id, { fareAmount, distanceKm, isActive });
+        const updated = await FareModel.updateRouteFareById(id, { fareAmount, distanceKm, isActive, pickupStop, destinationStop });
         return success(res, 'Route fare updated successfully.', updated);
       } else {
         if (!pickupStop || !destinationStop || fareAmount === undefined) {
@@ -290,6 +331,32 @@ const AdminController = {
       const id = req.params.id;
       await FareModel.deleteRouteFare(id);
       return success(res, 'Route fare deleted successfully.');
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async testRouteFare(req, res, next) {
+    try {
+      const { pickupStop, destinationStop } = req.body;
+      if (!pickupStop || !destinationStop) {
+        return error(res, 'Pickup and destination stop are required.', 400);
+      }
+      const matched = await FareModel.findRouteFare(pickupStop, destinationStop);
+      if (matched) {
+        return success(res, 'Matched route fare rule found.', {
+          matched: true,
+          routeFare: matched,
+          fare: parseFloat(matched.fare_amount),
+          ruleType: matched.ruleType,
+          description: matched.appliedRuleDescription
+        });
+      } else {
+        return success(res, 'No specific route fare found, standard base fare will apply.', {
+          matched: false,
+          fallback: true
+        });
+      }
     } catch (err) {
       next(err);
     }

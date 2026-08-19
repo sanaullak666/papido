@@ -79,6 +79,13 @@ const SOCKET_EVENTS = {
   NOTIFICATION: 'notification:new'
 };
 
+const CAMPUS_CATEGORIES = {
+  GIRLS_HOSTEL: { code: 'GIRLS_HOSTEL', label: 'Girls Hostels', token: '[Girls Hostels]', icon: '👧' },
+  BOYS_HOSTEL: { code: 'BOYS_HOSTEL', label: 'Boys Hostels', token: '[Boys Hostels]', icon: '👦' },
+  DEPARTMENT: { code: 'DEPARTMENT', label: 'Departments & Schools', token: '[Departments & Schools]', icon: '🏛️' },
+  GATE_HUB: { code: 'GATE_HUB', label: 'Gates & Campus Hubs', token: '[Gates & Hubs]', icon: '🚪' }
+};
+
 module.exports = {
   ROLES,
   USER_STATUS,
@@ -87,5 +94,6 @@ module.exports = {
   RIDE_STATUS,
   PAYMENT_METHODS,
   PAYMENT_STATUS,
-  SOCKET_EVENTS
+  SOCKET_EVENTS,
+  CAMPUS_CATEGORIES
 };

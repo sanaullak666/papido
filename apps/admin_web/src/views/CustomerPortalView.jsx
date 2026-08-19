@@ -28,16 +28,66 @@ import {
   ExternalLink
 } from 'lucide-react';
 
-const CAMPUS_HOTSPOTS = [
-  { name: 'PU Main Gate (Gate 1)', lat: 12.0228681, lng: 79.8509415 },
-  { name: 'Central Library', lat: 12.0245000, lng: 79.8532000 },
-  { name: 'Science Complex / Physics Dept', lat: 12.0261000, lng: 79.8550000 },
-  { name: 'Silver Jubilee Hostel', lat: 12.0280000, lng: 79.8520000 },
-  { name: 'Madame Curie Girls Hostel', lat: 12.0215000, lng: 79.8565000 },
-  { name: 'University Canteen & Food Court', lat: 12.0238000, lng: 79.8541000 },
-  { name: 'Admin Block & Exam Wing', lat: 12.0252000, lng: 79.8515000 },
-  { name: 'Gate 2 (East Coast Road)', lat: 12.0295000, lng: 79.8580000 },
+const DEFAULT_GROUPED_CAMPUS_STOPS = [
+  {
+    key: 'GIRLS_HOSTEL',
+    label: 'Girls Hostels',
+    icon: '👧',
+    stops: [
+      { id: 'gh-1', name: 'Madame Curie Girls Hostel', lat: 12.0215, lng: 79.8565 },
+      { id: 'gh-2', name: 'Mother Teresa Girls Hostel', lat: 12.0218, lng: 79.8570 },
+      { id: 'gh-3', name: 'Ganga Girls Hostel', lat: 12.0222, lng: 79.8575 },
+      { id: 'gh-4', name: 'Yamuna Girls Hostel', lat: 12.0225, lng: 79.8572 },
+      { id: 'gh-5', name: 'Sarojini Naidu Girls Hostel', lat: 12.0212, lng: 79.8560 },
+      { id: 'gh-6', name: 'Cauvery Girls Hostel', lat: 12.0220, lng: 79.8580 },
+      { id: 'gh-7', name: 'Saraswathi Girls Hostel', lat: 12.0216, lng: 79.8568 }
+    ]
+  },
+  {
+    key: 'BOYS_HOSTEL',
+    label: 'Boys Hostels',
+    icon: '👦',
+    stops: [
+      { id: 'bh-1', name: 'Silver Jubilee Hostel (SJC)', lat: 12.0280, lng: 79.8520 },
+      { id: 'bh-2', name: 'Bharathidasan Boys Hostel', lat: 12.0275, lng: 79.8515 },
+      { id: 'bh-3', name: 'Kabilar Boys Hostel', lat: 12.0270, lng: 79.8510 },
+      { id: 'bh-4', name: 'Subramania Bharathi Boys Hostel', lat: 12.0285, lng: 79.8525 },
+      { id: 'bh-5', name: 'Kalidas Boys Hostel', lat: 12.0268, lng: 79.8530 },
+      { id: 'bh-6', name: 'Valmiki Boys Hostel', lat: 12.0272, lng: 79.8535 },
+      { id: 'bh-7', name: 'Foreign Students Hostel', lat: 12.0288, lng: 79.8540 }
+    ]
+  },
+  {
+    key: 'DEPARTMENT',
+    label: 'Departments & School Blocks',
+    icon: '🏛️',
+    stops: [
+      { id: 'dp-1', name: 'Science Complex / Physics Dept', lat: 12.0261, lng: 79.8550 },
+      { id: 'dp-2', name: 'School of Management (SOM)', lat: 12.0255, lng: 79.8540 },
+      { id: 'dp-3', name: 'Ramanujan Math & Computer Science Block', lat: 12.0265, lng: 79.8560 },
+      { id: 'dp-4', name: 'School of Humanities & Social Sciences', lat: 12.0248, lng: 79.8535 },
+      { id: 'dp-5', name: 'School of Life Sciences & Biotech', lat: 12.0258, lng: 79.8565 },
+      { id: 'dp-6', name: 'School of Engineering & Technology', lat: 12.0270, lng: 79.8570 },
+      { id: 'dp-7', name: 'School of Media & Communication', lat: 12.0250, lng: 79.8545 }
+    ]
+  },
+  {
+    key: 'GATE_HUB',
+    label: 'Gates & Campus Hubs',
+    icon: '🚪',
+    stops: [
+      { id: 'gt-1', name: 'PU Main Gate (Gate 1)', lat: 12.0228681, lng: 79.8509415 },
+      { id: 'gt-2', name: 'Gate 2 (East Coast Road)', lat: 12.0295, lng: 79.8580 },
+      { id: 'gt-3', name: 'Central Library', lat: 12.0245, lng: 79.8532 },
+      { id: 'gt-4', name: 'University Canteen & Food Court', lat: 12.0238, lng: 79.8541 },
+      { id: 'gt-5', name: 'Admin Block & Exam Wing', lat: 12.0252, lng: 79.8515 },
+      { id: 'gt-6', name: 'Shopping Complex / Co-op Stores', lat: 12.0240, lng: 79.8538 },
+      { id: 'gt-7', name: 'Rajiv Gandhi Sports Stadium', lat: 12.0290, lng: 79.8555 }
+    ]
+  }
 ];
+
+const CAMPUS_HOTSPOTS = DEFAULT_GROUPED_CAMPUS_STOPS.flatMap(g => g.stops);
 
 const POPULAR_OUTSIDE_SPOTS = [
   { name: 'White Town / Rock Beach', lat: 11.9338, lng: 79.8359 },
@@ -62,10 +112,10 @@ export function CustomerPortalView() {
     activePinModeRef.current = activePinMode;
   }, [activePinMode]);
 
-  const [pickupAddress, setPickupAddress] = useState(CAMPUS_HOTSPOTS[0].name);
-  const [pickupCoords, setPickupCoords] = useState({ lat: CAMPUS_HOTSPOTS[0].lat, lng: CAMPUS_HOTSPOTS[0].lng });
-  const [destAddress, setDestAddress] = useState(CAMPUS_HOTSPOTS[1].name);
-  const [destCoords, setDestCoords] = useState({ lat: CAMPUS_HOTSPOTS[1].lat, lng: CAMPUS_HOTSPOTS[1].lng });
+  const [pickupAddress, setPickupAddress] = useState('PU Main Gate (Gate 1)');
+  const [pickupCoords, setPickupCoords] = useState({ lat: 12.0228681, lng: 79.8509415 });
+  const [destAddress, setDestAddress] = useState('Madame Curie Girls Hostel');
+  const [destCoords, setDestCoords] = useState({ lat: 12.0215, lng: 79.8565 });
   const [vehicleType, setVehicleType] = useState('ANY');
   const [femaleRiderOnly, setFemaleRiderOnly] = useState(false);
   const [isDoubleRide, setIsDoubleRide] = useState(false);
@@ -77,21 +127,41 @@ export function CustomerPortalView() {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [adminRoutes, setAdminRoutes] = useState([]);
   const [adminStops, setAdminStops] = useState([]);
+  const [groupedCampusStops, setGroupedCampusStops] = useState(DEFAULT_GROUPED_CAMPUS_STOPS);
 
-  // Fetch & Live-Sync Admin-Configured Campus Routes
+  // Helper to find coordinates for any stop name
+  const findStopCoords = (stopName) => {
+    if (!stopName) return null;
+    const nameLower = stopName.trim().toLowerCase();
+    for (const grp of groupedCampusStops) {
+      for (const stop of grp.stops) {
+        if (stop.name && (stop.name.toLowerCase() === nameLower || stop.name.toLowerCase().includes(nameLower) || nameLower.includes(stop.name.toLowerCase()))) {
+          if (stop.lat && stop.lng) return { lat: parseFloat(stop.lat || stop.latitude), lng: parseFloat(stop.lng || stop.longitude) };
+          if (stop.latitude && stop.longitude) return { lat: parseFloat(stop.latitude), lng: parseFloat(stop.longitude) };
+        }
+      }
+    }
+    const hotspot = CAMPUS_HOTSPOTS.find(h => h.name.toLowerCase() === nameLower || h.name.toLowerCase().includes(nameLower));
+    if (hotspot) return { lat: hotspot.lat, lng: hotspot.lng };
+    return null;
+  };
+
+  // Fetch & Live-Sync Admin-Configured Campus Routes and Grouped Stops
   const loadAdminRoutes = async () => {
     try {
-      const [routesRes, stopsRes] = await Promise.all([
+      const [routesRes, stopsRes, groupedRes] = await Promise.all([
         apiRequest('/fares/routes', 'GET', null, token),
-        apiRequest('/fares/stops', 'GET', null, token)
+        apiRequest('/fares/stops', 'GET', null, token),
+        apiRequest('/fares/grouped-stops', 'GET', null, token)
       ]);
       if (routesRes.data) {
         setAdminRoutes(routesRes.data);
       }
       if (stopsRes.data && stopsRes.data.length > 0) {
         setAdminStops(stopsRes.data);
-        setPickupAddress(prev => stopsRes.data.includes(prev) ? prev : stopsRes.data[0]);
-        setDestAddress(prev => (stopsRes.data.includes(prev) && prev !== stopsRes.data[0]) ? prev : (stopsRes.data[1] || stopsRes.data[0]));
+      }
+      if (groupedRes.data && Array.isArray(groupedRes.data) && groupedRes.data.length > 0) {
+        setGroupedCampusStops(groupedRes.data);
       }
     } catch (err) {
       console.warn('Failed to load admin routes:', err);
@@ -100,7 +170,7 @@ export function CustomerPortalView() {
 
   useEffect(() => {
     loadAdminRoutes();
-    const interval = setInterval(loadAdminRoutes, 3000);
+    const interval = setInterval(loadAdminRoutes, 5000);
     return () => clearInterval(interval);
   }, [token, currentTab]);
 
@@ -846,15 +916,27 @@ export function CustomerPortalView() {
                       onChange={(e) => {
                         const val = e.target.value;
                         setPickupAddress(val);
-                        const spot = CAMPUS_HOTSPOTS.find(h => h.name.toLowerCase() === val.toLowerCase());
-                        if (spot) {
-                          setPickupCoords({ lat: spot.lat, lng: spot.lng });
+                        const coords = findStopCoords(val);
+                        if (coords) {
+                          setPickupCoords(coords);
                         }
                       }}
                     >
-                      {(adminStops.length > 0 ? adminStops : CAMPUS_HOTSPOTS.map(h => h.name)).map((stopName, i) => (
-                        <option key={i} value={stopName}>{stopName}</option>
-                      ))}
+                      {groupedCampusStops && groupedCampusStops.length > 0 ? (
+                        groupedCampusStops.map(group => (
+                          <optgroup key={`p-${group.key || group.label}`} label={`${group.icon || '📍'} ${group.label}`}>
+                            {group.stops.map(stop => (
+                              <option key={`p-stop-${stop.id || stop.name}`} value={stop.name}>
+                                {stop.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ))
+                      ) : (
+                        (adminStops.length > 0 ? adminStops : CAMPUS_HOTSPOTS.map(h => h.name)).map((stopName, i) => (
+                          <option key={i} value={stopName}>{stopName}</option>
+                        ))
+                      )}
                     </select>
                   </div>
 
@@ -870,24 +952,27 @@ export function CustomerPortalView() {
                       onChange={(e) => {
                         const val = e.target.value;
                         setDestAddress(val);
-                        const spot = CAMPUS_HOTSPOTS.find(h => h.name.toLowerCase() === val.toLowerCase());
-                        if (spot) {
-                          setDestCoords({ lat: spot.lat, lng: spot.lng });
+                        const coords = findStopCoords(val);
+                        if (coords) {
+                          setDestCoords(coords);
                         }
                       }}
                     >
-                      {(adminStops.length > 0 ? adminStops : CAMPUS_HOTSPOTS.map(h => h.name)).map((stopName, i) => {
-                        const matchRoute = adminRoutes.find(r => 
-                          (r.pickup_stop?.toLowerCase() === pickupAddress?.toLowerCase() && r.destination_stop?.toLowerCase() === stopName?.toLowerCase()) ||
-                          (r.pickup_stop?.toLowerCase() === stopName?.toLowerCase() && r.destination_stop?.toLowerCase() === pickupAddress?.toLowerCase()) ||
-                          ((r.pickup_stop || '').toLowerCase().includes((pickupAddress || '').toLowerCase()) && (r.destination_stop || '').toLowerCase().includes((stopName || '').toLowerCase())) ||
-                          ((r.pickup_stop || '').toLowerCase().includes((stopName || '').toLowerCase()) && (r.destination_stop || '').toLowerCase().includes((pickupAddress || '').toLowerCase()))
-                        );
-                        const priceLabel = matchRoute ? ` (₹${matchRoute.fare_amount})` : '';
-                        return (
-                          <option key={i} value={stopName}>{stopName}{priceLabel}</option>
-                        );
-                      })}
+                      {groupedCampusStops && groupedCampusStops.length > 0 ? (
+                        groupedCampusStops.map(group => (
+                          <optgroup key={`d-${group.key || group.label}`} label={`${group.icon || '📍'} ${group.label}`}>
+                            {group.stops.map(stop => (
+                              <option key={`d-stop-${stop.id || stop.name}`} value={stop.name}>
+                                {stop.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ))
+                      ) : (
+                        (adminStops.length > 0 ? adminStops : CAMPUS_HOTSPOTS.map(h => h.name)).map((stopName, i) => (
+                          <option key={i} value={stopName}>{stopName}</option>
+                        ))
+                      )}
                     </select>
                   </div>
 
@@ -1020,8 +1105,28 @@ export function CustomerPortalView() {
                         {estimating ? '...' : `₹${fareEstimate?.estimatedFare || (isDoubleRide ? 30 : 20)}`}
                       </span>
                     </div>
+
+                    {fareEstimate?.appliedRuleDescription && (
+                      <div style={{
+                        margin: '6px 0 8px 0',
+                        padding: '6px 10px',
+                        borderRadius: '6px',
+                        background: 'rgba(249, 115, 22, 0.12)',
+                        border: '1px solid rgba(249, 115, 22, 0.25)',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        color: '#EA580C',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}>
+                        <span>🏷️</span>
+                        <span>{fareEstimate.appliedRuleDescription}</span>
+                      </div>
+                    )}
+
                     <div style={{ fontSize: '11px', color: '#796D61', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #FED7AA', paddingTop: '8px', marginTop: '6px' }}>
-                      <span>Pricing: {isDoubleRide ? `(₹${fareEstimate?.singleFare || 20} × 2) - ₹10` : 'Admin Campus Route'}</span>
+                      <span>Pricing: {fareEstimate?.ruleType ? `Group / Preset Rule` : (isDoubleRide ? `(₹${fareEstimate?.singleFare || 20} × 2) - ₹10` : 'Campus Route Fare')}</span>
                       <span style={{ fontWeight: 700 }}>Cash on Drop</span>
                     </div>
                   </div>

@@ -172,6 +172,20 @@ async function bootstrapMysqlSchema(targetPool) {
     `);
 
     await targetPool.query(`
+      CREATE TABLE IF NOT EXISTS campus_stops (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(150) NOT NULL UNIQUE,
+        category VARCHAR(50) NOT NULL,
+        category_label VARCHAR(100) NOT NULL,
+        latitude DECIMAL(10, 8) DEFAULT NULL,
+        longitude DECIMAL(11, 8) DEFAULT NULL,
+        is_active BOOLEAN DEFAULT TRUE,
+        display_order INT DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    await targetPool.query(`
       CREATE TABLE IF NOT EXISTS route_fares (
         id INT AUTO_INCREMENT PRIMARY KEY,
         pickup_stop VARCHAR(150) NOT NULL,
@@ -390,6 +404,9 @@ async function bootstrapMysqlSchema(targetPool) {
 
     // Seed Demo Test Accounts (Passengers, Verified Riders, Admin)
     await seedDemoUsers(targetPool);
+
+    // Seed Campus Stops & Categorized Group Routes
+    await seedCampusStopsAndGroupRoutes(targetPool, false);
   } catch (err) {
     console.warn('[Database Warning] MySQL bootstrap notice:', err.message);
   }
@@ -611,6 +628,18 @@ function bootstrapSqliteSchema() {
       is_active INTEGER DEFAULT 1,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS campus_stops (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE,
+      category TEXT NOT NULL,
+      category_label TEXT NOT NULL,
+      latitude REAL,
+      longitude REAL,
+      is_active INTEGER DEFAULT 1,
+      display_order INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS route_fares (
@@ -855,6 +884,112 @@ function bootstrapSqliteSchema() {
       ('RIDER_TIMEOUT_SECONDS', '45', 'Time rider has to accept incoming ride request'),
       ('OTP_VERIFICATION_REQUIRED', 'true', 'Require 4-digit OTP from customer to start ride');
     `);
+  }
+
+  // Seed Campus Stops & Categorized Group Routes for SQLite
+  try {
+    seedCampusStopsAndGroupRoutes(sqliteDb, true);
+  } catch (err) {
+    console.warn('SQLite seed campus stops notice:', err.message);
+  }
+}
+
+/**
+ * Seed Campus Stops & Categorized Group Routes
+ */
+async function seedCampusStopsAndGroupRoutes(targetDb, isSqlite) {
+  const DEFAULT_CAMPUS_STOPS = [
+    // Girls Hostels
+    { name: 'Madame Curie Girls Hostel', category: 'GIRLS_HOSTEL', category_label: 'Girls Hostels', lat: 12.0215, lng: 79.8565, order: 1 },
+    { name: 'Mother Teresa Girls Hostel', category: 'GIRLS_HOSTEL', category_label: 'Girls Hostels', lat: 12.0218, lng: 79.8570, order: 2 },
+    { name: 'Ganga Girls Hostel', category: 'GIRLS_HOSTEL', category_label: 'Girls Hostels', lat: 12.0222, lng: 79.8575, order: 3 },
+    { name: 'Yamuna Girls Hostel', category: 'GIRLS_HOSTEL', category_label: 'Girls Hostels', lat: 12.0225, lng: 79.8572, order: 4 },
+    { name: 'Sarojini Naidu Girls Hostel', category: 'GIRLS_HOSTEL', category_label: 'Girls Hostels', lat: 12.0212, lng: 79.8560, order: 5 },
+    { name: 'Cauvery Girls Hostel', category: 'GIRLS_HOSTEL', category_label: 'Girls Hostels', lat: 12.0220, lng: 79.8580, order: 6 },
+    { name: 'Saraswathi Girls Hostel', category: 'GIRLS_HOSTEL', category_label: 'Girls Hostels', lat: 12.0216, lng: 79.8568, order: 7 },
+
+    // Boys Hostels
+    { name: 'Silver Jubilee Hostel (SJC)', category: 'BOYS_HOSTEL', category_label: 'Boys Hostels', lat: 12.0280, lng: 79.8520, order: 10 },
+    { name: 'Bharathidasan Boys Hostel', category: 'BOYS_HOSTEL', category_label: 'Boys Hostels', lat: 12.0275, lng: 79.8515, order: 11 },
+    { name: 'Kabilar Boys Hostel', category: 'BOYS_HOSTEL', category_label: 'Boys Hostels', lat: 12.0270, lng: 79.8510, order: 12 },
+    { name: 'Subramania Bharathi Boys Hostel', category: 'BOYS_HOSTEL', category_label: 'Boys Hostels', lat: 12.0285, lng: 79.8525, order: 13 },
+    { name: 'Kalidas Boys Hostel', category: 'BOYS_HOSTEL', category_label: 'Boys Hostels', lat: 12.0268, lng: 79.8530, order: 14 },
+    { name: 'Valmiki Boys Hostel', category: 'BOYS_HOSTEL', category_label: 'Boys Hostels', lat: 12.0272, lng: 79.8535, order: 15 },
+    { name: 'Foreign Students Hostel', category: 'BOYS_HOSTEL', category_label: 'Boys Hostels', lat: 12.0288, lng: 79.8540, order: 16 },
+
+    // Departments & School Blocks
+    { name: 'Science Complex / Physics Dept', category: 'DEPARTMENT', category_label: 'Departments & Schools', lat: 12.0261, lng: 79.8550, order: 20 },
+    { name: 'School of Management (SOM)', category: 'DEPARTMENT', category_label: 'Departments & Schools', lat: 12.0255, lng: 79.8540, order: 21 },
+    { name: 'Ramanujan Math & Computer Science Block', category: 'DEPARTMENT', category_label: 'Departments & Schools', lat: 12.0265, lng: 79.8560, order: 22 },
+    { name: 'School of Humanities & Social Sciences', category: 'DEPARTMENT', category_label: 'Departments & Schools', lat: 12.0248, lng: 79.8535, order: 23 },
+    { name: 'School of Life Sciences & Biotech', category: 'DEPARTMENT', category_label: 'Departments & Schools', lat: 12.0258, lng: 79.8565, order: 24 },
+    { name: 'School of Engineering & Technology', category: 'DEPARTMENT', category_label: 'Departments & Schools', lat: 12.0270, lng: 79.8570, order: 25 },
+    { name: 'School of Media & Communication', category: 'DEPARTMENT', category_label: 'Departments & Schools', lat: 12.0250, lng: 79.8545, order: 26 },
+
+    // Gates & Common Hubs
+    { name: 'PU Main Gate (Gate 1)', category: 'GATE_HUB', category_label: 'Gates & Hubs', lat: 12.0228681, lng: 79.8509415, order: 30 },
+    { name: 'Gate 2 (East Coast Road / ECR)', category: 'GATE_HUB', category_label: 'Gates & Hubs', lat: 12.0295, lng: 79.8580, order: 31 },
+    { name: 'Central Library', category: 'GATE_HUB', category_label: 'Gates & Hubs', lat: 12.0245, lng: 79.8532, order: 32 },
+    { name: 'University Canteen & Food Court', category: 'GATE_HUB', category_label: 'Gates & Hubs', lat: 12.0238, lng: 79.8541, order: 33 },
+    { name: 'Admin Block & Exam Wing', category: 'GATE_HUB', category_label: 'Gates & Hubs', lat: 12.0252, lng: 79.8515, order: 34 },
+    { name: 'Shopping Complex / Co-op Stores', category: 'GATE_HUB', category_label: 'Gates & Hubs', lat: 12.0240, lng: 79.8538, order: 35 },
+    { name: 'Rajiv Gandhi Sports Stadium', category: 'GATE_HUB', category_label: 'Gates & Hubs', lat: 12.0290, lng: 79.8555, order: 36 }
+  ];
+
+  const DEFAULT_GROUP_ROUTES = [
+    { from: 'Silver Jubilee Hostel (SJC)', to: '[Girls Hostels]', fare: 25.00, dist: 1.8 },
+    { from: 'PU Main Gate (Gate 1)', to: '[Girls Hostels]', fare: 30.00, dist: 2.2 },
+    { from: 'PU Main Gate (Gate 1)', to: '[Boys Hostels]', fare: 25.00, dist: 1.9 },
+    { from: 'PU Main Gate (Gate 1)', to: '[Departments & Schools]', fare: 20.00, dist: 1.2 },
+    { from: '[Boys Hostels]', to: '[Departments & Schools]', fare: 20.00, dist: 1.5 },
+    { from: '[Girls Hostels]', to: '[Departments & Schools]', fare: 20.00, dist: 1.5 },
+    { from: '[Girls Hostels]', to: 'Central Library', fare: 15.00, dist: 1.0 },
+    { from: '[Boys Hostels]', to: 'Central Library', fare: 15.00, dist: 1.0 },
+    { from: '[Girls Hostels]', to: 'University Canteen & Food Court', fare: 15.00, dist: 1.1 },
+    { from: '[Boys Hostels]', to: 'University Canteen & Food Court', fare: 15.00, dist: 1.1 },
+    { from: 'Gate 2 (East Coast Road / ECR)', to: '[Girls Hostels]', fare: 25.00, dist: 1.8 },
+    { from: 'Gate 2 (East Coast Road / ECR)', to: '[Boys Hostels]', fare: 20.00, dist: 1.4 },
+    { from: 'PU Main Gate (Gate 1)', to: 'Central Library', fare: 20.00, dist: 1.2 },
+    { from: 'PU Main Gate (Gate 1)', to: 'Gate 2 (East Coast Road / ECR)', fare: 30.00, dist: 2.5 }
+  ];
+
+  if (isSqlite && targetDb) {
+    // 1. Seed campus_stops in SQLite
+    const insertStopStmt = targetDb.prepare(`
+      INSERT OR IGNORE INTO campus_stops (name, category, category_label, latitude, longitude, is_active, display_order)
+      VALUES (?, ?, ?, ?, ?, 1, ?)
+    `);
+    for (const stop of DEFAULT_CAMPUS_STOPS) {
+      insertStopStmt.run(stop.name, stop.category, stop.category_label, stop.lat, stop.lng, stop.order);
+    }
+
+    // 2. Seed route_fares in SQLite
+    const insertRouteStmt = targetDb.prepare(`
+      INSERT OR IGNORE INTO route_fares (pickup_stop, destination_stop, fare_amount, distance_km, is_active)
+      VALUES (?, ?, ?, ?, 1)
+    `);
+    for (const r of DEFAULT_GROUP_ROUTES) {
+      insertRouteStmt.run(r.from, r.to, r.fare, r.dist);
+    }
+  } else if (!isSqlite && targetDb) {
+    // 1. Seed campus_stops in MySQL
+    for (const stop of DEFAULT_CAMPUS_STOPS) {
+      await targetDb.query(`
+        INSERT INTO campus_stops (name, category, category_label, latitude, longitude, is_active, display_order)
+        VALUES (?, ?, ?, ?, ?, 1, ?)
+        ON DUPLICATE KEY UPDATE category = VALUES(category), category_label = VALUES(category_label),
+                                latitude = VALUES(latitude), longitude = VALUES(longitude)
+      `, [stop.name, stop.category, stop.category_label, stop.lat, stop.lng, stop.order]);
+    }
+
+    // 2. Seed route_fares in MySQL
+    for (const r of DEFAULT_GROUP_ROUTES) {
+      await targetDb.query(`
+        INSERT INTO route_fares (pickup_stop, destination_stop, fare_amount, distance_km, is_active)
+        VALUES (?, ?, ?, ?, 1)
+        ON DUPLICATE KEY UPDATE fare_amount = VALUES(fare_amount), distance_km = VALUES(distance_km)
+      `, [r.from, r.to, r.fare, r.dist]);
+    }
   }
 }
 

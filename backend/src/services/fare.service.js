@@ -8,7 +8,7 @@ const FareService = {
   async calculateEstimatedFare(distanceKm, durationMinutes, vehicleType = 'BIKE', pickupAddress = null, destinationAddress = null, isDoubleRide = false) {
     let baseResult = null;
 
-    // 1. Check if an Admin-defined Fixed Route exists for this Pickup -> Destination
+    // 1. Check if an Admin-defined Fixed Route or Group Rule exists for this Pickup -> Destination
     if (pickupAddress && destinationAddress) {
       const routeFare = await FareModel.findRouteFare(pickupAddress, destinationAddress);
       if (routeFare) {
@@ -23,7 +23,9 @@ const FareService = {
           estimatedFare: fare,
           minimumFare: fare,
           isRouteBased: true,
-          routeName: `${routeFare.pickup_stop} ➔ ${routeFare.destination_stop}`
+          routeName: `${routeFare.pickup_stop} ➔ ${routeFare.destination_stop}`,
+          ruleType: routeFare.ruleType || 'EXACT',
+          appliedRuleDescription: routeFare.appliedRuleDescription || `${routeFare.pickup_stop} ➔ ${routeFare.destination_stop}`
         };
       }
     }
