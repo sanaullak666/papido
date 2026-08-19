@@ -15,9 +15,14 @@ router.patch('/users/:id/status', AdminController.updateUserStatus);
 router.get('/rides', AdminController.listRides);
 router.get('/payments', AdminController.listPayments);
 router.get('/fare-settings', AdminController.getFareConfigurations);
-router.patch('/fare-settings/:vehicleType', AdminController.updateFareConfiguration);
 router.get('/default-campus-fare', AdminController.getDefaultCampusFare);
 router.post('/default-campus-fare', AdminController.updateDefaultCampusFare);
+router.patch('/default-campus-fare', AdminController.updateDefaultCampusFare);
+router.put('/default-campus-fare', AdminController.updateDefaultCampusFare);
+router.get('/fare-settings/default-campus-fare', AdminController.getDefaultCampusFare);
+router.post('/fare-settings/default-campus-fare', AdminController.updateDefaultCampusFare);
+router.patch('/fare-settings/default-campus-fare', AdminController.updateDefaultCampusFare);
+router.patch('/fare-settings/:vehicleType', AdminController.updateFareConfiguration);
 
 // Campus Areas (Campus Zones)
 router.get('/campus-areas', AdminController.getCampusAreas);

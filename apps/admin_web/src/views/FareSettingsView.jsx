@@ -157,7 +157,11 @@ export function FareSettingsView() {
 
     try {
       setSavingDefaultFare(true);
-      await apiRequest('/admin/default-campus-fare', 'POST', { fareAmount: fareNum });
+      try {
+        await apiRequest('/admin/default-campus-fare', 'POST', { fareAmount: fareNum });
+      } catch (err1) {
+        await apiRequest('/admin/fare-settings/default-campus-fare', 'POST', { fareAmount: fareNum });
+      }
       showToast(`Default Campus Fare updated to ₹${fareNum.toFixed(2)}!`);
       loadData();
     } catch (err) {
