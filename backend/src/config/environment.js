@@ -3,6 +3,33 @@ const path = require('path');
 
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
+let dbHost = process.env.DB_HOST || '127.0.0.1';
+let dbPort = parseInt(process.env.DB_PORT, 10) || 3306;
+let dbUser = process.env.DB_USER || 'root';
+let dbPassword = process.env.DB_PASSWORD || '';
+let dbName = process.env.DB_NAME || 'papido_db';
+let dbSsl = process.env.DB_SSL === 'true';
+
+const dbUrl = process.env.DATABASE_URL || process.env.MYSQL_URL || process.env.TIDB_URL;
+if (dbUrl) {
+  try {
+    const parsed = new URL(dbUrl);
+    dbHost = parsed.hostname || dbHost;
+    dbPort = parseInt(parsed.port, 10) || dbPort;
+    dbUser = decodeURIComponent(parsed.username) || dbUser;
+    dbPassword = decodeURIComponent(parsed.password) || dbPassword;
+    const rawPath = parsed.pathname.replace(/^\//, '');
+    if (rawPath && rawPath !== 'sys' && rawPath !== 'mysql' && rawPath !== 'information_schema') {
+      dbName = rawPath;
+    }
+    if (dbHost.includes('tidbcloud.com') || dbHost.includes('aws') || dbUrl.includes('ssl=')) {
+      dbSsl = true;
+    }
+  } catch (e) {
+    console.error('Failed to parse database connection URL:', e.message);
+  }
+}
+
 module.exports = {
   PORT: parseInt(process.env.PORT, 10) || 5000,
   NODE_ENV: process.env.NODE_ENV || 'development',
@@ -10,11 +37,12 @@ module.exports = {
   CLIENT_URL: process.env.CLIENT_URL || 'http://localhost:5173',
 
   DB: {
-    HOST: process.env.DB_HOST || '127.0.0.1',
-    PORT: parseInt(process.env.DB_PORT, 10) || 3306,
-    USER: process.env.DB_USER || 'root',
-    PASSWORD: process.env.DB_PASSWORD || '',
-    NAME: process.env.DB_NAME || 'papido_db',
+    HOST: dbHost,
+    PORT: dbPort,
+    USER: dbUser,
+    PASSWORD: dbPassword,
+    NAME: dbName,
+    SSL: dbSsl,
     CONNECTION_LIMIT: parseInt(process.env.DB_CONNECTION_LIMIT, 10) || 10
   },
 
