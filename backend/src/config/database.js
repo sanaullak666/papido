@@ -390,6 +390,14 @@ async function bootstrapMysqlSchema(targetPool) {
           ('OTP_VERIFICATION_REQUIRED', 'true', 'Require 4-digit OTP from customer to start ride');
       `);
     }
+
+    // Ensure document and image columns support large Base64 strings for persistent storage
+    try {
+      await targetPool.query('ALTER TABLE rider_profiles MODIFY COLUMN license_doc_url MEDIUMTEXT;');
+      await targetPool.query('ALTER TABLE rider_profiles MODIFY COLUMN rc_doc_url MEDIUMTEXT;');
+      await targetPool.query('ALTER TABLE rider_profiles MODIFY COLUMN college_id_doc_url MEDIUMTEXT;');
+      await targetPool.query('ALTER TABLE users MODIFY COLUMN profile_image MEDIUMTEXT;');
+    } catch (_) {}
   } catch (err) {
     console.warn('[Database Warning] MySQL bootstrap notice:', err.message);
   }
