@@ -1,0 +1,43 @@
+{
+  "name": "papido-backend",
+  "version": "1.0.0",
+  "description": "Production-Ready Backend API for Papido Ride-Hailing Platform",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "node tests/run-tests.js",
+    "db:migrate": "node database/migrate.js",
+    "db:seed": "node database/seed.js"
+  },
+  "keywords": [
+    "papido",
+    "ride-hailing",
+    "express",
+    "socket.io",
+    "mysql",
+    "jwt",
+    "clean-architecture"
+  ],
+  "author": "Papido Team",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "better-sqlite3": "^11.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "multer": "^2.2.0",
+    "mysql2": "^3.12.0",
+    "nodemailer": "^9.0.5",
+    "socket.io": "^4.8.1",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
