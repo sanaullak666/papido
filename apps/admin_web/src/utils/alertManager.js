@@ -6,6 +6,7 @@ let ringInterval = null;
 let isRinging = false;
 
 function getAudioContext() {
+  if (typeof window === 'undefined') return null;
   if (!audioCtx) {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (AudioContextClass) {
@@ -13,56 +14,134 @@ function getAudioContext() {
     }
   }
   if (audioCtx && audioCtx.state === 'suspended') {
-    audioCtx.resume();
+    audioCtx.resume().catch(() => {});
   }
   return audioCtx;
 }
 
-// Generates a crisp, distinctive high-urgency ride-hailing dispatcher ringtone
-function playChimeBeep() {
+// Auto-unlock AudioContext on first user interaction anywhere on the page
+if (typeof window !== 'undefined') {
+  const unlockEvents = ['click', 'touchstart', 'touchend', 'keydown', 'mousedown'];
+  const unlockAudio = () => {
+    const ctx = getAudioContext();
+    if (ctx && ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+  };
+  unlockEvents.forEach(evt => {
+    window.addEventListener(evt, unlockAudio, { passive: true, once: false });
+  });
+}
+
+// Generates a loud, crisp synthesized WAV audio chime for instant playback across all mobile browsers
+function playWavChime() {
+  try {
+    const sampleRate = 22050;
+    const duration = 0.55;
+    const numSamples = Math.floor(sampleRate * duration);
+    const buffer = new ArrayBuffer(44 + numSamples * 2);
+    const view = new DataView(buffer);
+
+    const writeString = (offset, string) => {
+      for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+      }
+    };
+
+    writeString(0, 'RIFF');
+    view.setUint32(4, 36 + numSamples * 2, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true); // PCM
+    view.setUint16(22, 1, true); // Mono
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeString(36, 'data');
+    view.setUint32(40, numSamples * 2, true);
+
+    for (let i = 0; i < numSamples; i++) {
+      const t = i / sampleRate;
+      let sample = 0;
+      if (t < 0.22) {
+        const env = Math.exp(-t * 9);
+        sample += (Math.sin(2 * Math.PI * 880 * t) * 0.7 + Math.sin(2 * Math.PI * 1760 * t) * 0.3) * env;
+      }
+      if (t >= 0.14) {
+        const t2 = t - 0.14;
+        const env2 = Math.exp(-t2 * 7);
+        sample += (Math.sin(2 * Math.PI * 1318.5 * t2) * 0.8 + Math.sin(2 * Math.PI * 2637 * t2) * 0.35) * env2;
+      }
+      sample = Math.max(-1, Math.min(1, sample));
+      view.setInt16(44 + i * 2, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+    }
+
+    const blob = new Blob([buffer], { type: 'audio/wav' });
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    audio.volume = 1.0;
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {});
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  } catch (_) {}
+}
+
+// Generates a crisp, loud high-urgency ride-hailing dispatcher ringtone
+async function playChimeBeep() {
+  // 1. Trigger HTML5 Audio synthesized WAV chime
+  playWavChime();
+
+  // 2. Trigger Web Audio API synthesized tones
   try {
     const ctx = getAudioContext();
     if (!ctx) return;
+    if (ctx.state === 'suspended') {
+      await ctx.resume().catch(() => {});
+    }
 
     const now = ctx.currentTime;
     
-    // Tone 1: 587.33 Hz (D5)
+    // Tone 1: 880 Hz (A5 - Loud Chime)
     const osc1 = ctx.createOscillator();
     const gain1 = ctx.createGain();
     osc1.type = 'sine';
-    osc1.frequency.setValueAtTime(587.33, now);
-    gain1.gain.setValueAtTime(0.3, now);
-    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+    osc1.frequency.setValueAtTime(880, now);
+    gain1.gain.setValueAtTime(0.85, now);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
     osc1.connect(gain1);
     gain1.connect(ctx.destination);
     osc1.start(now);
-    osc1.stop(now + 0.18);
+    osc1.stop(now + 0.22);
 
-    // Tone 2: 880 Hz (A5)
+    // Tone 2: 1318.5 Hz (E6 - High Bell)
     const osc2 = ctx.createOscillator();
     const gain2 = ctx.createGain();
-    osc2.type = 'sine';
-    osc2.frequency.setValueAtTime(880, now + 0.12);
-    gain2.gain.setValueAtTime(0.35, now + 0.12);
-    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+    osc2.type = 'triangle';
+    osc2.frequency.setValueAtTime(1318.5, now + 0.12);
+    gain2.gain.setValueAtTime(0.9, now + 0.12);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
     osc2.connect(gain2);
     gain2.connect(ctx.destination);
     osc2.start(now + 0.12);
-    osc2.stop(now + 0.35);
+    osc2.stop(now + 0.45);
 
-    // Tone 3: 1174.66 Hz (D6)
+    // Tone 3: 1760 Hz (A6 - Bright Ping)
     const osc3 = ctx.createOscillator();
     const gain3 = ctx.createGain();
-    osc3.type = 'triangle';
-    osc3.frequency.setValueAtTime(1174.66, now + 0.25);
-    gain3.gain.setValueAtTime(0.4, now + 0.25);
-    gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+    osc3.type = 'sine';
+    osc3.frequency.setValueAtTime(1760, now + 0.25);
+    gain3.gain.setValueAtTime(0.85, now + 0.25);
+    gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
     osc3.connect(gain3);
     gain3.connect(ctx.destination);
     osc3.start(now + 0.25);
-    osc3.stop(now + 0.55);
+    osc3.stop(now + 0.6);
   } catch (err) {
-    console.warn('Audio play failed:', err);
+    console.warn('Web Audio play notice:', err);
   }
 }
 
