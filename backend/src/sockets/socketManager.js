@@ -265,10 +265,8 @@ class SocketManager {
       });
     }
 
-    // Broadcast to role_RIDER ONLY if not a female-only ride request
-    if (!isFemaleOnly) {
-      this.io.to('role_RIDER').emit(SOCKET_EVENTS.NEW_RIDE_REQUEST, payload);
-    }
+    // Broadcast to all online riders and admin
+    this.io.to('role_RIDER').emit(SOCKET_EVENTS.NEW_RIDE_REQUEST, payload);
     this.io.to('role_ADMIN').emit('admin:ride_requested', payload);
 
     // Send Lock-Screen Web Push Notifications to Target Drivers (Works even when browser is closed)

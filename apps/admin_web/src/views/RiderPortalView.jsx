@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { apiRequest } from '../api';
+import { apiRequest, getSocketUrl } from '../api';
 import { io } from 'socket.io-client';
 import {
   Bike,
@@ -42,7 +42,7 @@ export function RiderPortalView() {
   const [incomingRequests, setIncomingRequests] = useState([]);
   const [activeRide, setActiveRide] = useState(null);
   const [activeRideLoading, setActiveRideLoading] = useState(false);
-  const [declinedRideIds, setDeclinedRideIds] = useState([]);
+  const [declinedRideIds, setDeclinedRideIds] = useState(() => new Set());
   const [tripCancelledNotice, setTripCancelledNotice] = useState(null);
 
   // Audio Alerts
@@ -312,7 +312,7 @@ export function RiderPortalView() {
   // 3. Socket.IO Listener for Incoming Requests & Real-time Updates
   useEffect(() => {
     if (!token) return;
-    const socket = io({
+    const socket = io(getSocketUrl(), {
       auth: { token },
       transports: ['websocket', 'polling']
     });

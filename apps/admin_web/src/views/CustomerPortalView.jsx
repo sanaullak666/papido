@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { apiRequest } from '../api';
+import { apiRequest, getSocketUrl } from '../api';
 import { io } from 'socket.io-client';
 import {
   MapPin,
@@ -414,7 +414,7 @@ export function CustomerPortalView() {
   // 5. Setup Socket.IO for Real-time Updates
   useEffect(() => {
     if (!token) return;
-    const socket = io({
+    const socket = io(getSocketUrl(), {
       auth: { token },
       transports: ['websocket', 'polling']
     });

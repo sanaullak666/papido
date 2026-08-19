@@ -189,11 +189,13 @@ const RideModel = {
       sql += ' AND (r.female_rider_only = 0 OR r.female_rider_only IS NULL)';
     }
 
-    if (riderVehicleType) {
-      // If customer requested ANY or NULL, any rider can fulfill.
-      // If customer specifically requested BIKE or SCOOTER, only matching riders will see it.
-      sql += " AND (r.vehicle_type IS NULL OR r.vehicle_type = 'ANY' OR r.vehicle_type = ?)";
-      params.push(riderVehicleType);
+    if (riderVehicleType && riderVehicleType !== 'ANY') {
+      if (['BIKE', 'SCOOTER'].includes(riderVehicleType.toUpperCase())) {
+        sql += " AND (r.vehicle_type IS NULL OR r.vehicle_type = 'ANY' OR r.vehicle_type IN ('BIKE', 'SCOOTER'))";
+      } else {
+        sql += " AND (r.vehicle_type IS NULL OR r.vehicle_type = 'ANY' OR r.vehicle_type = ?)";
+        params.push(riderVehicleType);
+      }
     }
 
     sql += ' ORDER BY r.id DESC LIMIT 10';
