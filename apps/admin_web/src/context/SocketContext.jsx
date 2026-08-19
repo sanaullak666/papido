@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
+import { getSocketUrl } from '../api';
 
 const SocketContext = createContext(null);
 
@@ -9,27 +10,15 @@ export function SocketProvider({ children }) {
 
   useEffect(() => {
     const token = localStorage.getItem('papido_admin_token') || localStorage.getItem('papido_user_token');
-    const getSocketUrl = () => {
-      if (import.meta.env.VITE_SOCKET_URL) {
-        return import.meta.env.VITE_SOCKET_URL;
-      }
-      if (import.meta.env.VITE_API_URL) {
-        return import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '');
-      }
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        return 'http://localhost:5000';
-      }
-      if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(window.location.hostname)) {
-        return `http://${window.location.hostname}:5000`;
-      }
-      return window.location.origin;
-    };
-
     const socketUrl = getSocketUrl();
+    
+    console.log('[Socket] Connecting to backend server:', socketUrl);
+
     const newSocket = io(socketUrl, {
       auth: { token },
-      reconnectionAttempts: 15,
-      reconnectionDelay: 1500,
+      reconnectionAttempts: 30,
+      reconnectionDelay: 1000,
+      timeout: 10000,
       transports: ['websocket', 'polling']
     });
 
@@ -37,11 +26,17 @@ export function SocketProvider({ children }) {
       console.log('[Socket] Connected to Papido backend with ID:', newSocket.id);
       setIsConnected(true);
       // Join admin room
-      newSocket.emit('identify', { id: 1, role: 'ADMIN', name: 'Admin Dashboard' });
+      const adminToken = localStorage.getItem('papido_admin_token');
+      newSocket.emit('identify', { id: 1, role: 'ADMIN', name: 'Admin Dashboard', token: adminToken || token });
     });
 
     newSocket.on('disconnect', () => {
       console.log('[Socket] Disconnected from Papido backend');
+      setIsConnected(false);
+    });
+
+    newSocket.on('connect_error', (err) => {
+      console.warn('[Socket] Connection error:', err.message);
       setIsConnected(false);
     });
 
