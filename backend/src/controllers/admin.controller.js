@@ -479,6 +479,31 @@ const AdminController = {
   },
 
   /**
+   * Campus Default Fare Setting (Tier 3)
+   */
+  async getDefaultCampusFare(req, res, next) {
+    try {
+      const fare = await FareModel.getDefaultCampusFare();
+      return success(res, 'Default campus flat fare fetched.', { defaultCampusFare: fare });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async updateDefaultCampusFare(req, res, next) {
+    try {
+      const { fareAmount } = req.body;
+      if (fareAmount === undefined || isNaN(parseFloat(fareAmount))) {
+        return error(res, 'Valid fareAmount is required.', 400);
+      }
+      const updated = await FareModel.updateDefaultCampusFare(fareAmount);
+      return success(res, 'Default campus flat fare updated successfully.', { defaultCampusFare: updated });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
    * Campus Route Fares
    */
   async getRouteFares(req, res, next) {
@@ -492,15 +517,15 @@ const AdminController = {
 
   async saveRouteFare(req, res, next) {
     try {
-      const { id, pickupStop, destinationStop, fareAmount, distanceKm, isActive } = req.body;
+      const { id, pickupStop, destinationStop, fareAmount, distanceKm, isBidirectional, isActive } = req.body;
       if (id) {
-        const updated = await FareModel.updateRouteFareById(id, { fareAmount, distanceKm, isActive, pickupStop, destinationStop });
+        const updated = await FareModel.updateRouteFareById(id, { fareAmount, distanceKm, isBidirectional: isBidirectional !== undefined ? isBidirectional : 1, isActive, pickupStop, destinationStop });
         return success(res, 'Route fare updated successfully.', updated);
       } else {
         if (!pickupStop || !destinationStop || fareAmount === undefined) {
           return error(res, 'Pickup stop, destination stop, and fare amount are required.', 400);
         }
-        const created = await FareModel.upsertRouteFare({ pickupStop, destinationStop, fareAmount, distanceKm, isActive });
+        const created = await FareModel.upsertRouteFare({ pickupStop, destinationStop, fareAmount, distanceKm, isBidirectional: isBidirectional !== undefined ? isBidirectional : 1, isActive });
         return success(res, 'Route fare saved successfully.', created, 201);
       }
     } catch (err) {
@@ -533,8 +558,8 @@ const AdminController = {
       if (!pickupStop || !destinationStop) {
         return error(res, 'Pickup and destination stop are required.', 400);
       }
-      const pArea = await FareModel.resolveStopArea(pickupStop);
-      const dArea = await FareModel.resolveStopArea(destinationStop);
+      const pCat = await FareModel.resolveStopCategory(pickupStop);
+      const dCat = await FareModel.resolveStopCategory(destinationStop);
       const matched = await FareModel.findRouteFare(pickupStop, destinationStop);
 
       if (matched) {
@@ -542,18 +567,26 @@ const AdminController = {
           matched: true,
           routeFare: matched,
           fare: parseFloat(matched.fare_amount),
-          ruleTier: matched.ruleTier || 2,
+          ruleTier: matched.ruleTier || 1,
+          ruleSource: matched.ruleSource || (matched.ruleTier === 1 ? 'Specific Route' : (matched.ruleTier === 2 ? 'Group Rule' : 'Default Campus Fare')),
           ruleType: matched.ruleType,
           description: matched.appliedRuleDescription,
-          pickupArea: pArea,
-          destinationArea: dArea
+          pickupCategory: pCat,
+          destinationCategory: dCat
         });
       } else {
-        return success(res, 'No specific area/override fare found, standard GPS base rate will apply.', {
+        const config = await FareModel.getFareConfiguration('BIKE');
+        const fallbackFare = config ? parseFloat(config.base_fare) : 25.0;
+        return success(res, 'Standard GPS fallback base rate will apply.', {
           matched: false,
           fallback: true,
-          pickupArea: pArea,
-          destinationArea: dArea
+          fare: fallbackFare,
+          ruleTier: 4,
+          ruleSource: 'GPS Fallback',
+          ruleType: 'GPS_FALLBACK',
+          description: `⚡ GPS Fallback Rate (Base ₹${fallbackFare.toFixed(0)} + ₹${(config?.per_km_fare || 8.5).toFixed(1)}/km)`,
+          pickupCategory: pCat,
+          destinationCategory: dCat
         });
       }
     } catch (err) {

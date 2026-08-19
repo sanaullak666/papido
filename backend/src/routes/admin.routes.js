@@ -16,6 +16,8 @@ router.get('/rides', AdminController.listRides);
 router.get('/payments', AdminController.listPayments);
 router.get('/fare-settings', AdminController.getFareConfigurations);
 router.patch('/fare-settings/:vehicleType', AdminController.updateFareConfiguration);
+router.get('/default-campus-fare', AdminController.getDefaultCampusFare);
+router.post('/default-campus-fare', AdminController.updateDefaultCampusFare);
 
 // Campus Areas (Campus Zones)
 router.get('/campus-areas', AdminController.getCampusAreas);
