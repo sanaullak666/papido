@@ -1,8 +1,8 @@
-﻿{
+{
   "name": "papido",
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "cd apps/admin_web && npm install && npm run build && cd ../.. && node -e \"const fs=require('fs'); fs.cpSync('apps/admin_web/dist', 'dist', {recursive:true});\""
+    "build": "cd apps/admin_web && npm install && npm run build"
   }
 }
