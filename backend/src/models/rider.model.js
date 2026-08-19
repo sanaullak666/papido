@@ -28,6 +28,7 @@ const RiderModel = {
     vehicleNumber,
     vehicleModel,
     licenseNumber,
+    collegeIdNumber = null,
     licenseDocUrl = null,
     rcDocUrl = null,
     collegeIdDocUrl = null,

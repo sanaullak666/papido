@@ -55,3 +55,26 @@ export async function apiRequest(endpoint, method = 'GET', body = null, token = 
     throw err;
   }
 }
+
+export async function uploadFile(file, token = null) {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const headers = {};
+  const storedToken = token || localStorage.getItem('papido_user_token') || localStorage.getItem('papido_admin_token');
+  if (storedToken) {
+    headers['Authorization'] = `Bearer ${storedToken}`;
+  }
+
+  const res = await fetch(`${BASE_URL}/upload/file`, {
+    method: 'POST',
+    headers,
+    body: formData
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || 'File upload failed.');
+  }
+  return data.data; // { url, filename, relativePath, ... }
+}

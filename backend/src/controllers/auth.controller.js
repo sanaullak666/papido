@@ -4,7 +4,24 @@ const { success, error } = require('../utils/response');
 const AuthController = {
   async register(req, res, next) {
     try {
-      const { name, email, phone, gender, password, role, profileImage, profileData, vehicleType, vehicleModel, vehicleNumber, licenseNumber } = req.body;
+      const {
+        name,
+        email,
+        phone,
+        gender,
+        password,
+        role,
+        profileImage,
+        profileData,
+        vehicleType,
+        vehicleModel,
+        vehicleNumber,
+        licenseNumber,
+        collegeIdNumber,
+        licenseDocUrl,
+        rcDocUrl,
+        collegeIdDocUrl
+      } = req.body;
 
       if (!name || !email || !phone || !password || !role) {
         return error(res, 'Name, email, phone, password, and role are required fields.', 400);
@@ -18,21 +35,27 @@ const AuthController = {
         ...(profileData || {}),
         profileImage: profileImage || (profileData && profileData.profileImage) || null,
         vehicleType: vehicleType || (profileData && profileData.vehicleType) || 'BIKE',
-        vehicleModel: vehicleModel || (profileData && profileData.vehicleModel) || 'Honda Activa 6G',
-        vehicleNumber: vehicleNumber || (profileData && profileData.vehicleNumber) || 'PY 01 AB 1234',
-        licenseNumber: licenseNumber || (profileData && profileData.licenseNumber) || 'DL-PY-2024-00123'
+        vehicleModel: vehicleModel || (profileData && profileData.vehicleModel) || 'Two-Wheeler',
+        vehicleNumber: vehicleNumber || (profileData && profileData.vehicleNumber) || '',
+        licenseNumber: licenseNumber || (profileData && profileData.licenseNumber) || '',
+        collegeIdNumber: collegeIdNumber || (profileData && profileData.collegeIdNumber) || '',
+        licenseDocUrl: licenseDocUrl || (profileData && profileData.licenseDocUrl) || null,
+        rcDocUrl: rcDocUrl || (profileData && profileData.rcDocUrl) || null,
+        collegeIdDocUrl: collegeIdDocUrl || (profileData && profileData.collegeIdDocUrl) || null
       };
 
-      // If registering as Rider, validate mandatory fields
+      // If registering as Rider, strictly validate both typed details AND uploaded documents
       if (role === 'RIDER') {
         const missing = [];
-        if (!mergedProfileData.profileImage) missing.push('Profile Photo');
-        if (!mergedProfileData.licenseDocUrl) missing.push('Driving License (DL)');
-        if (!mergedProfileData.rcDocUrl) missing.push('Vehicle RC Card');
-        if (!mergedProfileData.collegeIdDocUrl) missing.push('College / Campus ID Card');
+        if (!mergedProfileData.collegeIdNumber) missing.push('Campus / College ID Number (Type)');
+        if (!mergedProfileData.collegeIdDocUrl) missing.push('Campus / College ID Card (Upload)');
+        if (!mergedProfileData.licenseNumber) missing.push('Driving Licence Number (Type)');
+        if (!mergedProfileData.licenseDocUrl) missing.push('Driving Licence Document (Upload)');
+        if (!mergedProfileData.vehicleNumber) missing.push('Vehicle Number / Plate (Type)');
+        if (!mergedProfileData.rcDocUrl) missing.push('Vehicle RC Document (Upload)');
 
         if (missing.length > 0) {
-          return error(res, `Mandatory Driver Registration Requirements Missing: ${missing.join(', ')}. Please upload all mandatory documents and your profile photo.`, 400);
+          return error(res, `Mandatory Driver Registration Details Missing: ${missing.join(', ')}. Please type your document numbers and upload all 3 documents.`, 400);
         }
       }
 

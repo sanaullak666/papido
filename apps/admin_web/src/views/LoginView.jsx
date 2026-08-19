@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Shield, Lock, Mail, ArrowRight, UserPlus, KeyRound, Bike, User, Sparkles, ShieldCheck, Zap } from 'lucide-react';
+import { apiRequest, uploadFile } from '../api';
+import { Shield, Lock, Mail, ArrowRight, UserPlus, KeyRound, Bike, User, Sparkles, ShieldCheck, Zap, Upload, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export function LoginView({ onGoToAdminPortal }) {
   const { login, register, forgotPassword, resetPassword } = useAuth();
@@ -21,9 +22,16 @@ export function LoginView({ onGoToAdminPortal }) {
   const [regGender, setRegGender] = useState('FEMALE');
   const [regPassword, setRegPassword] = useState('');
   const [regVehicleType, setRegVehicleType] = useState('BIKE'); // 'BIKE' or 'SCOOTER'
-  const [regVehicleModel, setRegVehicleModel] = useState('Honda Activa 6G');
-  const [regVehicleNumber, setRegVehicleNumber] = useState('PY 01 AB 1234');
-  const [regLicenseNumber, setRegLicenseNumber] = useState('DL-PY-2024-00123');
+  const [regVehicleModel, setRegVehicleModel] = useState('');
+  const [regVehicleNumber, setRegVehicleNumber] = useState('');
+  const [regLicenseNumber, setRegLicenseNumber] = useState('');
+  const [regCollegeIdNumber, setRegCollegeIdNumber] = useState('');
+
+  // Rider KYC Document Files
+  const [collegeIdFile, setCollegeIdFile] = useState(null);
+  const [licenseFile, setLicenseFile] = useState(null);
+  const [rcFile, setRcFile] = useState(null);
+  const [uploadStatus, setUploadStatus] = useState('');
 
   // Forgot Password State
   const [forgotStep, setForgotStep] = useState(1); // 1 = enter email, 2 = enter OTP & new pass
@@ -50,8 +58,57 @@ export function LoginView({ onGoToAdminPortal }) {
     e.preventDefault();
     setError('');
     setSuccessMsg('');
+    setUploadStatus('');
+
+    if (regRole === 'RIDER') {
+      if (!regCollegeIdNumber.trim()) {
+        setError('Please enter your Campus / College ID Card Number.');
+        return;
+      }
+      if (!collegeIdFile) {
+        setError('Please upload a clear photo or PDF of your Campus / College ID Card.');
+        return;
+      }
+      if (!regLicenseNumber.trim()) {
+        setError('Please enter your Driving Licence (DL) Number.');
+        return;
+      }
+      if (!licenseFile) {
+        setError('Please upload a clear photo or PDF of your Driving Licence.');
+        return;
+      }
+      if (!regVehicleNumber.trim()) {
+        setError('Please enter your Vehicle Registration Number (Plate).');
+        return;
+      }
+      if (!rcFile) {
+        setError('Please upload a clear photo or PDF of your Vehicle RC Document.');
+        return;
+      }
+    }
+
     setLoading(true);
     try {
+      let collegeIdDocUrl = null;
+      let licenseDocUrl = null;
+      let rcDocUrl = null;
+
+      if (regRole === 'RIDER') {
+        setUploadStatus('1/3 Uploading Campus ID Card...');
+        const cidRes = await uploadFile(collegeIdFile);
+        collegeIdDocUrl = cidRes.url || cidRes.relativePath;
+
+        setUploadStatus('2/3 Uploading Driving Licence...');
+        const dlRes = await uploadFile(licenseFile);
+        licenseDocUrl = dlRes.url || dlRes.relativePath;
+
+        setUploadStatus('3/3 Uploading Vehicle RC Document...');
+        const rcRes = await uploadFile(rcFile);
+        rcDocUrl = rcRes.url || rcRes.relativePath;
+
+        setUploadStatus('Submitting Driver Registration...');
+      }
+
       await register({
         name: regName,
         email: regEmail,
@@ -62,13 +119,18 @@ export function LoginView({ onGoToAdminPortal }) {
         vehicleType: regRole === 'RIDER' ? regVehicleType : undefined,
         vehicleModel: regRole === 'RIDER' ? regVehicleModel : undefined,
         vehicleNumber: regRole === 'RIDER' ? regVehicleNumber : undefined,
-        licenseNumber: regRole === 'RIDER' ? regLicenseNumber : undefined
+        licenseNumber: regRole === 'RIDER' ? regLicenseNumber : undefined,
+        collegeIdNumber: regRole === 'RIDER' ? regCollegeIdNumber : undefined,
+        collegeIdDocUrl: regRole === 'RIDER' ? collegeIdDocUrl : undefined,
+        licenseDocUrl: regRole === 'RIDER' ? licenseDocUrl : undefined,
+        rcDocUrl: regRole === 'RIDER' ? rcDocUrl : undefined
       });
-      setSuccessMsg('Account created successfully! Logging you in...');
+      setSuccessMsg('Account registered successfully! Logging you in...');
     } catch (err) {
       setError(err.message || 'Registration failed.');
     } finally {
       setLoading(false);
+      setUploadStatus('');
     }
   };
 
@@ -441,22 +503,135 @@ export function LoginView({ onGoToAdminPortal }) {
               </div>
             </div>
 
-            {/* Rider Specific Fields */}
+            {/* Rider Specific Mandatory Verification Details */}
             {regRole === 'RIDER' && (
-              <div style={{ background: '#F8F3EC', padding: '14px', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '12px', border: '1px solid #E8DCCB' }}>
-                <div style={{ fontSize: '11px', fontWeight: 800, color: '#EA580C' }}>VEHICLE TYPE & DETAILS</div>
-                
-                <div>
-                  <label className="form-label" style={{ fontSize: '11px', marginBottom: '6px', color: '#271E16' }}>Your Two-Wheeler Type</label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div style={{ background: '#F8F3EC', padding: '16px', borderRadius: '14px', display: 'flex', flexDirection: 'column', gap: '14px', border: '1.5px solid #E8DCCB' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 800, color: '#EA580C' }}>
+                  <ShieldCheck size={16} /> MANDATORY DRIVER KYC & VERIFICATION
+                </div>
+                <div style={{ fontSize: '11px', color: '#796D61', marginTop: '-8px' }}>
+                  Please type your credential numbers and upload clear photos or PDF copies of all 3 documents for Admin verification.
+                </div>
+
+                {/* 1. College / Campus ID */}
+                <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '10px', border: '1px solid #E8DCCB', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#271E16', margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>1. Campus / College ID Card <span style={{ color: '#EA580C' }}>*</span></span>
+                    {collegeIdFile && (
+                      <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        <CheckCircle2 size={12} /> File Ready
+                      </span>
+                    )}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    className="form-input"
+                    style={{ background: '#F8F3EC', border: '1.5px solid #E8DCCB', color: '#271E16', fontSize: '13px' }}
+                    placeholder="Type College ID No. (e.g. 23MMS042 / PU-2024-884)"
+                    value={regCollegeIdNumber}
+                    onChange={(e) => setRegCollegeIdNumber(e.target.value)}
+                  />
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    padding: '10px',
+                    borderRadius: '8px',
+                    border: collegeIdFile ? '1.5px solid #10B981' : '1.5px dashed #EA580C',
+                    background: collegeIdFile ? '#ECFDF5' : '#FFF7ED',
+                    color: collegeIdFile ? '#047857' : '#EA580C',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: 700
+                  }}>
+                    <Upload size={14} />
+                    <span>{collegeIdFile ? `✓ ${collegeIdFile.name}` : 'Upload Campus ID Card (Photo / PDF)'}</span>
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      required
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setCollegeIdFile(e.target.files[0]);
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+
+                {/* 2. Driving Licence */}
+                <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '10px', border: '1px solid #E8DCCB', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#271E16', margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>2. Driving Licence (DL) <span style={{ color: '#EA580C' }}>*</span></span>
+                    {licenseFile && (
+                      <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        <CheckCircle2 size={12} /> File Ready
+                      </span>
+                    )}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    className="form-input"
+                    style={{ background: '#F8F3EC', border: '1.5px solid #E8DCCB', color: '#271E16', fontSize: '13px' }}
+                    placeholder="Type Driving Licence No. (e.g. DL-PY-2024-00123)"
+                    value={regLicenseNumber}
+                    onChange={(e) => setRegLicenseNumber(e.target.value)}
+                  />
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    padding: '10px',
+                    borderRadius: '8px',
+                    border: licenseFile ? '1.5px solid #10B981' : '1.5px dashed #EA580C',
+                    background: licenseFile ? '#ECFDF5' : '#FFF7ED',
+                    color: licenseFile ? '#047857' : '#EA580C',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: 700
+                  }}>
+                    <Upload size={14} />
+                    <span>{licenseFile ? `✓ ${licenseFile.name}` : 'Upload Driving Licence (Photo / PDF)'}</span>
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      required
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setLicenseFile(e.target.files[0]);
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+
+                {/* 3. Vehicle Details & RC Card */}
+                <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '10px', border: '1px solid #E8DCCB', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#271E16', margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>3. Vehicle Details & RC Card <span style={{ color: '#EA580C' }}>*</span></span>
+                    {rcFile && (
+                      <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        <CheckCircle2 size={12} /> File Ready
+                      </span>
+                    )}
+                  </label>
+                  
+                  {/* Two-Wheeler Type */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                     <button
                       type="button"
                       onClick={() => setRegVehicleType('BIKE')}
                       style={{
-                        padding: '10px',
-                        borderRadius: '8px',
-                        border: regVehicleType === 'BIKE' ? '2px solid #F97316' : '1.5px solid #E8DCCB',
-                        background: regVehicleType === 'BIKE' ? '#FFFFFF' : '#F8F3EC',
+                        padding: '8px',
+                        borderRadius: '6px',
+                        border: regVehicleType === 'BIKE' ? '2px solid #F97316' : '1px solid #E8DCCB',
+                        background: regVehicleType === 'BIKE' ? '#FFF7ED' : '#F8F3EC',
                         color: regVehicleType === 'BIKE' ? '#EA580C' : '#796D61',
                         cursor: 'pointer',
                         display: 'flex',
@@ -467,16 +642,16 @@ export function LoginView({ onGoToAdminPortal }) {
                         fontSize: '12px'
                       }}
                     >
-                      <Bike size={16} /> Bike (Motorcycle)
+                      <Bike size={14} /> Motorcycle (Bike)
                     </button>
                     <button
                       type="button"
                       onClick={() => setRegVehicleType('SCOOTER')}
                       style={{
-                        padding: '10px',
-                        borderRadius: '8px',
-                        border: regVehicleType === 'SCOOTER' ? '2px solid #F97316' : '1.5px solid #E8DCCB',
-                        background: regVehicleType === 'SCOOTER' ? '#FFFFFF' : '#F8F3EC',
+                        padding: '8px',
+                        borderRadius: '6px',
+                        border: regVehicleType === 'SCOOTER' ? '2px solid #F97316' : '1px solid #E8DCCB',
+                        background: regVehicleType === 'SCOOTER' ? '#FFF7ED' : '#F8F3EC',
                         color: regVehicleType === 'SCOOTER' ? '#EA580C' : '#796D61',
                         cursor: 'pointer',
                         display: 'flex',
@@ -487,38 +662,59 @@ export function LoginView({ onGoToAdminPortal }) {
                         fontSize: '12px'
                       }}
                     >
-                      <Zap size={16} /> Scooter / Scooty
+                      <Zap size={14} /> Scooter / Scooty
                     </button>
                   </div>
-                </div>
 
-                <input
-                  type="text"
-                  required
-                  className="form-input"
-                  style={{ background: '#FFFFFF', border: '1.5px solid #E8DCCB', color: '#271E16' }}
-                  placeholder="Vehicle Model (e.g. Honda Activa 6G / Splendor)"
-                  value={regVehicleModel}
-                  onChange={(e) => setRegVehicleModel(e.target.value)}
-                />
-                <input
-                  type="text"
-                  required
-                  className="form-input"
-                  style={{ background: '#FFFFFF', border: '1.5px solid #E8DCCB', color: '#271E16' }}
-                  placeholder="Vehicle Number (e.g. PY 01 AB 1234)"
-                  value={regVehicleNumber}
-                  onChange={(e) => setRegVehicleNumber(e.target.value)}
-                />
-                <input
-                  type="text"
-                  required
-                  className="form-input"
-                  style={{ background: '#FFFFFF', border: '1.5px solid #E8DCCB', color: '#271E16' }}
-                  placeholder="Driving License Number"
-                  value={regLicenseNumber}
-                  onChange={(e) => setRegLicenseNumber(e.target.value)}
-                />
+                  <input
+                    type="text"
+                    required
+                    className="form-input"
+                    style={{ background: '#F8F3EC', border: '1.5px solid #E8DCCB', color: '#271E16', fontSize: '13px' }}
+                    placeholder="Type Vehicle Plate No. (e.g. PY 01 AB 1234)"
+                    value={regVehicleNumber}
+                    onChange={(e) => setRegVehicleNumber(e.target.value)}
+                  />
+
+                  <input
+                    type="text"
+                    required
+                    className="form-input"
+                    style={{ background: '#F8F3EC', border: '1.5px solid #E8DCCB', color: '#271E16', fontSize: '13px' }}
+                    placeholder="Type Vehicle Model (e.g. Honda Activa 6G / Splendor)"
+                    value={regVehicleModel}
+                    onChange={(e) => setRegVehicleModel(e.target.value)}
+                  />
+
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    padding: '10px',
+                    borderRadius: '8px',
+                    border: rcFile ? '1.5px solid #10B981' : '1.5px dashed #EA580C',
+                    background: rcFile ? '#ECFDF5' : '#FFF7ED',
+                    color: rcFile ? '#047857' : '#EA580C',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: 700
+                  }}>
+                    <Upload size={14} />
+                    <span>{rcFile ? `✓ ${rcFile.name}` : 'Upload Vehicle RC Card (Photo / PDF)'}</span>
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      required
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setRcFile(e.target.files[0]);
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
               </div>
             )}
 
@@ -538,10 +734,14 @@ export function LoginView({ onGoToAdminPortal }) {
             <button
               type="submit"
               className="btn btn-primary"
-              style={{ width: '100%', padding: '12px', fontWeight: 800, background: 'linear-gradient(135deg, #F97316, #EA580C)', color: '#FFFFFF', border: 'none', borderRadius: '10px', boxShadow: '0 4px 14px rgba(234, 88, 12, 0.35)', cursor: 'pointer' }}
+              style={{ width: '100%', padding: '12px', marginTop: '12px', fontWeight: 800, fontSize: '14px', background: 'linear-gradient(135deg, #F97316, #EA580C)', color: '#FFFFFF', border: 'none', borderRadius: '10px', boxShadow: '0 4px 14px rgba(234, 88, 12, 0.35)', cursor: 'pointer' }}
               disabled={loading}
             >
-              {loading ? 'Creating Account...' : 'Complete Registration & Sign In'}
+              {loading ? (uploadStatus || 'Processing Registration...') : (
+                <>
+                  Create Account <ArrowRight size={16} />
+                </>
+              )}
             </button>
           </form>
         )}
