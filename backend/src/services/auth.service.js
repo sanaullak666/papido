@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const db = require('../config/database');
 const env = require('../config/environment');
 const { ROLES, USER_STATUS, VERIFICATION_STATUS } = require('../config/constants');
 const UserModel = require('../models/user.model');
