@@ -439,18 +439,17 @@ const AdminController = {
 
   async saveCampusStop(req, res, next) {
     try {
-      const { id, name, area_code, category, category_label, latitude, longitude, display_order, is_active } = req.body;
+      const { id, name, category, category_label, latitude, longitude, display_order, is_active } = req.body;
       if (!name) {
         return error(res, 'Stop name is required.', 400);
       }
-      const finalCategory = category || 'GATE_HUB';
-      const finalAreaCode = area_code || 'MAIN_CAMPUS';
+      const finalCategory = category || 'BOYS_HOSTEL';
 
       if (id) {
-        const updated = await FareModel.updateCampusStop(id, { name, area_code: finalAreaCode, category: finalCategory, category_label, latitude, longitude, display_order, is_active });
+        const updated = await FareModel.updateCampusStop(id, { name, category: finalCategory, category_label, latitude, longitude, display_order, is_active });
         return success(res, 'Campus stop updated successfully.', updated);
       } else {
-        const created = await FareModel.createCampusStop({ name, area_code: finalAreaCode, category: finalCategory, category_label, latitude, longitude, display_order });
+        const created = await FareModel.createCampusStop({ name, category: finalCategory, category_label, latitude, longitude, display_order });
         return success(res, 'Campus stop created successfully.', created, 201);
       }
     } catch (err) {

@@ -262,8 +262,14 @@ const FareModel = {
     // 2. Distribute stops into groups
     let otherGroup = null;
     (stops || []).forEach(s => {
-      const cat = s.category || 'GATE_HUB';
-      const matchedKey = Object.keys(groupedMap).find(k => k.toLowerCase() === cat.toLowerCase());
+      const cat = (s.category || '').trim();
+      const catLabel = (s.category_label || '').trim().toLowerCase();
+      const matchedKey = Object.keys(groupedMap).find(k => 
+        k.toLowerCase() === cat.toLowerCase() || 
+        (groupedMap[k].label && groupedMap[k].label.toLowerCase() === catLabel) ||
+        (groupedMap[k].token && groupedMap[k].token.toLowerCase() === `[${catLabel}]`)
+      );
+
       if (matchedKey) {
         groupedMap[matchedKey].stops.push(s);
       } else if (groupedMap[cat]) {
