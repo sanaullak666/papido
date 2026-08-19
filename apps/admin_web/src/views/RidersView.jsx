@@ -1,7 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../api';
 import { useSocket } from '../context/SocketContext';
-import { Search, Check, X, Star, ShieldCheck, ShieldAlert, Bike, Car, RefreshCw } from 'lucide-react';
+import { Search, Check, X, Star, ShieldCheck, ShieldAlert, Bike, Car, RefreshCw, Eye, ExternalLink, FileText, Image as ImageIcon, Download } from 'lucide-react';
+
+const resolveDocUrl = (rawUrl) => {
+  if (!rawUrl) return null;
+  if (rawUrl.startsWith('data:') || rawUrl.startsWith('http://') || rawUrl.startsWith('https://') || rawUrl.startsWith('blob:')) {
+    return rawUrl;
+  }
+  const apiBase = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '').replace(/\/api$/, '');
+  return `${apiBase}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
+};
+
+const isPdfDoc = (rawUrl) => {
+  if (!rawUrl) return false;
+  const s = String(rawUrl).toLowerCase();
+  return s.startsWith('data:application/pdf') || s.endsWith('.pdf') || s.includes('.pdf?') || s.includes('mimetype=application/pdf');
+};
 
 export function RidersView() {
   const { socket } = useSocket() || {};
@@ -13,6 +28,7 @@ export function RidersView() {
   const [vehicleFilter, setVehicleFilter] = useState('');
   const [selectedRider, setSelectedRider] = useState(null);
   const [riderEarnings, setRiderEarnings] = useState(null);
+  const [previewDoc, setPreviewDoc] = useState(null); // { title, url, isPdf }
 
   // Suspension Modal State
   const [suspendingRider, setSuspendingRider] = useState(null);
@@ -457,129 +473,179 @@ export function RidersView() {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
               {/* Driver Profile Photo */}
-              <div style={{ background: 'var(--bg-sidebar, #0f172a)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <h4 style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '8px', color: 'var(--primary, #38bdf8)' }}>
-                  📸 Driver Profile Photo
-                </h4>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                  Face ID: <strong>{selectedRider.name}</strong>
-                </div>
-                {selectedRider.profile_image ? (
-                  <a href={selectedRider.profile_image} target="_blank" rel="noreferrer">
-                    <img
-                      src={selectedRider.profile_image}
-                      alt={selectedRider.name}
-                      style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}
-                    />
-                  </a>
-                ) : (
-                  <div style={{ height: '140px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
-                    No Photo Uploaded
+              {(() => {
+                const photoUrl = resolveDocUrl(selectedRider.profile_image);
+                return (
+                  <div style={{ background: 'var(--bg-sidebar, #0f172a)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column' }}>
+                    <h4 style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '4px', color: 'var(--primary, #38bdf8)' }}>
+                      📸 Driver Profile Photo
+                    </h4>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '10px' }}>
+                      Face ID: <strong>{selectedRider.name}</strong>
+                    </div>
+                    {photoUrl ? (
+                      <div style={{ position: 'relative', cursor: 'pointer', borderRadius: '8px', overflow: 'hidden', height: '150px', background: '#000' }} onClick={() => setPreviewDoc({ title: `Face Photo: ${selectedRider.name}`, url: photoUrl, isPdf: false })}>
+                        <img
+                          src={photoUrl}
+                          alt={selectedRider.name}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.7)', padding: '4px 8px', fontSize: '11px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                          <Eye size={12} /> Click to Enlarge
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ height: '150px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
+                        No Photo Uploaded
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                );
+              })()}
 
               {/* Driving License */}
-              <div style={{ background: 'var(--bg-sidebar, #0f172a)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <h4 style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '8px', color: 'var(--primary, #38bdf8)' }}>
-                  1. Driving License (DL)
-                </h4>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                  No: <strong>{selectedRider.license_number}</strong>
-                </div>
-                {selectedRider.license_doc_url ? (
-                  selectedRider.license_doc_url.toLowerCase().endsWith('.pdf') ? (
-                    <div style={{ height: '140px', background: 'rgba(56, 189, 248, 0.08)', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
-                      <div style={{ fontSize: '28px' }}>📄</div>
-                      <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#38bdf8' }}>PDF Document</span>
-                      <a href={selectedRider.license_doc_url} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm" style={{ padding: '4px 10px', fontSize: '11px' }}>
-                        Open PDF
-                      </a>
+              {(() => {
+                const dlUrl = resolveDocUrl(selectedRider.license_doc_url);
+                const isPdf = isPdfDoc(selectedRider.license_doc_url);
+                return (
+                  <div style={{ background: 'var(--bg-sidebar, #0f172a)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column' }}>
+                    <h4 style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '4px', color: 'var(--primary, #38bdf8)' }}>
+                      1. Driving Licence (DL)
+                    </h4>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '10px' }}>
+                      License: <strong>{selectedRider.license_number || 'Submitted via Upload'}</strong>
                     </div>
-                  ) : (
-                    <a href={selectedRider.license_doc_url} target="_blank" rel="noreferrer">
-                      <img
-                        src={selectedRider.license_doc_url}
-                        alt="Driving License"
-                        style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}
-                      />
-                    </a>
-                  )
-                ) : (
-                  <div style={{ height: '140px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
-                    No DL Uploaded
+                    {dlUrl ? (
+                      isPdf ? (
+                        <div style={{ height: '150px', background: 'rgba(56, 189, 248, 0.08)', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+                          <div style={{ fontSize: '32px' }}>📄</div>
+                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#38bdf8' }}>PDF Document</span>
+                          <button
+                            type="button"
+                            onClick={() => setPreviewDoc({ title: `Driving Licence: ${selectedRider.name}`, url: dlUrl, isPdf: true })}
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '4px 10px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <Eye size={12} /> View PDF
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{ position: 'relative', cursor: 'pointer', borderRadius: '8px', overflow: 'hidden', height: '150px', background: '#000' }} onClick={() => setPreviewDoc({ title: `Driving Licence: ${selectedRider.name}`, url: dlUrl, isPdf: false })}>
+                          <img
+                            src={dlUrl}
+                            alt="Driving License"
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.7)', padding: '4px 8px', fontSize: '11px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                            <Eye size={12} /> Click to Inspect
+                          </div>
+                        </div>
+                      )
+                    ) : (
+                      <div style={{ height: '150px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
+                        No DL Uploaded
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                );
+              })()}
 
               {/* Vehicle RC */}
-              <div style={{ background: 'var(--bg-sidebar, #0f172a)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <h4 style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '8px', color: 'var(--primary, #38bdf8)' }}>
-                  2. Vehicle RC Card
-                </h4>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                  Reg: <strong>{selectedRider.vehicle_number}</strong>
-                </div>
-                {selectedRider.rc_doc_url ? (
-                  selectedRider.rc_doc_url.toLowerCase().endsWith('.pdf') ? (
-                    <div style={{ height: '140px', background: 'rgba(56, 189, 248, 0.08)', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
-                      <div style={{ fontSize: '28px' }}>📄</div>
-                      <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#38bdf8' }}>PDF Document</span>
-                      <a href={selectedRider.rc_doc_url} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm" style={{ padding: '4px 10px', fontSize: '11px' }}>
-                        Open PDF
-                      </a>
+              {(() => {
+                const rcUrl = resolveDocUrl(selectedRider.rc_doc_url);
+                const isPdf = isPdfDoc(selectedRider.rc_doc_url);
+                return (
+                  <div style={{ background: 'var(--bg-sidebar, #0f172a)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column' }}>
+                    <h4 style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '4px', color: 'var(--primary, #38bdf8)' }}>
+                      2. Vehicle RC Document
+                    </h4>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '10px' }}>
+                      Model: <strong>{selectedRider.vehicle_model}</strong>
                     </div>
-                  ) : (
-                    <a href={selectedRider.rc_doc_url} target="_blank" rel="noreferrer">
-                      <img
-                        src={selectedRider.rc_doc_url}
-                        alt="Vehicle RC"
-                        style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}
-                      />
-                    </a>
-                  )
-                ) : (
-                  <div style={{ height: '140px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
-                    No RC Uploaded
+                    {rcUrl ? (
+                      isPdf ? (
+                        <div style={{ height: '150px', background: 'rgba(56, 189, 248, 0.08)', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+                          <div style={{ fontSize: '32px' }}>📄</div>
+                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#38bdf8' }}>PDF Document</span>
+                          <button
+                            type="button"
+                            onClick={() => setPreviewDoc({ title: `Vehicle RC: ${selectedRider.name} (${selectedRider.vehicle_model})`, url: rcUrl, isPdf: true })}
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '4px 10px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <Eye size={12} /> View PDF
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{ position: 'relative', cursor: 'pointer', borderRadius: '8px', overflow: 'hidden', height: '150px', background: '#000' }} onClick={() => setPreviewDoc({ title: `Vehicle RC: ${selectedRider.name} (${selectedRider.vehicle_model})`, url: rcUrl, isPdf: false })}>
+                          <img
+                            src={rcUrl}
+                            alt="Vehicle RC"
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.7)', padding: '4px 8px', fontSize: '11px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                            <Eye size={12} /> Click to Inspect
+                          </div>
+                        </div>
+                      )
+                    ) : (
+                      <div style={{ height: '150px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
+                        No RC Uploaded
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                );
+              })()}
 
               {/* College ID Card */}
-              <div style={{ background: 'var(--bg-sidebar, #0f172a)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <h4 style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '8px', color: 'var(--primary, #38bdf8)' }}>
-                  3. College / Campus ID
-                </h4>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                  Affiliation: <strong>Campus Driver</strong>
-                </div>
-                {selectedRider.college_id_doc_url ? (
-                  selectedRider.college_id_doc_url.toLowerCase().endsWith('.pdf') ? (
-                    <div style={{ height: '140px', background: 'rgba(56, 189, 248, 0.08)', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
-                      <div style={{ fontSize: '28px' }}>📄</div>
-                      <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#38bdf8' }}>PDF Document</span>
-                      <a href={selectedRider.college_id_doc_url} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm" style={{ padding: '4px 10px', fontSize: '11px' }}>
-                        Open PDF
-                      </a>
+              {(() => {
+                const cidUrl = resolveDocUrl(selectedRider.college_id_doc_url);
+                const isPdf = isPdfDoc(selectedRider.college_id_doc_url);
+                return (
+                  <div style={{ background: 'var(--bg-sidebar, #0f172a)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column' }}>
+                    <h4 style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '4px', color: 'var(--primary, #38bdf8)' }}>
+                      3. Campus / College ID Card
+                    </h4>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '10px' }}>
+                      Affiliation: <strong>Pondicherry University</strong>
                     </div>
-                  ) : (
-                    <a href={selectedRider.college_id_doc_url} target="_blank" rel="noreferrer">
-                      <img
-                        src={selectedRider.college_id_doc_url}
-                        alt="College ID"
-                        style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}
-                      />
-                    </a>
-                  )
-                ) : (
-                  <div style={{ height: '140px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
-                    No College ID Uploaded
+                    {cidUrl ? (
+                      isPdf ? (
+                        <div style={{ height: '150px', background: 'rgba(56, 189, 248, 0.08)', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+                          <div style={{ fontSize: '32px' }}>📄</div>
+                          <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#38bdf8' }}>PDF Document</span>
+                          <button
+                            type="button"
+                            onClick={() => setPreviewDoc({ title: `Campus ID Card: ${selectedRider.name}`, url: cidUrl, isPdf: true })}
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '4px 10px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <Eye size={12} /> View PDF
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{ position: 'relative', cursor: 'pointer', borderRadius: '8px', overflow: 'hidden', height: '150px', background: '#000' }} onClick={() => setPreviewDoc({ title: `Campus ID Card: ${selectedRider.name}`, url: cidUrl, isPdf: false })}>
+                          <img
+                            src={cidUrl}
+                            alt="College ID"
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.7)', padding: '4px 8px', fontSize: '11px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                            <Eye size={12} /> Click to Inspect
+                          </div>
+                        </div>
+                      )
+                    ) : (
+                      <div style={{ height: '150px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
+                        No College ID Uploaded
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                );
+              })()}
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px', flexWrap: 'wrap', gap: '10px' }}>
               <div>
                 Current Status:{' '}
                 <span className={`badge ${
@@ -610,6 +676,82 @@ export function RidersView() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fullscreen Document Inspector Modal */}
+      {previewDoc && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.85)',
+          display: 'flex',
+          flexDirection: 'column',
+          zIndex: 100000,
+          padding: '16px'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            background: 'var(--bg-card, #1e293b)',
+            padding: '12px 20px',
+            borderRadius: '12px 12px 0 0',
+            border: '1px solid var(--border, rgba(255,255,255,0.1))',
+            borderBottom: 'none'
+          }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0, color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <FileText size={18} color="var(--primary, #38bdf8)" /> {previewDoc.title}
+            </h3>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <a
+                href={previewDoc.url}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-secondary btn-sm"
+                style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                <ExternalLink size={14} /> Open in New Tab
+              </a>
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={() => setPreviewDoc(null)}
+                style={{ padding: '6px 14px', fontSize: '12px' }}
+              >
+                ✕ Close
+              </button>
+            </div>
+          </div>
+
+          <div style={{
+            flex: 1,
+            background: '#0a0f1d',
+            borderRadius: '0 0 12px 12px',
+            border: '1px solid var(--border, rgba(255,255,255,0.1))',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'auto',
+            padding: '16px'
+          }}>
+            {previewDoc.isPdf ? (
+              <iframe
+                src={previewDoc.url}
+                title={previewDoc.title}
+                style={{ width: '100%', height: '100%', border: 'none', borderRadius: '8px' }}
+              />
+            ) : (
+              <img
+                src={previewDoc.url}
+                alt={previewDoc.title}
+                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}
+              />
+            )}
           </div>
         </div>
       )}
