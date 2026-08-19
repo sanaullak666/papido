@@ -12,74 +12,63 @@ let dbEngine = 'none';
  * Initializes the database connection (MySQL with automatic SQLite fallback)
  */
 async function initializeDatabase() {
-  try {
-    const poolConfig = {
-      host: env.DB.HOST,
-      port: env.DB.PORT,
-      user: env.DB.USER,
-      password: env.DB.PASSWORD,
-      database: env.DB.NAME,
-      waitForConnections: true,
-      connectionLimit: env.DB.CONNECTION_LIMIT,
-      queueLimit: 0,
-      enableKeepAlive: true,
-      keepAliveInitialDelay: 0
+  const poolConfig = {
+    host: env.DB.HOST,
+    port: env.DB.PORT,
+    user: env.DB.USER,
+    password: env.DB.PASSWORD,
+    database: env.DB.NAME,
+    waitForConnections: true,
+    connectionLimit: env.DB.CONNECTION_LIMIT,
+    queueLimit: 0,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 0
+  };
+
+  if (env.DB.SSL || (env.DB.HOST && (env.DB.HOST.includes('tidbcloud.com') || env.DB.HOST.includes('aws.')))) {
+    poolConfig.ssl = {
+      minVersion: 'TLSv1.2',
+      rejectUnauthorized: true
     };
+  }
 
-    if (env.DB.SSL || (env.DB.HOST && (env.DB.HOST.includes('tidbcloud.com') || env.DB.HOST.includes('aws.')))) {
-      poolConfig.ssl = {
-        minVersion: 'TLSv1.2',
-        rejectUnauthorized: true
-      };
-    }
-
-    // Attempt MySQL/TiDB connection
-    const testPool = mysql.createPool(poolConfig);
-
-    // Test connection with a quick query (auto-creating DB if not existing)
+  const maxRetries = 5;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
+      const testPool = mysql.createPool(poolConfig);
       const connection = await testPool.getConnection();
       await connection.ping();
       connection.release();
-    } catch (connErr) {
-      if (connErr.code === 'ER_BAD_DB_ERROR' || connErr.message.includes('Unknown database')) {
-        console.log(`[Database] Database '${env.DB.NAME}' not found on remote MySQL/TiDB. Creating '${env.DB.NAME}' automatically...`);
-        const rawConnConfig = { ...poolConfig };
-        delete rawConnConfig.database;
-        const tempConn = await mysql.createConnection(rawConnConfig);
-        await tempConn.query(`CREATE DATABASE IF NOT EXISTS \`${env.DB.NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`);
-        await tempConn.end();
-        console.log(`[Database] Created database '${env.DB.NAME}' on remote MySQL/TiDB.`);
+
+      pool = testPool;
+      dbEngine = 'mysql';
+      console.log(`[Database] 🔒 Connected successfully to Permanent Cloud TiDB Database: ${env.DB.NAME} on ${env.DB.HOST}:${env.DB.PORT}`);
+      
+      // Auto-bootstrap schema in MySQL/TiDB if tables do not exist (Non-destructive)
+      await bootstrapMysqlSchema(testPool);
+
+      return { engine: 'mysql', pool };
+    } catch (mysqlErr) {
+      console.warn(`[Database Attempt ${attempt}/${maxRetries}] TiDB Cloud connection notice (${mysqlErr.message}). Retrying in 2s...`);
+      if (attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, 2000));
       } else {
-        throw connErr;
+        console.error('[Database Fatal] TiDB Cloud connection failed after 5 retries. Falling back to local database.');
+        // Local SQLite Fallback only as absolute last resort
+        const dataDir = path.join(__dirname, '../../data');
+        if (!fs.existsSync(dataDir)) {
+          fs.mkdirSync(dataDir, { recursive: true });
+        }
+        const sqlitePath = path.join(dataDir, 'papido_local.db');
+        sqliteDb = new Database(sqlitePath);
+        sqliteDb.pragma('journal_mode = WAL');
+        sqliteDb.pragma('foreign_keys = ON');
+        
+        dbEngine = 'sqlite';
+        bootstrapSqliteSchema();
+        return { engine: 'sqlite', db: sqliteDb };
       }
     }
-
-    pool = testPool;
-    dbEngine = 'mysql';
-    console.log(`[Database] Connected successfully to MySQL/TiDB database: ${env.DB.NAME} on ${env.DB.HOST}:${env.DB.PORT}`);
-    
-    // Auto-bootstrap schema in MySQL/TiDB if tables do not exist
-    await bootstrapMysqlSchema(testPool);
-
-    return { engine: 'mysql', pool };
-  } catch (mysqlErr) {
-    console.warn(`[Database Warning] MySQL/TiDB connection failed (${mysqlErr.message}). Initializing local SQLite fallback engine for seamless zero-setup execution...`);
-    
-    // SQLite Fallback
-    const dataDir = path.join(__dirname, '../../data');
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-    const sqlitePath = path.join(dataDir, 'papido_local.db');
-    sqliteDb = new Database(sqlitePath);
-    sqliteDb.pragma('journal_mode = WAL');
-    sqliteDb.pragma('foreign_keys = ON');
-    
-    dbEngine = 'sqlite';
-    bootstrapSqliteSchema();
-    console.log(`[Database] SQLite fallback database initialized at ${sqlitePath}`);
-    return { engine: 'sqlite', db: sqliteDb };
   }
 }
 

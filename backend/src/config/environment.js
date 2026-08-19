@@ -3,26 +3,22 @@ const path = require('path');
 
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
-const isProduction = process.env.NODE_ENV === 'production' || Boolean(process.env.RENDER);
+const isProduction = process.env.NODE_ENV === 'production' || Boolean(process.env.RENDER) || true;
 
-let dbHost = process.env.DB_HOST;
-let dbPort = parseInt(process.env.DB_PORT, 10);
-let dbUser = process.env.DB_USER;
-let dbPassword = process.env.DB_PASSWORD;
+let dbHost = process.env.DB_HOST || 'gateway01.ap-southeast-1.prod.aws.tidbcloud.com';
+let dbPort = parseInt(process.env.DB_PORT, 10) || 4000;
+let dbUser = process.env.DB_USER || '1cXSFvsybXYvbQr.root';
+let dbPassword = process.env.DB_PASSWORD || 'GjJFGgxEPSBxMW9k';
 let dbName = process.env.DB_NAME || 'papido_db';
-let dbSsl = process.env.DB_SSL === 'true';
+let dbSsl = true;
 
-if (isProduction && (!dbHost || dbHost === '127.0.0.1' || dbHost === 'localhost')) {
+// If explicitly provided localhost without FORCE_LOCAL_DB, still use TiDB Cloud
+if ((dbHost === '127.0.0.1' || dbHost === 'localhost') && process.env.FORCE_LOCAL_DB !== 'true') {
   dbHost = 'gateway01.ap-southeast-1.prod.aws.tidbcloud.com';
   dbPort = 4000;
   dbUser = '1cXSFvsybXYvbQr.root';
   dbPassword = 'GjJFGgxEPSBxMW9k';
   dbSsl = true;
-} else {
-  dbHost = dbHost || '127.0.0.1';
-  dbPort = dbPort || 3306;
-  dbUser = dbUser || 'root';
-  dbPassword = dbPassword || '';
 }
 
 const rawDbUrl = process.env.DATABASE_URL || process.env.MYSQL_URL || process.env.TIDB_URL;
