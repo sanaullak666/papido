@@ -495,37 +495,27 @@ async function seedDemoUsers(targetPool) {
     ];
 
     for (const u of demoUsers) {
-      const [existing] = await targetPool.query('SELECT id FROM users WHERE email = ?', [u.email]);
-      let userId = existing && existing[0] ? existing[0].id : null;
+      const [existingByEmail] = await targetPool.query('SELECT id FROM users WHERE email = ?', [u.email]);
+      const [existingByPhone] = await targetPool.query('SELECT id FROM users WHERE phone = ?', [u.phone]);
 
-      if (!userId) {
-        // Also check phone conflict before inserting
-        const [phoneExisting] = await targetPool.query('SELECT id FROM users WHERE phone = ?', [u.phone]);
-        if (phoneExisting && phoneExisting.length > 0) {
-          userId = phoneExisting[0].id;
-          await targetPool.query('UPDATE users SET email = ?, name = ?, password_hash = ?, role = ?, status = ? WHERE id = ?', [u.email, u.name, hash, u.role, u.status, userId]);
-        } else {
-          const [insertRes] = await targetPool.query(`
-            INSERT INTO users (name, email, phone, gender, password_hash, role, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-          `, [u.name, u.email, u.phone, u.gender, hash, u.role, u.status]);
-          userId = insertRes.insertId;
-        }
-      } else {
-        await targetPool.query('UPDATE users SET password_hash = ?, status = "ACTIVE" WHERE id = ?', [hash, userId]);
+      // If user already exists by either email or phone, DO NOT TOUCH OR MODIFY IT AT ALL
+      if ((existingByEmail && existingByEmail.length > 0) || (existingByPhone && existingByPhone.length > 0)) {
+        continue;
       }
 
-      if (u.role === 'CUSTOMER') {
-        const [cProfile] = await targetPool.query('SELECT id FROM customer_profiles WHERE user_id = ?', [userId]);
-        if (!cProfile || cProfile.length === 0) {
+      try {
+        const [insertRes] = await targetPool.query(`
+          INSERT INTO users (name, email, phone, gender, password_hash, role, status)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `, [u.name, u.email, u.phone, u.gender, hash, u.role, u.status]);
+        const userId = insertRes.insertId;
+
+        if (u.role === 'CUSTOMER') {
           await targetPool.query(`
             INSERT INTO customer_profiles (user_id, rating, total_ratings_count, total_rides, wallet_balance)
             VALUES (?, 5.00, 10, 5, ?)
           `, [userId, u.wallet || 100.00]);
-        }
-      } else if (u.role === 'RIDER' && u.rider) {
-        const [rProfile] = await targetPool.query('SELECT id FROM rider_profiles WHERE user_id = ?', [userId]);
-        if (!rProfile || rProfile.length === 0) {
+        } else if (u.role === 'RIDER' && u.rider) {
           await targetPool.query(`
             INSERT INTO rider_profiles (user_id, vehicle_type, vehicle_number, vehicle_model, license_number, verification_status, is_online, rating, total_ratings_count, total_rides)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 15, 12)
@@ -539,14 +529,8 @@ async function seedDemoUsers(targetPool) {
             u.rider.isOnline,
             u.rider.rating
           ]);
-        } else {
-          await targetPool.query('UPDATE rider_profiles SET verification_status = ?, is_online = ? WHERE user_id = ?', [
-            u.rider.verificationStatus,
-            u.rider.isOnline,
-            userId
-          ]);
         }
-      }
+      } catch (_) {}
     }
   } catch (err) {
     console.warn('[Database Warning] Seed demo accounts notice:', err.message);
