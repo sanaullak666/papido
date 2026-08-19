@@ -172,80 +172,17 @@ async function bootstrapMysqlSchema(targetPool) {
     `);
 
     await targetPool.query(`
-      CREATE TABLE IF NOT EXISTS campus_categories (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        category_key VARCHAR(50) NOT NULL UNIQUE,
-        label VARCHAR(100) NOT NULL,
-        token VARCHAR(100) NOT NULL UNIQUE,
-        icon VARCHAR(20) DEFAULT '📍',
-        color VARCHAR(30) DEFAULT '#3B82F6',
-        bg_color VARCHAR(50) DEFAULT 'rgba(59, 130, 246, 0.12)',
-        display_order INT DEFAULT 0,
-        is_active BOOLEAN DEFAULT TRUE,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    `);
-
-    await targetPool.query(`
-      CREATE TABLE IF NOT EXISTS campus_areas (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        area_code VARCHAR(50) NOT NULL UNIQUE,
-        name VARCHAR(100) NOT NULL,
-        icon VARCHAR(20) DEFAULT '📍',
-        color VARCHAR(30) DEFAULT '#3B82F6',
-        bg_color VARCHAR(50) DEFAULT 'rgba(59, 130, 246, 0.12)',
-        description VARCHAR(255) DEFAULT NULL,
-        display_order INT DEFAULT 0,
-        is_active BOOLEAN DEFAULT TRUE,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    `);
-
-    await targetPool.query(`
-      CREATE TABLE IF NOT EXISTS area_fares (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        from_area_code VARCHAR(50) NOT NULL,
-        to_area_code VARCHAR(50) NOT NULL,
-        fare_amount DECIMAL(10, 2) NOT NULL,
-        distance_km DECIMAL(5, 2) DEFAULT 1.50,
-        is_active BOOLEAN DEFAULT TRUE,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        UNIQUE KEY uq_area_fares (from_area_code, to_area_code)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    `);
-
-    await targetPool.query(`
-      CREATE TABLE IF NOT EXISTS campus_stops (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(150) NOT NULL UNIQUE,
-        area_code VARCHAR(50) DEFAULT 'MAIN_CAMPUS',
-        category VARCHAR(50) NOT NULL,
-        category_label VARCHAR(100) NOT NULL,
-        latitude DECIMAL(10, 8) DEFAULT NULL,
-        longitude DECIMAL(11, 8) DEFAULT NULL,
-        is_active BOOLEAN DEFAULT TRUE,
-        display_order INT DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    `);
-
-    await targetPool.query(`
       CREATE TABLE IF NOT EXISTS route_fares (
         id INT AUTO_INCREMENT PRIMARY KEY,
         pickup_stop VARCHAR(150) NOT NULL,
         destination_stop VARCHAR(150) NOT NULL,
         fare_amount DECIMAL(10, 2) NOT NULL,
         distance_km DECIMAL(5, 2) DEFAULT 1.50,
-        is_bidirectional BOOLEAN DEFAULT TRUE,
         is_active BOOLEAN DEFAULT TRUE,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         UNIQUE KEY uq_route_stops (pickup_stop, destination_stop)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
-
-    try {
-      await targetPool.query('ALTER TABLE route_fares ADD COLUMN is_bidirectional BOOLEAN DEFAULT TRUE;');
-    } catch (_) {}
 
     await targetPool.query(`
       CREATE TABLE IF NOT EXISTS rides (
@@ -453,9 +390,6 @@ async function bootstrapMysqlSchema(targetPool) {
 
     // Seed Demo Test Accounts (Passengers, Verified Riders, Admin)
     await seedDemoUsers(targetPool);
-
-    // Seed Campus Stops & Categorized Group Routes
-    await seedCampusStopsAndGroupRoutes(targetPool, false);
   } catch (err) {
     console.warn('[Database Warning] MySQL bootstrap notice:', err.message);
   }
@@ -677,56 +611,6 @@ function bootstrapSqliteSchema() {
       is_active INTEGER DEFAULT 1,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS campus_categories (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      category_key TEXT NOT NULL UNIQUE,
-      label TEXT NOT NULL,
-      token TEXT NOT NULL UNIQUE,
-      icon TEXT DEFAULT '📍',
-      color TEXT DEFAULT '#3B82F6',
-      bg_color TEXT DEFAULT 'rgba(59, 130, 246, 0.12)',
-      display_order INTEGER DEFAULT 0,
-      is_active INTEGER DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS campus_areas (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      area_code TEXT NOT NULL UNIQUE,
-      name TEXT NOT NULL,
-      icon TEXT DEFAULT '📍',
-      color TEXT DEFAULT '#3B82F6',
-      bg_color TEXT DEFAULT 'rgba(59, 130, 246, 0.12)',
-      description TEXT,
-      display_order INTEGER DEFAULT 0,
-      is_active INTEGER DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS area_fares (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      from_area_code TEXT NOT NULL,
-      to_area_code TEXT NOT NULL,
-      fare_amount REAL NOT NULL,
-      distance_km REAL DEFAULT 1.5,
-      is_active INTEGER DEFAULT 1,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(from_area_code, to_area_code)
-    );
-
-    CREATE TABLE IF NOT EXISTS campus_stops (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL UNIQUE,
-      area_code TEXT DEFAULT 'MAIN_CAMPUS',
-      category TEXT NOT NULL,
-      category_label TEXT NOT NULL,
-      latitude REAL,
-      longitude REAL,
-      is_active INTEGER DEFAULT 1,
-      display_order INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS route_fares (
@@ -971,223 +855,6 @@ function bootstrapSqliteSchema() {
       ('RIDER_TIMEOUT_SECONDS', '45', 'Time rider has to accept incoming ride request'),
       ('OTP_VERIFICATION_REQUIRED', 'true', 'Require 4-digit OTP from customer to start ride');
     `);
-  }
-
-  // Seed Campus Stops & Categorized Group Routes for SQLite
-  try {
-    seedCampusStopsAndGroupRoutes(sqliteDb, true);
-  } catch (err) {
-    console.warn('SQLite seed campus stops notice:', err.message);
-  }
-}
-
-/**
- * Seed Campus Stops & Categorized Group Routes
- */
-async function seedCampusStopsAndGroupRoutes(targetDb, isSqlite) {
-  const DEFAULT_CAMPUS_STOPS = [
-    // Girls Hostels
-    { name: 'Madame Curie Girls Hostel', category: 'GIRLS_HOSTEL', category_label: 'Girls Hostels', lat: 12.0215, lng: 79.8565, order: 1 },
-    { name: 'Mother Teresa Girls Hostel', category: 'GIRLS_HOSTEL', category_label: 'Girls Hostels', lat: 12.0218, lng: 79.8570, order: 2 },
-    { name: 'Ganga Girls Hostel', category: 'GIRLS_HOSTEL', category_label: 'Girls Hostels', lat: 12.0222, lng: 79.8575, order: 3 },
-    { name: 'Yamuna Girls Hostel', category: 'GIRLS_HOSTEL', category_label: 'Girls Hostels', lat: 12.0225, lng: 79.8572, order: 4 },
-    { name: 'Sarojini Naidu Girls Hostel', category: 'GIRLS_HOSTEL', category_label: 'Girls Hostels', lat: 12.0212, lng: 79.8560, order: 5 },
-    { name: 'Cauvery Girls Hostel', category: 'GIRLS_HOSTEL', category_label: 'Girls Hostels', lat: 12.0220, lng: 79.8580, order: 6 },
-    { name: 'Saraswathi Girls Hostel', category: 'GIRLS_HOSTEL', category_label: 'Girls Hostels', lat: 12.0216, lng: 79.8568, order: 7 },
-
-    // Boys Hostels
-    { name: 'Birsa Munda Hostel', category: 'BOYS_HOSTEL', category_label: 'Boys Hostels', lat: 12.0278, lng: 79.8518, order: 8 },
-    { name: 'Silver Jubilee Hostel (SJC)', category: 'SJC_CAMPUS', category_label: 'Silver Jubilee Campus', lat: 12.0280, lng: 79.8520, order: 10 },
-    { name: 'Bharathidasan Boys Hostel', category: 'BOYS_HOSTEL', category_label: 'Boys Hostels', lat: 12.0275, lng: 79.8515, order: 11 },
-    { name: 'Kabilar Boys Hostel', category: 'BOYS_HOSTEL', category_label: 'Boys Hostels', lat: 12.0270, lng: 79.8510, order: 12 },
-    { name: 'Subramania Bharathi Boys Hostel', category: 'BOYS_HOSTEL', category_label: 'Boys Hostels', lat: 12.0285, lng: 79.8525, order: 13 },
-    { name: 'Kalidas Boys Hostel', category: 'BOYS_HOSTEL', category_label: 'Boys Hostels', lat: 12.0268, lng: 79.8530, order: 14 },
-    { name: 'Valmiki Boys Hostel', category: 'BOYS_HOSTEL', category_label: 'Boys Hostels', lat: 12.0272, lng: 79.8535, order: 15 },
-    { name: 'Foreign Students Hostel', category: 'SJC_CAMPUS', category_label: 'Silver Jubilee Campus', lat: 12.0288, lng: 79.8540, order: 16 },
-
-    // Departments & School Blocks
-    { name: 'Sociology Department', category: 'SJC_CAMPUS', category_label: 'Silver Jubilee Campus', lat: 12.0282, lng: 79.8530, order: 18 },
-    { name: 'History Department', category: 'SJC_CAMPUS', category_label: 'Silver Jubilee Campus', lat: 12.0284, lng: 79.8532, order: 19 },
-    { name: 'Science Complex / Physics Dept', category: 'SCIENCE_BLOCK', category_label: 'Science Block', lat: 12.0261, lng: 79.8550, order: 20 },
-    { name: 'School of Management (SOM)', category: 'SCIENCE_BLOCK', category_label: 'Science Block', lat: 12.0255, lng: 79.8540, order: 21 },
-    { name: 'Ramanujan Math & Computer Science Block', category: 'SCIENCE_BLOCK', category_label: 'Science Block', lat: 12.0265, lng: 79.8560, order: 22 },
-    { name: 'School of Humanities & Social Sciences', category: 'SCIENCE_BLOCK', category_label: 'Science Block', lat: 12.0248, lng: 79.8535, order: 23 },
-    { name: 'School of Life Sciences & Biotech', category: 'SCIENCE_BLOCK', category_label: 'Science Block', lat: 12.0258, lng: 79.8565, order: 24 },
-    { name: 'School of Engineering & Technology', category: 'SCIENCE_BLOCK', category_label: 'Science Block', lat: 12.0270, lng: 79.8570, order: 25 },
-    { name: 'School of Media & Communication', category: 'SCIENCE_BLOCK', category_label: 'Science Block', lat: 12.0250, lng: 79.8545, order: 26 },
-
-    // Gates, Library & Common Hubs
-    { name: 'PU Main Gate (Gate 1)', category: 'GATES', category_label: 'Gates', lat: 12.0228681, lng: 79.8509415, order: 30 },
-    { name: 'Gate 2 (East Coast Road / ECR)', category: 'GATES', category_label: 'Gates', lat: 12.0295, lng: 79.8580, order: 31 },
-    { name: 'Central Library & Reading Room', category: 'LIBRARY_HUB', category_label: 'Library / Reading Room', lat: 12.0245, lng: 79.8532, order: 32 },
-    { name: 'University Canteen & Food Court', category: 'LIBRARY_HUB', category_label: 'Library / Reading Room', lat: 12.0238, lng: 79.8541, order: 33 },
-    { name: 'Admin Block & Exam Wing', category: 'LIBRARY_HUB', category_label: 'Library / Reading Room', lat: 12.0252, lng: 79.8515, order: 34 },
-    { name: 'Shopping Complex / Co-op Stores', category: 'LIBRARY_HUB', category_label: 'Library / Reading Room', lat: 12.0240, lng: 79.8538, order: 35 },
-    { name: 'Rajiv Gandhi Sports Stadium', category: 'GATES', category_label: 'Gates', lat: 12.0290, lng: 79.8555, order: 36 }
-  ];
-
-  const DEFAULT_GROUP_ROUTES = [
-    // 🌟 Specific Route Override (Tier 1)
-    { from: 'Birsa Munda Hostel', to: 'Sociology Department', fare: 35.00, dist: 2.5, isBidirectional: 1 },
-    { from: 'PU Main Gate (Gate 1)', to: 'Gate 2 (East Coast Road / ECR)', fare: 30.00, dist: 2.5, isBidirectional: 1 },
-
-    // 🏷️ Group-Based Fare Rules (Tier 2)
-    { from: '[Boys Hostels]', to: '[Silver Jubilee Campus]', fare: 25.00, dist: 2.0, isBidirectional: 1 },
-    { from: '[Girls Hostels]', to: '[Silver Jubilee Campus]', fare: 30.00, dist: 2.5, isBidirectional: 1 },
-    { from: '[Silver Jubilee Campus]', to: 'PU Main Gate (Gate 1)', fare: 30.00, dist: 2.5, isBidirectional: 1 },
-    { from: '[Silver Jubilee Campus]', to: 'Gate 2 (East Coast Road / ECR)', fare: 35.00, dist: 2.8, isBidirectional: 1 },
-    { from: '[Girls Hostels]', to: '[Science Block]', fare: 25.00, dist: 1.5, isBidirectional: 1 },
-    { from: '[Girls Hostels]', to: '[Gates]', fare: 25.00, dist: 1.8, isBidirectional: 1 },
-    { from: '[Girls Hostels]', to: '[Library / Reading Room]', fare: 25.00, dist: 1.2, isBidirectional: 1 }
-  ];
-
-  const DEFAULT_CAMPUS_CATEGORIES = [
-    { key: 'BOYS_HOSTEL', label: 'Boys Hostels', token: '[Boys Hostels]', icon: '👦', color: '#3B82F6', bg_color: 'rgba(59, 130, 246, 0.12)', order: 1 },
-    { key: 'GIRLS_HOSTEL', label: 'Girls Hostels', token: '[Girls Hostels]', icon: '👧', color: '#EC4899', bg_color: 'rgba(236, 72, 153, 0.12)', order: 2 },
-    { key: 'SJC_CAMPUS', label: 'Silver Jubilee Campus', token: '[Silver Jubilee Campus]', icon: '🎓', color: '#8B5CF6', bg_color: 'rgba(139, 92, 246, 0.12)', order: 3 },
-    { key: 'SCIENCE_BLOCK', label: 'Science Block', token: '[Science Block]', icon: '🔬', color: '#10B981', bg_color: 'rgba(16, 185, 129, 0.12)', order: 4 },
-    { key: 'GATES', label: 'Gates', token: '[Gates]', icon: '🚪', color: '#F59E0B', bg_color: 'rgba(245, 158, 11, 0.12)', order: 5 },
-    { key: 'LIBRARY_HUB', label: 'Library / Reading Room', token: '[Library / Reading Room]', icon: '📚', color: '#06B6D4', bg_color: 'rgba(6, 182, 212, 0.12)', order: 6 }
-  ];
-
-  const DEFAULT_CAMPUS_AREAS = [
-    { code: 'HOSTEL_AREA', name: 'Hostel & Residential Area', icon: '🏡', color: '#EC4899', bg: 'rgba(236, 72, 153, 0.12)', desc: 'Girls & Boys Hostels, dining halls and student quarters', order: 1 },
-    { code: 'MAIN_CAMPUS', name: 'Main Campus & Gate 1 Hub', icon: '🏛️', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.12)', desc: 'Main Gate, Central Library, Admin Block, Canteen & Stores', order: 2 },
-    { code: 'SCIENCE_BLOCK', name: 'Science & Academic Block', icon: '🔬', color: '#10B981', bg: 'rgba(16, 185, 129, 0.12)', desc: 'Science Complex, SOM, Engineering, Math & Biotech Depts', order: 3 },
-    { code: 'SJC_CAMPUS', name: 'Silver Jubilee Campus (SJC)', icon: '🎓', color: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.12)', desc: 'SJC Hostels, Sociology, History, Social Sciences & Foreign Hostel', order: 4 },
-    { code: 'SPORTS_GATE2', name: 'Sports Area & Gate 2 (ECR)', icon: '⚽', color: '#06B6D4', bg: 'rgba(6, 182, 212, 0.12)', desc: 'ECR Gate 2, Sports Stadium, grounds and facilities', order: 5 }
-  ];
-
-  const DEFAULT_AREA_FARES = [
-    { from: 'HOSTEL_AREA', to: 'HOSTEL_AREA', fare: 15.00, dist: 1.0 },
-    { from: 'HOSTEL_AREA', to: 'MAIN_CAMPUS', fare: 20.00, dist: 1.5 },
-    { from: 'HOSTEL_AREA', to: 'SCIENCE_BLOCK', fare: 20.00, dist: 1.5 },
-    { from: 'HOSTEL_AREA', to: 'SJC_CAMPUS', fare: 35.00, dist: 2.8 },
-    { from: 'HOSTEL_AREA', to: 'SPORTS_GATE2', fare: 25.00, dist: 2.0 },
-    { from: 'MAIN_CAMPUS', to: 'MAIN_CAMPUS', fare: 15.00, dist: 1.0 },
-    { from: 'MAIN_CAMPUS', to: 'SCIENCE_BLOCK', fare: 20.00, dist: 1.2 },
-    { from: 'MAIN_CAMPUS', to: 'SJC_CAMPUS', fare: 30.00, dist: 2.5 },
-    { from: 'MAIN_CAMPUS', to: 'SPORTS_GATE2', fare: 25.00, dist: 2.2 },
-    { from: 'SCIENCE_BLOCK', to: 'SCIENCE_BLOCK', fare: 15.00, dist: 1.0 },
-    { from: 'SCIENCE_BLOCK', to: 'SJC_CAMPUS', fare: 30.00, dist: 2.2 },
-    { from: 'SCIENCE_BLOCK', to: 'SPORTS_GATE2', fare: 20.00, dist: 1.5 },
-    { from: 'SJC_CAMPUS', to: 'SJC_CAMPUS', fare: 15.00, dist: 1.0 },
-    { from: 'SJC_CAMPUS', to: 'SPORTS_GATE2', fare: 30.00, dist: 2.5 },
-    { from: 'SPORTS_GATE2', to: 'SPORTS_GATE2', fare: 15.00, dist: 1.0 }
-  ];
-
-  if (isSqlite && targetDb) {
-    // 0a. Seed campus_areas in SQLite
-    const insertAreaStmt = targetDb.prepare(`
-      INSERT OR IGNORE INTO campus_areas (area_code, name, icon, color, bg_color, description, display_order, is_active)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 1)
-    `);
-    for (const a of DEFAULT_CAMPUS_AREAS) {
-      insertAreaStmt.run(a.code, a.name, a.icon, a.color, a.bg, a.desc, a.order);
-    }
-
-    // 0b. Seed area_fares in SQLite
-    const insertAreaFareStmt = targetDb.prepare(`
-      INSERT OR IGNORE INTO area_fares (from_area_code, to_area_code, fare_amount, distance_km, is_active)
-      VALUES (?, ?, ?, ?, 1)
-    `);
-    for (const af of DEFAULT_AREA_FARES) {
-      insertAreaFareStmt.run(af.from, af.to, af.fare, af.dist);
-    }
-
-    // 0c. Seed campus_categories in SQLite
-    const insertCatStmt = targetDb.prepare(`
-      INSERT OR IGNORE INTO campus_categories (category_key, label, token, icon, color, bg_color, display_order, is_active)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 1)
-    `);
-    for (const cat of DEFAULT_CAMPUS_CATEGORIES) {
-      insertCatStmt.run(cat.key, cat.label, cat.token, cat.icon, cat.color, cat.bg_color, cat.order);
-    }
-
-    // 1. Seed campus_stops in SQLite
-    const insertStopStmt = targetDb.prepare(`
-      INSERT OR IGNORE INTO campus_stops (name, area_code, category, category_label, latitude, longitude, is_active, display_order)
-      VALUES (?, ?, ?, ?, ?, ?, 1, ?)
-    `);
-    for (const stop of DEFAULT_CAMPUS_STOPS) {
-      let areaCode = 'MAIN_CAMPUS';
-      if (stop.category === 'GIRLS_HOSTEL' || (stop.category === 'BOYS_HOSTEL' && !stop.name.includes('Silver Jubilee') && !stop.name.includes('Foreign'))) {
-        areaCode = 'HOSTEL_AREA';
-      } else if (stop.name.includes('Silver Jubilee') || stop.name.includes('Foreign')) {
-        areaCode = 'SJC_CAMPUS';
-      } else if (stop.category === 'DEPARTMENT') {
-        areaCode = 'SCIENCE_BLOCK';
-      } else if (stop.name.includes('Gate 2') || stop.name.includes('Stadium') || stop.name.includes('Sports')) {
-        areaCode = 'SPORTS_GATE2';
-      }
-      insertStopStmt.run(stop.name, areaCode, stop.category, stop.category_label, stop.lat, stop.lng, stop.order);
-    }
-
-    // 2. Seed route_fares (Specific Overrides) in SQLite
-    const insertRouteStmt = targetDb.prepare(`
-      INSERT OR REPLACE INTO route_fares (pickup_stop, destination_stop, fare_amount, distance_km, is_bidirectional, is_active)
-      VALUES (?, ?, ?, ?, ?, 1)
-    `);
-    for (const r of DEFAULT_GROUP_ROUTES) {
-      insertRouteStmt.run(r.from, r.to, r.fare, r.dist, r.isBidirectional !== undefined ? r.isBidirectional : 1);
-    }
-  } else if (!isSqlite && targetDb) {
-    // 0a. Seed campus_areas in MySQL
-    for (const a of DEFAULT_CAMPUS_AREAS) {
-      await targetDb.query(`
-        INSERT INTO campus_areas (area_code, name, icon, color, bg_color, description, display_order, is_active)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 1)
-        ON DUPLICATE KEY UPDATE name = VALUES(name), icon = VALUES(icon), color = VALUES(color), bg_color = VALUES(bg_color)
-      `, [a.code, a.name, a.icon, a.color, a.bg, a.desc, a.order]);
-    }
-
-    // 0b. Seed area_fares in MySQL
-    for (const af of DEFAULT_AREA_FARES) {
-      await targetDb.query(`
-        INSERT INTO area_fares (from_area_code, to_area_code, fare_amount, distance_km, is_active)
-        VALUES (?, ?, ?, ?, 1)
-        ON DUPLICATE KEY UPDATE fare_amount = VALUES(fare_amount), distance_km = VALUES(distance_km)
-      `, [af.from, af.to, af.fare, af.dist]);
-    }
-
-    // 0c. Seed campus_categories in MySQL
-    for (const cat of DEFAULT_CAMPUS_CATEGORIES) {
-      await targetDb.query(`
-        INSERT INTO campus_categories (category_key, label, token, icon, color, bg_color, display_order, is_active)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 1)
-        ON DUPLICATE KEY UPDATE label = VALUES(label), token = VALUES(token), icon = VALUES(icon), color = VALUES(color), bg_color = VALUES(bg_color)
-      `, [cat.key, cat.label, cat.token, cat.icon, cat.color, cat.bg_color, cat.order]);
-    }
-
-    // 1. Seed campus_stops in MySQL
-    for (const stop of DEFAULT_CAMPUS_STOPS) {
-      let areaCode = 'MAIN_CAMPUS';
-      if (stop.category === 'GIRLS_HOSTEL' || (stop.category === 'BOYS_HOSTEL' && !stop.name.includes('Silver Jubilee') && !stop.name.includes('Foreign'))) {
-        areaCode = 'HOSTEL_AREA';
-      } else if (stop.name.includes('Silver Jubilee') || stop.name.includes('Foreign')) {
-        areaCode = 'SJC_CAMPUS';
-      } else if (stop.category === 'SCIENCE_BLOCK' || stop.category === 'DEPARTMENT') {
-        areaCode = 'SCIENCE_BLOCK';
-      } else if (stop.name.includes('Gate 2') || stop.name.includes('Stadium') || stop.name.includes('Sports')) {
-        areaCode = 'SPORTS_GATE2';
-      }
-
-      await targetDb.query(`
-        INSERT INTO campus_stops (name, area_code, category, category_label, latitude, longitude, is_active, display_order)
-        VALUES (?, ?, ?, ?, ?, ?, 1, ?)
-        ON DUPLICATE KEY UPDATE area_code = VALUES(area_code), category = VALUES(category), category_label = VALUES(category_label),
-                                latitude = VALUES(latitude), longitude = VALUES(longitude)
-      `, [stop.name, areaCode, stop.category, stop.category_label, stop.lat, stop.lng, stop.order]);
-    }
-
-    // 2. Seed route_fares (Specific Overrides) in MySQL
-    for (const r of DEFAULT_GROUP_ROUTES) {
-      await targetDb.query(`
-        INSERT INTO route_fares (pickup_stop, destination_stop, fare_amount, distance_km, is_bidirectional, is_active)
-        VALUES (?, ?, ?, ?, ?, 1)
-        ON DUPLICATE KEY UPDATE fare_amount = VALUES(fare_amount), distance_km = VALUES(distance_km), is_bidirectional = VALUES(is_bidirectional)
-      `, [r.from, r.to, r.fare, r.dist, r.isBidirectional !== undefined ? r.isBidirectional : 1]);
-    }
   }
 }
 

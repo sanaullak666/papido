@@ -13,24 +13,6 @@ const FareController = {
     }
   },
 
-  async getAreas(req, res, next) {
-    try {
-      const areas = await FareModel.getAllCampusAreas();
-      return success(res, 'Active campus areas fetched.', areas);
-    } catch (err) {
-      next(err);
-    }
-  },
-
-  async getCategories(req, res, next) {
-    try {
-      const categories = await FareModel.getAllCategories();
-      return success(res, 'Active campus categories fetched.', categories);
-    } catch (err) {
-      next(err);
-    }
-  },
-
   async getRouteFares(req, res, next) {
     try {
       const routes = await FareModel.getAllRouteFares();
@@ -40,26 +22,13 @@ const FareController = {
     }
   },
 
-  async getGroupedStops(req, res, next) {
-    try {
-      const groups = await FareModel.getGroupedCampusStops();
-      return success(res, 'Categorized campus stops fetched.', groups);
-    } catch (err) {
-      next(err);
-    }
-  },
-
   async getAvailableStops(req, res, next) {
     try {
-      const campusStops = await FareModel.getAllCampusStops();
-      if (campusStops && campusStops.length > 0) {
-        return success(res, 'Available campus stops fetched.', campusStops.map(s => s.name));
-      }
       const routes = await FareModel.getAllRouteFares();
       const stopsSet = new Set();
       (routes || []).filter(r => r.is_active).forEach(r => {
-        if (r.pickup_stop && !r.pickup_stop.startsWith('[')) stopsSet.add(r.pickup_stop);
-        if (r.destination_stop && !r.destination_stop.startsWith('[')) stopsSet.add(r.destination_stop);
+        if (r.pickup_stop) stopsSet.add(r.pickup_stop);
+        if (r.destination_stop) stopsSet.add(r.destination_stop);
       });
       return success(res, 'Available campus stops fetched.', Array.from(stopsSet));
     } catch (err) {
