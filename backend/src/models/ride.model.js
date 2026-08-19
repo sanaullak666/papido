@@ -190,12 +190,8 @@ const RideModel = {
     }
 
     if (riderVehicleType && riderVehicleType !== 'ANY') {
-      if (['BIKE', 'SCOOTER'].includes(riderVehicleType.toUpperCase())) {
-        sql += " AND (r.vehicle_type IS NULL OR r.vehicle_type = 'ANY' OR r.vehicle_type IN ('BIKE', 'SCOOTER'))";
-      } else {
-        sql += " AND (r.vehicle_type IS NULL OR r.vehicle_type = 'ANY' OR r.vehicle_type = ?)";
-        params.push(riderVehicleType);
-      }
+      sql += " AND (r.vehicle_type IS NULL OR r.vehicle_type = 'ANY' OR UPPER(r.vehicle_type) = ?)";
+      params.push(riderVehicleType.toUpperCase());
     }
 
     sql += ' ORDER BY r.id DESC LIMIT 10';

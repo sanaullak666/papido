@@ -226,11 +226,16 @@ export function RiderPortalView() {
       const res = await apiRequest('/rider/requests', 'GET', null, token);
       const list = res.data || [];
       const myGender = (user?.gender || '').toUpperCase();
+      const myVehicle = (user?.profile?.vehicle_type || vehicleType || 'BIKE').toUpperCase();
       const available = list
         .filter(r => !declinedRideIds.has(String(r.id)))
         .filter(r => {
           const isFemaleOnly = Boolean(r.female_rider_only || r.femaleRiderOnly);
           if (isFemaleOnly && myGender !== 'FEMALE') return false;
+
+          const reqVehicle = (r.vehicle_type || r.vehicleType || 'ANY').toUpperCase();
+          if (reqVehicle !== 'ANY' && reqVehicle !== myVehicle) return false;
+
           return true;
         })
         .map(r => {
