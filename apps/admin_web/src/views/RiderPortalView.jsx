@@ -44,6 +44,9 @@ export function RiderPortalView() {
   const [activeRideLoading, setActiveRideLoading] = useState(false);
   const [declinedRideIds, setDeclinedRideIds] = useState(() => new Set());
   const [tripCancelledNotice, setTripCancelledNotice] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [enteredOtp, setEnteredOtp] = useState('');
+  const [otpError, setOtpError] = useState(null);
 
   // Audio Alerts
   const [soundEnabled, setSoundEnabled] = useState(true);
