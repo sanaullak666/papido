@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useSocket } from '../context/SocketContext';
-import { Wifi, WifiOff, Bell, RefreshCw, Menu, Volume2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Wifi, WifiOff, Bell, RefreshCw, Menu, Volume2, LogOut, Shield } from 'lucide-react';
 import { alertManager } from '../utils/alertManager';
 
 export function Header({ title, subtitle, onRefresh, isRefreshing, onToggleMobileMenu }) {
   const { isConnected } = useSocket();
+  const { adminUser, adminLogout } = useAuth();
   const [alertTested, setAlertTested] = useState(false);
 
   const handleTestSound = () => {
@@ -75,6 +77,26 @@ export function Header({ title, subtitle, onRefresh, isRefreshing, onToggleMobil
           >
             <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
             <span>Refresh</span>
+          </button>
+        )}
+
+        {/* Admin Sign Out Button */}
+        {adminLogout && (
+          <button
+            onClick={adminLogout}
+            className="btn btn-secondary btn-sm"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '12px',
+              borderColor: 'rgba(239, 68, 68, 0.4)',
+              color: '#F87171'
+            }}
+            title="Sign out of Admin Portal"
+          >
+            <LogOut size={14} />
+            <span>Logout</span>
           </button>
         )}
       </div>

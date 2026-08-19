@@ -16,7 +16,9 @@ import {
 import { useAuth } from '../context/AuthContext';
 
 export function Sidebar({ currentTab, setCurrentTab, isOpen, onClose, hasPendingOutsideAlert }) {
-  const { user, logout } = useAuth();
+  const { user, adminUser, logout, adminLogout } = useAuth();
+  const currentUser = adminUser || user;
+  const handleLogout = adminUser ? adminLogout : logout;
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -108,23 +110,33 @@ export function Sidebar({ currentTab, setCurrentTab, isOpen, onClose, hasPending
         })}
       </ul>
 
-        {user && (
+        {currentUser && (
           <div className="user-profile-widget">
             <img
-              src={user.profile_image || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
-              alt={user.name}
+              src={currentUser.profile_image || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
+              alt={currentUser.name}
               className="user-avatar"
             />
             <div className="user-info">
-              <div className="user-name">{user.name}</div>
-              <div className="user-role">Administrator</div>
+              <div className="user-name">{currentUser.name || 'Admin'}</div>
+              <div className="user-role">{adminUser ? 'Super Admin' : 'Administrator'}</div>
             </div>
             <button
-              onClick={logout}
-              title="Log Out"
-              style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
+              onClick={handleLogout}
+              title="Log Out of Admin Portal"
+              style={{
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                borderRadius: '8px',
+                color: '#F87171',
+                cursor: 'pointer',
+                padding: '6px 8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
             >
-              <LogOut size={18} />
+              <LogOut size={16} />
             </button>
           </div>
         )}
