@@ -31,31 +31,32 @@ const AuthController = {
         ? gender.toUpperCase()
         : 'OTHER';
 
+      const uniqueSuffix = Date.now().toString().slice(-6);
       const mergedProfileData = {
         ...(profileData || {}),
         profileImage: profileImage || (profileData && profileData.profileImage) || null,
         vehicleType: vehicleType || (profileData && profileData.vehicleType) || 'BIKE',
-        vehicleModel: vehicleModel || (profileData && profileData.vehicleModel) || 'Two-Wheeler',
-        vehicleNumber: vehicleNumber || (profileData && profileData.vehicleNumber) || '',
-        licenseNumber: licenseNumber || (profileData && profileData.licenseNumber) || '',
-        collegeIdNumber: collegeIdNumber || (profileData && profileData.collegeIdNumber) || '',
+        vehicleModel: (vehicleModel || (profileData && profileData.vehicleModel) || '').trim(),
+        vehicleNumber: vehicleNumber || (profileData && profileData.vehicleNumber) || `RC-DOC-${uniqueSuffix}`,
+        licenseNumber: licenseNumber || (profileData && profileData.licenseNumber) || `DL-DOC-${uniqueSuffix}`,
+        collegeIdNumber: collegeIdNumber || (profileData && profileData.collegeIdNumber) || `ID-DOC-${uniqueSuffix}`,
         licenseDocUrl: licenseDocUrl || (profileData && profileData.licenseDocUrl) || null,
         rcDocUrl: rcDocUrl || (profileData && profileData.rcDocUrl) || null,
         collegeIdDocUrl: collegeIdDocUrl || (profileData && profileData.collegeIdDocUrl) || null
       };
 
-      // If registering as Rider, strictly validate both typed details AND uploaded documents
+      // If registering as Rider, validate Vehicle Model + 3 mandatory Document Uploads
       if (role === 'RIDER') {
         const missing = [];
-        if (!mergedProfileData.collegeIdNumber) missing.push('Campus / College ID Number (Type)');
+        if (!mergedProfileData.vehicleModel) {
+          missing.push('Vehicle Model (e.g. Honda Activa 6G / Splendor)');
+        }
         if (!mergedProfileData.collegeIdDocUrl) missing.push('Campus / College ID Card (Upload)');
-        if (!mergedProfileData.licenseNumber) missing.push('Driving Licence Number (Type)');
-        if (!mergedProfileData.licenseDocUrl) missing.push('Driving Licence Document (Upload)');
-        if (!mergedProfileData.vehicleNumber) missing.push('Vehicle Number / Plate (Type)');
+        if (!mergedProfileData.licenseDocUrl) missing.push('Driving Licence (Upload)');
         if (!mergedProfileData.rcDocUrl) missing.push('Vehicle RC Document (Upload)');
 
         if (missing.length > 0) {
-          return error(res, `Mandatory Driver Registration Details Missing: ${missing.join(', ')}. Please type your document numbers and upload all 3 documents.`, 400);
+          return error(res, `Mandatory Driver Requirements Missing: ${missing.join(', ')}. Please enter your Vehicle Model and upload all 3 documents.`, 400);
         }
       }
 

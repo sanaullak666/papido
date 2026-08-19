@@ -61,28 +61,20 @@ export function LoginView({ onGoToAdminPortal }) {
     setUploadStatus('');
 
     if (regRole === 'RIDER') {
-      if (!regCollegeIdNumber.trim()) {
-        setError('Please enter your Campus / College ID Card Number.');
+      if (!regVehicleModel.trim()) {
+        setError('Please enter your Vehicle Model (e.g. Honda Activa 6G / Splendor).');
         return;
       }
       if (!collegeIdFile) {
-        setError('Please upload a clear photo or PDF of your Campus / College ID Card.');
-        return;
-      }
-      if (!regLicenseNumber.trim()) {
-        setError('Please enter your Driving Licence (DL) Number.');
+        setError('Please upload your Campus / College ID Card (Photo or PDF).');
         return;
       }
       if (!licenseFile) {
-        setError('Please upload a clear photo or PDF of your Driving Licence.');
-        return;
-      }
-      if (!regVehicleNumber.trim()) {
-        setError('Please enter your Vehicle Registration Number (Plate).');
+        setError('Please upload your Driving Licence (DL) (Photo or PDF).');
         return;
       }
       if (!rcFile) {
-        setError('Please upload a clear photo or PDF of your Vehicle RC Document.');
+        setError('Please upload your Vehicle RC Document (Photo or PDF).');
         return;
       }
     }
@@ -507,119 +499,16 @@ export function LoginView({ onGoToAdminPortal }) {
             {regRole === 'RIDER' && (
               <div style={{ background: '#F8F3EC', padding: '16px', borderRadius: '14px', display: 'flex', flexDirection: 'column', gap: '14px', border: '1.5px solid #E8DCCB' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 800, color: '#EA580C' }}>
-                  <ShieldCheck size={16} /> MANDATORY DRIVER KYC & VERIFICATION
+                  <ShieldCheck size={16} /> MANDATORY DRIVER VEHICLE & DOCUMENTS
                 </div>
                 <div style={{ fontSize: '11px', color: '#796D61', marginTop: '-8px' }}>
-                  Please type your credential numbers and upload clear photos or PDF copies of all 3 documents for Admin verification.
+                  Type your vehicle model and upload clear photos or PDF copies of your 3 documents for Admin verification.
                 </div>
 
-                {/* 1. College / Campus ID */}
-                <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '10px', border: '1px solid #E8DCCB', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#271E16', margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>1. Campus / College ID Card <span style={{ color: '#EA580C' }}>*</span></span>
-                    {collegeIdFile && (
-                      <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        <CheckCircle2 size={12} /> File Ready
-                      </span>
-                    )}
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    className="form-input"
-                    style={{ background: '#F8F3EC', border: '1.5px solid #E8DCCB', color: '#271E16', fontSize: '13px' }}
-                    placeholder="Type College ID No. (e.g. 23MMS042 / PU-2024-884)"
-                    value={regCollegeIdNumber}
-                    onChange={(e) => setRegCollegeIdNumber(e.target.value)}
-                  />
-                  <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    padding: '10px',
-                    borderRadius: '8px',
-                    border: collegeIdFile ? '1.5px solid #10B981' : '1.5px dashed #EA580C',
-                    background: collegeIdFile ? '#ECFDF5' : '#FFF7ED',
-                    color: collegeIdFile ? '#047857' : '#EA580C',
-                    cursor: 'pointer',
-                    fontSize: '12px',
-                    fontWeight: 700
-                  }}>
-                    <Upload size={14} />
-                    <span>{collegeIdFile ? `✓ ${collegeIdFile.name}` : 'Upload Campus ID Card (Photo / PDF)'}</span>
-                    <input
-                      type="file"
-                      accept="image/*,application/pdf"
-                      required
-                      style={{ display: 'none' }}
-                      onChange={(e) => {
-                        if (e.target.files && e.target.files[0]) {
-                          setCollegeIdFile(e.target.files[0]);
-                        }
-                      }}
-                    />
-                  </label>
-                </div>
-
-                {/* 2. Driving Licence */}
-                <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '10px', border: '1px solid #E8DCCB', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#271E16', margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>2. Driving Licence (DL) <span style={{ color: '#EA580C' }}>*</span></span>
-                    {licenseFile && (
-                      <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        <CheckCircle2 size={12} /> File Ready
-                      </span>
-                    )}
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    className="form-input"
-                    style={{ background: '#F8F3EC', border: '1.5px solid #E8DCCB', color: '#271E16', fontSize: '13px' }}
-                    placeholder="Type Driving Licence No. (e.g. DL-PY-2024-00123)"
-                    value={regLicenseNumber}
-                    onChange={(e) => setRegLicenseNumber(e.target.value)}
-                  />
-                  <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    padding: '10px',
-                    borderRadius: '8px',
-                    border: licenseFile ? '1.5px solid #10B981' : '1.5px dashed #EA580C',
-                    background: licenseFile ? '#ECFDF5' : '#FFF7ED',
-                    color: licenseFile ? '#047857' : '#EA580C',
-                    cursor: 'pointer',
-                    fontSize: '12px',
-                    fontWeight: 700
-                  }}>
-                    <Upload size={14} />
-                    <span>{licenseFile ? `✓ ${licenseFile.name}` : 'Upload Driving Licence (Photo / PDF)'}</span>
-                    <input
-                      type="file"
-                      accept="image/*,application/pdf"
-                      required
-                      style={{ display: 'none' }}
-                      onChange={(e) => {
-                        if (e.target.files && e.target.files[0]) {
-                          setLicenseFile(e.target.files[0]);
-                        }
-                      }}
-                    />
-                  </label>
-                </div>
-
-                {/* 3. Vehicle Details & RC Card */}
-                <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '10px', border: '1px solid #E8DCCB', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#271E16', margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>3. Vehicle Details & RC Card <span style={{ color: '#EA580C' }}>*</span></span>
-                    {rcFile && (
-                      <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        <CheckCircle2 size={12} /> File Ready
-                      </span>
-                    )}
+                {/* Vehicle Type & Model */}
+                <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '10px', border: '1px solid #E8DCCB', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#271E16', margin: 0 }}>
+                    Vehicle Type & Model <span style={{ color: '#EA580C' }}>*</span>
                   </label>
                   
                   {/* Two-Wheeler Type */}
@@ -671,21 +560,102 @@ export function LoginView({ onGoToAdminPortal }) {
                     required
                     className="form-input"
                     style={{ background: '#F8F3EC', border: '1.5px solid #E8DCCB', color: '#271E16', fontSize: '13px' }}
-                    placeholder="Type Vehicle Plate No. (e.g. PY 01 AB 1234)"
-                    value={regVehicleNumber}
-                    onChange={(e) => setRegVehicleNumber(e.target.value)}
-                  />
-
-                  <input
-                    type="text"
-                    required
-                    className="form-input"
-                    style={{ background: '#F8F3EC', border: '1.5px solid #E8DCCB', color: '#271E16', fontSize: '13px' }}
-                    placeholder="Type Vehicle Model (e.g. Honda Activa 6G / Splendor)"
+                    placeholder="Type Vehicle Model (e.g. Honda Activa 6G / Splendor / Dio)"
                     value={regVehicleModel}
                     onChange={(e) => setRegVehicleModel(e.target.value)}
                   />
+                </div>
 
+                {/* 1. College / Campus ID Upload */}
+                <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '10px', border: '1px solid #E8DCCB', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#271E16', margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>1. Campus / College ID Card <span style={{ color: '#EA580C' }}>*</span></span>
+                    {collegeIdFile && (
+                      <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        <CheckCircle2 size={12} /> Uploaded
+                      </span>
+                    )}
+                  </label>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    padding: '10px',
+                    borderRadius: '8px',
+                    border: collegeIdFile ? '1.5px solid #10B981' : '1.5px dashed #EA580C',
+                    background: collegeIdFile ? '#ECFDF5' : '#FFF7ED',
+                    color: collegeIdFile ? '#047857' : '#EA580C',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: 700
+                  }}>
+                    <Upload size={14} />
+                    <span>{collegeIdFile ? `✓ ${collegeIdFile.name}` : 'Upload Campus ID Card (Photo / PDF)'}</span>
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      required
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setCollegeIdFile(e.target.files[0]);
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+
+                {/* 2. Driving Licence Upload */}
+                <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '10px', border: '1px solid #E8DCCB', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#271E16', margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>2. Driving Licence (DL) <span style={{ color: '#EA580C' }}>*</span></span>
+                    {licenseFile && (
+                      <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        <CheckCircle2 size={12} /> Uploaded
+                      </span>
+                    )}
+                  </label>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    padding: '10px',
+                    borderRadius: '8px',
+                    border: licenseFile ? '1.5px solid #10B981' : '1.5px dashed #EA580C',
+                    background: licenseFile ? '#ECFDF5' : '#FFF7ED',
+                    color: licenseFile ? '#047857' : '#EA580C',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: 700
+                  }}>
+                    <Upload size={14} />
+                    <span>{licenseFile ? `✓ ${licenseFile.name}` : 'Upload Driving Licence (Photo / PDF)'}</span>
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      required
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setLicenseFile(e.target.files[0]);
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+
+                {/* 3. Vehicle RC Document Upload */}
+                <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '10px', border: '1px solid #E8DCCB', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#271E16', margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>3. Vehicle RC Document <span style={{ color: '#EA580C' }}>*</span></span>
+                    {rcFile && (
+                      <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        <CheckCircle2 size={12} /> Uploaded
+                      </span>
+                    )}
+                  </label>
                   <label style={{
                     display: 'flex',
                     alignItems: 'center',
