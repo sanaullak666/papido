@@ -187,9 +187,38 @@ async function bootstrapMysqlSchema(targetPool) {
     `);
 
     await targetPool.query(`
+      CREATE TABLE IF NOT EXISTS campus_areas (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        area_code VARCHAR(50) NOT NULL UNIQUE,
+        name VARCHAR(100) NOT NULL,
+        icon VARCHAR(20) DEFAULT '📍',
+        color VARCHAR(30) DEFAULT '#3B82F6',
+        bg_color VARCHAR(50) DEFAULT 'rgba(59, 130, 246, 0.12)',
+        description VARCHAR(255) DEFAULT NULL,
+        display_order INT DEFAULT 0,
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    await targetPool.query(`
+      CREATE TABLE IF NOT EXISTS area_fares (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        from_area_code VARCHAR(50) NOT NULL,
+        to_area_code VARCHAR(50) NOT NULL,
+        fare_amount DECIMAL(10, 2) NOT NULL,
+        distance_km DECIMAL(5, 2) DEFAULT 1.50,
+        is_active BOOLEAN DEFAULT TRUE,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_area_fares (from_area_code, to_area_code)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    await targetPool.query(`
       CREATE TABLE IF NOT EXISTS campus_stops (
         id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(150) NOT NULL UNIQUE,
+        area_code VARCHAR(50) DEFAULT 'MAIN_CAMPUS',
         category VARCHAR(50) NOT NULL,
         category_label VARCHAR(100) NOT NULL,
         latitude DECIMAL(10, 8) DEFAULT NULL,
@@ -658,9 +687,34 @@ function bootstrapSqliteSchema() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS campus_areas (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      area_code TEXT NOT NULL UNIQUE,
+      name TEXT NOT NULL,
+      icon TEXT DEFAULT '📍',
+      color TEXT DEFAULT '#3B82F6',
+      bg_color TEXT DEFAULT 'rgba(59, 130, 246, 0.12)',
+      description TEXT,
+      display_order INTEGER DEFAULT 0,
+      is_active INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS area_fares (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      from_area_code TEXT NOT NULL,
+      to_area_code TEXT NOT NULL,
+      fare_amount REAL NOT NULL,
+      distance_km REAL DEFAULT 1.5,
+      is_active INTEGER DEFAULT 1,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(from_area_code, to_area_code)
+    );
+
     CREATE TABLE IF NOT EXISTS campus_stops (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,
+      area_code TEXT DEFAULT 'MAIN_CAMPUS',
       category TEXT NOT NULL,
       category_label TEXT NOT NULL,
       latitude REAL,
@@ -988,8 +1042,52 @@ async function seedCampusStopsAndGroupRoutes(targetDb, isSqlite) {
     { key: 'GATE_HUB', label: 'Gates & Campus Hubs', token: '[Gates & Hubs]', icon: '🚪', color: '#F59E0B', bg_color: 'rgba(245, 158, 11, 0.12)', order: 4 }
   ];
 
+  const DEFAULT_CAMPUS_AREAS = [
+    { code: 'HOSTEL_AREA', name: 'Hostel & Residential Area', icon: '🏡', color: '#EC4899', bg: 'rgba(236, 72, 153, 0.12)', desc: 'Girls & Boys Hostels, dining halls and student quarters', order: 1 },
+    { code: 'MAIN_CAMPUS', name: 'Main Campus & Gate 1 Hub', icon: '🏛️', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.12)', desc: 'Main Gate, Central Library, Admin Block, Canteen & Stores', order: 2 },
+    { code: 'SCIENCE_BLOCK', name: 'Science & Academic Block', icon: '🔬', color: '#10B981', bg: 'rgba(16, 185, 129, 0.12)', desc: 'Science Complex, SOM, Engineering, Math & Biotech Depts', order: 3 },
+    { code: 'SJC_CAMPUS', name: 'Silver Jubilee Campus (SJC)', icon: '🎓', color: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.12)', desc: 'SJC Hostels, Sociology, History, Social Sciences & Foreign Hostel', order: 4 },
+    { code: 'SPORTS_GATE2', name: 'Sports Area & Gate 2 (ECR)', icon: '⚽', color: '#06B6D4', bg: 'rgba(6, 182, 212, 0.12)', desc: 'ECR Gate 2, Sports Stadium, grounds and facilities', order: 5 }
+  ];
+
+  const DEFAULT_AREA_FARES = [
+    { from: 'HOSTEL_AREA', to: 'HOSTEL_AREA', fare: 15.00, dist: 1.0 },
+    { from: 'HOSTEL_AREA', to: 'MAIN_CAMPUS', fare: 20.00, dist: 1.5 },
+    { from: 'HOSTEL_AREA', to: 'SCIENCE_BLOCK', fare: 20.00, dist: 1.5 },
+    { from: 'HOSTEL_AREA', to: 'SJC_CAMPUS', fare: 35.00, dist: 2.8 },
+    { from: 'HOSTEL_AREA', to: 'SPORTS_GATE2', fare: 25.00, dist: 2.0 },
+    { from: 'MAIN_CAMPUS', to: 'MAIN_CAMPUS', fare: 15.00, dist: 1.0 },
+    { from: 'MAIN_CAMPUS', to: 'SCIENCE_BLOCK', fare: 20.00, dist: 1.2 },
+    { from: 'MAIN_CAMPUS', to: 'SJC_CAMPUS', fare: 30.00, dist: 2.5 },
+    { from: 'MAIN_CAMPUS', to: 'SPORTS_GATE2', fare: 25.00, dist: 2.2 },
+    { from: 'SCIENCE_BLOCK', to: 'SCIENCE_BLOCK', fare: 15.00, dist: 1.0 },
+    { from: 'SCIENCE_BLOCK', to: 'SJC_CAMPUS', fare: 30.00, dist: 2.2 },
+    { from: 'SCIENCE_BLOCK', to: 'SPORTS_GATE2', fare: 20.00, dist: 1.5 },
+    { from: 'SJC_CAMPUS', to: 'SJC_CAMPUS', fare: 15.00, dist: 1.0 },
+    { from: 'SJC_CAMPUS', to: 'SPORTS_GATE2', fare: 30.00, dist: 2.5 },
+    { from: 'SPORTS_GATE2', to: 'SPORTS_GATE2', fare: 15.00, dist: 1.0 }
+  ];
+
   if (isSqlite && targetDb) {
-    // 0. Seed campus_categories in SQLite
+    // 0a. Seed campus_areas in SQLite
+    const insertAreaStmt = targetDb.prepare(`
+      INSERT OR IGNORE INTO campus_areas (area_code, name, icon, color, bg_color, description, display_order, is_active)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+    `);
+    for (const a of DEFAULT_CAMPUS_AREAS) {
+      insertAreaStmt.run(a.code, a.name, a.icon, a.color, a.bg, a.desc, a.order);
+    }
+
+    // 0b. Seed area_fares in SQLite
+    const insertAreaFareStmt = targetDb.prepare(`
+      INSERT OR IGNORE INTO area_fares (from_area_code, to_area_code, fare_amount, distance_km, is_active)
+      VALUES (?, ?, ?, ?, 1)
+    `);
+    for (const af of DEFAULT_AREA_FARES) {
+      insertAreaFareStmt.run(af.from, af.to, af.fare, af.dist);
+    }
+
+    // 0c. Seed campus_categories in SQLite
     const insertCatStmt = targetDb.prepare(`
       INSERT OR IGNORE INTO campus_categories (category_key, label, token, icon, color, bg_color, display_order, is_active)
       VALUES (?, ?, ?, ?, ?, ?, ?, 1)
@@ -1000,14 +1098,24 @@ async function seedCampusStopsAndGroupRoutes(targetDb, isSqlite) {
 
     // 1. Seed campus_stops in SQLite
     const insertStopStmt = targetDb.prepare(`
-      INSERT OR IGNORE INTO campus_stops (name, category, category_label, latitude, longitude, is_active, display_order)
-      VALUES (?, ?, ?, ?, ?, 1, ?)
+      INSERT OR IGNORE INTO campus_stops (name, area_code, category, category_label, latitude, longitude, is_active, display_order)
+      VALUES (?, ?, ?, ?, ?, ?, 1, ?)
     `);
     for (const stop of DEFAULT_CAMPUS_STOPS) {
-      insertStopStmt.run(stop.name, stop.category, stop.category_label, stop.lat, stop.lng, stop.order);
+      let areaCode = 'MAIN_CAMPUS';
+      if (stop.category === 'GIRLS_HOSTEL' || (stop.category === 'BOYS_HOSTEL' && !stop.name.includes('Silver Jubilee') && !stop.name.includes('Foreign'))) {
+        areaCode = 'HOSTEL_AREA';
+      } else if (stop.name.includes('Silver Jubilee') || stop.name.includes('Foreign')) {
+        areaCode = 'SJC_CAMPUS';
+      } else if (stop.category === 'DEPARTMENT') {
+        areaCode = 'SCIENCE_BLOCK';
+      } else if (stop.name.includes('Gate 2') || stop.name.includes('Stadium') || stop.name.includes('Sports')) {
+        areaCode = 'SPORTS_GATE2';
+      }
+      insertStopStmt.run(stop.name, areaCode, stop.category, stop.category_label, stop.lat, stop.lng, stop.order);
     }
 
-    // 2. Seed route_fares in SQLite
+    // 2. Seed route_fares (Specific Overrides) in SQLite
     const insertRouteStmt = targetDb.prepare(`
       INSERT OR IGNORE INTO route_fares (pickup_stop, destination_stop, fare_amount, distance_km, is_active)
       VALUES (?, ?, ?, ?, 1)
@@ -1016,7 +1124,25 @@ async function seedCampusStopsAndGroupRoutes(targetDb, isSqlite) {
       insertRouteStmt.run(r.from, r.to, r.fare, r.dist);
     }
   } else if (!isSqlite && targetDb) {
-    // 0. Seed campus_categories in MySQL
+    // 0a. Seed campus_areas in MySQL
+    for (const a of DEFAULT_CAMPUS_AREAS) {
+      await targetDb.query(`
+        INSERT INTO campus_areas (area_code, name, icon, color, bg_color, description, display_order, is_active)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+        ON DUPLICATE KEY UPDATE name = VALUES(name), icon = VALUES(icon), color = VALUES(color), bg_color = VALUES(bg_color)
+      `, [a.code, a.name, a.icon, a.color, a.bg, a.desc, a.order]);
+    }
+
+    // 0b. Seed area_fares in MySQL
+    for (const af of DEFAULT_AREA_FARES) {
+      await targetDb.query(`
+        INSERT INTO area_fares (from_area_code, to_area_code, fare_amount, distance_km, is_active)
+        VALUES (?, ?, ?, ?, 1)
+        ON DUPLICATE KEY UPDATE fare_amount = VALUES(fare_amount), distance_km = VALUES(distance_km)
+      `, [af.from, af.to, af.fare, af.dist]);
+    }
+
+    // 0c. Seed campus_categories in MySQL
     for (const cat of DEFAULT_CAMPUS_CATEGORIES) {
       await targetDb.query(`
         INSERT INTO campus_categories (category_key, label, token, icon, color, bg_color, display_order, is_active)
@@ -1027,15 +1153,26 @@ async function seedCampusStopsAndGroupRoutes(targetDb, isSqlite) {
 
     // 1. Seed campus_stops in MySQL
     for (const stop of DEFAULT_CAMPUS_STOPS) {
+      let areaCode = 'MAIN_CAMPUS';
+      if (stop.category === 'GIRLS_HOSTEL' || (stop.category === 'BOYS_HOSTEL' && !stop.name.includes('Silver Jubilee') && !stop.name.includes('Foreign'))) {
+        areaCode = 'HOSTEL_AREA';
+      } else if (stop.name.includes('Silver Jubilee') || stop.name.includes('Foreign')) {
+        areaCode = 'SJC_CAMPUS';
+      } else if (stop.category === 'DEPARTMENT') {
+        areaCode = 'SCIENCE_BLOCK';
+      } else if (stop.name.includes('Gate 2') || stop.name.includes('Stadium') || stop.name.includes('Sports')) {
+        areaCode = 'SPORTS_GATE2';
+      }
+
       await targetDb.query(`
-        INSERT INTO campus_stops (name, category, category_label, latitude, longitude, is_active, display_order)
-        VALUES (?, ?, ?, ?, ?, 1, ?)
-        ON DUPLICATE KEY UPDATE category = VALUES(category), category_label = VALUES(category_label),
+        INSERT INTO campus_stops (name, area_code, category, category_label, latitude, longitude, is_active, display_order)
+        VALUES (?, ?, ?, ?, ?, ?, 1, ?)
+        ON DUPLICATE KEY UPDATE area_code = VALUES(area_code), category = VALUES(category), category_label = VALUES(category_label),
                                 latitude = VALUES(latitude), longitude = VALUES(longitude)
-      `, [stop.name, stop.category, stop.category_label, stop.lat, stop.lng, stop.order]);
+      `, [stop.name, areaCode, stop.category, stop.category_label, stop.lat, stop.lng, stop.order]);
     }
 
-    // 2. Seed route_fares in MySQL
+    // 2. Seed route_fares (Specific Overrides) in MySQL
     for (const r of DEFAULT_GROUP_ROUTES) {
       await targetDb.query(`
         INSERT INTO route_fares (pickup_stop, destination_stop, fare_amount, distance_km, is_active)

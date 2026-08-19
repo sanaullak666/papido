@@ -10,17 +10,20 @@ import {
   Trash2,
   ArrowRight,
   Sparkles,
-  FolderTree,
-  Building,
   Layers,
+  Building,
+  Grid,
   AlertCircle,
   X,
-  Tag,
-  HelpCircle,
-  Check
+  Compass,
+  Check,
+  ShieldAlert,
+  ChevronRight,
+  TrendingUp,
+  Settings2
 } from 'lucide-react';
 
-const PRESET_EMOJIS = ['👧', '👦', '🏛️', '🚪', '📚', '☕', '🏨', '🏋️', '🔬', '🏥', '🌳', '🚌', '📍', '🏢', '🎓'];
+const PRESET_EMOJIS = ['🏡', '🏛️', '🔬', '🎓', '⚽', '🚪', '📚', '☕', '🏨', '🏋️', '🏥', '🌳', '🚌', '📍', '🏢'];
 const PRESET_COLORS = [
   { label: 'Pink', hex: '#EC4899', bg: 'rgba(236, 72, 153, 0.12)' },
   { label: 'Blue', hex: '#3B82F6', bg: 'rgba(59, 130, 246, 0.12)' },
@@ -33,59 +36,66 @@ const PRESET_COLORS = [
 ];
 
 export function FareSettingsView() {
-  const [activeTab, setActiveTab] = useState('routes'); // 'routes', 'locations', 'fallback'
-  const [fareConfigs, setFareConfigs] = useState([]);
-  const [routeFares, setRouteFares] = useState([]);
+  const [activeTab, setActiveTab] = useState('area_matrix'); // 'area_matrix', 'campus_areas', 'specific_routes', 'vehicle_fallback'
+  const [campusAreas, setCampusAreas] = useState([]);
+  const [areaFares, setAreaFares] = useState([]);
+  const [matrixData, setMatrixData] = useState(null);
   const [campusStops, setCampusStops] = useState([]);
   const [groupedStops, setGroupedStops] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const [routeOverrides, setRouteOverrides] = useState([]);
+  const [fareConfigs, setFareConfigs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [savingFare, setSavingFare] = useState(false);
+  const [savingMatrix, setSavingMatrix] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
+
+  // Modals state
+  const [showAreaModal, setShowAreaModal] = useState(false);
+  const [editingArea, setEditingArea] = useState(null);
+  const [areaToDelete, setAreaToDelete] = useState(null);
+  const [showStopModal, setShowStopModal] = useState(false);
+  const [targetAreaForStop, setTargetAreaForStop] = useState('');
+  const [showOverrideModal, setShowOverrideModal] = useState(false);
+  const [editingOverride, setEditingOverride] = useState(null);
   const [editingConfig, setEditingConfig] = useState(null);
-  const [editingRoute, setEditingRoute] = useState(null);
-  const [showAddRouteModal, setShowAddRouteModal] = useState(false);
-  const [showAddStopModal, setShowAddStopModal] = useState(false);
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [editingCategory, setEditingCategory] = useState(null);
-  const [categoryToDelete, setCategoryToDelete] = useState(null);
-  const [routeFilter, setRouteFilter] = useState('ALL'); // 'ALL', 'GROUPS', 'SPECIFIC'
-  const [searchQuery, setSearchQuery] = useState('');
-  const [targetCategoryForStop, setTargetCategoryForStop] = useState('');
+  const [savingFare, setSavingFare] = useState(false);
 
-  // Route Form State
-  const [newRoute, setNewRoute] = useState({
-    pickupStop: '',
-    destinationStop: '',
-    fareAmount: '20.00',
-    distanceKm: '1.5'
-  });
-
-  // Stop Form State
-  const [newStop, setNewStop] = useState({
+  // Area Form State
+  const [areaForm, setAreaForm] = useState({
     name: '',
-    category: '',
-    latitude: '12.0240',
-    longitude: '79.8530',
-    displayOrder: 0
-  });
-
-  // Category Form State
-  const [categoryForm, setCategoryForm] = useState({
-    label: '',
-    token: '',
-    icon: '📍',
+    area_code: '',
+    icon: '🏛️',
     color: '#3B82F6',
     bg_color: 'rgba(59, 130, 246, 0.12)',
+    description: '',
     display_order: 0
   });
 
-  // Live Rule Tester State
+  // Stop Form State
+  const [stopForm, setStopForm] = useState({
+    name: '',
+    area_code: 'MAIN_CAMPUS',
+    category: 'DEPARTMENT',
+    latitude: '12.0240',
+    longitude: '79.8530',
+    display_order: 0
+  });
+
+  // Specific Route Override Form State
+  const [overrideForm, setOverrideForm] = useState({
+    pickupStop: '',
+    destinationStop: '',
+    fareAmount: '30.00',
+    distanceKm: '2.5'
+  });
+
+  // Live 4-Tier Simulator State
   const [testPickup, setTestPickup] = useState('');
   const [testDrop, setTestDrop] = useState('');
   const [testResult, setTestResult] = useState(null);
   const [testingRoute, setTestingRoute] = useState(false);
 
-  const [successMsg, setSuccessMsg] = useState('');
+  // Search & Filter
+  const [areaSearch, setAreaSearch] = useState('');
 
   const showToast = (msg) => {
     setSuccessMsg(msg);
@@ -95,37 +105,31 @@ export function FareSettingsView() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [configsRes, routesRes, stopsRes, catsRes] = await Promise.all([
-        apiRequest('/admin/fare-settings'),
-        apiRequest('/admin/route-fares'),
+      const [areasRes, matrixRes, faresRes, stopsRes, routesRes, configsRes] = await Promise.all([
+        apiRequest('/admin/campus-areas'),
+        apiRequest('/admin/area-fares/matrix'),
+        apiRequest('/admin/area-fares'),
         apiRequest('/admin/campus-stops'),
-        apiRequest('/admin/campus-categories')
+        apiRequest('/admin/route-fares'),
+        apiRequest('/admin/fare-settings')
       ]);
 
+      const areas = areasRes.data || [];
+      setCampusAreas(areas);
+      setMatrixData(matrixRes.data || null);
+      setAreaFares(faresRes.data || []);
+      setRouteOverrides(routesRes.data || []);
       setFareConfigs(configsRes.data || []);
-      setRouteFares(routesRes.data || []);
-
-      const catsList = catsRes.data || (stopsRes.data?.categories) || [];
-      setCategories(catsList);
 
       if (stopsRes.data) {
-        const stopsList = stopsRes.data.stops || [];
-        setCampusStops(stopsList);
+        const stops = stopsRes.data.stops || [];
+        setCampusStops(stops);
         setGroupedStops(stopsRes.data.grouped || []);
 
-        if (stopsList.length > 0 && !testPickup) {
-          setTestPickup(stopsList[0].name);
-          setTestDrop(stopsList[1] ? stopsList[1].name : stopsList[0].name);
+        if (stops.length > 0 && !testPickup) {
+          setTestPickup(stops[0].name);
+          setTestDrop(stops[1] ? stops[1].name : stops[0].name);
         }
-      }
-
-      // Default route form defaults
-      if (catsList.length > 0 && !newRoute.pickupStop) {
-        setNewRoute(prev => ({
-          ...prev,
-          pickupStop: catsList[0].token || `[${catsList[0].label}]`,
-          destinationStop: catsList[1] ? (catsList[1].token || `[${catsList[1].label}]`) : (catsList[0].token || `[${catsList[0].label}]`)
-        }));
       }
     } catch (err) {
       console.error('Failed to load fare settings', err);
@@ -139,211 +143,225 @@ export function FareSettingsView() {
   }, []);
 
   // -------------------------------------------------------------
-  // CATEGORY / LIST MANAGEMENT
+  // CAMPUS AREA (ZONE) ACTIONS
   // -------------------------------------------------------------
-  const handleOpenCategoryModal = (cat = null) => {
-    if (cat) {
-      setEditingCategory(cat);
-      setCategoryForm({
-        label: cat.label || '',
-        token: cat.token || `[${cat.label || ''}]`,
-        icon: cat.icon || '📍',
-        color: cat.color || '#3B82F6',
-        bg_color: cat.bg_color || 'rgba(59, 130, 246, 0.12)',
-        display_order: cat.display_order || 0
+  const handleOpenAreaModal = (area = null) => {
+    if (area) {
+      setEditingArea(area);
+      setAreaForm({
+        name: area.name || '',
+        area_code: area.area_code || '',
+        icon: area.icon || '🏛️',
+        color: area.color || '#3B82F6',
+        bg_color: area.bg_color || 'rgba(59, 130, 246, 0.12)',
+        description: area.description || '',
+        display_order: area.display_order || 0
       });
     } else {
-      setEditingCategory(null);
-      setCategoryForm({
-        label: '',
-        token: '',
-        icon: '📍',
+      setEditingArea(null);
+      setAreaForm({
+        name: '',
+        area_code: '',
+        icon: '🏛️',
         color: '#3B82F6',
         bg_color: 'rgba(59, 130, 246, 0.12)',
-        display_order: categories.length + 1
+        description: '',
+        display_order: campusAreas.length + 1
       });
     }
-    setShowCategoryModal(true);
+    setShowAreaModal(true);
   };
 
-  const handleSaveCategory = async (e) => {
+  const handleSaveArea = async (e) => {
     e.preventDefault();
-    if (!categoryForm.label.trim()) {
-      alert('Please enter a list name.');
+    if (!areaForm.name.trim()) {
+      alert('Please enter a campus area name.');
       return;
     }
 
     try {
-      let finalToken = categoryForm.token.trim();
-      if (!finalToken) {
-        finalToken = `[${categoryForm.label.trim()}]`;
-      }
-      if (!finalToken.startsWith('[')) finalToken = `[${finalToken}`;
-      if (!finalToken.endsWith(']')) finalToken = `${finalToken}]`;
-
-      await apiRequest('/admin/campus-categories', 'POST', {
-        id: editingCategory?.id,
-        label: categoryForm.label.trim(),
-        token: finalToken,
-        icon: categoryForm.icon,
-        color: categoryForm.color,
-        bg_color: categoryForm.bg_color,
-        display_order: parseInt(categoryForm.display_order) || 0
+      await apiRequest('/admin/campus-areas', 'POST', {
+        id: editingArea?.id,
+        name: areaForm.name.trim(),
+        area_code: areaForm.area_code.trim() || undefined,
+        icon: areaForm.icon,
+        color: areaForm.color,
+        bg_color: areaForm.bg_color,
+        description: areaForm.description.trim(),
+        display_order: parseInt(areaForm.display_order) || 0
       });
 
-      showToast(editingCategory ? `List "${categoryForm.label}" updated!` : `New list "${categoryForm.label}" created!`);
-      setShowCategoryModal(false);
-      setEditingCategory(null);
+      showToast(editingArea ? `Campus Area "${areaForm.name}" updated!` : `Campus Area "${areaForm.name}" created!`);
+      setShowAreaModal(false);
       loadData();
     } catch (err) {
-      alert(`Failed to save category list: ${err.message}`);
+      alert(`Failed to save campus area: ${err.message}`);
     }
   };
 
-  const handleDeleteCategory = async (cat, deleteStops = false) => {
+  const handleDeleteArea = async (area, deleteStops = false) => {
     try {
-      await apiRequest(`/admin/campus-categories/${cat.id}?deleteStops=${deleteStops}`, 'DELETE');
-      showToast(`Category list "${cat.label}" deleted.`);
-      setCategoryToDelete(null);
+      await apiRequest(`/admin/campus-areas/${area.id}?deleteStops=${deleteStops}`, 'DELETE');
+      showToast(`Campus Area "${area.name}" deleted.`);
+      setAreaToDelete(null);
       loadData();
     } catch (err) {
-      alert(`Failed to delete category: ${err.message}`);
+      alert(`Failed to delete campus area: ${err.message}`);
     }
   };
 
-  const handleClearAllCategories = async () => {
-    const confirmText = window.prompt('Type "DELETE" to confirm removing ALL campus categories & location lists:');
-    if (confirmText !== 'DELETE') {
-      if (confirmText !== null) alert('Action cancelled: text did not match.');
-      return;
-    }
-
+  const handleResetAllAreas = async () => {
+    const text = window.prompt('Type "DELETE" to clear all campus areas and reset to default:');
+    if (text !== 'DELETE') return;
     try {
-      await apiRequest('/admin/campus-categories/all?deleteStops=true', 'DELETE');
-      showToast('All category lists and stops cleared.');
+      await apiRequest('/admin/campus-areas/all?deleteStops=false', 'DELETE');
+      showToast('Campus areas cleared.');
       loadData();
     } catch (err) {
-      alert(`Failed to clear categories: ${err.message}`);
+      alert(`Failed to clear areas: ${err.message}`);
     }
   };
 
   // -------------------------------------------------------------
-  // LOCATION / STOP MANAGEMENT
+  // LOCATION / STOP ACTIONS
   // -------------------------------------------------------------
-  const handleOpenAddStopModal = (categoryKey = null) => {
-    const defaultCat = categoryKey || (categories[0]?.category_key || 'GATE_HUB');
-    setNewStop({
+  const handleOpenAddStopModal = (areaCode = null) => {
+    const defaultArea = areaCode || (campusAreas[0]?.area_code || 'MAIN_CAMPUS');
+    setStopForm({
       name: '',
-      category: defaultCat,
+      area_code: defaultArea,
+      category: 'DEPARTMENT',
       latitude: '12.0240',
       longitude: '79.8530',
-      displayOrder: 0
+      display_order: 0
     });
-    setTargetCategoryForStop(defaultCat);
-    setShowAddStopModal(true);
+    setTargetAreaForStop(defaultArea);
+    setShowStopModal(true);
   };
 
-  const handleSaveCampusStop = async (e) => {
+  const handleSaveStop = async (e) => {
     e.preventDefault();
-    if (!newStop.name.trim()) {
-      alert('Please enter a location / building name.');
+    if (!stopForm.name.trim()) {
+      alert('Please enter a location / department name.');
       return;
     }
-    const cat = newStop.category || targetCategoryForStop || categories[0]?.category_key || 'GATE_HUB';
-    const catObj = categories.find(c => c.category_key === cat);
+    const area = stopForm.area_code || targetAreaForStop || campusAreas[0]?.area_code || 'MAIN_CAMPUS';
 
     try {
       await apiRequest('/admin/campus-stops', 'POST', {
-        name: newStop.name.trim(),
-        category: cat,
-        category_label: catObj ? catObj.label : 'Campus Location',
-        latitude: parseFloat(newStop.latitude || 12.0240),
-        longitude: parseFloat(newStop.longitude || 79.8530),
-        displayOrder: parseInt(newStop.displayOrder || 0)
+        name: stopForm.name.trim(),
+        area_code: area,
+        category: stopForm.category || 'DEPARTMENT',
+        category_label: stopForm.name.trim(),
+        latitude: parseFloat(stopForm.latitude || 12.0240),
+        longitude: parseFloat(stopForm.longitude || 79.8530),
+        display_order: parseInt(stopForm.display_order || 0)
       });
-      showToast(`"${newStop.name}" added to campus locations!`);
-      setShowAddStopModal(false);
+      showToast(`"${stopForm.name}" added to campus locations!`);
+      setShowStopModal(false);
       loadData();
     } catch (err) {
-      alert(`Failed to save campus stop: ${err.message}`);
+      alert(`Failed to save stop: ${err.message}`);
     }
   };
 
-  const handleDeleteCampusStop = async (id, name) => {
+  const handleDeleteStop = async (id, name) => {
     if (!window.confirm(`Are you sure you want to remove "${name}"?`)) return;
     try {
       await apiRequest(`/admin/campus-stops/${id}`, 'DELETE');
-      showToast(`"${name}" removed from campus locations.`);
+      showToast(`"${name}" removed.`);
       loadData();
     } catch (err) {
-      alert(`Failed to delete location: ${err.message}`);
+      alert(`Failed to delete stop: ${err.message}`);
     }
   };
 
   // -------------------------------------------------------------
-  // ROUTE & GROUP FARE RULES
+  // AREA-TO-AREA MATRIX & PRICING ACTIONS
   // -------------------------------------------------------------
-  const handleSaveRoute = async (routeData) => {
-    try {
-      const p = routeData.pickup_stop || routeData.pickupStop;
-      const d = routeData.destination_stop || routeData.destinationStop;
-      if (!p || !d) {
-        alert('Please select or specify both Pickup and Destination.');
-        return;
-      }
-      if (p.trim().toLowerCase() === d.trim().toLowerCase()) {
-        alert('Pickup and Destination cannot be the same location.');
-        return;
-      }
+  const handleMatrixCellChange = (fromIndex, toIndex, newFare) => {
+    if (!matrixData || !matrixData.matrix) return;
+    const newMatrix = [...matrixData.matrix];
+    newMatrix[fromIndex].targets[toIndex].fareAmount = parseFloat(newFare) || 0;
+    setMatrixData({ ...matrixData, matrix: newMatrix });
+  };
 
-      await apiRequest('/admin/route-fares', 'POST', {
-        id: routeData.id,
-        pickupStop: p,
-        destinationStop: d,
-        fareAmount: parseFloat(routeData.fare_amount || routeData.fareAmount),
-        distanceKm: parseFloat(routeData.distance_km || routeData.distanceKm || 1.5),
-        isActive: routeData.is_active !== undefined ? routeData.is_active : 1
+  const handleSaveAreaFareMatrix = async () => {
+    if (!matrixData || !matrixData.matrix) return;
+    try {
+      setSavingMatrix(true);
+      const updates = [];
+      matrixData.matrix.forEach(row => {
+        const fromCode = row.fromArea.area_code;
+        row.targets.forEach(target => {
+          updates.push({
+            fromAreaCode: fromCode,
+            toAreaCode: target.toArea.area_code,
+            fareAmount: parseFloat(target.fareAmount),
+            distanceKm: parseFloat(target.distanceKm || 1.5)
+          });
+        });
       });
-      showToast('Campus pricing rule saved successfully!');
-      setEditingRoute(null);
-      setShowAddRouteModal(false);
+
+      await apiRequest('/admin/area-fares/matrix-save', 'POST', { updates });
+      showToast('Area-to-Area Fare Matrix saved successfully!');
       loadData();
     } catch (err) {
-      alert(`Failed to save pricing rule: ${err.message}`);
+      alert(`Failed to save matrix: ${err.message}`);
+    } finally {
+      setSavingMatrix(false);
     }
   };
 
-  const handleDeleteRoute = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this pricing rule?')) return;
-    try {
-      await apiRequest(`/admin/route-fares/${id}`, 'DELETE');
-      showToast('Pricing rule deleted.');
-      loadData();
-    } catch (err) {
-      alert(`Failed to delete route: ${err.message}`);
+  // -------------------------------------------------------------
+  // SPECIFIC ROUTE OVERRIDES (TIER 1)
+  // -------------------------------------------------------------
+  const handleSaveOverride = async (e) => {
+    e.preventDefault();
+    const p = overrideForm.pickupStop;
+    const d = overrideForm.destinationStop;
+    if (!p || !d) {
+      alert('Please select both pickup and destination stops.');
+      return;
     }
-  };
-
-  const handleClearAllRoutes = async () => {
-    const confirmPrompt = window.prompt('Type "DELETE" to remove ALL route pricing rules from the matrix:');
-    if (confirmPrompt !== 'DELETE') {
-      if (confirmPrompt !== null) alert('Action cancelled: text did not match.');
+    if (p.trim().toLowerCase() === d.trim().toLowerCase()) {
+      alert('Pickup and Destination cannot be the same.');
       return;
     }
 
     try {
-      await apiRequest('/admin/route-fares/all', 'DELETE');
-      showToast('All route pricing rules cleared.');
+      await apiRequest('/admin/route-fares', 'POST', {
+        id: editingOverride?.id,
+        pickupStop: p,
+        destinationStop: d,
+        fareAmount: parseFloat(overrideForm.fareAmount),
+        distanceKm: parseFloat(overrideForm.distanceKm || 1.5),
+        isActive: 1
+      });
+      showToast('Specific Route Override saved!');
+      setShowOverrideModal(false);
+      setEditingOverride(null);
       loadData();
     } catch (err) {
-      alert(`Failed to clear route rules: ${err.message}`);
+      alert(`Failed to save override: ${err.message}`);
+    }
+  };
+
+  const handleDeleteOverride = async (id) => {
+    if (!window.confirm('Delete this specific route override?')) return;
+    try {
+      await apiRequest(`/admin/route-fares/${id}`, 'DELETE');
+      showToast('Route override deleted.');
+      loadData();
+    } catch (err) {
+      alert(`Failed to delete override: ${err.message}`);
     }
   };
 
   // -------------------------------------------------------------
-  // VEHICLE RATES
+  // VEHICLE FALLBACK RATES
   // -------------------------------------------------------------
-  const handleUpdateFare = async (config) => {
+  const handleUpdateFareConfig = async (config) => {
     try {
       setSavingFare(true);
       await apiRequest(`/admin/fare-settings/${config.vehicle_type}`, 'PATCH', {
@@ -354,16 +372,19 @@ export function FareSettingsView() {
         minimumFare: parseFloat(config.minimum_fare),
         cancellationFee: parseFloat(config.cancellation_fee)
       });
-      showToast(`Default rates for ${config.vehicle_type} updated!`);
+      showToast(`Default fallback rates for ${config.vehicle_type} updated!`);
       setEditingConfig(null);
       loadData();
     } catch (err) {
-      alert(`Failed to update fare: ${err.message}`);
+      alert(`Failed to update fallback rates: ${err.message}`);
     } finally {
       setSavingFare(false);
     }
   };
 
+  // -------------------------------------------------------------
+  // LIVE 4-TIER SIMULATOR
+  // -------------------------------------------------------------
   const handleTestFareRule = async () => {
     if (!testPickup || !testDrop) return;
     try {
@@ -374,43 +395,15 @@ export function FareSettingsView() {
       });
       setTestResult(res.data);
     } catch (err) {
-      alert(`Testing error: ${err.message}`);
+      alert(`Simulation error: ${err.message}`);
     } finally {
       setTestingRoute(false);
     }
   };
 
-  const isGroupToken = (val) => val && val.startsWith('[') && val.endsWith(']');
-
-  const formatDisplayStopName = (val) => {
-    if (!val) return '';
-    if (isGroupToken(val)) {
-      const match = categories.find(c => c.token === val || `[${c.label}]` === val || `[${c.category_key}]` === val);
-      return (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontWeight: 800, color: match?.color || '#F59E0B' }}>
-          <span>{match?.icon || '🌟'}</span>
-          <span>All {match?.label || val.replace(/[\[\]]/g, '')}</span>
-        </span>
-      );
-    }
-    return <span style={{ fontWeight: 600 }}>{val}</span>;
-  };
-
-  const filteredRoutes = routeFares.filter(r => {
-    const isGroup = isGroupToken(r.pickup_stop) || isGroupToken(r.destination_stop);
-    if (routeFilter === 'GROUPS' && !isGroup) return false;
-    if (routeFilter === 'SPECIFIC' && isGroup) return false;
-
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      return (r.pickup_stop || '').toLowerCase().includes(q) || (r.destination_stop || '').toLowerCase().includes(q);
-    }
-    return true;
-  });
-
   return (
     <div>
-      {/* Success Notification Banner */}
+      {/* Toast Notification */}
       {successMsg && (
         <div style={{
           padding: '12px 18px',
@@ -422,7 +415,7 @@ export function FareSettingsView() {
           display: 'flex',
           alignItems: 'center',
           gap: '10px',
-          fontWeight: 600
+          fontWeight: 700
         }}>
           <CheckCircle size={18} />
           <span>{successMsg}</span>
@@ -439,11 +432,11 @@ export function FareSettingsView() {
         flexWrap: 'wrap'
       }}>
         <button
-          onClick={() => setActiveTab('routes')}
+          onClick={() => setActiveTab('area_matrix')}
           className="btn"
           style={{
-            background: activeTab === 'routes' ? 'var(--primary)' : 'var(--bg-card)',
-            color: activeTab === 'routes' ? '#000' : 'var(--text-primary)',
+            background: activeTab === 'area_matrix' ? 'var(--primary)' : 'var(--bg-card)',
+            color: activeTab === 'area_matrix' ? '#000' : 'var(--text-primary)',
             border: '1px solid var(--border)',
             fontWeight: 800,
             display: 'flex',
@@ -451,23 +444,23 @@ export function FareSettingsView() {
             gap: '8px'
           }}
         >
-          <FolderTree size={16} /> Campus Pricing Rules
+          <Grid size={16} /> Area ➔ Area Fare Matrix
           <span style={{
-            background: activeTab === 'routes' ? 'rgba(0,0,0,0.25)' : 'var(--bg-sidebar)',
+            background: activeTab === 'area_matrix' ? 'rgba(0,0,0,0.25)' : 'var(--bg-sidebar)',
             padding: '2px 8px',
             borderRadius: '10px',
             fontSize: '11px'
           }}>
-            {routeFares.length}
+            {campusAreas.length} Areas
           </span>
         </button>
 
         <button
-          onClick={() => setActiveTab('locations')}
+          onClick={() => setActiveTab('campus_areas')}
           className="btn"
           style={{
-            background: activeTab === 'locations' ? 'var(--primary)' : 'var(--bg-card)',
-            color: activeTab === 'locations' ? '#000' : 'var(--text-primary)',
+            background: activeTab === 'campus_areas' ? 'var(--primary)' : 'var(--bg-card)',
+            color: activeTab === 'campus_areas' ? '#000' : 'var(--text-primary)',
             border: '1px solid var(--border)',
             fontWeight: 800,
             display: 'flex',
@@ -475,23 +468,23 @@ export function FareSettingsView() {
             gap: '8px'
           }}
         >
-          <Layers size={16} /> Location Lists & Categories
+          <Layers size={16} /> Campus Areas & Locations
           <span style={{
-            background: activeTab === 'locations' ? 'rgba(0,0,0,0.25)' : 'var(--bg-sidebar)',
+            background: activeTab === 'campus_areas' ? 'rgba(0,0,0,0.25)' : 'var(--bg-sidebar)',
             padding: '2px 8px',
             borderRadius: '10px',
             fontSize: '11px'
           }}>
-            {categories.length} Lists ({campusStops.length} Stops)
+            {campusStops.length} Locations
           </span>
         </button>
 
         <button
-          onClick={() => setActiveTab('fallback')}
+          onClick={() => setActiveTab('specific_routes')}
           className="btn"
           style={{
-            background: activeTab === 'fallback' ? 'var(--primary)' : 'var(--bg-card)',
-            color: activeTab === 'fallback' ? '#000' : 'var(--text-primary)',
+            background: activeTab === 'specific_routes' ? 'var(--primary)' : 'var(--bg-card)',
+            color: activeTab === 'specific_routes' ? '#000' : 'var(--text-primary)',
             border: '1px solid var(--border)',
             fontWeight: 800,
             display: 'flex',
@@ -499,21 +492,45 @@ export function FareSettingsView() {
             gap: '8px'
           }}
         >
-          ⚡ Vehicle Base Rates & Splits
+          <Compass size={16} /> Specific Route Overrides
+          <span style={{
+            background: activeTab === 'specific_routes' ? 'rgba(0,0,0,0.25)' : 'var(--bg-sidebar)',
+            padding: '2px 8px',
+            borderRadius: '10px',
+            fontSize: '11px'
+          }}>
+            {routeOverrides.length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('vehicle_fallback')}
+          className="btn"
+          style={{
+            background: activeTab === 'vehicle_fallback' ? 'var(--primary)' : 'var(--bg-card)',
+            color: activeTab === 'vehicle_fallback' ? '#000' : 'var(--text-primary)',
+            border: '1px solid var(--border)',
+            fontWeight: 800,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          ⚡ Fallback GPS Rates & Splits
         </button>
       </div>
 
       {/* ========================================================================= */}
-      {/* TAB 1: CAMPUS ROUTE & PRICING RULES */}
+      {/* TAB 1: AREA-TO-AREA FARE MATRIX (CORE SYSTEM) */}
       {/* ========================================================================= */}
-      {activeTab === 'routes' && (
+      {activeTab === 'area_matrix' && (
         <>
-          {/* Quick Info & Action Header */}
+          {/* Architecture Banner */}
           <div style={{
             background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(99, 102, 241, 0.12))',
             border: '1px solid rgba(245, 158, 11, 0.3)',
             borderRadius: 'var(--radius-lg)',
-            padding: '16px 20px',
+            padding: '18px 22px',
             marginBottom: '24px',
             display: 'flex',
             alignItems: 'center',
@@ -522,195 +539,53 @@ export function FareSettingsView() {
             gap: '14px'
           }}>
             <div>
-              <div style={{ fontWeight: 800, fontSize: '15px', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Sparkles size={18} /> Simple & Easy Fare Rules
+              <div style={{ fontWeight: 900, fontSize: '16px', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Sparkles size={20} /> Papido Scalable Fare System: Campus Area ➔ Location ➔ Fare Rule
               </div>
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                Set flat prices between entire lists (e.g. <strong>All Boys Hostels ➔ All Departments = ₹20</strong>) or specific individual buildings.
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px', lineHeight: 1.5 }}>
+                Fares are set <strong>Area ➔ Area</strong> (e.g. <em>Hostel Area ➔ Silver Jubilee Campus = ₹35</em>).
+                Any department or building placed in those areas (e.g. Sociology, History) automatically gets the <strong>₹35</strong> rate.
               </div>
             </div>
 
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
                 className="btn btn-primary"
-                onClick={() => {
-                  setEditingRoute(null);
-                  setShowAddRouteModal(true);
-                }}
+                onClick={handleSaveAreaFareMatrix}
+                disabled={savingMatrix}
                 style={{ fontWeight: 800 }}
               >
-                <Plus size={15} /> Add Pricing Rule
+                <Save size={15} /> {savingMatrix ? 'Saving Grid...' : 'Save All Matrix Fares'}
               </button>
-
-              {routeFares.length > 0 && (
-                <button
-                  className="btn btn-secondary"
-                  onClick={handleClearAllRoutes}
-                  style={{ color: '#F87171', borderColor: 'rgba(239, 68, 68, 0.3)' }}
-                  title="Remove all pricing rules to start fresh"
-                >
-                  <Trash2 size={14} /> Clear All Rules
-                </button>
-              )}
+              <button className="btn btn-secondary" onClick={loadData} title="Refresh Fares">
+                <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
+              </button>
             </div>
           </div>
 
-          {/* Add / Edit Route Modal */}
-          {showAddRouteModal && (
-            <div className="panel" style={{ border: '1.5px solid var(--primary)', marginBottom: '24px', background: 'var(--bg-card)' }}>
-              <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 className="panel-title" style={{ color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Plus size={18} /> {editingRoute ? 'Edit Fare Rule' : 'Create Simple Fare Rule'}
-                </h3>
-                <button className="btn btn-secondary btn-sm" onClick={() => { setShowAddRouteModal(false); setEditingRoute(null); }}>
-                  <X size={14} /> Close
-                </button>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginTop: '14px' }}>
-                {/* Pickup Selection */}
-                <div>
-                  <label className="form-label" style={{ fontSize: '12px', fontWeight: 800 }}>
-                    Pickup Location / List
-                  </label>
-                  <select
-                    className="form-input"
-                    value={newRoute.pickupStop}
-                    onChange={(e) => setNewRoute({ ...newRoute, pickupStop: e.target.value })}
-                  >
-                    <optgroup label="🏷️ ENTIRE LISTS (Applies to all stops in list)">
-                      {categories.map(c => (
-                        <option key={`p-cat-${c.id}`} value={c.token || `[${c.label}]`}>
-                          {c.icon} All {c.label} ({c.stopsCount || 0} locations)
-                        </option>
-                      ))}
-                    </optgroup>
-
-                    {groupedStops.map(group => (
-                      <optgroup key={`p-${group.key || group.label}`} label={`📍 Specific ${group.label}`}>
-                        {group.stops.map(stop => (
-                          <option key={`p-stop-${stop.id}`} value={stop.name}>
-                            {stop.name}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Destination Selection */}
-                <div>
-                  <label className="form-label" style={{ fontSize: '12px', fontWeight: 800 }}>
-                    Destination Location / List
-                  </label>
-                  <select
-                    className="form-input"
-                    value={newRoute.destinationStop}
-                    onChange={(e) => setNewRoute({ ...newRoute, destinationStop: e.target.value })}
-                  >
-                    <optgroup label="🏷️ ENTIRE LISTS (Applies to all stops in list)">
-                      {categories.map(c => (
-                        <option key={`d-cat-${c.id}`} value={c.token || `[${c.label}]`}>
-                          {c.icon} All {c.label} ({c.stopsCount || 0} locations)
-                        </option>
-                      ))}
-                    </optgroup>
-
-                    {groupedStops.map(group => (
-                      <optgroup key={`d-${group.key || group.label}`} label={`📍 Specific ${group.label}`}>
-                        {group.stops.map(stop => (
-                          <option key={`d-stop-${stop.id}`} value={stop.name}>
-                            {stop.name}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Fixed Fare */}
-                <div>
-                  <label className="form-label" style={{ fontSize: '12px', fontWeight: 800 }}>
-                    Fixed Fare (₹)
-                  </label>
-                  <input
-                    type="number"
-                    step="1"
-                    min="5"
-                    max="300"
-                    className="form-input"
-                    value={newRoute.fareAmount}
-                    onChange={(e) => setNewRoute({ ...newRoute, fareAmount: e.target.value })}
-                    placeholder="20.00"
-                  />
-                </div>
-
-                {/* Distance */}
-                <div>
-                  <label className="form-label" style={{ fontSize: '12px', fontWeight: 800 }}>
-                    Estimated Distance (km)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="0.1"
-                    className="form-input"
-                    value={newRoute.distanceKm}
-                    onChange={(e) => setNewRoute({ ...newRoute, distanceKm: e.target.value })}
-                    placeholder="1.5"
-                  />
-                </div>
-              </div>
-
-              {/* Rule Summary Tip */}
-              <div style={{
-                marginTop: '16px',
-                padding: '12px 16px',
-                background: 'var(--bg-sidebar)',
-                borderRadius: '8px',
-                fontSize: '13px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px'
-              }}>
-                <span style={{ fontSize: '18px' }}>💡</span>
-                <span>
-                  <strong>Rule Summary:</strong> Any trip between <strong>{newRoute.pickupStop}</strong> and <strong>{newRoute.destinationStop}</strong> will be fixed at <strong>₹{parseFloat(newRoute.fareAmount || 0).toFixed(2)}</strong>.
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '16px' }}>
-                <button className="btn btn-secondary btn-sm" onClick={() => setShowAddRouteModal(false)}>Cancel</button>
-                <button className="btn btn-primary btn-sm" onClick={() => handleSaveRoute(newRoute)}>
-                  <Save size={13} /> Save Pricing Rule
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Interactive Live Fare Tester */}
+          {/* Interactive Live 4-Tier Fare Simulator */}
           <div className="panel" style={{ marginBottom: '24px', background: 'var(--bg-card)' }}>
             <div className="panel-header">
               <div>
                 <h3 className="panel-title" style={{ fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Sparkles size={16} color="var(--primary)" /> Test Fare Simulator
+                  <Sparkles size={16} color="var(--primary)" /> 4-Tier Fare Resolution Simulator
                 </h3>
                 <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                  Verify any pickup and destination combination to see the calculated fare before students book.
+                  Test how any pickup and destination resolves through: <strong>Tier 1 Override ➔ Tier 2 Area Rule ➔ Tier 3 Default Campus Flat ➔ Tier 4 GPS Fallback</strong>.
                 </p>
               </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '14px', alignItems: 'flex-end', marginTop: '12px' }}>
               <div>
-                <label className="form-label" style={{ fontSize: '11px', fontWeight: 700 }}>Pickup Stop</label>
+                <label className="form-label" style={{ fontSize: '11px', fontWeight: 700 }}>Pickup Stop / Department</label>
                 <select
                   className="form-input"
                   value={testPickup}
                   onChange={(e) => { setTestPickup(e.target.value); setTestResult(null); }}
                 >
                   {groupedStops.map(group => (
-                    <optgroup key={`tp-${group.key || group.label}`} label={`${group.icon || '📍'} ${group.label}`}>
+                    <optgroup key={`tp-${group.key || group.code}`} label={`${group.icon} ${group.label || group.name}`}>
                       {group.stops.map(stop => (
                         <option key={`tp-stop-${stop.id}`} value={stop.name}>
                           {stop.name}
@@ -722,14 +597,14 @@ export function FareSettingsView() {
               </div>
 
               <div>
-                <label className="form-label" style={{ fontSize: '11px', fontWeight: 700 }}>Destination Stop</label>
+                <label className="form-label" style={{ fontSize: '11px', fontWeight: 700 }}>Destination Stop / Department</label>
                 <select
                   className="form-input"
                   value={testDrop}
                   onChange={(e) => { setTestDrop(e.target.value); setTestResult(null); }}
                 >
                   {groupedStops.map(group => (
-                    <optgroup key={`td-${group.key || group.label}`} label={`${group.icon || '📍'} ${group.label}`}>
+                    <optgroup key={`td-${group.key || group.code}`} label={`${group.icon} ${group.label || group.name}`}>
                       {group.stops.map(stop => (
                         <option key={`td-stop-${stop.id}`} value={stop.name}>
                           {stop.name}
@@ -744,7 +619,7 @@ export function FareSettingsView() {
                 className="btn btn-primary"
                 onClick={handleTestFareRule}
                 disabled={testingRoute || !testPickup || !testDrop}
-                style={{ padding: '10px 18px', fontWeight: 800 }}
+                style={{ padding: '10px 20px', fontWeight: 800 }}
               >
                 {testingRoute ? 'Simulating...' : 'Test Fare'}
               </button>
@@ -753,28 +628,40 @@ export function FareSettingsView() {
             {testResult && (
               <div style={{
                 marginTop: '16px',
-                padding: '14px 18px',
-                background: testResult.matched ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
-                border: `1px solid ${testResult.matched ? '#10B981' : '#F59E0B'}`,
+                padding: '16px 20px',
+                background: testResult.ruleTier === 1 ? 'rgba(99, 102, 241, 0.12)' : (testResult.ruleTier === 2 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)'),
+                border: `1.5px solid ${testResult.ruleTier === 1 ? '#6366F1' : (testResult.ruleTier === 2 ? '#10B981' : '#F59E0B')}`,
                 borderRadius: 'var(--radius-md)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 flexWrap: 'wrap',
-                gap: '12px'
+                gap: '14px'
               }}>
                 <div>
-                  <div style={{ fontWeight: 800, fontSize: '14px', color: testResult.matched ? '#34D399' : '#FBBF24' }}>
-                    {testResult.matched ? '✅ Matched Rule Applied' : 'ℹ️ Fallback Base Rate Applied'}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <span className="badge" style={{
+                      background: testResult.ruleTier === 1 ? '#6366F1' : (testResult.ruleTier === 2 ? '#10B981' : '#F59E0B'),
+                      color: '#FFF',
+                      fontWeight: 900
+                    }}>
+                      Tier {testResult.ruleTier || 2}: {testResult.ruleType}
+                    </span>
+                    <span style={{ fontSize: '14px', fontWeight: 800 }}>
+                      {testResult.description}
+                    </span>
                   </div>
-                  <div style={{ fontSize: '13px', color: 'var(--text-primary)', marginTop: '2px' }}>
-                    {testResult.description || 'Standard base charge calculation applies.'}
+
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', gap: '16px', marginTop: '4px' }}>
+                    <span>Pickup Area: <strong>{testResult.pickupArea ? `${testResult.pickupArea.areaIcon} ${testResult.pickupArea.areaName}` : 'Campus Stop'}</strong></span>
+                    <span>➔</span>
+                    <span>Drop Area: <strong>{testResult.destinationArea ? `${testResult.destinationArea.areaIcon} ${testResult.destinationArea.areaName}` : 'Campus Stop'}</strong></span>
                   </div>
                 </div>
 
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Passenger Fare</div>
-                  <div style={{ fontSize: '24px', fontWeight: 900, color: 'var(--primary)' }}>
+                  <div style={{ fontSize: '26px', fontWeight: 900, color: 'var(--primary)' }}>
                     ₹{parseFloat(testResult.fare || 20).toFixed(2)}
                   </div>
                 </div>
@@ -782,229 +669,93 @@ export function FareSettingsView() {
             )}
           </div>
 
-          {/* Pricing Table Panel */}
-          <div className="panel">
+          {/* Visual N x N Matrix Grid Panel */}
+          <div className="panel" style={{ marginBottom: '24px' }}>
             <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
               <div>
                 <h2 className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <MapPin className="text-primary" size={20} /> Campus Pricing Matrix
+                  <Grid className="text-primary" size={20} /> Campus Area-to-Area Pricing Grid (N × N)
                 </h2>
                 <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                  Total {filteredRoutes.length} rules active. Automatically applies during booking.
+                  Enter fixed fares between each campus area. Click "Save All Matrix Fares" when done.
                 </p>
               </div>
 
-              {/* Filters & Search */}
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', background: 'var(--bg-sidebar)', padding: '2px', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                  <button
-                    onClick={() => setRouteFilter('ALL')}
-                    style={{
-                      padding: '4px 10px',
-                      fontSize: '12px',
-                      borderRadius: '6px',
-                      border: 'none',
-                      background: routeFilter === 'ALL' ? 'var(--primary)' : 'transparent',
-                      color: routeFilter === 'ALL' ? '#000' : 'var(--text-secondary)',
-                      fontWeight: 700,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    All ({routeFares.length})
-                  </button>
-                  <button
-                    onClick={() => setRouteFilter('GROUPS')}
-                    style={{
-                      padding: '4px 10px',
-                      fontSize: '12px',
-                      borderRadius: '6px',
-                      border: 'none',
-                      background: routeFilter === 'GROUPS' ? 'var(--primary)' : 'transparent',
-                      color: routeFilter === 'GROUPS' ? '#000' : 'var(--text-secondary)',
-                      fontWeight: 700,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    List Rules
-                  </button>
-                  <button
-                    onClick={() => setRouteFilter('SPECIFIC')}
-                    style={{
-                      padding: '4px 10px',
-                      fontSize: '12px',
-                      borderRadius: '6px',
-                      border: 'none',
-                      background: routeFilter === 'SPECIFIC' ? 'var(--primary)' : 'transparent',
-                      color: routeFilter === 'SPECIFIC' ? '#000' : 'var(--text-secondary)',
-                      fontWeight: 700,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Stop-to-Stop
-                  </button>
-                </div>
-
-                <input
-                  type="text"
-                  placeholder="Filter rules..."
-                  className="form-input"
-                  style={{ width: '160px', padding: '6px 10px', fontSize: '12px' }}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-
-                <button className="btn btn-secondary btn-sm" onClick={loadData} title="Refresh Table">
-                  <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-                </button>
-              </div>
+              <button className="btn btn-primary btn-sm" onClick={handleSaveAreaFareMatrix} disabled={savingMatrix}>
+                <Save size={13} /> {savingMatrix ? 'Saving...' : 'Save Matrix'}
+              </button>
             </div>
 
-            {/* Table */}
-            <div style={{ overflowX: 'auto' }}>
-              <table className="table" style={{ width: '100%' }}>
+            {/* Matrix Table */}
+            <div style={{ overflowX: 'auto', marginTop: '12px' }}>
+              <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
-                    <th>Type</th>
-                    <th>From (Pickup)</th>
-                    <th style={{ textAlign: 'center' }}>Direction</th>
-                    <th>To (Destination)</th>
-                    <th>Est. Distance</th>
-                    <th>Fixed Fare (₹)</th>
-                    <th>Status</th>
-                    <th style={{ textAlign: 'right' }}>Actions</th>
+                    <th style={{ background: 'var(--bg-sidebar)', width: '220px' }}>From Area ➔ To Area</th>
+                    {matrixData?.areas?.map(toArea => (
+                      <th key={`th-${toArea.area_code}`} style={{ textAlign: 'center', background: toArea.bg_color || 'var(--bg-sidebar)', color: toArea.color || 'var(--text-primary)', fontWeight: 800 }}>
+                        <div style={{ fontSize: '18px' }}>{toArea.icon || '📍'}</div>
+                        <div style={{ fontSize: '12px' }}>{toArea.name}</div>
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredRoutes.length === 0 ? (
-                    <tr>
-                      <td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
-                        No pricing rules found. Click "Add Pricing Rule" to configure your fares.
+                  {matrixData?.matrix?.map((row, rIdx) => (
+                    <tr key={`row-${row.fromArea.area_code}`}>
+                      <td style={{ fontWeight: 800, background: row.fromArea.bg_color || 'var(--bg-sidebar)', color: row.fromArea.color || 'var(--text-primary)', borderRight: '2px solid var(--border)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '18px' }}>{row.fromArea.icon || '📍'}</span>
+                          <div>
+                            <div style={{ fontSize: '13px' }}>{row.fromArea.name}</div>
+                            <div style={{ fontSize: '10px', opacity: 0.8 }}>({row.fromArea.stopsCount || 0} locations)</div>
+                          </div>
+                        </div>
                       </td>
-                    </tr>
-                  ) : (
-                    filteredRoutes.map((r) => {
-                      const isEditing = editingRoute?.id === r.id;
-                      const current = isEditing ? editingRoute : r;
-                      const isPickupGroup = isGroupToken(r.pickup_stop);
-                      const isDestGroup = isGroupToken(r.destination_stop);
-                      const isGroupRule = isPickupGroup || isDestGroup;
 
-                      return (
-                        <tr key={r.id} style={{ background: isGroupRule ? 'rgba(245, 158, 11, 0.02)' : 'transparent' }}>
-                          <td>
-                            {isGroupRule ? (
-                              <span className="badge" style={{ background: 'rgba(99, 102, 241, 0.15)', color: '#818CF8', border: '1px solid rgba(99, 102, 241, 0.3)', fontSize: '11px' }}>
-                                🌟 List Rule
-                              </span>
-                            ) : (
-                              <span className="badge" style={{ background: 'rgba(148, 163, 184, 0.15)', color: '#94A3B8', fontSize: '11px' }}>
-                                📍 Stop-to-Stop
-                              </span>
-                            )}
-                          </td>
-
-                          {/* Pickup Column */}
-                          <td>
-                            {isEditing ? (
-                              <input
-                                type="text"
-                                className="form-input"
-                                style={{ padding: '4px 8px', fontSize: '12px' }}
-                                value={current.pickup_stop}
-                                onChange={(e) => setEditingRoute({ ...editingRoute, pickup_stop: e.target.value })}
-                              />
-                            ) : (
-                              formatDisplayStopName(r.pickup_stop)
-                            )}
-                          </td>
-
-                          <td style={{ textAlign: 'center', color: 'var(--primary)' }}>
-                            <ArrowRight size={16} />
-                          </td>
-
-                          {/* Destination Column */}
-                          <td>
-                            {isEditing ? (
-                              <input
-                                type="text"
-                                className="form-input"
-                                style={{ padding: '4px 8px', fontSize: '12px' }}
-                                value={current.destination_stop}
-                                onChange={(e) => setEditingRoute({ ...editingRoute, destination_stop: e.target.value })}
-                              />
-                            ) : (
-                              formatDisplayStopName(r.destination_stop)
-                            )}
-                          </td>
-
-                          {/* Distance Column */}
-                          <td>
-                            {isEditing ? (
+                      {row.targets.map((target, cIdx) => {
+                        const isSame = row.fromArea.area_code === target.toArea.area_code;
+                        return (
+                          <td
+                            key={`cell-${row.fromArea.area_code}-${target.toArea.area_code}`}
+                            style={{
+                              textAlign: 'center',
+                              background: isSame ? 'rgba(245, 158, 11, 0.05)' : 'transparent',
+                              padding: '10px'
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                              <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-muted)' }}>₹</span>
                               <input
                                 type="number"
-                                step="0.1"
-                                style={{ width: '70px', padding: '4px 6px' }}
-                                className="form-input"
-                                value={current.distance_km}
-                                onChange={(e) => setEditingRoute({ ...editingRoute, distance_km: e.target.value })}
+                                step="1"
+                                min="5"
+                                max="200"
+                                style={{
+                                  width: '68px',
+                                  textAlign: 'center',
+                                  fontWeight: 900,
+                                  fontSize: '14px',
+                                  color: 'var(--primary)',
+                                  padding: '4px 6px',
+                                  border: '1.5px solid var(--border)',
+                                  borderRadius: '6px',
+                                  background: 'var(--bg-card)'
+                                }}
+                                value={target.fareAmount}
+                                onChange={(e) => handleMatrixCellChange(rIdx, cIdx, e.target.value)}
                               />
-                            ) : (
-                              `${r.distance_km || 1.5} km`
-                            )}
-                          </td>
-
-                          {/* Fare Column */}
-                          <td>
-                            {isEditing ? (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <span>₹</span>
-                                <input
-                                  type="number"
-                                  step="1"
-                                  style={{ width: '80px', padding: '4px 6px', fontWeight: 'bold' }}
-                                  className="form-input"
-                                  value={current.fare_amount}
-                                  onChange={(e) => setEditingRoute({ ...editingRoute, fare_amount: e.target.value })}
-                                />
-                              </div>
-                            ) : (
-                              <span style={{ fontWeight: 900, color: 'var(--primary)', fontSize: '15px' }}>
-                                ₹{parseFloat(r.fare_amount).toFixed(2)}
-                              </span>
-                            )}
-                          </td>
-
-                          <td>
-                            <span className={`badge ${r.is_active ? 'badge-success' : 'badge-danger'}`}>
-                              {r.is_active ? 'Active' : 'Inactive'}
-                            </span>
-                          </td>
-
-                          <td style={{ textAlign: 'right' }}>
-                            {isEditing ? (
-                              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
-                                <button className="btn btn-primary btn-sm" onClick={() => handleSaveRoute(editingRoute)}>
-                                  <Save size={12} /> Save
-                                </button>
-                                <button className="btn btn-secondary btn-sm" onClick={() => setEditingRoute(null)}>
-                                  Cancel
-                                </button>
-                              </div>
-                            ) : (
-                              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
-                                <button className="btn btn-secondary btn-sm" onClick={() => setEditingRoute({ ...r })}>
-                                  <Edit2 size={12} /> Edit
-                                </button>
-                                <button className="btn btn-danger btn-sm" onClick={() => handleDeleteRoute(r.id)}>
-                                  <Trash2 size={12} />
-                                </button>
+                            </div>
+                            {isSame && (
+                              <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                                (Within Area)
                               </div>
                             )}
                           </td>
-                        </tr>
-                      );
-                    })
-                  )}
+                        );
+                      })}
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -1013,58 +764,69 @@ export function FareSettingsView() {
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 2: CAMPUS LOCATION LISTS & CATEGORIES */}
+      {/* TAB 2: CAMPUS AREAS & LOCATIONS (HIERARCHY) */}
       {/* ========================================================================= */}
-      {activeTab === 'locations' && (
+      {activeTab === 'campus_areas' && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
             <div>
               <h2 className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Layers className="text-primary" size={20} /> Campus Location Lists & Categories
+                <Layers className="text-primary" size={20} /> Campus Areas & Associated Locations
               </h2>
               <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                Create, rename, or delete lists (e.g. Girls Hostels, Boys Hostels, Departments, Cafeterias). Add locations under each list.
+                Organize your campus into geographic zones. Add or move departments and hostels under each Campus Area.
               </p>
             </div>
 
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              <button className="btn btn-primary" onClick={() => handleOpenCategoryModal(null)} style={{ fontWeight: 800 }}>
-                <Plus size={15} /> Create New List
+              <button className="btn btn-primary" onClick={() => handleOpenAreaModal(null)} style={{ fontWeight: 800 }}>
+                <Plus size={15} /> Create Campus Area
               </button>
               <button className="btn btn-secondary" onClick={() => handleOpenAddStopModal(null)}>
-                <MapPin size={15} /> Add Location / Stop
+                <MapPin size={15} /> Add Location / Department
               </button>
-              {categories.length > 0 && (
-                <button className="btn btn-secondary" onClick={handleClearAllCategories} style={{ color: '#F87171', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
-                  <Trash2 size={14} /> Remove All Lists
+              {campusAreas.length > 0 && (
+                <button className="btn btn-secondary" onClick={handleResetAllAreas} style={{ color: '#F87171', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
+                  <Trash2 size={14} /> Reset Areas
                 </button>
               )}
             </div>
           </div>
 
-          {/* Create / Edit Category Modal */}
-          {showCategoryModal && (
+          {/* Create / Edit Campus Area Modal */}
+          {showAreaModal && (
             <div className="panel" style={{ border: '1.5px solid var(--primary)', marginBottom: '24px', background: 'var(--bg-card)' }}>
               <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h3 className="panel-title" style={{ color: 'var(--primary)' }}>
-                  {editingCategory ? `Edit List: ${editingCategory.label}` : 'Create New Location List / Category'}
+                  {editingArea ? `Edit Campus Area: ${editingArea.name}` : 'Create New Campus Area (Zone)'}
                 </h3>
-                <button className="btn btn-secondary btn-sm" onClick={() => setShowCategoryModal(false)}>
+                <button className="btn btn-secondary btn-sm" onClick={() => setShowAreaModal(false)}>
                   <X size={14} /> Close
                 </button>
               </div>
 
-              <form onSubmit={handleSaveCategory}>
+              <form onSubmit={handleSaveArea}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginTop: '14px' }}>
                   <div>
-                    <label className="form-label" style={{ fontSize: '12px', fontWeight: 800 }}>List Name / Category</label>
+                    <label className="form-label" style={{ fontSize: '12px', fontWeight: 800 }}>Area Name</label>
                     <input
                       type="text"
                       className="form-input"
-                      value={categoryForm.label}
-                      onChange={(e) => setCategoryForm({ ...categoryForm, label: e.target.value })}
-                      placeholder="e.g. Guest Houses & Faculty"
+                      value={areaForm.name}
+                      onChange={(e) => setAreaForm({ ...areaForm, name: e.target.value })}
+                      placeholder="e.g. Silver Jubilee Campus (SJC)"
                       required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="form-label" style={{ fontSize: '12px', fontWeight: 800 }}>Area Code (Unique ID)</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={areaForm.area_code}
+                      onChange={(e) => setAreaForm({ ...areaForm, area_code: e.target.value.toUpperCase().replace(/\s+/g, '_') })}
+                      placeholder="e.g. SJC_CAMPUS"
                     />
                   </div>
 
@@ -1075,13 +837,13 @@ export function FareSettingsView() {
                         <button
                           key={emoji}
                           type="button"
-                          onClick={() => setCategoryForm({ ...categoryForm, icon: emoji })}
+                          onClick={() => setAreaForm({ ...areaForm, icon: emoji })}
                           style={{
                             fontSize: '18px',
                             padding: '4px 8px',
                             borderRadius: '6px',
-                            border: categoryForm.icon === emoji ? '2px solid var(--primary)' : '1px solid var(--border)',
-                            background: categoryForm.icon === emoji ? 'rgba(245, 158, 11, 0.2)' : 'var(--bg-sidebar)',
+                            border: areaForm.icon === emoji ? '2px solid var(--primary)' : '1px solid var(--border)',
+                            background: areaForm.icon === emoji ? 'rgba(245, 158, 11, 0.2)' : 'var(--bg-sidebar)',
                             cursor: 'pointer'
                           }}
                         >
@@ -1098,14 +860,14 @@ export function FareSettingsView() {
                         <button
                           key={c.hex}
                           type="button"
-                          onClick={() => setCategoryForm({ ...categoryForm, color: c.hex, bg_color: c.bg })}
+                          onClick={() => setAreaForm({ ...areaForm, color: c.hex, bg_color: c.bg })}
                           style={{
                             width: '28px',
                             height: '28px',
                             borderRadius: '50%',
                             background: c.hex,
-                            border: categoryForm.color === c.hex ? '3px solid #FFF' : '1px solid transparent',
-                            boxShadow: categoryForm.color === c.hex ? '0 0 0 2px var(--primary)' : 'none',
+                            border: areaForm.color === c.hex ? '3px solid #FFF' : '1px solid transparent',
+                            boxShadow: areaForm.color === c.hex ? '0 0 0 2px var(--primary)' : 'none',
                             cursor: 'pointer'
                           }}
                         />
@@ -1114,87 +876,89 @@ export function FareSettingsView() {
                   </div>
                 </div>
 
+                <div style={{ marginTop: '14px' }}>
+                  <label className="form-label" style={{ fontSize: '12px', fontWeight: 800 }}>Area Description</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={areaForm.description}
+                    onChange={(e) => setAreaForm({ ...areaForm, description: e.target.value })}
+                    placeholder="e.g. SJC Hostels, Sociology, History, Social Sciences & Foreign Hostel"
+                  />
+                </div>
+
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
-                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowCategoryModal(false)}>Cancel</button>
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowAreaModal(false)}>Cancel</button>
                   <button type="submit" className="btn btn-primary btn-sm" style={{ fontWeight: 800 }}>
-                    <Save size={13} /> Save Category List
+                    <Save size={13} /> Save Campus Area
                   </button>
                 </div>
               </form>
             </div>
           )}
 
-          {/* Delete Category Confirmation Dialog */}
-          {categoryToDelete && (
+          {/* Delete Area Modal */}
+          {areaToDelete && (
             <div className="panel" style={{ border: '2px solid #EF4444', marginBottom: '24px', background: 'rgba(239, 68, 68, 0.05)' }}>
               <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h3 className="panel-title" style={{ color: '#EF4444', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <AlertCircle size={18} /> Delete List: {categoryToDelete.label}?
+                  <AlertCircle size={18} /> Delete Campus Area: {areaToDelete.name}?
                 </h3>
-                <button className="btn btn-secondary btn-sm" onClick={() => setCategoryToDelete(null)}>Cancel</button>
+                <button className="btn btn-secondary btn-sm" onClick={() => setAreaToDelete(null)}>Cancel</button>
               </div>
 
               <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '8px' }}>
-                How would you like to handle the <strong>{categoryToDelete.stopsCount || 0} locations</strong> currently inside this list?
+                How would you like to handle the <strong>{areaToDelete.stopsCount || 0} locations</strong> currently inside this area?
               </p>
 
               <div style={{ display: 'flex', gap: '12px', marginTop: '16px', flexWrap: 'wrap' }}>
-                <button
-                  className="btn btn-danger"
-                  onClick={() => handleDeleteCategory(categoryToDelete, true)}
-                >
-                  <Trash2 size={14} /> Delete List AND Delete all {categoryToDelete.stopsCount || 0} Locations
+                <button className="btn btn-danger" onClick={() => handleDeleteArea(areaToDelete, true)}>
+                  <Trash2 size={14} /> Delete Area AND All its Locations
                 </button>
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => handleDeleteCategory(categoryToDelete, false)}
-                >
-                  Keep Locations (Move to General Hubs) & Delete List
+                <button className="btn btn-secondary" onClick={() => handleDeleteArea(areaToDelete, false)}>
+                  Keep Locations (Move to Main Campus) & Delete Area
                 </button>
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setCategoryToDelete(null)}
-                >
+                <button className="btn btn-secondary" onClick={() => setAreaToDelete(null)}>
                   Cancel
                 </button>
               </div>
             </div>
           )}
 
-          {/* Add Stop Modal / Panel */}
-          {showAddStopModal && (
+          {/* Add Stop Modal */}
+          {showStopModal && (
             <div className="panel" style={{ border: '1.5px solid var(--primary)', marginBottom: '24px', background: 'var(--bg-card)' }}>
               <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 className="panel-title" style={{ color: 'var(--primary)' }}>Add New Location / Stop</h3>
-                <button className="btn btn-secondary btn-sm" onClick={() => setShowAddStopModal(false)}>
+                <h3 className="panel-title" style={{ color: 'var(--primary)' }}>Add Location / Department</h3>
+                <button className="btn btn-secondary btn-sm" onClick={() => setShowStopModal(false)}>
                   <X size={14} /> Close
                 </button>
               </div>
 
-              <form onSubmit={handleSaveCampusStop}>
+              <form onSubmit={handleSaveStop}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginTop: '14px' }}>
                   <div>
-                    <label className="form-label" style={{ fontSize: '11px', fontWeight: 800 }}>Building / Stop Name</label>
+                    <label className="form-label" style={{ fontSize: '11px', fontWeight: 800 }}>Location / Building / Dept Name</label>
                     <input
                       type="text"
                       className="form-input"
-                      value={newStop.name}
-                      onChange={(e) => setNewStop({ ...newStop, name: e.target.value })}
-                      placeholder="e.g. Ganga Girls Hostel or Central Library"
+                      value={stopForm.name}
+                      onChange={(e) => setStopForm({ ...stopForm, name: e.target.value })}
+                      placeholder="e.g. Sociology Department or Mother Teresa Hostel"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="form-label" style={{ fontSize: '11px', fontWeight: 800 }}>Belongs to List / Category</label>
+                    <label className="form-label" style={{ fontSize: '11px', fontWeight: 800 }}>Belongs to Campus Area</label>
                     <select
                       className="form-input"
-                      value={newStop.category}
-                      onChange={(e) => setNewStop({ ...newStop, category: e.target.value })}
+                      value={stopForm.area_code}
+                      onChange={(e) => setStopForm({ ...stopForm, area_code: e.target.value })}
                     >
-                      {categories.map(c => (
-                        <option key={c.id} value={c.category_key}>
-                          {c.icon} {c.label}
+                      {campusAreas.map(a => (
+                        <option key={a.id} value={a.area_code}>
+                          {a.icon} {a.name}
                         </option>
                       ))}
                     </select>
@@ -1206,8 +970,8 @@ export function FareSettingsView() {
                       type="number"
                       step="0.000001"
                       className="form-input"
-                      value={newStop.latitude}
-                      onChange={(e) => setNewStop({ ...newStop, latitude: e.target.value })}
+                      value={stopForm.latitude}
+                      onChange={(e) => setStopForm({ ...stopForm, latitude: e.target.value })}
                       placeholder="12.0240"
                     />
                   </div>
@@ -1218,15 +982,15 @@ export function FareSettingsView() {
                       type="number"
                       step="0.000001"
                       className="form-input"
-                      value={newStop.longitude}
-                      onChange={(e) => setNewStop({ ...newStop, longitude: e.target.value })}
+                      value={stopForm.longitude}
+                      onChange={(e) => setStopForm({ ...stopForm, longitude: e.target.value })}
                       placeholder="79.8530"
                     />
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '16px' }}>
-                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowAddStopModal(false)}>Cancel</button>
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowStopModal(false)}>Cancel</button>
                   <button type="submit" className="btn btn-primary btn-sm" style={{ fontWeight: 800 }}>
                     <Save size={13} /> Save Location
                   </button>
@@ -1235,17 +999,17 @@ export function FareSettingsView() {
             </div>
           )}
 
-          {/* Categorized Location Cards Grid */}
+          {/* Categorized Campus Area Cards Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px' }}>
             {groupedStops.map(group => {
-              const catObj = categories.find(c => c.category_key === group.key || c.id === group.id) || {};
-              const color = catObj.color || group.color || '#3B82F6';
-              const bg = catObj.bg_color || group.bg || 'rgba(59, 130, 246, 0.12)';
-              const icon = catObj.icon || group.icon || '📍';
+              const areaObj = campusAreas.find(a => a.area_code === group.code || a.area_code === group.key) || group;
+              const color = areaObj.color || '#3B82F6';
+              const bg = areaObj.bg_color || 'rgba(59, 130, 246, 0.12)';
+              const icon = areaObj.icon || '📍';
 
               return (
                 <div
-                  key={group.key || group.id}
+                  key={group.code || group.key}
                   style={{
                     background: 'var(--bg-card)',
                     border: '1px solid var(--border)',
@@ -1253,8 +1017,7 @@ export function FareSettingsView() {
                     padding: '20px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '14px',
-                    position: 'relative'
+                    gap: '14px'
                   }}
                 >
                   {/* Card Header */}
@@ -1274,9 +1037,9 @@ export function FareSettingsView() {
                       </div>
 
                       <div>
-                        <div style={{ fontWeight: 800, fontSize: '16px', color: 'var(--text-primary)' }}>{group.label}</div>
+                        <div style={{ fontWeight: 800, fontSize: '16px', color: 'var(--text-primary)' }}>{group.label || group.name}</div>
                         <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>
-                          List Token: <code>{group.token || `[${group.label}]`}</code>
+                          Area Code: <code>{group.code || group.key}</code>
                         </div>
                       </div>
                     </div>
@@ -1286,20 +1049,20 @@ export function FareSettingsView() {
                         {group.stops.length} locations
                       </span>
 
-                      {catObj.id && (
+                      {areaObj.id && (
                         <>
                           <button
                             className="btn btn-secondary btn-sm"
-                            onClick={() => handleOpenCategoryModal(catObj)}
-                            title="Edit list name / icon"
+                            onClick={() => handleOpenAreaModal(areaObj)}
+                            title="Edit area"
                             style={{ padding: '4px 6px' }}
                           >
                             <Edit2 size={12} />
                           </button>
                           <button
                             className="btn btn-secondary btn-sm"
-                            onClick={() => setCategoryToDelete({ ...catObj, stopsCount: group.stops.length })}
-                            title="Delete this entire list"
+                            onClick={() => setAreaToDelete({ ...areaObj, stopsCount: group.stops.length })}
+                            title="Delete area"
                             style={{ padding: '4px 6px', color: '#F87171' }}
                           >
                             <Trash2 size={12} />
@@ -1309,7 +1072,7 @@ export function FareSettingsView() {
                     </div>
                   </div>
 
-                  {/* Stops List inside category */}
+                  {/* Stops List */}
                   <div style={{
                     background: 'var(--bg-sidebar)',
                     borderRadius: 'var(--radius-md)',
@@ -1322,7 +1085,7 @@ export function FareSettingsView() {
                   }}>
                     {group.stops.length === 0 ? (
                       <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '20px' }}>
-                        No locations in this list yet.
+                        No locations inside this area yet. Click below to add.
                       </div>
                     ) : (
                       group.stops.map(stop => (
@@ -1349,7 +1112,7 @@ export function FareSettingsView() {
 
                           <button
                             className="btn btn-secondary btn-sm"
-                            onClick={() => handleDeleteCampusStop(stop.id, stop.name)}
+                            onClick={() => handleDeleteStop(stop.id, stop.name)}
                             title="Delete location"
                             style={{ padding: '4px 6px', color: '#F87171' }}
                           >
@@ -1360,13 +1123,13 @@ export function FareSettingsView() {
                     )}
                   </div>
 
-                  {/* Add Stop Quick Button */}
+                  {/* Add Location Button */}
                   <button
                     className="btn btn-secondary btn-sm"
-                    onClick={() => handleOpenAddStopModal(group.key)}
+                    onClick={() => handleOpenAddStopModal(group.code || group.key)}
                     style={{ width: '100%', justifyContent: 'center', fontSize: '12px', fontWeight: 700 }}
                   >
-                    <Plus size={13} /> Add Location to {group.label}
+                    <Plus size={13} /> Add Location to {group.label || group.name}
                   </button>
                 </div>
               );
@@ -1376,17 +1139,177 @@ export function FareSettingsView() {
       )}
 
       {/* ========================================================================= */}
-      {/* TAB 3: VEHICLE FALLBACK RATES & DRIVER SPLIT POLICIES */}
+      {/* TAB 3: SPECIFIC ROUTE OVERRIDES (TIER 1 OVERRIDES) */}
       {/* ========================================================================= */}
-      {activeTab === 'fallback' && (
+      {activeTab === 'specific_routes' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <h2 className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Compass className="text-primary" size={20} /> Specific Route Overrides (Tier 1 Priority)
+              </h2>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                Set special pricing for specific stop-to-stop routes. When defined, these override the standard Area ➔ Area fare.
+              </p>
+            </div>
+
+            <button className="btn btn-primary" onClick={() => { setEditingOverride(null); setShowOverrideModal(true); }}>
+              <Plus size={15} /> Add Specific Route Override
+            </button>
+          </div>
+
+          {/* Add Override Modal */}
+          {showOverrideModal && (
+            <div className="panel" style={{ border: '1.5px solid var(--primary)', marginBottom: '24px', background: 'var(--bg-card)' }}>
+              <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 className="panel-title" style={{ color: 'var(--primary)' }}>
+                  {editingOverride ? 'Edit Specific Route Override' : 'Create Specific Route Override'}
+                </h3>
+                <button className="btn btn-secondary btn-sm" onClick={() => setShowOverrideModal(false)}>Close</button>
+              </div>
+
+              <form onSubmit={handleSaveOverride}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginTop: '14px' }}>
+                  <div>
+                    <label className="form-label" style={{ fontSize: '12px', fontWeight: 800 }}>Pickup Stop</label>
+                    <select
+                      className="form-input"
+                      value={overrideForm.pickupStop}
+                      onChange={(e) => setOverrideForm({ ...overrideForm, pickupStop: e.target.value })}
+                      required
+                    >
+                      <option value="">Select Pickup...</option>
+                      {groupedStops.map(group => (
+                        <optgroup key={`op-${group.code}`} label={`${group.icon} ${group.label || group.name}`}>
+                          {group.stops.map(s => (
+                            <option key={`op-stop-${s.id}`} value={s.name}>{s.name}</option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="form-label" style={{ fontSize: '12px', fontWeight: 800 }}>Destination Stop</label>
+                    <select
+                      className="form-input"
+                      value={overrideForm.destinationStop}
+                      onChange={(e) => setOverrideForm({ ...overrideForm, destinationStop: e.target.value })}
+                      required
+                    >
+                      <option value="">Select Destination...</option>
+                      {groupedStops.map(group => (
+                        <optgroup key={`od-${group.code}`} label={`${group.icon} ${group.label || group.name}`}>
+                          {group.stops.map(s => (
+                            <option key={`od-stop-${s.id}`} value={s.name}>{s.name}</option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="form-label" style={{ fontSize: '12px', fontWeight: 800 }}>Override Fare (₹)</label>
+                    <input
+                      type="number"
+                      step="1"
+                      min="5"
+                      max="300"
+                      className="form-input"
+                      value={overrideForm.fareAmount}
+                      onChange={(e) => setOverrideForm({ ...overrideForm, fareAmount: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="form-label" style={{ fontSize: '12px', fontWeight: 800 }}>Est. Distance (km)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      className="form-input"
+                      value={overrideForm.distanceKm}
+                      onChange={(e) => setOverrideForm({ ...overrideForm, distanceKm: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '16px' }}>
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowOverrideModal(false)}>Cancel</button>
+                  <button type="submit" className="btn btn-primary btn-sm" style={{ fontWeight: 800 }}>
+                    <Save size={13} /> Save Override
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Overrides Table */}
+          <div className="panel">
+            <div style={{ overflowX: 'auto' }}>
+              <table className="table" style={{ width: '100%' }}>
+                <thead>
+                  <tr>
+                    <th>From (Pickup)</th>
+                    <th style={{ textAlign: 'center' }}>Direction</th>
+                    <th>To (Destination)</th>
+                    <th>Distance</th>
+                    <th>Override Fare (₹)</th>
+                    <th>Priority</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {routeOverrides.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+                        No specific overrides active. All routes follow the Area ➔ Area matrix.
+                      </td>
+                    </tr>
+                  ) : (
+                    routeOverrides.map(r => (
+                      <tr key={r.id}>
+                        <td style={{ fontWeight: 600 }}>{r.pickup_stop}</td>
+                        <td style={{ textAlign: 'center', color: 'var(--primary)' }}><ArrowRight size={16} /></td>
+                        <td style={{ fontWeight: 600 }}>{r.destination_stop}</td>
+                        <td>{r.distance_km || 1.5} km</td>
+                        <td>
+                          <span style={{ fontWeight: 900, color: 'var(--primary)', fontSize: '15px' }}>
+                            ₹{parseFloat(r.fare_amount).toFixed(2)}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="badge" style={{ background: 'rgba(99, 102, 241, 0.15)', color: '#818CF8', fontWeight: 800 }}>
+                            🌟 Tier 1 Override
+                          </span>
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <button className="btn btn-danger btn-sm" onClick={() => handleDeleteOverride(r.id)}>
+                            <Trash2 size={12} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 4: VEHICLE FALLBACK RATES & REVENUE SPLITS */}
+      {/* ========================================================================= */}
+      {activeTab === 'vehicle_fallback' && (
         <div>
           {/* Default Vehicle Fallback Rates */}
           <div className="panel" style={{ marginBottom: '24px' }}>
             <div className="panel-header">
               <div>
-                <h2 className="panel-title">Default Fallback Rates (Unlisted Routes)</h2>
+                <h2 className="panel-title">Tier 4: GPS Distance Fallback Rates</h2>
                 <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                  Standard base charges and per-kilometer fallback pricing when a trip does not match any preset route or group rule.
+                  Applied only when a ride takes place outside campus or between unmapped coordinates.
                 </p>
               </div>
             </div>
@@ -1422,7 +1345,7 @@ export function FareSettingsView() {
                         <div style={{ display: 'flex', gap: '6px' }}>
                           <button
                             className="btn btn-primary btn-sm"
-                            onClick={() => handleUpdateFare(editingConfig)}
+                            onClick={() => handleUpdateFareConfig(editingConfig)}
                             disabled={savingFare}
                           >
                             <Save size={13} /> Save
@@ -1529,7 +1452,7 @@ export function FareSettingsView() {
                   From each ride below <strong>₹80</strong>, the platform deducts a flat <strong>₹4.00</strong> fee. The driver takes home the full remainder. Controller cut is ₹0.
                 </p>
                 <div style={{ marginTop: '12px', fontSize: '12px', color: 'var(--text-muted)', background: 'var(--bg-card)', padding: '8px 12px', borderRadius: '8px' }}>
-                  Example: ₹20 Campus Ride ➔ Driver gets <strong>₹16</strong>, Company gets <strong>₹4</strong>.
+                  Example: ₹35 Campus Ride ➔ Driver gets <strong>₹31</strong>, Company gets <strong>₹4</strong>.
                 </div>
               </div>
 
@@ -1554,4 +1477,5 @@ export function FareSettingsView() {
     </div>
   );
 }
+
 

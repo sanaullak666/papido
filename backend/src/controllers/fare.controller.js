@@ -13,6 +13,15 @@ const FareController = {
     }
   },
 
+  async getAreas(req, res, next) {
+    try {
+      const areas = await FareModel.getAllCampusAreas();
+      return success(res, 'Active campus areas fetched.', areas);
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async getCategories(req, res, next) {
     try {
       const categories = await FareModel.getAllCategories();

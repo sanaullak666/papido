@@ -17,7 +17,21 @@ router.get('/payments', AdminController.listPayments);
 router.get('/fare-settings', AdminController.getFareConfigurations);
 router.patch('/fare-settings/:vehicleType', AdminController.updateFareConfiguration);
 
-// Categories & Lists
+// Campus Areas (Campus Zones)
+router.get('/campus-areas', AdminController.getCampusAreas);
+router.post('/campus-areas', AdminController.saveCampusArea);
+router.delete('/campus-areas/all', AdminController.deleteAllCampusAreas);
+router.delete('/campus-areas/:id', AdminController.deleteCampusArea);
+
+// Area-to-Area Fare Matrix
+router.get('/area-fares', AdminController.getAreaFares);
+router.get('/area-fares/matrix', AdminController.getAreaFareMatrix);
+router.post('/area-fares/matrix-save', AdminController.saveAreaFareMatrix);
+router.post('/area-fares', AdminController.saveAreaFare);
+router.delete('/area-fares/all', AdminController.deleteAllAreaFares);
+router.delete('/area-fares/:id', AdminController.deleteAreaFare);
+
+// Categories & Lists (Legacy/Grouping Support)
 router.get('/campus-categories', AdminController.getCampusCategories);
 router.post('/campus-categories', AdminController.saveCampusCategory);
 router.delete('/campus-categories/all', AdminController.deleteAllCampusCategories);

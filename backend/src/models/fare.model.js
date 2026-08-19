@@ -416,20 +416,315 @@ const FareModel = {
   },
 
   // ==========================================
-  // ROUTE-BASED & GROUP-BASED FARE MANAGEMENT
+  // CAMPUS AREAS (CAMPUS ZONES) MANAGEMENT
   // ==========================================
-
-  async getAllRouteFares() {
-    return db.query('SELECT * FROM route_fares ORDER BY pickup_stop ASC, destination_stop ASC');
+  async getAllCampusAreas() {
+    try {
+      return await db.query('SELECT * FROM campus_areas WHERE is_active = 1 ORDER BY display_order ASC, id ASC');
+    } catch (_) {
+      return [];
+    }
   },
 
-  /**
-   * Multi-tier resolution:
-   * 1. Exact Stop-to-Stop Match
-   * 2. Stop-to-Group Match (e.g. SJC -> [Girls Hostels])
-   * 3. Group-to-Group Match (e.g. [Boys Hostels] -> [Departments & Schools])
-   * 4. Substring / Synonym Match
-   */
+  async getAllAdminCampusAreas() {
+    try {
+      const areas = await db.query('SELECT * FROM campus_areas ORDER BY display_order ASC, id ASC');
+      const stopCounts = await db.query('SELECT area_code, COUNT(*) as count FROM campus_stops WHERE is_active = 1 GROUP BY area_code');
+      const countMap = {};
+      (stopCounts || []).forEach(sc => {
+        if (sc.area_code) countMap[sc.area_code] = sc.count;
+      });
+      return (areas || []).map(a => ({
+        ...a,
+        stopsCount: countMap[a.area_code] || 0
+      }));
+    } catch (_) {
+      return [];
+    }
+  },
+
+  async getCampusAreaByCode(areaCode) {
+    return db.queryOne('SELECT * FROM campus_areas WHERE area_code = ?', [areaCode]);
+  },
+
+  async createCampusArea({ area_code, name, icon, color, bg_color, description, display_order, is_active = 1 }) {
+    let finalCode = area_code;
+    if (!finalCode) {
+      finalCode = name.toUpperCase().replace(/[^A-Z0-9]/g, '_').substring(0, 50);
+    }
+    const res = await db.query(
+      `INSERT INTO campus_areas (area_code, name, icon, color, bg_color, description, display_order, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [finalCode, name.trim(), icon || '📍', color || '#3B82F6', bg_color || 'rgba(59, 130, 246, 0.12)', description || null, parseInt(display_order) || 0, is_active ? 1 : 0]
+    );
+    const insertedId = res?.insertId;
+    return this.getCampusAreaByCode(finalCode) || (insertedId ? db.queryOne('SELECT * FROM campus_areas WHERE id = ?', [insertedId]) : null);
+  },
+
+  async updateCampusArea(id, { area_code, name, icon, color, bg_color, description, display_order, is_active }) {
+    await db.query(
+      `UPDATE campus_areas
+       SET area_code = COALESCE(?, area_code),
+           name = COALESCE(?, name),
+           icon = COALESCE(?, icon),
+           color = COALESCE(?, color),
+           bg_color = COALESCE(?, bg_color),
+           description = COALESCE(?, description),
+           display_order = COALESCE(?, display_order),
+           is_active = COALESCE(?, is_active)
+       WHERE id = ?`,
+      [
+        area_code || null,
+        name ? name.trim() : null,
+        icon || null,
+        color || null,
+        bg_color || null,
+        description !== undefined ? description : null,
+        display_order !== undefined ? parseInt(display_order) : null,
+        is_active !== undefined ? (is_active ? 1 : 0) : null,
+        id
+      ]
+    );
+    return db.queryOne('SELECT * FROM campus_areas WHERE id = ?', [id]);
+  },
+
+  async deleteCampusArea(id, { deleteStops = false } = {}) {
+    const area = await db.queryOne('SELECT * FROM campus_areas WHERE id = ?', [id]);
+    if (!area) return { success: false, message: 'Campus area not found' };
+
+    if (deleteStops) {
+      await db.query('DELETE FROM campus_stops WHERE area_code = ?', [area.area_code]);
+    } else {
+      await db.query('UPDATE campus_stops SET area_code = "MAIN_CAMPUS" WHERE area_code = ?', [area.area_code]);
+    }
+    // Delete any area fares referencing this area
+    await db.query('DELETE FROM area_fares WHERE from_area_code = ? OR to_area_code = ?', [area.area_code, area.area_code]);
+    await db.query('DELETE FROM campus_areas WHERE id = ?', [id]);
+    return { success: true, deleted: area };
+  },
+
+  async deleteAllCampusAreas({ deleteStops = false } = {}) {
+    if (deleteStops) {
+      await db.query('DELETE FROM campus_stops');
+    } else {
+      await db.query('UPDATE campus_stops SET area_code = "MAIN_CAMPUS"');
+    }
+    await db.query('DELETE FROM area_fares');
+    return db.query('DELETE FROM campus_areas');
+  },
+
+  // ==========================================
+  // AREA-TO-AREA FARE MATRIX MANAGEMENT
+  // ==========================================
+  async getAllAreaFares() {
+    try {
+      const fares = await db.query('SELECT * FROM area_fares WHERE is_active = 1 ORDER BY from_area_code ASC, to_area_code ASC');
+      const areas = await this.getAllCampusAreas();
+      const areaMap = {};
+      (areas || []).forEach(a => { areaMap[a.area_code] = a; });
+
+      return (fares || []).map(f => ({
+        ...f,
+        fromAreaName: areaMap[f.from_area_code]?.name || f.from_area_code,
+        fromAreaIcon: areaMap[f.from_area_code]?.icon || '📍',
+        fromAreaColor: areaMap[f.from_area_code]?.color || '#3B82F6',
+        toAreaName: areaMap[f.to_area_code]?.name || f.to_area_code,
+        toAreaIcon: areaMap[f.to_area_code]?.icon || '📍',
+        toAreaColor: areaMap[f.to_area_code]?.color || '#3B82F6'
+      }));
+    } catch (_) {
+      return [];
+    }
+  },
+
+  async getAreaFareMatrix() {
+    const areas = await this.getAllAdminCampusAreas();
+    const fares = await db.query('SELECT * FROM area_fares WHERE is_active = 1');
+    const fareMap = {};
+    (fares || []).forEach(f => {
+      fareMap[`${f.from_area_code}_${f.to_area_code}`] = f;
+      fareMap[`${f.to_area_code}_${f.from_area_code}`] = f;
+    });
+
+    const matrix = [];
+    for (const fromArea of areas) {
+      const row = {
+        fromArea,
+        targets: []
+      };
+      for (const toArea of areas) {
+        const key = `${fromArea.area_code}_${toArea.area_code}`;
+        const existing = fareMap[key];
+        row.targets.push({
+          toArea,
+          fareAmount: existing ? parseFloat(existing.fare_amount) : (fromArea.area_code === toArea.area_code ? 15.00 : 20.00),
+          distanceKm: existing ? parseFloat(existing.distance_km) : (fromArea.area_code === toArea.area_code ? 1.0 : 1.5),
+          isConfigured: !!existing,
+          id: existing?.id || null
+        });
+      }
+      matrix.push(row);
+    }
+    return { areas, matrix };
+  },
+
+  async upsertAreaFare({ fromAreaCode, toAreaCode, fareAmount, distanceKm = 1.5, isActive = 1 }) {
+    const existing = await db.queryOne(
+      `SELECT * FROM area_fares 
+       WHERE (from_area_code = ? AND to_area_code = ?)
+          OR (from_area_code = ? AND to_area_code = ?)`,
+      [fromAreaCode, toAreaCode, toAreaCode, fromAreaCode]
+    );
+
+    if (existing && existing.id) {
+      await db.query(
+        `UPDATE area_fares 
+         SET fare_amount = ?, distance_km = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP 
+         WHERE id = ?`,
+        [parseFloat(fareAmount), parseFloat(distanceKm), isActive ? 1 : 0, existing.id]
+      );
+      return db.queryOne('SELECT * FROM area_fares WHERE id = ?', [existing.id]);
+    }
+
+    await db.query(
+      `INSERT INTO area_fares (from_area_code, to_area_code, fare_amount, distance_km, is_active)
+       VALUES (?, ?, ?, ?, ?)`,
+      [fromAreaCode, toAreaCode, parseFloat(fareAmount), parseFloat(distanceKm), isActive ? 1 : 0]
+    );
+    return db.queryOne(
+      `SELECT * FROM area_fares WHERE (from_area_code = ? AND to_area_code = ?) OR (from_area_code = ? AND to_area_code = ?) LIMIT 1`,
+      [fromAreaCode, toAreaCode, toAreaCode, fromAreaCode]
+    );
+  },
+
+  async saveAreaFareMatrix(matrixUpdates = []) {
+    for (const item of matrixUpdates) {
+      if (item.fromAreaCode && item.toAreaCode && item.fareAmount !== undefined) {
+        await this.upsertAreaFare(item);
+      }
+    }
+    return this.getAreaFareMatrix();
+  },
+
+  async deleteAreaFare(id) {
+    return db.query('DELETE FROM area_fares WHERE id = ?', [id]);
+  },
+
+  async deleteAllAreaFares() {
+    return db.query('DELETE FROM area_fares');
+  },
+
+  // ==========================================
+  // CAMPUS STOPS & GROUPED STOPS BY AREA
+  // ==========================================
+  async getGroupedCampusStops() {
+    try {
+      const areas = await this.getAllCampusAreas();
+      const allStops = await db.query('SELECT * FROM campus_stops WHERE is_active = 1 ORDER BY display_order ASC, name ASC');
+
+      const areaMap = {};
+      (areas || []).forEach(a => {
+        areaMap[a.area_code] = {
+          id: a.id,
+          code: a.area_code,
+          key: a.area_code,
+          label: a.name,
+          name: a.name,
+          icon: a.icon || '📍',
+          color: a.color || '#3B82F6',
+          bg: a.bg_color || 'rgba(59, 130, 246, 0.12)',
+          description: a.description,
+          stops: []
+        };
+      });
+
+      // Fallback area if unmapped
+      if (!areaMap['MAIN_CAMPUS']) {
+        areaMap['MAIN_CAMPUS'] = {
+          id: 999,
+          code: 'MAIN_CAMPUS',
+          key: 'MAIN_CAMPUS',
+          label: 'Main Campus & Gate 1 Hub',
+          name: 'Main Campus & Gate 1 Hub',
+          icon: '🏛️',
+          color: '#F59E0B',
+          bg: 'rgba(245, 158, 11, 0.12)',
+          stops: []
+        };
+      }
+
+      (allStops || []).forEach(stop => {
+        const areaCode = stop.area_code || 'MAIN_CAMPUS';
+        if (!areaMap[areaCode]) {
+          areaMap[areaCode] = {
+            id: 999,
+            code: areaCode,
+            key: areaCode,
+            label: areaCode,
+            name: areaCode,
+            icon: '📍',
+            color: '#3B82F6',
+            bg: 'rgba(59, 130, 246, 0.12)',
+            stops: []
+          };
+        }
+        areaMap[areaCode].stops.push(stop);
+      });
+
+      return Object.values(areaMap);
+    } catch (_) {
+      return [];
+    }
+  },
+
+  async resolveStopArea(stopName) {
+    if (!stopName) return null;
+    const clean = stopName.trim().toLowerCase();
+
+    // 1. Direct match in campus_stops table
+    const stopRow = await db.queryOne(
+      'SELECT * FROM campus_stops WHERE LOWER(TRIM(name)) = ? LIMIT 1',
+      [clean]
+    );
+    if (stopRow && stopRow.area_code) {
+      const area = await this.getCampusAreaByCode(stopRow.area_code);
+      return {
+        areaCode: stopRow.area_code,
+        areaName: area ? area.name : stopRow.area_code,
+        areaIcon: area ? area.icon : '📍',
+        stopName: stopRow.name
+      };
+    }
+
+    // 2. Keyword heuristic matching
+    if (/curie|teresa|ganga|yamuna|sarojini|cauvery|saraswathi|bharathidasan|kabilar|subramania|kalidas|valmiki|hostel/i.test(clean) && !clean.includes('silver') && !clean.includes('foreign')) {
+      const a = await this.getCampusAreaByCode('HOSTEL_AREA');
+      return { areaCode: 'HOSTEL_AREA', areaName: a ? a.name : 'Hostel & Residential Area', areaIcon: a ? a.icon : '🏡', stopName };
+    }
+    if (/silver|jubilee|sjc|foreign|sociology|history/i.test(clean)) {
+      const a = await this.getCampusAreaByCode('SJC_CAMPUS');
+      return { areaCode: 'SJC_CAMPUS', areaName: a ? a.name : 'Silver Jubilee Campus (SJC)', areaIcon: a ? a.icon : '🎓', stopName };
+    }
+    if (/science|physics|management|som|ramanujan|math|computer|humanities|biotech|engineering|media|department|school/i.test(clean)) {
+      const a = await this.getCampusAreaByCode('SCIENCE_BLOCK');
+      return { areaCode: 'SCIENCE_BLOCK', areaName: a ? a.name : 'Science & Academic Block', areaIcon: a ? a.icon : '🔬', stopName };
+    }
+    if (/gate 2|gate2|stadium|sports|ecr/i.test(clean)) {
+      const a = await this.getCampusAreaByCode('SPORTS_GATE2');
+      return { areaCode: 'SPORTS_GATE2', areaName: a ? a.name : 'Sports Area & Gate 2 (ECR)', areaIcon: a ? a.icon : '⚽', stopName };
+    }
+    if (/gate|library|canteen|admin|shopping|co-op|stores|main/i.test(clean)) {
+      const a = await this.getCampusAreaByCode('MAIN_CAMPUS');
+      return { areaCode: 'MAIN_CAMPUS', areaName: a ? a.name : 'Main Campus & Gate 1 Hub', areaIcon: a ? a.icon : '🏛️', stopName };
+    }
+
+    return null;
+  },
+
+  // =========================================================================
+  // 🌟 ULTIMATE 4-TIER FARE PRIORITY ENGINE
+  // Priority: Specific Route Override -> Area-to-Area Fare -> Default Campus Flat -> GPS Fallback
+  // =========================================================================
   async findRouteFare(pickupStop, destinationStop) {
     if (!pickupStop || !destinationStop) return null;
     const pTrim = pickupStop.trim();
@@ -437,164 +732,87 @@ const FareModel = {
     const pLower = pTrim.toLowerCase();
     const dLower = dTrim.toLowerCase();
 
-    // 1. Tier 1: Direct exact stop-to-stop (bidirectional)
-    const exactSql = `
-      SELECT * FROM route_fares 
-      WHERE (
-        (LOWER(TRIM(pickup_stop)) = ? AND LOWER(TRIM(destination_stop)) = ?)
-        OR 
-        (LOWER(TRIM(pickup_stop)) = ? AND LOWER(TRIM(destination_stop)) = ?)
-      )
-      AND is_active = 1
-      LIMIT 1
-    `;
-    const exact = await db.queryOne(exactSql, [pLower, dLower, dLower, pLower]);
-    if (exact) {
+    // -------------------------------------------------------------
+    // TIER 1: Specific Route Override (Exact Stop A ➔ Exact Stop B)
+    // -------------------------------------------------------------
+    const exactOverride = await db.queryOne(
+      `SELECT * FROM route_fares 
+       WHERE (
+         (LOWER(TRIM(pickup_stop)) = ? AND LOWER(TRIM(destination_stop)) = ?)
+         OR 
+         (LOWER(TRIM(pickup_stop)) = ? AND LOWER(TRIM(destination_stop)) = ?)
+       )
+       AND is_active = 1
+       LIMIT 1`,
+      [pLower, dLower, dLower, pLower]
+    );
+
+    if (exactOverride) {
       return {
-        ...exact,
-        ruleType: 'EXACT',
-        appliedRuleDescription: `Direct Route: ${exact.pickup_stop} ➔ ${exact.destination_stop}`
+        ...exactOverride,
+        ruleTier: 1,
+        ruleType: 'SPECIFIC_OVERRIDE',
+        appliedRuleDescription: `🌟 Tier 1 Specific Override: ${exactOverride.pickup_stop} ➔ ${exactOverride.destination_stop}`
       };
     }
 
-    // Resolve categories and group tokens for both stops
-    const pCat = await this.resolveStopCategory(pickupStop);
-    const dCat = await this.resolveStopCategory(destinationStop);
+    // -------------------------------------------------------------
+    // TIER 2: Campus Area ➔ Campus Area Fare (e.g. Hostel Area ➔ SJC = ₹35)
+    // -------------------------------------------------------------
+    const pArea = await this.resolveStopArea(pTrim);
+    const dArea = await this.resolveStopArea(dTrim);
 
-    const allRoutes = await db.query('SELECT * FROM route_fares WHERE is_active = 1');
-    if (!allRoutes || allRoutes.length === 0) return null;
+    if (pArea && dArea) {
+      const areaRule = await db.queryOne(
+        `SELECT * FROM area_fares 
+         WHERE (
+           (from_area_code = ? AND to_area_code = ?)
+           OR 
+           (from_area_code = ? AND to_area_code = ?)
+         )
+         AND is_active = 1
+         LIMIT 1`,
+        [pArea.areaCode, dArea.areaCode, dArea.areaCode, pArea.areaCode]
+      );
 
-    // 2. Tier 2: Specific Stop ➔ Target Group List (e.g. SJC -> [Girls Hostels])
-    if (dCat && dCat.token) {
-      const targetTokenLower = dCat.token.toLowerCase();
-      const codeTokenLower = `[${dCat.category.toLowerCase()}]`;
-
-      for (const r of allRoutes) {
-        const rp = (r.pickup_stop || '').trim().toLowerCase();
-        const rd = (r.destination_stop || '').trim().toLowerCase();
-
-        // Pickup is exact, Destination is group token
-        const matchForward = (pLower.includes(rp) || rp.includes(pLower)) && (rd === targetTokenLower || rd === codeTokenLower || rd.includes(dCat.categoryLabel.toLowerCase()));
-        const matchReverse = (pLower.includes(rd) || rd.includes(pLower)) && (rp === targetTokenLower || rp === codeTokenLower || rp.includes(dCat.categoryLabel.toLowerCase()));
-
-        if (matchForward || matchReverse) {
-          return {
-            ...r,
-            ruleType: 'STOP_TO_GROUP',
-            appliedRuleDescription: `Group Rule: ${pTrim} ➔ ${dCat.categoryLabel} list (${dTrim})`
-          };
-        }
-      }
-    }
-
-    // Check reverse: Pickup's Group ➔ Specific Destination (e.g. [Girls Hostels] -> Central Library)
-    if (pCat && pCat.token) {
-      const pTokenLower = pCat.token.toLowerCase();
-      const pCodeTokenLower = `[${pCat.category.toLowerCase()}]`;
-
-      for (const r of allRoutes) {
-        const rp = (r.pickup_stop || '').trim().toLowerCase();
-        const rd = (r.destination_stop || '').trim().toLowerCase();
-
-        const matchForward = (rp === pTokenLower || rp === pCodeTokenLower || rp.includes(pCat.categoryLabel.toLowerCase())) && (dLower.includes(rd) || rd.includes(dLower));
-        const matchReverse = (rd === pTokenLower || rd === pCodeTokenLower || rd.includes(pCat.categoryLabel.toLowerCase())) && (dLower.includes(rp) || rp.includes(dLower));
-
-        if (matchForward || matchReverse) {
-          return {
-            ...r,
-            ruleType: 'GROUP_TO_STOP',
-            appliedRuleDescription: `Group Rule: ${pCat.categoryLabel} list ➔ ${dTrim}`
-          };
-        }
-      }
-    }
-
-    // 3. Tier 3: Group List ➔ Group List (e.g. [Boys Hostels] -> [Departments & Schools])
-    if (pCat && dCat && pCat.category !== dCat.category) {
-      const pTokenLower = pCat.token.toLowerCase();
-      const dTokenLower = dCat.token.toLowerCase();
-      const pCatLower = pCat.categoryLabel.toLowerCase();
-      const dCatLower = dCat.categoryLabel.toLowerCase();
-
-      for (const r of allRoutes) {
-        const rp = (r.pickup_stop || '').trim().toLowerCase();
-        const rd = (r.destination_stop || '').trim().toLowerCase();
-
-        const matchForward = (rp === pTokenLower || rp.includes(pCatLower)) && (rd === dTokenLower || rd.includes(dCatLower));
-        const matchReverse = (rp === dTokenLower || rp.includes(dCatLower)) && (rd === pTokenLower || rd.includes(pCatLower));
-
-        if (matchForward || matchReverse) {
-          return {
-            ...r,
-            ruleType: 'GROUP_TO_GROUP',
-            appliedRuleDescription: `Group Matrix: ${pCat.categoryLabel} ➔ ${dCat.categoryLabel}`
-          };
-        }
-      }
-    }
-
-    // 4. Tier 4: Normalized & Substring Overlap Matching
-    const normalize = (str) => (str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-    const pNorm = normalize(pickupStop);
-    const dNorm = normalize(destinationStop);
-
-    for (const r of allRoutes) {
-      const rpNorm = normalize(r.pickup_stop);
-      const rdNorm = normalize(r.destination_stop);
-
-      if (!rpNorm || !rdNorm) continue;
-
-      const directMatch = (pNorm.includes(rpNorm) || rpNorm.includes(pNorm)) &&
-                          (dNorm.includes(rdNorm) || rdNorm.includes(dNorm));
-      const reverseMatch = (pNorm.includes(rdNorm) || rdNorm.includes(pNorm)) &&
-                           (dNorm.includes(rpNorm) || rpNorm.includes(dNorm));
-
-      if (directMatch || reverseMatch) {
+      if (areaRule) {
         return {
-          ...r,
-          ruleType: 'NORMALIZED_MATCH',
-          appliedRuleDescription: `Matched Campus Route: ${r.pickup_stop} ➔ ${r.destination_stop}`
+          id: areaRule.id,
+          pickup_stop: pTrim,
+          destination_stop: dTrim,
+          fare_amount: areaRule.fare_amount,
+          distance_km: areaRule.distance_km || 1.5,
+          ruleTier: 2,
+          ruleType: 'AREA_TO_AREA',
+          appliedRuleDescription: `🗺️ Tier 2 Area Rule: ${pArea.areaIcon} ${pArea.areaName} ➔ ${dArea.areaIcon} ${dArea.areaName}`
         };
       }
     }
 
-    // 5. Tier 5: Keyword / Synonym Fallback
-    const getSynonyms = (str) => {
-      const s = (str || '').toLowerCase();
-      const tokens = [];
-      if (s.includes('silver') || s.includes('jubilee') || s.includes('sjc')) tokens.push('silver_jubilee');
-      if (s.includes('gate 2') || s.includes('gate2') || s.includes('ecr')) tokens.push('gate_2');
-      if (s.includes('gate 1') || s.includes('gate1') || s.includes('main gate')) tokens.push('gate_1');
-      if (s.includes('library')) tokens.push('library');
-      if (s.includes('canteen') || s.includes('food court')) tokens.push('canteen');
-      if (s.includes('curie') || s.includes('girls hostel') || s.includes('teresa') || s.includes('ganga')) tokens.push('girls_hostel');
-      if (s.includes('physics') || s.includes('science') || s.includes('management') || s.includes('math')) tokens.push('dept');
-      if (s.includes('admin block') || s.includes('exam')) tokens.push('admin_block');
-      return tokens;
-    };
-
-    const pSyns = getSynonyms(pickupStop);
-    const dSyns = getSynonyms(destinationStop);
-
-    if (pSyns.length > 0 && dSyns.length > 0) {
-      for (const r of allRoutes) {
-        const rpSyns = getSynonyms(r.pickup_stop);
-        const rdSyns = getSynonyms(r.destination_stop);
-
-        const directSynMatch = pSyns.some(ps => rpSyns.includes(ps)) && dSyns.some(ds => rdSyns.includes(ds));
-        const reverseSynMatch = pSyns.some(ps => rdSyns.includes(ps)) && dSyns.some(ds => rpSyns.includes(ds));
-
-        if (directSynMatch || reverseSynMatch) {
-          return {
-            ...r,
-            ruleType: 'SYNONYM_MATCH',
-            appliedRuleDescription: `Synonym Route: ${r.pickup_stop} ➔ ${r.destination_stop}`
-          };
-        }
-      }
+    // -------------------------------------------------------------
+    // TIER 3: Default Campus Flat Fare (If both stops are recognized on campus)
+    // -------------------------------------------------------------
+    if (pArea && dArea) {
+      const sameArea = pArea.areaCode === dArea.areaCode;
+      const defaultFlatFare = sameArea ? 15.00 : 20.00;
+      return {
+        id: 0,
+        pickup_stop: pTrim,
+        destination_stop: dTrim,
+        fare_amount: defaultFlatFare.toFixed(2),
+        distance_km: sameArea ? 1.0 : 1.5,
+        ruleTier: 3,
+        ruleType: 'DEFAULT_CAMPUS_FARE',
+        appliedRuleDescription: `🏛️ Tier 3 Default Campus Fare (${sameArea ? 'Within Same Area: ₹15' : 'Standard Campus: ₹20'})`
+      };
     }
 
+    // Return null -> falls back to Tier 4: GPS Distance Fallback
     return null;
+  },
+
+  async getAllRouteFares() {
+    return db.query('SELECT * FROM route_fares ORDER BY pickup_stop ASC, destination_stop ASC');
   },
 
   async upsertRouteFare({ pickupStop, destinationStop, fareAmount, distanceKm = 1.5, isActive = 1 }) {
@@ -675,4 +893,3 @@ const FareModel = {
 };
 
 module.exports = FareModel;
-

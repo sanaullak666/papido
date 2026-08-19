@@ -256,7 +256,124 @@ const AdminController = {
   },
 
   /**
-   * Campus Categories & Lists Management
+   * Campus Areas (Campus Zones) Management
+   */
+  async getCampusAreas(req, res, next) {
+    try {
+      const areas = await FareModel.getAllAdminCampusAreas();
+      return success(res, 'Campus areas fetched.', areas);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async saveCampusArea(req, res, next) {
+    try {
+      const { id, area_code, name, icon, color, bg_color, description, display_order, is_active } = req.body;
+      if (!name || name.trim().length === 0) {
+        return error(res, 'Campus area name is required.', 400);
+      }
+      if (id) {
+        const updated = await FareModel.updateCampusArea(id, { area_code, name, icon, color, bg_color, description, display_order, is_active });
+        return success(res, 'Campus area updated successfully.', updated);
+      } else {
+        const created = await FareModel.createCampusArea({ area_code, name, icon, color, bg_color, description, display_order, is_active });
+        return success(res, 'Campus area created successfully.', created, 201);
+      }
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async deleteCampusArea(req, res, next) {
+    try {
+      const id = req.params.id;
+      const deleteStops = req.query.deleteStops === 'true' || req.body?.deleteStops === true;
+      const result = await FareModel.deleteCampusArea(id, { deleteStops });
+      return success(res, 'Campus area deleted successfully.', result);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async deleteAllCampusAreas(req, res, next) {
+    try {
+      const deleteStops = req.query.deleteStops === 'true' || req.body?.deleteStops === true;
+      await FareModel.deleteAllCampusAreas({ deleteStops });
+      return success(res, 'All campus areas deleted successfully.');
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
+   * Area-to-Area Fare Matrix Management
+   */
+  async getAreaFares(req, res, next) {
+    try {
+      const fares = await FareModel.getAllAreaFares();
+      return success(res, 'Area-to-Area fares fetched.', fares);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async getAreaFareMatrix(req, res, next) {
+    try {
+      const matrix = await FareModel.getAreaFareMatrix();
+      return success(res, 'Area fare matrix fetched.', matrix);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async saveAreaFare(req, res, next) {
+    try {
+      const { fromAreaCode, toAreaCode, fareAmount, distanceKm, isActive } = req.body;
+      if (!fromAreaCode || !toAreaCode || fareAmount === undefined) {
+        return error(res, 'fromAreaCode, toAreaCode, and fareAmount are required.', 400);
+      }
+      const saved = await FareModel.upsertAreaFare({ fromAreaCode, toAreaCode, fareAmount, distanceKm, isActive });
+      return success(res, 'Area-to-Area fare saved successfully.', saved);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async saveAreaFareMatrix(req, res, next) {
+    try {
+      const { updates } = req.body;
+      if (!Array.isArray(updates)) {
+        return error(res, 'Matrix updates array is required.', 400);
+      }
+      const matrix = await FareModel.saveAreaFareMatrix(updates);
+      return success(res, 'Area fare matrix saved successfully.', matrix);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async deleteAreaFare(req, res, next) {
+    try {
+      const id = req.params.id;
+      await FareModel.deleteAreaFare(id);
+      return success(res, 'Area fare rule deleted successfully.');
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async deleteAllAreaFares(req, res, next) {
+    try {
+      await FareModel.deleteAllAreaFares();
+      return success(res, 'All Area-to-Area fares deleted successfully.');
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
+   * Campus Categories & Lists Management (Legacy / Group Support)
    */
   async getCampusCategories(req, res, next) {
     try {
@@ -322,15 +439,18 @@ const AdminController = {
 
   async saveCampusStop(req, res, next) {
     try {
-      const { id, name, category, category_label, latitude, longitude, display_order, is_active } = req.body;
-      if (!name || !category) {
-        return error(res, 'Stop name and category are required.', 400);
+      const { id, name, area_code, category, category_label, latitude, longitude, display_order, is_active } = req.body;
+      if (!name) {
+        return error(res, 'Stop name is required.', 400);
       }
+      const finalCategory = category || 'GATE_HUB';
+      const finalAreaCode = area_code || 'MAIN_CAMPUS';
+
       if (id) {
-        const updated = await FareModel.updateCampusStop(id, { name, category, category_label, latitude, longitude, display_order, is_active });
+        const updated = await FareModel.updateCampusStop(id, { name, area_code: finalAreaCode, category: finalCategory, category_label, latitude, longitude, display_order, is_active });
         return success(res, 'Campus stop updated successfully.', updated);
       } else {
-        const created = await FareModel.createCampusStop({ name, category, category_label, latitude, longitude, display_order });
+        const created = await FareModel.createCampusStop({ name, area_code: finalAreaCode, category: finalCategory, category_label, latitude, longitude, display_order });
         return success(res, 'Campus stop created successfully.', created, 201);
       }
     } catch (err) {
@@ -413,19 +533,27 @@ const AdminController = {
       if (!pickupStop || !destinationStop) {
         return error(res, 'Pickup and destination stop are required.', 400);
       }
+      const pArea = await FareModel.resolveStopArea(pickupStop);
+      const dArea = await FareModel.resolveStopArea(destinationStop);
       const matched = await FareModel.findRouteFare(pickupStop, destinationStop);
+
       if (matched) {
         return success(res, 'Matched route fare rule found.', {
           matched: true,
           routeFare: matched,
           fare: parseFloat(matched.fare_amount),
+          ruleTier: matched.ruleTier || 2,
           ruleType: matched.ruleType,
-          description: matched.appliedRuleDescription
+          description: matched.appliedRuleDescription,
+          pickupArea: pArea,
+          destinationArea: dArea
         });
       } else {
-        return success(res, 'No specific route fare found, standard base fare will apply.', {
+        return success(res, 'No specific area/override fare found, standard GPS base rate will apply.', {
           matched: false,
-          fallback: true
+          fallback: true,
+          pickupArea: pArea,
+          destinationArea: dArea
         });
       }
     } catch (err) {
