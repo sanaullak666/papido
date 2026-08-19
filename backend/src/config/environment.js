@@ -10,21 +10,30 @@ let dbPassword = process.env.DB_PASSWORD || '';
 let dbName = process.env.DB_NAME || 'papido_db';
 let dbSsl = process.env.DB_SSL === 'true';
 
-const dbUrl = process.env.DATABASE_URL || process.env.MYSQL_URL || process.env.TIDB_URL;
-if (dbUrl) {
+const rawDbUrl = process.env.DATABASE_URL || process.env.MYSQL_URL || process.env.TIDB_URL;
+if (rawDbUrl) {
   try {
-    const parsed = new URL(dbUrl);
+    // 1. Clean quotes and find the mysql URI substring if extra text was pasted
+    let cleaned = String(rawDbUrl).trim().replace(/^['"]|['"]$/g, '');
+    const urlMatch = cleaned.match(/mysql:\/\/[^\s"']+/i);
+    if (urlMatch) {
+      cleaned = urlMatch[0];
+    }
+    
+    // 2. Parse using URL parser
+    const parsed = new URL(cleaned.startsWith('mysql://') ? cleaned : `mysql://${cleaned}`);
     dbHost = parsed.hostname || dbHost;
-    dbPort = parseInt(parsed.port, 10) || dbPort;
+    dbPort = parsed.port ? parseInt(parsed.port, 10) : (dbHost.includes('tidbcloud.com') ? 4000 : dbPort);
     dbUser = decodeURIComponent(parsed.username) || dbUser;
     dbPassword = decodeURIComponent(parsed.password) || dbPassword;
-    const rawPath = parsed.pathname.replace(/^\//, '');
+    const rawPath = parsed.pathname.replace(/^\//, '').split('?')[0];
     if (rawPath && rawPath !== 'sys' && rawPath !== 'mysql' && rawPath !== 'information_schema') {
       dbName = rawPath;
     }
-    if (dbHost.includes('tidbcloud.com') || dbHost.includes('aws') || dbUrl.includes('ssl=')) {
+    if (dbHost.includes('tidbcloud.com') || dbHost.includes('aws') || cleaned.includes('ssl=')) {
       dbSsl = true;
     }
+    console.log(`[Config] Database configured: ${dbUser}@${dbHost}:${dbPort}/${dbName} (SSL: ${dbSsl})`);
   } catch (e) {
     console.error('Failed to parse database connection URL:', e.message);
   }
