@@ -1,6 +1,4 @@
 ﻿{
-  "buildCommand": "cd apps/admin_web && npm install && npm run build",
-  "outputDirectory": "apps/admin_web/dist",
   "rewrites": [
     {
       "source": "/(.*)",
