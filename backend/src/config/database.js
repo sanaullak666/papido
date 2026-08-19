@@ -36,10 +36,24 @@ async function initializeDatabase() {
     // Attempt MySQL/TiDB connection
     const testPool = mysql.createPool(poolConfig);
 
-    // Test connection with a quick query
-    const connection = await testPool.getConnection();
-    await connection.ping();
-    connection.release();
+    // Test connection with a quick query (auto-creating DB if not existing)
+    try {
+      const connection = await testPool.getConnection();
+      await connection.ping();
+      connection.release();
+    } catch (connErr) {
+      if (connErr.code === 'ER_BAD_DB_ERROR' || connErr.message.includes('Unknown database')) {
+        console.log(`[Database] Database '${env.DB.NAME}' not found on remote MySQL/TiDB. Creating '${env.DB.NAME}' automatically...`);
+        const rawConnConfig = { ...poolConfig };
+        delete rawConnConfig.database;
+        const tempConn = await mysql.createConnection(rawConnConfig);
+        await tempConn.query(`CREATE DATABASE IF NOT EXISTS \`${env.DB.NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`);
+        await tempConn.end();
+        console.log(`[Database] Created database '${env.DB.NAME}' on remote MySQL/TiDB.`);
+      } else {
+        throw connErr;
+      }
+    }
 
     pool = testPool;
     dbEngine = 'mysql';
