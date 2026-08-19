@@ -26,6 +26,7 @@ import {
   Zap,
   Users,
   ShieldCheck,
+  ShieldAlert,
   CheckCircle2,
   ExternalLink,
   MapPin
@@ -33,41 +34,53 @@ import {
 import { alertManager } from '../utils/alertManager';
 
 export function RiderPortalView() {
-  const { user, token, logout, updateProfile, changePassword } = useAuth();
+  const { user, token, logout } = useAuth();
   const [currentTab, setCurrentTab] = useState('radar'); // 'radar', 'active', 'earnings', 'kyc', 'profile'
+  const [isOnline, setIsOnline] = useState(user?.profile?.verification_status === 'APPROVED' ? Boolean(user?.profile?.is_online) : false);
 
-  // Driver Status & Multiple Incoming Bookings Queue
-  const [isOnline, setIsOnline] = useState(true);
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  // Incoming Requests & Active Ride
   const [incomingRequests, setIncomingRequests] = useState([]);
-  const [declinedRideIds, setDeclinedRideIds] = useState(new Set());
-
-  // Active Ride
   const [activeRide, setActiveRide] = useState(null);
   const [activeRideLoading, setActiveRideLoading] = useState(false);
-  const [enteredOtp, setEnteredOtp] = useState('');
-  const [otpError, setOtpError] = useState(null);
-  const [actionLoading, setActionLoading] = useState(false);
+  const [declinedRideIds, setDeclinedRideIds] = useState([]);
   const [tripCancelledNotice, setTripCancelledNotice] = useState(null);
 
-  // Earnings & History
+  // Audio Alerts
+  const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // Earnings & Shift Stats
   const [earnings, setEarnings] = useState({
     todayTotal: 0,
-    todayTrips: 0,
-    companyCommission: 0,
     netDriverEarning: 0,
-    rides: []
+    companyCommission: 0,
+    todayTrips: 0,
+    trips: []
   });
   const [loadingEarnings, setLoadingEarnings] = useState(false);
   const [riderRides, setRiderRides] = useState([]);
 
   // KYC & Vehicle
   const [vehicleType, setVehicleType] = useState(user?.profile?.vehicle_type || 'BIKE');
-  const [vehicleModel, setVehicleModel] = useState(user?.profile?.vehicle_model || 'Honda Activa 6G');
-  const [vehicleNumber, setVehicleNumber] = useState(user?.profile?.vehicle_number || 'PY 01 AB 1234');
-  const [licenseNumber, setLicenseNumber] = useState(user?.profile?.license_number || 'DL-PY-2024-00123');
-  const [kycStatus, setKycStatus] = useState(user?.profile?.kyc_status || 'APPROVED');
+  const [vehicleModel, setVehicleModel] = useState(user?.profile?.vehicle_model || '');
+  const [vehicleNumber, setVehicleNumber] = useState(user?.profile?.vehicle_number || '');
+  const [licenseNumber, setLicenseNumber] = useState(user?.profile?.license_number || '');
+  const [kycStatus, setKycStatus] = useState(user?.profile?.verification_status || user?.profile?.kyc_status || 'PENDING');
   const [savingKyc, setSavingKyc] = useState(false);
+
+  // Sync profile details when user context loads or updates
+  useEffect(() => {
+    if (user?.profile) {
+      const vStatus = user.profile.verification_status || user.profile.kyc_status || 'PENDING';
+      setKycStatus(vStatus);
+      if (user.profile.vehicle_type) setVehicleType(user.profile.vehicle_type);
+      if (user.profile.vehicle_model) setVehicleModel(user.profile.vehicle_model);
+      if (user.profile.vehicle_number) setVehicleNumber(user.profile.vehicle_number);
+      if (user.profile.license_number) setLicenseNumber(user.profile.license_number);
+      if (vStatus !== 'APPROVED') {
+        setIsOnline(false);
+      }
+    }
+  }, [user]);
 
   // Profile & Password
   const [name, setName] = useState(user?.name || '');
@@ -116,6 +129,10 @@ export function RiderPortalView() {
   const platformCommission = earnings?.companyCommission ?? earnings?.summary?.today?.companyDeduction ?? 0;
 
   const handleToggleOnline = async () => {
+    if (!isOnline && kycStatus !== 'APPROVED') {
+      alert(`Cannot go online. Your driver account is ${kycStatus}. Admin approval of your Campus ID, Driving Licence, and RC is required before you can accept rides.`);
+      return;
+    }
     const nextStatus = !isOnline;
     setIsOnline(nextStatus);
     if (socketRef.current) {
@@ -125,6 +142,8 @@ export function RiderPortalView() {
       await apiRequest('/rider/status', 'PATCH', { isOnline: nextStatus }, token);
     } catch (err) {
       console.warn('Status toggle warning:', err);
+      setIsOnline(!nextStatus);
+      alert(err.message || 'Failed to update online status.');
     }
   };
 
@@ -237,8 +256,19 @@ export function RiderPortalView() {
     const fetchProfile = async () => {
       try {
         const res = await apiRequest('/rider/profile', 'GET', null, token);
-        if (res?.data && res.data.is_online !== undefined) {
-          setIsOnline(Boolean(res.data.is_online));
+        if (res?.data) {
+          const p = res.data;
+          const vStatus = p.verification_status || 'PENDING';
+          setKycStatus(vStatus);
+          if (p.vehicle_type) setVehicleType(p.vehicle_type);
+          if (p.vehicle_model) setVehicleModel(p.vehicle_model);
+          if (p.vehicle_number) setVehicleNumber(p.vehicle_number);
+          if (p.license_number) setLicenseNumber(p.license_number);
+          if (vStatus !== 'APPROVED') {
+            setIsOnline(false);
+          } else if (p.is_online !== undefined) {
+            setIsOnline(Boolean(p.is_online));
+          }
         }
       } catch (_) {}
     };
@@ -922,6 +952,33 @@ export function RiderPortalView() {
           <div className="portal-split-layout">
             {/* Left Radar Panel */}
             <div className="portal-content-pane">
+              {/* KYC Status Notice Banner */}
+              {kycStatus !== 'APPROVED' && (
+                <div style={{
+                  background: kycStatus === 'PENDING' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                  border: kycStatus === 'PENDING' ? '1.5px solid rgba(245, 158, 11, 0.4)' : '1.5px solid rgba(239, 68, 68, 0.4)',
+                  borderRadius: '12px',
+                  padding: '14px 18px',
+                  marginBottom: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  color: kycStatus === 'PENDING' ? '#FCD34D' : '#FCA5A5'
+                }}>
+                  <ShieldAlert size={26} style={{ flexShrink: 0 }} />
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '14px' }}>
+                      {kycStatus === 'PENDING' ? '⏳ KYC Verification Pending Review' : '❌ KYC Verification Rejected'}
+                    </div>
+                    <div style={{ fontSize: '12px', opacity: 0.95, marginTop: '2px', lineHeight: 1.4 }}>
+                      {kycStatus === 'PENDING'
+                        ? 'Your uploaded documents (Campus ID, Driving Licence, and RC) are under review by Campus Admin. You will be able to go online and accept rides once approved.'
+                        : 'Your driver documents were not approved by the admin. Please check the Vehicle & KYC tab.'}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div>
                 <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '4px' }}>Driver Dispatch Radar</h2>
                 <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
@@ -1415,12 +1472,53 @@ export function RiderPortalView() {
         {currentTab === 'kyc' && (
           <div className="content-body" style={{ maxWidth: '700px', margin: '0 auto', width: '100%' }}>
             <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h2 style={{ fontSize: '20px', fontWeight: 800 }}>Vehicle & KYC Documents</h2>
-                <span className="badge badge-success" style={{ fontSize: '11px' }}>
-                  {kycStatus.toUpperCase()}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, margin: 0 }}>Vehicle & KYC Documents</h2>
+                <span className={`badge ${kycStatus === 'APPROVED' ? 'badge-success' : kycStatus === 'PENDING' ? 'badge-warning' : 'badge-danger'}`} style={{ fontSize: '12px', fontWeight: 800, padding: '4px 10px' }}>
+                  {kycStatus === 'APPROVED' ? '✓ APPROVED BY ADMIN' : kycStatus === 'PENDING' ? '⏳ PENDING ADMIN VERIFICATION' : '❌ REJECTED'}
                 </span>
               </div>
+
+              {/* Status Explanation Card */}
+              {kycStatus !== 'APPROVED' ? (
+                <div style={{
+                  background: kycStatus === 'PENDING' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                  border: kycStatus === 'PENDING' ? '1.5px solid rgba(245, 158, 11, 0.35)' : '1.5px solid rgba(239, 68, 68, 0.35)',
+                  borderRadius: '12px',
+                  padding: '14px 18px',
+                  marginBottom: '18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  color: kycStatus === 'PENDING' ? '#FCD34D' : '#FCA5A5'
+                }}>
+                  <ShieldAlert size={22} style={{ flexShrink: 0 }} />
+                  <div style={{ fontSize: '13px', lineHeight: 1.4 }}>
+                    <strong>{kycStatus === 'PENDING' ? 'Document Verification in Progress:' : 'Verification Rejected:'}</strong>{' '}
+                    {kycStatus === 'PENDING'
+                      ? 'Your Campus ID Card, Driving Licence, and Vehicle RC have been submitted and are currently waiting for approval from the Campus Administrator. You will be able to turn Online and accept rides once approved.'
+                      : 'Your documents were rejected. Please review or update your credentials below.'}
+                  </div>
+                </div>
+              ) : (
+                <div style={{
+                  background: 'rgba(16, 185, 129, 0.12)',
+                  border: '1.5px solid rgba(16, 185, 129, 0.35)',
+                  borderRadius: '12px',
+                  padding: '12px 16px',
+                  marginBottom: '18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  color: '#34D399',
+                  fontSize: '13px'
+                }}>
+                  <ShieldCheck size={20} style={{ flexShrink: 0 }} />
+                  <div>
+                    <strong>Verified Driver Account:</strong> All your documents have been verified and approved by Campus Admin. You can go online anytime to accept student rides.
+                  </div>
+                </div>
+              )}
 
               <form onSubmit={handleSaveKyc} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div className="form-group">
