@@ -34,7 +34,7 @@ import {
 import { alertManager } from '../utils/alertManager';
 
 export function RiderPortalView() {
-  const { user, token, logout } = useAuth();
+  const { user, token, logout, updateProfile, changePassword } = useAuth();
   const [currentTab, setCurrentTab] = useState('radar'); // 'radar', 'active', 'earnings', 'kyc', 'profile'
   const [isOnline, setIsOnline] = useState(user?.profile?.verification_status === 'APPROVED' ? Boolean(user?.profile?.is_online) : false);
 
