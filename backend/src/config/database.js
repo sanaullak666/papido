@@ -398,8 +398,158 @@ async function bootstrapMysqlSchema(targetPool) {
       await targetPool.query('ALTER TABLE rider_profiles MODIFY COLUMN college_id_doc_url MEDIUMTEXT;');
       await targetPool.query('ALTER TABLE users MODIFY COLUMN profile_image MEDIUMTEXT;');
     } catch (_) {}
+
+    // Seed Demo Test Accounts (Passengers, Verified Riders, Admin)
+    await seedDemoUsers(targetPool);
   } catch (err) {
     console.warn('[Database Warning] MySQL bootstrap notice:', err.message);
+  }
+}
+
+/**
+ * Seed all demo accounts (Passengers, Drivers, Admin)
+ */
+async function seedDemoUsers(targetPool) {
+  try {
+    const bcrypt = require('bcryptjs');
+    const hash = await bcrypt.hash('Password@123', 10);
+
+    const demoUsers = [
+      {
+        name: 'Papido Master Admin',
+        email: 'admin@papido.com',
+        phone: '+919876543210',
+        gender: 'OTHER',
+        role: 'ADMIN',
+        status: 'ACTIVE'
+      },
+      {
+        name: 'Ananya Sen (Passenger)',
+        email: 'customer.ananya@papido.com',
+        phone: '+919876543211',
+        gender: 'FEMALE',
+        role: 'CUSTOMER',
+        status: 'ACTIVE',
+        wallet: 250.00
+      },
+      {
+        name: 'Rohan Sharma (Passenger)',
+        email: 'customer.rohan@papido.com',
+        phone: '+919876543212',
+        gender: 'MALE',
+        role: 'CUSTOMER',
+        status: 'ACTIVE',
+        wallet: 180.00
+      },
+      {
+        name: 'Rahul Kumar (Bike Rider)',
+        email: 'rider.rahul@papido.com',
+        phone: '+919876543213',
+        gender: 'MALE',
+        role: 'RIDER',
+        status: 'ACTIVE',
+        rider: {
+          vehicleType: 'BIKE',
+          vehicleNumber: 'PY 01 AB 1234',
+          vehicleModel: 'Honda Activa 6G',
+          licenseNumber: 'DL-PY-2024-00123',
+          verificationStatus: 'APPROVED',
+          isOnline: 1,
+          rating: 4.90
+        }
+      },
+      {
+        name: 'Priya Sharma (Lady Rider)',
+        email: 'rider.priya@papido.com',
+        phone: '+919876543214',
+        gender: 'FEMALE',
+        role: 'RIDER',
+        status: 'ACTIVE',
+        rider: {
+          vehicleType: 'SCOOTER',
+          vehicleNumber: 'PY 01 CD 5678',
+          vehicleModel: 'TVS Jupiter 125',
+          licenseNumber: 'DL-PY-2024-00456',
+          verificationStatus: 'APPROVED',
+          isOnline: 1,
+          rating: 5.00
+        }
+      },
+      {
+        name: 'Sanaulla (Rider)',
+        email: 'sanaullak294@gmail.com',
+        phone: '+919876543215',
+        gender: 'MALE',
+        role: 'RIDER',
+        status: 'ACTIVE',
+        rider: {
+          vehicleType: 'SCOOTER',
+          vehicleNumber: 'PY 01 EF 9988',
+          vehicleModel: 'Honda Dio',
+          licenseNumber: 'DL-PY-2024-00789',
+          verificationStatus: 'APPROVED',
+          isOnline: 1,
+          rating: 5.00
+        }
+      }
+    ];
+
+    for (const u of demoUsers) {
+      const [existing] = await targetPool.query('SELECT id FROM users WHERE email = ?', [u.email]);
+      let userId = existing && existing[0] ? existing[0].id : null;
+
+      if (!userId) {
+        // Also check phone conflict before inserting
+        const [phoneExisting] = await targetPool.query('SELECT id FROM users WHERE phone = ?', [u.phone]);
+        if (phoneExisting && phoneExisting.length > 0) {
+          userId = phoneExisting[0].id;
+          await targetPool.query('UPDATE users SET email = ?, name = ?, password_hash = ?, role = ?, status = ? WHERE id = ?', [u.email, u.name, hash, u.role, u.status, userId]);
+        } else {
+          const [insertRes] = await targetPool.query(`
+            INSERT INTO users (name, email, phone, gender, password_hash, role, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+          `, [u.name, u.email, u.phone, u.gender, hash, u.role, u.status]);
+          userId = insertRes.insertId;
+        }
+      } else {
+        await targetPool.query('UPDATE users SET password_hash = ?, status = "ACTIVE" WHERE id = ?', [hash, userId]);
+      }
+
+      if (u.role === 'CUSTOMER') {
+        const [cProfile] = await targetPool.query('SELECT id FROM customer_profiles WHERE user_id = ?', [userId]);
+        if (!cProfile || cProfile.length === 0) {
+          await targetPool.query(`
+            INSERT INTO customer_profiles (user_id, rating, total_ratings_count, total_rides, wallet_balance)
+            VALUES (?, 5.00, 10, 5, ?)
+          `, [userId, u.wallet || 100.00]);
+        }
+      } else if (u.role === 'RIDER' && u.rider) {
+        const [rProfile] = await targetPool.query('SELECT id FROM rider_profiles WHERE user_id = ?', [userId]);
+        if (!rProfile || rProfile.length === 0) {
+          await targetPool.query(`
+            INSERT INTO rider_profiles (user_id, vehicle_type, vehicle_number, vehicle_model, license_number, verification_status, is_online, rating, total_ratings_count, total_rides)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 15, 12)
+          `, [
+            userId,
+            u.rider.vehicleType,
+            u.rider.vehicleNumber,
+            u.rider.vehicleModel,
+            u.rider.licenseNumber,
+            u.rider.verificationStatus,
+            u.rider.isOnline,
+            u.rider.rating
+          ]);
+        } else {
+          await targetPool.query('UPDATE rider_profiles SET verification_status = ?, is_online = ? WHERE user_id = ?', [
+            u.rider.verificationStatus,
+            u.rider.isOnline,
+            userId
+          ]);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[Database Warning] Seed demo accounts notice:', err.message);
   }
 }
 
