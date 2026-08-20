@@ -113,13 +113,20 @@ export function CustomerPortalView() {
   }, [activePinMode]);
 
   const [pickupAddress, setPickupAddress] = useState('PU Main Gate (Gate 1)');
+  const [pickupDetail, setPickupDetail] = useState('');
   const [pickupCoords, setPickupCoords] = useState({ lat: 12.0228681, lng: 79.8509415 });
   const [destAddress, setDestAddress] = useState('Madame Curie Girls Hostel');
+  const [destDetail, setDestDetail] = useState('');
   const [destCoords, setDestCoords] = useState({ lat: 12.0215, lng: 79.8565 });
   const [vehicleType, setVehicleType] = useState('ANY');
   const [femaleRiderOnly, setFemaleRiderOnly] = useState(false);
   const [isDoubleRide, setIsDoubleRide] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('CASH');
+
+  const isSJCStop = (stop) => {
+    const s = (stop || '').toLowerCase();
+    return s.includes('sjc') || s.includes('silver') || s.includes('jubilee');
+  };
 
   // Fare & Estimation
   const [fareEstimate, setFareEstimate] = useState(null);
@@ -580,14 +587,21 @@ export function CustomerPortalView() {
 
     setBookingLoading(true);
     const isFemaleCustomer = (user?.gender || '').toUpperCase() === 'FEMALE';
+    const finalPickup = isSJCStop(pickupAddress) && pickupDetail.trim()
+      ? `${pickupAddress} (${pickupDetail.trim()})`
+      : pickupAddress;
+    const finalDest = isSJCStop(destAddress) && destDetail.trim()
+      ? `${destAddress} (${destDetail.trim()})`
+      : destAddress;
+
     try {
       const res = await apiRequest('/customer/rides', 'POST', {
         pickupLatitude: pickupCoords.lat,
         pickupLongitude: pickupCoords.lng,
-        pickupAddress,
+        pickupAddress: finalPickup,
         destinationLatitude: destCoords.lat,
         destinationLongitude: destCoords.lng,
-        destinationAddress: destAddress,
+        destinationAddress: finalDest,
         vehicleType,
         femaleRiderOnly: isFemaleCustomer ? Boolean(femaleRiderOnly) : false,
         isDoubleRide,
@@ -938,6 +952,23 @@ export function CustomerPortalView() {
                         <option value="" disabled>No pickup locations added by Admin</option>
                       )}
                     </select>
+
+                    {/* If SJC is selected as Pickup: Show specific spot input */}
+                    {isSJCStop(pickupAddress) && (
+                      <div style={{ marginTop: '8px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 700, color: '#C2410C', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
+                          🏢 Specific location in SJC (e.g. Kalidas Hostel, SOM, Mess, etc.)
+                        </label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          style={{ background: '#FFFFFF', border: '1.5px solid #FDBA74', fontSize: '13px', padding: '8px 12px' }}
+                          placeholder="Type specific spot in SJC"
+                          value={pickupDetail}
+                          onChange={(e) => setPickupDetail(e.target.value)}
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* Drop-off Campus Destination Selection */}
@@ -968,6 +999,23 @@ export function CustomerPortalView() {
                         <option value="" disabled>No drop-off locations added by Admin</option>
                       )}
                     </select>
+
+                    {/* If SJC is selected as Destination: Show specific spot input */}
+                    {isSJCStop(destAddress) && (
+                      <div style={{ marginTop: '8px' }}>
+                        <label style={{ fontSize: '11px', fontWeight: 700, color: '#C2410C', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
+                          🏢 Specific location in SJC (e.g. Subramania Bharathi, SOM, Mess 2, etc.)
+                        </label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          style={{ background: '#FFFFFF', border: '1.5px solid #FDBA74', fontSize: '13px', padding: '8px 12px' }}
+                          placeholder="Type specific spot in SJC"
+                          value={destDetail}
+                          onChange={(e) => setDestDetail(e.target.value)}
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* Vehicle Type Selection */}
