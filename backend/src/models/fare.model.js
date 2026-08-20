@@ -47,7 +47,7 @@ const FareModel = {
     const pTrim = pickupStop.trim().toLowerCase();
     const dTrim = destinationStop.trim().toLowerCase();
 
-    // 1. Direct exact or bidirectional match
+    // 1. Direct exact match in database
     const sql = `
       SELECT * FROM route_fares 
       WHERE (
@@ -56,68 +56,91 @@ const FareModel = {
         (LOWER(TRIM(pickup_stop)) = ? AND LOWER(TRIM(destination_stop)) = ?)
       )
       AND is_active = 1
+      ORDER BY updated_at DESC
       LIMIT 1
     `;
     const exact = await db.queryOne(sql, [pTrim, dTrim, dTrim, pTrim]);
     if (exact) return exact;
 
-    // 2. Normalized & Substring Overlap Matching
-    const allRoutes = await db.query('SELECT * FROM route_fares WHERE is_active = 1');
+    const allRoutes = await db.query('SELECT * FROM route_fares WHERE is_active = 1 ORDER BY updated_at DESC');
     if (!allRoutes || allRoutes.length === 0) return null;
 
     const normalize = (str) => (str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     const pNorm = normalize(pickupStop);
     const dNorm = normalize(destinationStop);
 
+    // 2. Normalized exact string match
     for (const r of allRoutes) {
       const rpNorm = normalize(r.pickup_stop);
       const rdNorm = normalize(r.destination_stop);
-
-      if (!rpNorm || !rdNorm) continue;
-
-      const directMatch = (pNorm.includes(rpNorm) || rpNorm.includes(pNorm)) &&
-                          (dNorm.includes(rdNorm) || rdNorm.includes(dNorm));
-      const reverseMatch = (pNorm.includes(rdNorm) || rdNorm.includes(pNorm)) &&
-                           (dNorm.includes(rpNorm) || rpNorm.includes(dNorm));
-
-      if (directMatch || reverseMatch) {
+      if ((pNorm === rpNorm && dNorm === rdNorm) || (pNorm === rdNorm && dNorm === rpNorm)) {
         return r;
       }
     }
 
-    // 3. Keyword / Synonym Matching (Silver Jubilee, Gate 2, Gate 1, Library, Canteen, etc.)
-    const getSynonyms = (str) => {
+    // 3. Substring inclusion match (e.g. 'Main Gate' inside 'PU Main Gate (Gate 1)')
+    for (const r of allRoutes) {
+      const rpNorm = normalize(r.pickup_stop);
+      const rdNorm = normalize(r.destination_stop);
+      if (!rpNorm || !rdNorm) continue;
+      const directSub = (pNorm.includes(rpNorm) || rpNorm.includes(pNorm)) &&
+                        (dNorm.includes(rdNorm) || rdNorm.includes(dNorm));
+      const reverseSub = (pNorm.includes(rdNorm) || rdNorm.includes(pNorm)) &&
+                         (dNorm.includes(rpNorm) || rpNorm.includes(dNorm));
+      if (directSub || reverseSub) {
+        return r;
+      }
+    }
+
+    // 4. Multi-tier Campus Category & Synonym Matcher
+    const getCampusTags = (str) => {
+      if (!str) return [];
       const s = (str || '').toLowerCase();
-      const tokens = [];
-      if (s.includes('silver') || s.includes('jubilee') || s.includes('sjc')) tokens.push('silver_jubilee');
-      if (s.includes('gate 2') || s.includes('gate2') || s.includes('ecr')) tokens.push('gate_2');
-      if (s.includes('gate 1') || s.includes('gate1') || s.includes('main gate')) tokens.push('gate_1');
-      if (s.includes('library')) tokens.push('library');
-      if (s.includes('canteen') || s.includes('food court')) tokens.push('canteen');
-      if (s.includes('curie') || s.includes('girls hostel')) tokens.push('girls_hostel');
-      if (s.includes('physics') || s.includes('science')) tokens.push('science_dept');
-      if (s.includes('admin block') || s.includes('exam')) tokens.push('admin_block');
-      return tokens;
+      const tags = [];
+      if (s.includes('gate 1') || s.includes('gate1') || s.includes('main gate')) tags.push('GATE_1');
+      if (s.includes('gate 2') || s.includes('gate2') || s.includes('ecr')) tags.push('GATE_2');
+      if (s.includes('gate') || s.includes('ecr') || s.includes('entrance')) tags.push('GATES');
+      if (s.includes('girl') || s.includes('curie') || s.includes('teresa') || s.includes('ganga') || s.includes('yamuna') || s.includes('sarojini') || s.includes('cauvery') || s.includes('saraswathi')) tags.push('GIRLS_HOSTEL');
+      if (s.includes('boy') || s.includes('bharathidasan') || s.includes('kabilar') || s.includes('subramania') || s.includes('kalidas') || s.includes('valmiki') || s.includes('foreign') || s.includes('birsa') || s.includes('munda')) tags.push('BOYS_HOSTEL');
+      if (s.includes('silver') || s.includes('jubilee') || s.includes('sjc') || s.includes('school of management') || s.includes('som')) tags.push('SILVER_JUBILEE');
+      if (s.includes('science') || s.includes('physics') || s.includes('math') || s.includes('ramanujan') || s.includes('biotech') || s.includes('chemistry') || s.includes('life science')) tags.push('SCIENCE_BLOCK');
+      if (s.includes('library') || s.includes('reading')) tags.push('LIBRARY');
+      if (s.includes('canteen') || s.includes('food') || s.includes('mess') || s.includes('shopping') || s.includes('store') || s.includes('co-op')) tags.push('CANTEEN');
+      if (s.includes('admin') || s.includes('exam') || s.includes('vc') || s.includes('registrar') || s.includes('auditorium')) tags.push('ADMIN_BLOCK');
+      if (s.includes('dept') || s.includes('department') || s.includes('humanities') || s.includes('social science') || s.includes('media') || s.includes('communication') || s.includes('engineering') || s.includes('technology') || s.includes('sociology')) tags.push('DEPARTMENTS');
+      return tags;
     };
 
-    const pSyns = getSynonyms(pickupStop);
-    const dSyns = getSynonyms(destinationStop);
+    const pTags = getCampusTags(pickupStop);
+    const dTags = getCampusTags(destinationStop);
 
-    if (pSyns.length > 0 && dSyns.length > 0) {
-      for (const r of allRoutes) {
-        const rpSyns = getSynonyms(r.pickup_stop);
-        const rdSyns = getSynonyms(r.destination_stop);
+    let bestRoute = null;
+    let highestScore = 0;
 
-        const directSynMatch = pSyns.some(ps => rpSyns.includes(ps)) && dSyns.some(ds => rdSyns.includes(ds));
-        const reverseSynMatch = pSyns.some(ps => rdSyns.includes(ps)) && dSyns.some(ds => rpSyns.includes(ds));
+    for (const r of allRoutes) {
+      const rpTags = getCampusTags(r.pickup_stop);
+      const rdTags = getCampusTags(r.destination_stop);
 
-        if (directSynMatch || reverseSynMatch) {
-          return r;
+      let score = 0;
+
+      // Specific gate bonus
+      if ((pTags.includes('GATE_1') && rpTags.includes('GATE_1')) || (dTags.includes('GATE_1') && rdTags.includes('GATE_1'))) score += 30;
+      if ((pTags.includes('GATE_2') && rpTags.includes('GATE_2')) || (dTags.includes('GATE_2') && rdTags.includes('GATE_2'))) score += 30;
+
+      const directMatches = pTags.filter(t => rpTags.includes(t)).length + dTags.filter(t => rdTags.includes(t)).length;
+      const reverseMatches = pTags.filter(t => rdTags.includes(t)).length + dTags.filter(t => rpTags.includes(t)).length;
+      const matchCount = Math.max(directMatches, reverseMatches);
+
+      if (matchCount >= 2) {
+        score += matchCount * 10;
+        if (score > highestScore) {
+          highestScore = score;
+          bestRoute = r;
         }
       }
     }
 
-    return null;
+    return bestRoute;
   },
 
   async upsertRouteFare({ pickupStop, destinationStop, fareAmount, distanceKm = 1.5, isActive = 1 }) {

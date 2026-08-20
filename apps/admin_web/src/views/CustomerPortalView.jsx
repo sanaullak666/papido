@@ -901,7 +901,7 @@ export function CustomerPortalView() {
                 <>
                   <div>
                     <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '4px' }}>Book a Campus Ride</h2>
-                    <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Fixed ₹20 anywhere across Pondicherry University</p>
+                    <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Affordable & instant rides across Pondicherry University</p>
                   </div>
 
                   {/* Pickup Campus Stop Selection */}
@@ -922,7 +922,7 @@ export function CustomerPortalView() {
                         }
                       }}
                     >
-                      {groupedCampusStops && groupedCampusStops.length > 0 ? (
+                      {groupedCampusStops && groupedCampusStops.length > 0 && (
                         groupedCampusStops.map(group => (
                           <optgroup key={`p-${group.key || group.label}`} label={`${group.icon || '📍'} ${group.label}`}>
                             {group.stops.map(stop => (
@@ -932,10 +932,15 @@ export function CustomerPortalView() {
                             ))}
                           </optgroup>
                         ))
-                      ) : (
-                        (adminStops.length > 0 ? adminStops : CAMPUS_HOTSPOTS.map(h => h.name)).map((stopName, i) => (
-                          <option key={i} value={stopName}>{stopName}</option>
-                        ))
+                      )}
+                      {adminStops && adminStops.filter(s => !groupedCampusStops?.some(g => g.stops?.some(st => st.name?.toLowerCase() === s.toLowerCase()))).length > 0 && (
+                        <optgroup label="📍 Admin Configured Stops">
+                          {adminStops
+                            .filter(s => !groupedCampusStops?.some(g => g.stops?.some(st => st.name?.toLowerCase() === s.toLowerCase())))
+                            .map((stopName, i) => (
+                              <option key={`p-admin-${i}`} value={stopName}>{stopName}</option>
+                            ))}
+                        </optgroup>
                       )}
                     </select>
                   </div>
@@ -958,7 +963,7 @@ export function CustomerPortalView() {
                         }
                       }}
                     >
-                      {groupedCampusStops && groupedCampusStops.length > 0 ? (
+                      {groupedCampusStops && groupedCampusStops.length > 0 && (
                         groupedCampusStops.map(group => (
                           <optgroup key={`d-${group.key || group.label}`} label={`${group.icon || '📍'} ${group.label}`}>
                             {group.stops.map(stop => (
@@ -968,10 +973,15 @@ export function CustomerPortalView() {
                             ))}
                           </optgroup>
                         ))
-                      ) : (
-                        (adminStops.length > 0 ? adminStops : CAMPUS_HOTSPOTS.map(h => h.name)).map((stopName, i) => (
-                          <option key={i} value={stopName}>{stopName}</option>
-                        ))
+                      )}
+                      {adminStops && adminStops.filter(s => !groupedCampusStops?.some(g => g.stops?.some(st => st.name?.toLowerCase() === s.toLowerCase()))).length > 0 && (
+                        <optgroup label="📍 Admin Configured Stops">
+                          {adminStops
+                            .filter(s => !groupedCampusStops?.some(g => g.stops?.some(st => st.name?.toLowerCase() === s.toLowerCase())))
+                            .map((stopName, i) => (
+                              <option key={`d-admin-${i}`} value={stopName}>{stopName}</option>
+                            ))}
+                        </optgroup>
                       )}
                     </select>
                   </div>
@@ -1095,6 +1105,11 @@ export function CustomerPortalView() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                       <div>
                         <span style={{ fontSize: '13px', color: '#796D61', fontWeight: 600 }}>Total Trip Fare:</span>
+                        {fareEstimate?.isRouteBased && (
+                          <div style={{ fontSize: '11px', color: '#EA580C', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                            <MapPin size={12} /> {fareEstimate.routeName || 'Configured Campus Route'}
+                          </div>
+                        )}
                         {isDoubleRide && (
                           <div style={{ fontSize: '11px', color: '#059669', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
                             <Users size={12} /> Double Ride (₹10 Discount Applied)
@@ -1126,7 +1141,7 @@ export function CustomerPortalView() {
                     )}
 
                     <div style={{ fontSize: '11px', color: '#796D61', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #FED7AA', paddingTop: '8px', marginTop: '6px' }}>
-                      <span>Pricing: {fareEstimate?.ruleType ? `Group / Preset Rule` : (isDoubleRide ? `(₹${fareEstimate?.singleFare || 20} × 2) - ₹10` : 'Campus Route Fare')}</span>
+                      <span>Pricing: {fareEstimate?.isRouteBased ? `Campus Route Fare (₹${fareEstimate.singleFare || fareEstimate.estimatedFare})` : (isDoubleRide ? `(₹${fareEstimate?.singleFare || 20} × 2) - ₹10` : 'Standard Distance Fare')}</span>
                       <span style={{ fontWeight: 700 }}>Cash on Drop</span>
                     </div>
                   </div>
