@@ -5,9 +5,6 @@ export const getSocketUrl = () => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL.replace(/\/+$/, '').replace(/\/api$/, '');
   }
-  if (typeof window !== 'undefined' && (window.location.hostname.includes('netlify.app') || window.location.hostname.includes('vercel.app'))) {
-    return 'https://papido.onrender.com';
-  }
   if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
     return window.location.port === '5173' ? 'http://localhost:5000' : window.location.origin;
   }
@@ -21,9 +18,6 @@ const getBaseUrl = () => {
   if (import.meta.env.VITE_API_URL) {
     const url = import.meta.env.VITE_API_URL.replace(/\/+$/, '');
     return url.endsWith('/api') ? url : `${url}/api`;
-  }
-  if (typeof window !== 'undefined' && (window.location.hostname.includes('netlify.app') || window.location.hostname.includes('vercel.app'))) {
-    return 'https://papido.onrender.com/api';
   }
   if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
     return window.location.port === '5173' ? '/api' : 'http://localhost:5000/api';

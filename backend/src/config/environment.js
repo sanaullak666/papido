@@ -3,7 +3,7 @@ const path = require('path');
 
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
-const isProduction = process.env.NODE_ENV === 'production' || Boolean(process.env.RENDER) || true;
+const isProduction = process.env.NODE_ENV === 'production';
 
 let dbHost = process.env.DB_HOST || 'gateway01.ap-southeast-1.prod.aws.tidbcloud.com';
 let dbPort = parseInt(process.env.DB_PORT, 10) || 4000;
@@ -12,7 +12,7 @@ let dbPassword = process.env.DB_PASSWORD || 'GjJFGgxEPSBxMW9k';
 let dbName = process.env.DB_NAME || 'papido_db';
 let dbSsl = true;
 
-// If explicitly provided localhost without FORCE_LOCAL_DB, still use TiDB Cloud
+// Ensure connection always points to TiDB Cloud
 if ((dbHost === '127.0.0.1' || dbHost === 'localhost') && process.env.FORCE_LOCAL_DB !== 'true') {
   dbHost = 'gateway01.ap-southeast-1.prod.aws.tidbcloud.com';
   dbPort = 4000;
@@ -48,8 +48,8 @@ if (rawDbUrl) {
   } catch (e) {
     console.error('Failed to parse database connection URL:', e.message);
   }
-} else if (process.env.NODE_ENV === 'production' || process.env.RENDER) {
-  console.log(`[Config] Production database configured with TiDB Cloud: ${dbUser}@${dbHost}:${dbPort}/${dbName} (SSL: ${dbSsl})`);
+} else {
+  console.log(`[Config] Database configured with TiDB Cloud: ${dbUser}@${dbHost}:${dbPort}/${dbName} (SSL: ${dbSsl})`);
 }
 
 module.exports = {
