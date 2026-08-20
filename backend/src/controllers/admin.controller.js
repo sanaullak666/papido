@@ -269,7 +269,7 @@ const AdminController = {
 
   async saveRouteFare(req, res, next) {
     try {
-      const { id, pickupStop, destinationStop, fareAmount, distanceKm, isActive } = req.body;
+      const { id, pickupStop, destinationStop, fareAmount, distanceKm, isActive, isBidirectional } = req.body;
       if (id) {
         const updated = await FareModel.updateRouteFareById(id, { fareAmount, distanceKm, isActive });
         return success(res, 'Route fare updated successfully.', updated);
@@ -277,7 +277,14 @@ const AdminController = {
         if (!pickupStop || !destinationStop || fareAmount === undefined) {
           return error(res, 'Pickup stop, destination stop, and fare amount are required.', 400);
         }
-        const created = await FareModel.upsertRouteFare({ pickupStop, destinationStop, fareAmount, distanceKm, isActive });
+        const created = await FareModel.upsertRouteFare({
+          pickupStop,
+          destinationStop,
+          fareAmount,
+          distanceKm,
+          isActive,
+          isBidirectional: isBidirectional !== false
+        });
         return success(res, 'Route fare saved successfully.', created, 201);
       }
     } catch (err) {

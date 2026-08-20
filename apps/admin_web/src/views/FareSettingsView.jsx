@@ -3,14 +3,15 @@ import { apiRequest } from '../api';
 import { MapPin, Save, Plus, Edit2, CheckCircle, RefreshCw, Trash2, ArrowRight } from 'lucide-react';
 
 const CAMPUS_STOPS = [
-  'PU Main Gate (Gate 1)',
+  'SJC (Silver Jubilee Campus)',
+  'Girls Hostel',
+  'Boys Hostel',
+  'Gate 1 (Main Gate)',
+  'Gate 2 (ECR Gate)',
+  'Science Block / Departments',
   'Central Library',
-  'Science Complex / Physics Dept',
-  'Silver Jubilee Hostel (SJC)',
-  'Madame Curie Girls Hostel',
   'University Canteen & Food Court',
-  'Admin Block & Exam Wing',
-  'Gate 2 (East Coast Road)'
+  'Admin Block & Exam Wing'
 ];
 
 export function FareSettingsView() {
@@ -25,7 +26,8 @@ export function FareSettingsView() {
     pickupStop: '',
     destinationStop: '',
     fareAmount: '25.00',
-    distanceKm: '1.5'
+    distanceKm: '1.5',
+    isBidirectional: true
   });
   const [successMsg, setSuccessMsg] = useState('');
 
@@ -89,9 +91,10 @@ export function FareSettingsView() {
         destinationStop: routeData.destination_stop || routeData.destinationStop,
         fareAmount: parseFloat(routeData.fare_amount || routeData.fareAmount),
         distanceKm: parseFloat(routeData.distance_km || routeData.distanceKm || 1.5),
-        isActive: routeData.is_active !== undefined ? routeData.is_active : 1
+        isActive: routeData.is_active !== undefined ? routeData.is_active : 1,
+        isBidirectional: routeData.isBidirectional !== undefined ? routeData.isBidirectional : true
       });
-      setSuccessMsg('Campus route fare updated successfully!');
+      setSuccessMsg('Campus route fare saved and synchronized for both directions!');
       setTimeout(() => setSuccessMsg(''), 4000);
       setEditingRoute(null);
       setShowAddRoute(false);

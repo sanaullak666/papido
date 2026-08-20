@@ -143,53 +143,82 @@ const FareModel = {
     return bestRoute;
   },
 
-  async upsertRouteFare({ pickupStop, destinationStop, fareAmount, distanceKm = 1.5, isActive = 1 }) {
-    // Check if an existing route between these two stops exists (bidirectional)
-    const existing = await this.findRouteFare(pickupStop, destinationStop);
-    if (existing && existing.id) {
-      await db.query(
-        `UPDATE route_fares 
-         SET fare_amount = ?, distance_km = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP 
-         WHERE id = ?`,
-        [parseFloat(fareAmount), parseFloat(distanceKm), isActive ? 1 : 0, existing.id]
+  async upsertRouteFare({ pickupStop, destinationStop, fareAmount, distanceKm = 1.5, isActive = 1, isBidirectional = true }) {
+    const p = (pickupStop || '').trim();
+    const d = (destinationStop || '').trim();
+    if (!p || !d) return null;
+
+    const fare = parseFloat(fareAmount);
+    const dist = parseFloat(distanceKm);
+    const act = isActive ? 1 : 0;
+
+    const upsertSingle = async (from, to) => {
+      const existing = await db.queryOne(
+        `SELECT id FROM route_fares WHERE LOWER(TRIM(pickup_stop)) = LOWER(TRIM(?)) AND LOWER(TRIM(destination_stop)) = LOWER(TRIM(?)) LIMIT 1`,
+        [from, to]
       );
-      return this.findRouteFare(pickupStop, destinationStop);
+      if (existing && existing.id) {
+        await db.query(
+          `UPDATE route_fares SET fare_amount = ?, distance_km = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+          [fare, dist, act, existing.id]
+        );
+      } else {
+        await db.query(
+          `INSERT INTO route_fares (pickup_stop, destination_stop, fare_amount, distance_km, is_active) VALUES (?, ?, ?, ?, ?)`,
+          [from, to, fare, dist, act]
+        );
+      }
+    };
+
+    await upsertSingle(p, d);
+    if (isBidirectional) {
+      await upsertSingle(d, p);
     }
 
-    try {
-      await db.query(
-        `INSERT INTO route_fares (pickup_stop, destination_stop, fare_amount, distance_km, is_active)
-         VALUES (?, ?, ?, ?, ?)`,
-        [pickupStop.trim(), destinationStop.trim(), parseFloat(fareAmount), parseFloat(distanceKm), isActive ? 1 : 0]
-      );
-    } catch (err) {
-      await db.query(
-        `UPDATE route_fares 
-         SET fare_amount = ?, distance_km = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP 
-         WHERE (LOWER(TRIM(pickup_stop)) = LOWER(TRIM(?)) AND LOWER(TRIM(destination_stop)) = LOWER(TRIM(?)))
-            OR (LOWER(TRIM(pickup_stop)) = LOWER(TRIM(?)) AND LOWER(TRIM(destination_stop)) = LOWER(TRIM(?)))`,
-        [parseFloat(fareAmount), parseFloat(distanceKm), isActive ? 1 : 0, pickupStop, destinationStop, destinationStop, pickupStop]
-      );
-    }
-
-    return this.findRouteFare(pickupStop, destinationStop);
+    return this.findRouteFare(p, d);
   },
 
   async updateRouteFareById(id, { fareAmount, distanceKm, isActive }) {
+    const target = await db.queryOne('SELECT * FROM route_fares WHERE id = ?', [id]);
+    if (!target) return null;
+
+    const fare = fareAmount !== undefined ? parseFloat(fareAmount) : parseFloat(target.fare_amount);
+    const dist = distanceKm !== undefined ? parseFloat(distanceKm) : parseFloat(target.distance_km);
+    const act = isActive !== undefined ? (isActive ? 1 : 0) : target.is_active;
+
     await db.query(
       `UPDATE route_fares 
-       SET fare_amount = COALESCE(?, fare_amount),
-           distance_km = COALESCE(?, distance_km),
-           is_active = COALESCE(?, is_active),
-           updated_at = CURRENT_TIMESTAMP
+       SET fare_amount = ?, distance_km = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP 
        WHERE id = ?`,
-      [fareAmount !== undefined ? parseFloat(fareAmount) : null, distanceKm !== undefined ? parseFloat(distanceKm) : null, isActive !== undefined ? (isActive ? 1 : 0) : null, id]
+      [fare, dist, act, id]
     );
+
+    // Also update reverse direction if exists
+    if (target.pickup_stop && target.destination_stop) {
+      await db.query(
+        `UPDATE route_fares 
+         SET fare_amount = ?, distance_km = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP 
+         WHERE LOWER(TRIM(pickup_stop)) = LOWER(TRIM(?)) AND LOWER(TRIM(destination_stop)) = LOWER(TRIM(?))`,
+        [fare, dist, act, target.destination_stop, target.pickup_stop]
+      );
+    }
+
     return db.queryOne('SELECT * FROM route_fares WHERE id = ?', [id]);
   },
 
   async deleteRouteFare(id) {
-    return db.query('DELETE FROM route_fares WHERE id = ?', [id]);
+    const target = await db.queryOne('SELECT * FROM route_fares WHERE id = ?', [id]);
+    if (target && target.pickup_stop && target.destination_stop) {
+      await db.query(
+        `DELETE FROM route_fares 
+         WHERE (LOWER(TRIM(pickup_stop)) = LOWER(TRIM(?)) AND LOWER(TRIM(destination_stop)) = LOWER(TRIM(?)))
+            OR (LOWER(TRIM(pickup_stop)) = LOWER(TRIM(?)) AND LOWER(TRIM(destination_stop)) = LOWER(TRIM(?)))`,
+        [target.pickup_stop, target.destination_stop, target.destination_stop, target.pickup_stop]
+      );
+    } else {
+      await db.query('DELETE FROM route_fares WHERE id = ?', [id]);
+    }
+    return true;
   }
 };
 
