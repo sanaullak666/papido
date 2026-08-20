@@ -133,8 +133,8 @@ export function CustomerPortalView() {
   const findStopCoords = (stopName) => {
     if (!stopName) return null;
     const nameLower = stopName.trim().toLowerCase();
-    for (const grp of groupedCampusStops) {
-      for (const stop of grp.stops) {
+    for (const grp of groupedCampusStops || []) {
+      for (const stop of grp.stops || []) {
         if (stop.name && (stop.name.toLowerCase() === nameLower || stop.name.toLowerCase().includes(nameLower) || nameLower.includes(stop.name.toLowerCase()))) {
           if (stop.lat && stop.lng) return { lat: parseFloat(stop.lat || stop.latitude), lng: parseFloat(stop.lng || stop.longitude) };
           if (stop.latitude && stop.longitude) return { lat: parseFloat(stop.latitude), lng: parseFloat(stop.longitude) };
@@ -143,29 +143,41 @@ export function CustomerPortalView() {
     }
     const hotspot = CAMPUS_HOTSPOTS.find(h => h.name.toLowerCase() === nameLower || h.name.toLowerCase().includes(nameLower));
     if (hotspot) return { lat: hotspot.lat, lng: hotspot.lng };
-    return null;
+    return { lat: 12.0240, lng: 79.8530 };
   };
 
   // Fetch & Live-Sync Admin-Configured Campus Routes and Grouped Stops
   const loadAdminRoutes = async () => {
     try {
-      const [routesRes, stopsRes, groupedRes] = await Promise.all([
+      const results = await Promise.allSettled([
         apiRequest('/fares/routes', 'GET', null, token),
         apiRequest('/fares/stops', 'GET', null, token),
         apiRequest('/fares/grouped-stops', 'GET', null, token)
       ]);
-      if (routesRes.data) {
-        setAdminRoutes(routesRes.data);
+
+      if (results[0].status === 'fulfilled' && results[0].value?.data) {
+        setAdminRoutes(results[0].value.data.filter(r => r.is_active));
       }
-      if (stopsRes.data && stopsRes.data.length > 0) {
-        setAdminStops(stopsRes.data);
+      if (results[1].status === 'fulfilled' && results[1].value?.data && Array.isArray(results[1].value.data)) {
+        setAdminStops(results[1].value.data);
       }
-      if (groupedRes.data && Array.isArray(groupedRes.data) && groupedRes.data.length > 0) {
-        setGroupedCampusStops(groupedRes.data);
+      if (results[2].status === 'fulfilled' && Array.isArray(results[2].value?.data) && results[2].value.data.length > 0) {
+        setGroupedCampusStops(results[2].value.data);
       }
     } catch (err) {
       console.warn('Failed to load admin routes:', err);
     }
+  };
+
+  const handleSelectAdminRoute = (route) => {
+    if (!route) return;
+    setPickupAddress(route.pickup_stop);
+    const pCoords = findStopCoords(route.pickup_stop) || { lat: 12.0228, lng: 79.8509 };
+    setPickupCoords(pCoords);
+
+    setDestAddress(route.destination_stop);
+    const dCoords = findStopCoords(route.destination_stop) || { lat: 12.0280, lng: 79.8520 };
+    setDestCoords(dCoords);
   };
 
   useEffect(() => {
@@ -904,6 +916,80 @@ export function CustomerPortalView() {
                     <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Affordable & instant rides across Pondicherry University</p>
                   </div>
 
+                  {/* Admin Configured Quick Routes with Fixed Fares */}
+                  {adminRoutes && adminRoutes.length > 0 && (
+                    <div style={{
+                      background: '#FFF7ED',
+                      border: '1.5px solid #FDBA74',
+                      borderRadius: '12px',
+                      padding: '12px 14px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '12px', fontWeight: 800, color: '#C2410C', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Zap size={14} color="#EA580C" /> Configured Campus Routes (Tap to Select):
+                        </span>
+                        <span style={{ fontSize: '11px', color: '#9A3412', fontWeight: 600 }}>
+                          {adminRoutes.length} Preset Routes
+                        </span>
+                      </div>
+
+                      <div style={{
+                        display: 'flex',
+                        gap: '8px',
+                        overflowX: 'auto',
+                        paddingBottom: '4px',
+                        scrollbarWidth: 'thin'
+                      }}>
+                        {adminRoutes.map((r) => {
+                          const isSelected = (pickupAddress === r.pickup_stop && destAddress === r.destination_stop) ||
+                                             (pickupAddress === r.destination_stop && destAddress === r.pickup_stop);
+                          return (
+                            <button
+                              key={`quick-route-${r.id}`}
+                              type="button"
+                              onClick={() => handleSelectAdminRoute(r)}
+                              style={{
+                                flexShrink: 0,
+                                padding: '8px 12px',
+                                borderRadius: '10px',
+                                border: isSelected ? '2px solid #EA580C' : '1px solid #FED7AA',
+                                background: isSelected ? '#FFEDD5' : '#FFFFFF',
+                                color: '#1C1917',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                boxShadow: isSelected ? '0 2px 8px rgba(234, 88, 12, 0.25)' : '0 1px 3px rgba(0,0,0,0.06)',
+                                transition: 'all 0.15s ease'
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+                                <span style={{ fontSize: '12px', fontWeight: 700, color: '#43362A' }}>
+                                  {r.pickup_stop} ➔ {r.destination_stop}
+                                </span>
+                                <span style={{
+                                  fontSize: '12px',
+                                  fontWeight: 900,
+                                  color: '#EA580C',
+                                  background: 'rgba(234, 88, 12, 0.12)',
+                                  padding: '2px 8px',
+                                  borderRadius: '6px',
+                                  border: '1px solid rgba(234, 88, 12, 0.25)'
+                                }}>
+                                  ₹{parseFloat(r.fare_amount).toFixed(0)}
+                                </span>
+                              </div>
+                              <div style={{ fontSize: '10px', color: '#796D61' }}>
+                                {r.distance_km || 1.5} km • Fixed Route Fare
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Pickup Campus Stop Selection */}
                   <div className="form-group">
                     <label className="form-label" style={{ color: '#271E16', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -922,6 +1008,15 @@ export function CustomerPortalView() {
                         }
                       }}
                     >
+                      {adminRoutes && adminRoutes.length > 0 && (
+                        <optgroup label="⭐ Admin Configured Route Stops">
+                          {Array.from(new Set(adminRoutes.flatMap(r => [r.pickup_stop, r.destination_stop]))).map((stopName, i) => (
+                            <option key={`p-adm-route-${i}`} value={stopName}>
+                              {stopName}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
                       {groupedCampusStops && groupedCampusStops.length > 0 && (
                         groupedCampusStops.map(group => (
                           <optgroup key={`p-${group.key || group.label}`} label={`${group.icon || '📍'} ${group.label}`}>
@@ -932,15 +1027,6 @@ export function CustomerPortalView() {
                             ))}
                           </optgroup>
                         ))
-                      )}
-                      {adminStops && adminStops.filter(s => !groupedCampusStops?.some(g => g.stops?.some(st => st.name?.toLowerCase() === s.toLowerCase()))).length > 0 && (
-                        <optgroup label="📍 Admin Configured Stops">
-                          {adminStops
-                            .filter(s => !groupedCampusStops?.some(g => g.stops?.some(st => st.name?.toLowerCase() === s.toLowerCase())))
-                            .map((stopName, i) => (
-                              <option key={`p-admin-${i}`} value={stopName}>{stopName}</option>
-                            ))}
-                        </optgroup>
                       )}
                     </select>
                   </div>
@@ -963,6 +1049,15 @@ export function CustomerPortalView() {
                         }
                       }}
                     >
+                      {adminRoutes && adminRoutes.length > 0 && (
+                        <optgroup label="⭐ Admin Configured Route Stops">
+                          {Array.from(new Set(adminRoutes.flatMap(r => [r.pickup_stop, r.destination_stop]))).map((stopName, i) => (
+                            <option key={`d-adm-route-${i}`} value={stopName}>
+                              {stopName}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
                       {groupedCampusStops && groupedCampusStops.length > 0 && (
                         groupedCampusStops.map(group => (
                           <optgroup key={`d-${group.key || group.label}`} label={`${group.icon || '📍'} ${group.label}`}>
@@ -973,15 +1068,6 @@ export function CustomerPortalView() {
                             ))}
                           </optgroup>
                         ))
-                      )}
-                      {adminStops && adminStops.filter(s => !groupedCampusStops?.some(g => g.stops?.some(st => st.name?.toLowerCase() === s.toLowerCase()))).length > 0 && (
-                        <optgroup label="📍 Admin Configured Stops">
-                          {adminStops
-                            .filter(s => !groupedCampusStops?.some(g => g.stops?.some(st => st.name?.toLowerCase() === s.toLowerCase())))
-                            .map((stopName, i) => (
-                              <option key={`d-admin-${i}`} value={stopName}>{stopName}</option>
-                            ))}
-                        </optgroup>
                       )}
                     </select>
                   </div>
