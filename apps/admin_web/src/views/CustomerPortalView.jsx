@@ -123,9 +123,37 @@ export function CustomerPortalView() {
   const [isDoubleRide, setIsDoubleRide] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('CASH');
 
-  const isSJCStop = (stop) => {
-    const s = (stop || '').toLowerCase();
-    return s.includes('sjc') || s.includes('silver') || s.includes('jubilee');
+  const getLocationHint = (stopName) => {
+    if (!stopName) return null;
+    const s = stopName.toLowerCase();
+    if (s.includes('sjc') || s.includes('silver') || s.includes('jubilee')) {
+      return {
+        label: '🏢 Specific location in SJC (e.g. SOM Building, Kalidas Hostel, Mess)',
+        placeholder: 'e.g. SOM Block, Kalidas Hostel Room 12'
+      };
+    }
+    if (s.includes('girl')) {
+      return {
+        label: '👧 Specific Girls Hostel (e.g. Madame Curie, Mother Teresa, Ganga, Yamuna)',
+        placeholder: 'e.g. Madame Curie Girls Hostel'
+      };
+    }
+    if (s.includes('boy')) {
+      return {
+        label: '👦 Specific Boys Hostel (e.g. Bharathidasan, Kabilar, Subramania, Kalidas)',
+        placeholder: 'e.g. Bharathidasan Boys Hostel'
+      };
+    }
+    if (s.includes('science') || s.includes('department') || s.includes('block') || s.includes('dept')) {
+      return {
+        label: '🏛️ Specific Department / Block (e.g. Physics, Math, Biotech, SOM)',
+        placeholder: 'e.g. Science Complex / Physics Dept'
+      };
+    }
+    return {
+      label: `📍 Specific spot / Gate entry for ${stopName} (Optional)`,
+      placeholder: 'e.g. Near main security cabin / bus shelter'
+    };
   };
 
   // Fare & Estimation
@@ -587,10 +615,10 @@ export function CustomerPortalView() {
 
     setBookingLoading(true);
     const isFemaleCustomer = (user?.gender || '').toUpperCase() === 'FEMALE';
-    const finalPickup = isSJCStop(pickupAddress) && pickupDetail.trim()
+    const finalPickup = pickupDetail.trim()
       ? `${pickupAddress} (${pickupDetail.trim()})`
       : pickupAddress;
-    const finalDest = isSJCStop(destAddress) && destDetail.trim()
+    const finalDest = destDetail.trim()
       ? `${destAddress} (${destDetail.trim()})`
       : destAddress;
 
@@ -953,17 +981,17 @@ export function CustomerPortalView() {
                       )}
                     </select>
 
-                    {/* If SJC is selected as Pickup: Show specific spot input */}
-                    {isSJCStop(pickupAddress) && (
+                    {/* Dynamic specific spot input */}
+                    {getLocationHint(pickupAddress) && (
                       <div style={{ marginTop: '8px' }}>
                         <label style={{ fontSize: '11px', fontWeight: 700, color: '#C2410C', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-                          🏢 Specific location in SJC (e.g. Kalidas Hostel, SOM, Mess, etc.)
+                          {getLocationHint(pickupAddress).label}
                         </label>
                         <input
                           type="text"
                           className="form-input"
                           style={{ background: '#FFFFFF', border: '1.5px solid #FDBA74', fontSize: '13px', padding: '8px 12px' }}
-                          placeholder="Type specific spot in SJC"
+                          placeholder={getLocationHint(pickupAddress).placeholder}
                           value={pickupDetail}
                           onChange={(e) => setPickupDetail(e.target.value)}
                         />
@@ -1000,17 +1028,17 @@ export function CustomerPortalView() {
                       )}
                     </select>
 
-                    {/* If SJC is selected as Destination: Show specific spot input */}
-                    {isSJCStop(destAddress) && (
+                    {/* Dynamic specific spot input */}
+                    {getLocationHint(destAddress) && (
                       <div style={{ marginTop: '8px' }}>
                         <label style={{ fontSize: '11px', fontWeight: 700, color: '#C2410C', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-                          🏢 Specific location in SJC (e.g. Subramania Bharathi, SOM, Mess 2, etc.)
+                          {getLocationHint(destAddress).label}
                         </label>
                         <input
                           type="text"
                           className="form-input"
                           style={{ background: '#FFFFFF', border: '1.5px solid #FDBA74', fontSize: '13px', padding: '8px 12px' }}
-                          placeholder="Type specific spot in SJC"
+                          placeholder={getLocationHint(destAddress).placeholder}
                           value={destDetail}
                           onChange={(e) => setDestDetail(e.target.value)}
                         />
