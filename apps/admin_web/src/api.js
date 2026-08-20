@@ -5,6 +5,9 @@ export const getSocketUrl = () => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL.replace(/\/+$/, '').replace(/\/api$/, '');
   }
+  if (typeof window !== 'undefined' && (window.location.hostname.includes('netlify.app') || window.location.hostname.includes('vercel.app'))) {
+    return 'https://papido.onrender.com';
+  }
   if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
     return window.location.port === '5173' ? 'http://localhost:5000' : window.location.origin;
   }
@@ -18,6 +21,9 @@ const getBaseUrl = () => {
   if (import.meta.env.VITE_API_URL) {
     const url = import.meta.env.VITE_API_URL.replace(/\/+$/, '');
     return url.endsWith('/api') ? url : `${url}/api`;
+  }
+  if (typeof window !== 'undefined' && (window.location.hostname.includes('netlify.app') || window.location.hostname.includes('vercel.app'))) {
+    return 'https://papido.onrender.com/api';
   }
   if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
     return window.location.port === '5173' ? '/api' : 'http://localhost:5000/api';
@@ -57,14 +63,25 @@ export async function apiRequest(endpoint, method = 'GET', body = null, token = 
 
   try {
     const res = await fetch(`${BASE_URL}${endpoint}`, config);
-    const data = await res.json();
+    const text = await res.text();
+    let data = null;
+
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch (_) {
+      if (!res.ok) {
+        throw new Error(`Server returned HTTP ${res.status}: ${res.statusText || 'Service Temporarily Unavailable'}`);
+      }
+      throw new Error('Backend server returned an invalid non-JSON response. Please check server logs.');
+    }
+
     if (!res.ok) {
-      throw new Error(data.message || `API Error: ${res.statusText}`);
+      throw new Error(data.message || `API Error: ${res.statusText || res.status}`);
     }
     return data;
   } catch (err) {
     if (err.name === 'TypeError' && err.message.includes('fetch')) {
-      throw new Error('Cannot connect to Papido Backend API at http://localhost:5000. Please ensure the backend server is running.');
+      throw new Error('Cannot connect to Papido Backend API. Please check your internet connection or verify the backend server is running.');
     }
     console.error(`[API Error] ${method} ${endpoint}:`, err);
     throw err;
@@ -87,9 +104,16 @@ export async function uploadFile(file, token = null) {
     body: formData
   });
 
-  const data = await res.json();
+  const text = await res.text();
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch (_) {
+    throw new Error(`Upload failed (HTTP ${res.status}).`);
+  }
+
   if (!res.ok) {
     throw new Error(data.message || 'File upload failed.');
   }
-  return data.data; // { url, filename, relativePath, ... }
+  return data.data;
 }
