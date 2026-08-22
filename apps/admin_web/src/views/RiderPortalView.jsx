@@ -299,6 +299,13 @@ export function RiderPortalView() {
     }
   }, [token]);
 
+  // Refresh earnings and trip history whenever opening the earnings tab
+  useEffect(() => {
+    if (currentTab === 'earnings') {
+      fetchEarnings();
+    }
+  }, [currentTab]);
+
   // Sync online status changes to socket
   useEffect(() => {
     if (socketRef.current) {

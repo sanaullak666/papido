@@ -20,15 +20,6 @@ const EarningModel = {
   },
 
   async getRiderEarningsSummary(riderId) {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const startOfTodayISO = `${year}-${month}-${day} 00:00:00`;
-
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10) + ' 00:00:00';
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10) + ' 00:00:00';
-
     // Today's earnings from rider_earnings
     const todaySql = `
       SELECT 
@@ -37,7 +28,7 @@ const EarningModel = {
         COALESCE(SUM(total_fare), 0) as today_gross_fare,
         COUNT(id) as today_completed_rides
       FROM rider_earnings
-      WHERE rider_id = ? AND (created_at >= ? OR date(created_at) = date('now', 'localtime') OR date(created_at) = date('now'))
+      WHERE rider_id = ? AND (created_at >= CURDATE() OR DATE(created_at) = CURDATE())
     `;
 
     // Weekly earnings (last 7 days)
@@ -48,7 +39,7 @@ const EarningModel = {
         COALESCE(SUM(total_fare), 0) as weekly_gross_fare,
         COUNT(id) as weekly_completed_rides
       FROM rider_earnings
-      WHERE rider_id = ? AND created_at >= ?
+      WHERE rider_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
     `;
 
     // Monthly earnings (last 30 days)
@@ -59,7 +50,7 @@ const EarningModel = {
         COALESCE(SUM(total_fare), 0) as monthly_gross_fare,
         COUNT(id) as monthly_completed_rides
       FROM rider_earnings
-      WHERE rider_id = ? AND created_at >= ?
+      WHERE rider_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
     `;
 
     // Total lifetime
@@ -74,9 +65,9 @@ const EarningModel = {
     `;
 
     const [today, weekly, monthly, lifetime] = await Promise.all([
-      db.queryOne(todaySql, [riderId, startOfTodayISO]),
-      db.queryOne(weeklySql, [riderId, sevenDaysAgo]),
-      db.queryOne(monthlySql, [riderId, thirtyDaysAgo]),
+      db.queryOne(todaySql, [riderId]),
+      db.queryOne(weeklySql, [riderId]),
+      db.queryOne(monthlySql, [riderId]),
       db.queryOne(lifetimeSql, [riderId])
     ]);
 
