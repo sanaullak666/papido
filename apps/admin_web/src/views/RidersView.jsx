@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../api';
 import { useSocket } from '../context/SocketContext';
-import { Search, Check, X, Star, ShieldCheck, ShieldAlert, Bike, Car, RefreshCw, Eye, ExternalLink, FileText, Image as ImageIcon, Download, Trash2 } from 'lucide-react';
+import { Search, Check, X, Star, ShieldCheck, ShieldAlert, Bike, Car, RefreshCw, Eye, ExternalLink, FileText, Image as ImageIcon, Download, Trash2, Camera } from 'lucide-react';
 
 const resolveDocUrl = (rawUrl) => {
   if (!rawUrl) return null;
@@ -122,7 +122,7 @@ export function RidersView() {
   };
 
   const handleDeleteDriver = async (rider) => {
-    const confirmDelete = window.confirm(`⚠️ Permanently delete driver "${rider.name}" (ID #${rider.user_id || r.id}) from the database?\n\nThis will completely remove their profile, documents, and records.`);
+    const confirmDelete = window.confirm(`Permanently delete driver "${rider.name}" (ID #${rider.user_id || rider.id}) from the database?\n\nThis will completely remove their profile, documents, and records.`);
     if (!confirmDelete) return;
 
     try {
@@ -423,9 +423,13 @@ export function RidersView() {
                 borderRadius: '8px',
                 marginBottom: '16px',
                 fontSize: '12px',
-                color: '#FCD34D'
+                color: '#FCD34D',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
               }}>
-                ⚠️ The suspension reason you enter will be <strong>directly displayed to the driver</strong> in the mobile app.
+                <AlertTriangle size={15} color="#F59E0B" style={{ flexShrink: 0 }} />
+                <span>The suspension reason you enter will be <strong>directly displayed to the driver</strong> in the mobile app.</span>
               </div>
 
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
@@ -439,40 +443,33 @@ export function RidersView() {
                 value={suspensionReason}
                 onChange={(e) => setSuspensionReason(e.target.value)}
               />
-            </div>
 
-            <div style={{
-              padding: '16px 24px',
-              borderTop: '1px solid var(--border)',
-              background: 'rgba(0, 0, 0, 0.2)',
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: '10px'
-            }}>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                disabled={isSubmittingSuspension}
-                onClick={() => setSuspendingRider(null)}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn btn-danger"
-                disabled={isSubmittingSuspension || !suspensionReason.trim()}
-                onClick={handleConfirmSuspension}
-              >
-                {isSubmittingSuspension ? 'Suspending...' : 'Confirm Driver Suspension'}
-              </button>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setSuspendingRider(null)}
+                  disabled={isSubmittingSuspension}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={handleSubmitSuspension}
+                  disabled={isSubmittingSuspension}
+                >
+                  {isSubmittingSuspension ? 'Suspending...' : 'Confirm Suspension'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* KYC Document Inspection Modal */}
+      {/* KYC Documents Inspector Modal */}
       {selectedRider && (
-        <div style={{
+        <div className="modal-backdrop" style={{
           position: 'fixed',
           top: 0,
           left: 0,
@@ -485,32 +482,26 @@ export function RidersView() {
           zIndex: 9999,
           padding: '20px'
         }}>
-          <div style={{
+          <div className="modal" style={{
             background: 'var(--bg-card, #1e293b)',
             borderRadius: '16px',
-            maxWidth: '800px',
-            width: '100%',
+            maxWidth: '850px',
+            width: '90%',
             maxHeight: '90vh',
             overflowY: 'auto',
             padding: '24px',
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
             border: '1px solid var(--border, rgba(255,255,255,0.1))'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0 }}>
-                  Driver KYC & Credentials: {selectedRider.name}
-                </h3>
+                <h3 className="modal-title" style={{ fontSize: '18px', fontWeight: 'bold', margin: 0 }}>Driver KYC Documents & Profile Details</h3>
                 <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                  Phone: {selectedRider.phone} &bull; Plate: {selectedRider.vehicle_number} &bull; Model: {selectedRider.vehicle_model}
+                  Driver ID: #{selectedRider.user_id} • {selectedRider.name} ({selectedRider.phone})
                 </div>
               </div>
-              <button
-                className="btn btn-secondary btn-sm"
-                onClick={() => setSelectedRider(null)}
-                style={{ padding: '6px 12px' }}
-              >
-                Close
+              <button className="btn btn-secondary btn-sm" onClick={() => setSelectedRider(null)}>
+                <X size={16} />
               </button>
             </div>
 
@@ -520,8 +511,8 @@ export function RidersView() {
                 const photoUrl = resolveDocUrl(selectedRider.profile_image);
                 return (
                   <div style={{ background: 'var(--bg-sidebar, #0f172a)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column' }}>
-                    <h4 style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '4px', color: 'var(--primary, #38bdf8)' }}>
-                      📸 Driver Profile Photo
+                    <h4 style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '4px', color: 'var(--primary, #38bdf8)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Camera size={15} /> Driver Profile Photo
                     </h4>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '10px' }}>
                       Face ID: <strong>{selectedRider.name}</strong>
@@ -561,7 +552,7 @@ export function RidersView() {
                     {dlUrl ? (
                       isPdf ? (
                         <div style={{ height: '150px', background: 'rgba(56, 189, 248, 0.08)', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
-                          <div style={{ fontSize: '32px' }}>📄</div>
+                          <FileText size={32} color="#38bdf8" />
                           <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#38bdf8' }}>PDF Document</span>
                           <button
                             type="button"
@@ -608,7 +599,7 @@ export function RidersView() {
                     {rcUrl ? (
                       isPdf ? (
                         <div style={{ height: '150px', background: 'rgba(56, 189, 248, 0.08)', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
-                          <div style={{ fontSize: '32px' }}>📄</div>
+                          <FileText size={32} color="#38bdf8" />
                           <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#38bdf8' }}>PDF Document</span>
                           <button
                             type="button"
@@ -655,7 +646,7 @@ export function RidersView() {
                     {cidUrl ? (
                       isPdf ? (
                         <div style={{ height: '150px', background: 'rgba(56, 189, 248, 0.08)', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
-                          <div style={{ fontSize: '32px' }}>📄</div>
+                          <FileText size={32} color="#38bdf8" />
                           <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#38bdf8' }}>PDF Document</span>
                           <button
                             type="button"
@@ -764,9 +755,9 @@ export function RidersView() {
                 type="button"
                 className="btn btn-primary btn-sm"
                 onClick={() => setPreviewDoc(null)}
-                style={{ padding: '6px 14px', fontSize: '12px' }}
+                style={{ padding: '6px 14px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
               >
-                ✕ Close
+                <X size={14} /> Close
               </button>
             </div>
           </div>

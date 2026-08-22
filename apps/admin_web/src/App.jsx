@@ -48,8 +48,8 @@ export function App() {
           const dAddress = newest?.destination_address || 'Destination';
 
           alertManager.triggerRideAlert({
-            title: `🚨 NEW OUTSIDE CAMPUS TRIP REQUEST (${pending.length})`,
-            body: `${custName} requested: ${pAddress} ➔ ${dAddress}. Review & dispatch now.`,
+            title: `NEW OUTSIDE CAMPUS TRIP REQUEST (${pending.length})`,
+            body: `${custName} requested: ${pAddress} → ${dAddress}. Review & dispatch now.`,
             repeat: true
           });
 
@@ -75,8 +75,8 @@ export function App() {
       const dAddress = data.destinationAddress || data.destination_address || 'Destination';
 
       alertManager.triggerRideAlert({
-        title: '🚨 NEW OUTSIDE CAMPUS TRIP REQUEST',
-        body: `${custName} requested route: ${pAddress} ➔ ${dAddress}. Click to open Dispatch & quote fare.`,
+        title: 'NEW OUTSIDE CAMPUS TRIP REQUEST',
+        body: `${custName} requested route: ${pAddress} → ${dAddress}. Click to open Dispatch & quote fare.`,
         repeat: true
       });
 
@@ -229,9 +229,9 @@ export function App() {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '22px' }}>🚨</span>
+                <AlertTriangle size={22} color="#000" />
                 <div>
-                  <span style={{ fontWeight: 900 }}>NEW OUTSIDE CAMPUS TRIP:</span> {newOutsideAlert.customerName} requested <strong>{newOutsideAlert.pickupAddress} ➔ {newOutsideAlert.destinationAddress}</strong>
+                  <span style={{ fontWeight: 900 }}>NEW OUTSIDE CAMPUS TRIP:</span> {newOutsideAlert.customerName} requested <strong>{newOutsideAlert.pickupAddress} → {newOutsideAlert.destinationAddress}</strong>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -240,7 +240,7 @@ export function App() {
                   className="btn btn-secondary btn-sm"
                   style={{ background: '#000', color: '#fff', border: 'none', fontWeight: 800, padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
-                  <span>🚀 Open Dispatch & Set Fare</span>
+                  <span>Open Dispatch & Set Fare</span>
                   <ArrowRight size={14} />
                 </button>
                 <button
@@ -250,10 +250,10 @@ export function App() {
                     alertManager.stopRingtone();
                     setNewOutsideAlert(null);
                   }}
-                  style={{ background: 'transparent', border: 'none', fontSize: '18px', cursor: 'pointer', fontWeight: 900, color: '#000' }}
+                  style={{ background: 'transparent', border: 'none', padding: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#000' }}
                   title="Dismiss Alert"
                 >
-                  ✕
+                  <X size={18} />
                 </button>
               </div>
             </div>

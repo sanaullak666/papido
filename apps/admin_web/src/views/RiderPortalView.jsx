@@ -29,7 +29,8 @@ import {
   ShieldAlert,
   CheckCircle2,
   ExternalLink,
-  MapPin
+  MapPin,
+  X
 } from 'lucide-react';
 import { alertManager } from '../utils/alertManager';
 
@@ -171,7 +172,7 @@ export function RiderPortalView() {
         const r = res.data;
         if (r.status === 'CANCELLED') {
           if (activeRide) {
-            setTripCancelledNotice(`⚠️ Passenger cancelled Trip #${r.id}. Returning to Radar.`);
+            setTripCancelledNotice(`Passenger cancelled Trip #${r.id}. Returning to Radar.`);
           }
           setActiveRide(null);
           setCurrentTab('radar');
@@ -256,8 +257,8 @@ export function RiderPortalView() {
       if (hasNewRequest && available.length > 0 && !activeRide && soundEnabled) {
         const topReq = available[0];
         alertManager.triggerRideAlert({
-          title: `🔔 New Ride Request: ₹${topReq.total_fare || 20}`,
-          body: `Pickup: ${topReq.pickup_address} ➔ Drop: ${topReq.destination_address}`,
+          title: `New Ride Request: ₹${topReq.total_fare || 20}`,
+          body: `Pickup: ${topReq.pickup_address} → Drop: ${topReq.destination_address}`,
           repeat: true
         });
       }
@@ -400,8 +401,8 @@ export function RiderPortalView() {
         // Trigger Audio Ringtone & Browser Push Notification
         if (soundEnabled) {
           alertManager.triggerRideAlert({
-            title: `🔔 New Ride Request: ₹${fare}`,
-            body: `Pickup: ${newReq.pickup_address} ➔ Drop: ${newReq.destination_address}`,
+            title: `New Ride Request: ₹${fare}`,
+            body: `Pickup: ${newReq.pickup_address} → Drop: ${newReq.destination_address}`,
             repeat: true
           });
         }
@@ -450,8 +451,8 @@ export function RiderPortalView() {
 
         if (soundEnabled) {
           alertManager.triggerRideAlert({
-            title: `⚠️ Ride Re-opened: ₹${fare}`,
-            body: `Pickup: ${newReq.pickup_address} ➔ Drop: ${newReq.destination_address}`,
+            title: `Ride Re-opened: ₹${fare}`,
+            body: `Pickup: ${newReq.pickup_address} → Drop: ${newReq.destination_address}`,
             repeat: true
           });
         }
@@ -465,7 +466,7 @@ export function RiderPortalView() {
 
       if (status === 'CANCELLED') {
         if (activeRide && String(activeRide.id) === String(rideId)) {
-          setTripCancelledNotice(`⚠️ Passenger cancelled Trip #${rideId}. Returning to Radar.`);
+          setTripCancelledNotice(`Passenger cancelled Trip #${rideId}. Returning to Radar.`);
           setActiveRide(null);
           setEnteredOtp('');
           setCurrentTab('radar');
@@ -501,7 +502,7 @@ export function RiderPortalView() {
         return;
       }
       if (activeRide && String(activeRide.id) === String(rideId)) {
-        setTripCancelledNotice(`⚠️ Passenger cancelled Trip #${rideId}. Returning to Radar.`);
+        setTripCancelledNotice(`Passenger cancelled Trip #${rideId}. Returning to Radar.`);
         setActiveRide(null);
         setEnteredOtp('');
         setCurrentTab('radar');
@@ -528,7 +529,7 @@ export function RiderPortalView() {
     // Driver location marker
     const driverIcon = window.L.divIcon({
       className: 'custom-map-pin',
-      html: `<div style="background: #06B6D4; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; border: 3px solid white; box-shadow: 0 4px 12px rgba(6,182,212,0.6);">🏍️</div>`,
+      html: `<div style="background: #06B6D4; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; border: 3px solid white; box-shadow: 0 4px 12px rgba(6,182,212,0.6);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg></div>`,
       iconSize: [34, 34],
       iconAnchor: [17, 17]
     });
@@ -693,7 +694,7 @@ export function RiderPortalView() {
         vehicleNumber,
         licenseNumber
       }, token);
-      alert('✅ Vehicle and driver details updated!');
+      alert('Vehicle and driver details updated!');
     } catch (err) {
       alert(err.message || 'Failed to save vehicle details.');
     } finally {
@@ -734,7 +735,7 @@ export function RiderPortalView() {
     setPassUpdating(true);
     try {
       await changePassword(currentPass, newPass);
-      setPassSuccess('✅ Password changed successfully!');
+      setPassSuccess('Password changed successfully!');
       setCurrentPass('');
       setNewPass('');
       setConfirmPass('');
@@ -962,17 +963,18 @@ export function RiderPortalView() {
           }}>
             <span>{tripCancelledNotice}</span>
             <button
+              type="button"
               onClick={() => setTripCancelledNotice(null)}
               style={{
-                background: 'transparent',
+                background: 'none',
                 border: 'none',
                 color: '#F87171',
                 cursor: 'pointer',
-                fontWeight: 800,
-                fontSize: '16px'
+                display: 'flex',
+                alignItems: 'center'
               }}
             >
-              ✕
+              <X size={16} />
             </button>
           </div>
         )}
@@ -1000,7 +1002,7 @@ export function RiderPortalView() {
                   <ShieldAlert size={26} style={{ flexShrink: 0 }} />
                   <div>
                     <div style={{ fontWeight: 800, fontSize: '14px' }}>
-                      {kycStatus === 'PENDING' ? '⏳ KYC Verification Pending Review' : '❌ KYC Verification Rejected'}
+                      {kycStatus === 'PENDING' ? 'KYC Verification Pending Review' : 'KYC Verification Rejected'}
                     </div>
                     <div style={{ fontSize: '12px', opacity: 0.95, marginTop: '2px', lineHeight: 1.4 }}>
                       {kycStatus === 'PENDING'
@@ -1014,7 +1016,7 @@ export function RiderPortalView() {
               <div>
                 <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '4px' }}>Driver Dispatch Radar</h2>
                 <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                  {isOnline ? '🟢 You are ONLINE and listening for nearby student requests.' : '🔴 You are OFFLINE. Toggle switch above to receive rides.'}
+                  {isOnline ? 'You are ONLINE and listening for nearby student requests.' : 'You are OFFLINE. Toggle switch above to receive rides.'}
                 </p>
               </div>
 
@@ -1507,7 +1509,7 @@ export function RiderPortalView() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
                 <h2 style={{ fontSize: '20px', fontWeight: 800, margin: 0 }}>Vehicle & KYC Documents</h2>
                 <span className={`badge ${kycStatus === 'APPROVED' ? 'badge-success' : kycStatus === 'PENDING' ? 'badge-warning' : 'badge-danger'}`} style={{ fontSize: '12px', fontWeight: 800, padding: '4px 10px' }}>
-                  {kycStatus === 'APPROVED' ? '✓ APPROVED BY ADMIN' : kycStatus === 'PENDING' ? '⏳ PENDING ADMIN VERIFICATION' : '❌ REJECTED'}
+                  {kycStatus === 'APPROVED' ? 'APPROVED BY ADMIN' : kycStatus === 'PENDING' ? 'PENDING ADMIN VERIFICATION' : 'REJECTED'}
                 </span>
               </div>
 

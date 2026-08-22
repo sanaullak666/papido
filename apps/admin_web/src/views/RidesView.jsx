@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../api';
-import { Search, Navigation, Clock, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Search, Navigation, Clock, CheckCircle2, AlertCircle, RefreshCw, Globe } from 'lucide-react';
 
 export function RidesView() {
   const [rides, setRides] = useState([]);
@@ -133,9 +133,12 @@ export function RidesView() {
                             fontSize: '10px',
                             fontWeight: 700,
                             padding: '1px 5px',
-                            borderRadius: '4px'
+                            borderRadius: '4px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px'
                           }}>
-                            🌐 Outside
+                            <Globe size={11} /> Outside
                           </span>
                         )}
                       </div>

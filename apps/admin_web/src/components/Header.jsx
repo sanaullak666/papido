@@ -12,7 +12,7 @@ export function Header({ title, subtitle, onRefresh, isRefreshing, onToggleMobil
   const handleTestSound = () => {
     alertManager.requestPermission();
     alertManager.triggerRideAlert({
-      title: '🔔 Papido Dispatch Alert Active',
+      title: 'Papido Dispatch Alert Active',
       body: 'Sound and Browser Notifications are enabled for this session.',
       repeat: false
     });
@@ -47,8 +47,8 @@ export function Header({ title, subtitle, onRefresh, isRefreshing, onToggleMobil
           style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}
           title="Click to test audio chime & enable browser push notifications"
         >
-          <Volume2 size={14} color="#10B981" />
-          <span>{alertTested ? '🔔 Sound Playing...' : 'Test Sound & Push'}</span>
+          {alertTested ? <Bell size={14} color="#10B981" /> : <Volume2 size={14} color="#10B981" />}
+          <span>{alertTested ? 'Sound Playing...' : 'Test Sound & Push'}</span>
         </button>
 
         {/* Real-time Socket / Live Sync Indicator */}

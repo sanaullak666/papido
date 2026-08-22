@@ -16,7 +16,9 @@ import {
   ListFilter,
   History,
   Volume2,
-  ExternalLink
+  ExternalLink,
+  Radio,
+  XCircle
 } from 'lucide-react';
 
 export function OutsideTripsView() {
@@ -60,8 +62,8 @@ export function OutsideTripsView() {
       if (prevPendingCountRef.current !== null && pending.length > prevPendingCountRef.current) {
         const newest = pending[0];
         alertManager.triggerRideAlert({
-          title: `🚨 New Outside Campus Request (${pending.length})`,
-          body: `Route: ${newest?.pickup_address || 'Pickup'} ➔ ${newest?.destination_address || 'Destination'}. Review & dispatch now.`,
+          title: `New Outside Campus Request (${pending.length})`,
+          body: `Route: ${newest?.pickup_address || 'Pickup'} → ${newest?.destination_address || 'Destination'}. Review & dispatch now.`,
           repeat: false
         });
       }
@@ -137,19 +139,19 @@ export function OutsideTripsView() {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'PENDING_ADMIN_QUOTE':
-        return <span style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>⏳ Awaiting Quote</span>;
+        return <span style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Clock size={12} /> Awaiting Quote</span>;
       case 'REQUESTED':
-        return <span style={{ background: 'rgba(234, 179, 8, 0.2)', color: '#facc15', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>📢 Dispatched (Searching)</span>;
+        return <span style={{ background: 'rgba(234, 179, 8, 0.2)', color: '#facc15', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Radio size={12} /> Dispatched (Searching)</span>;
       case 'ACCEPTED':
       case 'RIDER_ARRIVING':
       case 'RIDER_REACHED':
-        return <span style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>🛵 Rider Assigned</span>;
+        return <span style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Bike size={12} /> Rider Assigned</span>;
       case 'STARTED':
-        return <span style={{ background: 'rgba(168, 85, 247, 0.2)', color: '#c084fc', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>🚀 On Trip</span>;
+        return <span style={{ background: 'rgba(168, 85, 247, 0.2)', color: '#c084fc', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Send size={12} /> On Trip</span>;
       case 'COMPLETED':
-        return <span style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>✅ Completed</span>;
+        return <span style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><CheckCircle size={12} /> Completed</span>;
       case 'CANCELLED':
-        return <span style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>❌ Cancelled</span>;
+        return <span style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><XCircle size={12} /> Cancelled</span>;
       default:
         return <span style={{ background: 'rgba(255, 255, 255, 0.1)', color: '#fff', padding: '3px 8px', borderRadius: '6px', fontSize: '11px' }}>{status}</span>;
     }
@@ -360,9 +362,12 @@ export function OutsideTripsView() {
                           fontSize: '11px',
                           fontWeight: 600,
                           padding: '3px 8px',
-                          borderRadius: '6px'
+                          borderRadius: '6px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
                         }}>
-                          🌐 Outside Campus Trip
+                          <Globe size={12} /> Outside Campus Trip
                         </span>
                       </div>
 
@@ -413,7 +418,7 @@ export function OutsideTripsView() {
                                 color: ride.customer_gender === 'FEMALE' ? '#f472b6' : '#60a5fa',
                                 fontWeight: 700
                               }}>
-                                {ride.customer_gender === 'FEMALE' ? '👩 Female' : '👨 Male'}
+                                {ride.customer_gender === 'FEMALE' ? 'Female' : 'Male'}
                               </span>
                             </div>
                             <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
@@ -557,10 +562,10 @@ export function OutsideTripsView() {
                               fontSize: '13px'
                             }}
                           >
-                            <option value="">📢 Broadcast to All Available Online Riders</option>
+                            <option value="">Broadcast to All Available Online Riders</option>
                             {activeRiders.map((r) => (
                               <option key={r.user_id} value={r.user_id}>
-                                🛵 {r.name} ({r.is_online ? '🟢 Online' : '⚪ Offline'}) - {r.vehicle_model} ({r.vehicle_number})
+                                {r.name} ({r.is_online ? 'Online' : 'Offline'}) - {r.vehicle_model} ({r.vehicle_number})
                               </option>
                             ))}
                           </select>
@@ -642,34 +647,36 @@ export function OutsideTripsView() {
                     </td>
                     <td style={{ maxWidth: '200px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={ride.pickup_address}>
-                          🟢 {ride.pickup_address}
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }} title={ride.pickup_address}>
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981', flexShrink: 0 }}></span>
+                          <span>{ride.pickup_address}</span>
                         </span>
                         {ride.pickup_latitude && (
                           <a
                             href={`https://www.google.com/maps?q=${ride.pickup_latitude},${ride.pickup_longitude}`}
                             target="_blank"
                             rel="noreferrer"
-                            style={{ fontSize: '10px', color: '#38bdf8', textDecoration: 'none', background: 'rgba(56,189,248,0.1)', padding: '2px 5px', borderRadius: '4px', flexShrink: 0 }}
+                            style={{ fontSize: '10px', color: '#38bdf8', textDecoration: 'none', background: 'rgba(56,189,248,0.1)', padding: '2px 5px', borderRadius: '4px', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '2px' }}
                           >
-                            🗺️
+                            <ExternalLink size={10} /> Maps
                           </a>
                         )}
                       </div>
                     </td>
                     <td style={{ maxWidth: '200px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={ride.destination_address}>
-                          🔴 {ride.destination_address}
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }} title={ride.destination_address}>
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#EF4444', flexShrink: 0 }}></span>
+                          <span>{ride.destination_address}</span>
                         </span>
                         {ride.destination_latitude && (
                           <a
                             href={`https://www.google.com/maps?q=${ride.destination_latitude},${ride.destination_longitude}`}
                             target="_blank"
                             rel="noreferrer"
-                            style={{ fontSize: '10px', color: '#f87171', textDecoration: 'none', background: 'rgba(239,68,68,0.1)', padding: '2px 5px', borderRadius: '4px', flexShrink: 0 }}
+                            style={{ fontSize: '10px', color: '#f87171', textDecoration: 'none', background: 'rgba(239,68,68,0.1)', padding: '2px 5px', borderRadius: '4px', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '2px' }}
                           >
-                            🗺️
+                            <ExternalLink size={10} /> Maps
                           </a>
                         )}
                       </div>
@@ -685,7 +692,10 @@ export function OutsideTripsView() {
                     <td>
                       {ride.rider_name ? (
                         <div>
-                          <div style={{ fontWeight: 600, color: '#fff' }}>🛵 {ride.rider_name}</div>
+                          <div style={{ fontWeight: 600, color: '#fff', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <Bike size={13} />
+                            <span>{ride.rider_name}</span>
+                          </div>
                           <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{ride.vehicle_number || ''}</div>
                         </div>
                       ) : (

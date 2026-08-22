@@ -128,7 +128,7 @@ export function CoreTeamView() {
               }}
             >
               {copied ? <Check size={16} color="#000" /> : <Copy size={16} color="#000" />}
-              <span>{copied ? 'Invite Link Copied!' : '📋 Copy Core Invite Link'}</span>
+              <span>{copied ? 'Invite Link Copied!' : 'Copy Core Invite Link'}</span>
             </button>
 
             <a
@@ -316,8 +316,9 @@ export function CoreTeamView() {
                     </td>
 
                     <td style={{ padding: '12px 16px' }}>
-                      <span className={`badge ${member.is_online ? 'badge-success' : 'badge-neutral'}`}>
-                        {member.is_online ? '🟢 Online (Radar)' : '⚪ Offline'}
+                      <span className={`badge ${member.is_online ? 'badge-success' : 'badge-neutral'}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: member.is_online ? '#10B981' : '#9CA3AF' }}></span>
+                        <span>{member.is_online ? 'Online' : 'Offline'}</span>
                       </span>
                     </td>
 

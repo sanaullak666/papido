@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest, uploadFile } from '../api';
-import { Shield, Lock, Mail, ArrowRight, UserPlus, KeyRound, Bike, User, Sparkles, ShieldCheck, Zap, Upload, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Shield, Lock, Mail, ArrowRight, UserPlus, KeyRound, Bike, User, Sparkles, ShieldCheck, Zap, Upload, FileText, CheckCircle2, AlertCircle, Check } from 'lucide-react';
 
 export function LoginView({ onGoToAdminPortal }) {
   const { login, register, forgotPassword, resetPassword } = useAuth();
@@ -157,7 +157,7 @@ export function LoginView({ onGoToAdminPortal }) {
     setLoading(true);
     try {
       await resetPassword(forgotEmail.trim(), forgotOtp.trim(), forgotNewPass);
-      setSuccessMsg('✅ Password has been reset successfully! Please sign in with your new password.');
+      setSuccessMsg('Password has been reset successfully! Please sign in with your new password.');
       setEmail(forgotEmail);
       setPassword(forgotNewPass);
       setAuthMode('login');
@@ -591,7 +591,7 @@ export function LoginView({ onGoToAdminPortal }) {
                     fontWeight: 700
                   }}>
                     <Upload size={14} />
-                    <span>{collegeIdFile ? `✓ ${collegeIdFile.name}` : 'Upload Campus ID Card (Photo / PDF)'}</span>
+                    <span>{collegeIdFile ? collegeIdFile.name : 'Upload Campus ID Card (Photo / PDF)'}</span>
                     <input
                       type="file"
                       accept="image/*,application/pdf"
@@ -631,7 +631,7 @@ export function LoginView({ onGoToAdminPortal }) {
                     fontWeight: 700
                   }}>
                     <Upload size={14} />
-                    <span>{licenseFile ? `✓ ${licenseFile.name}` : 'Upload Driving Licence (Photo / PDF)'}</span>
+                    <span>{licenseFile ? licenseFile.name : 'Upload Driving Licence (Photo / PDF)'}</span>
                     <input
                       type="file"
                       accept="image/*,application/pdf"
@@ -671,7 +671,7 @@ export function LoginView({ onGoToAdminPortal }) {
                     fontWeight: 700
                   }}>
                     <Upload size={14} />
-                    <span>{rcFile ? `✓ ${rcFile.name}` : 'Upload Vehicle RC Card (Photo / PDF)'}</span>
+                    <span>{rcFile ? rcFile.name : 'Upload Vehicle RC Card (Photo / PDF)'}</span>
                     <input
                       type="file"
                       accept="image/*,application/pdf"

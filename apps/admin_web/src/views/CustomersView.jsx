@@ -297,9 +297,13 @@ export function CustomersView() {
                 borderRadius: '8px',
                 marginBottom: '16px',
                 fontSize: '12px',
-                color: '#FCD34D'
+                color: '#FCD34D',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
               }}>
-                ⚠️ <strong>Important:</strong> The reason you specify below will be <strong>directly displayed to the customer</strong> in their Papido mobile app upon login or attempt to book rides.
+                <AlertTriangle size={15} color="#F59E0B" style={{ flexShrink: 0 }} />
+                <span><strong>Important:</strong> The reason you specify below will be <strong>directly displayed to the customer</strong> in their Papido mobile app upon login or attempt to book rides.</span>
               </div>
 
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>

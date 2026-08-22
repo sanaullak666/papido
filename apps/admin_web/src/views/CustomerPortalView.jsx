@@ -25,14 +25,15 @@ import {
   Search,
   Users,
   CheckCircle2,
-  ExternalLink
+  ExternalLink,
+  Tag,
+  X
 } from 'lucide-react';
 
 const DEFAULT_GROUPED_CAMPUS_STOPS = [
   {
     key: 'GIRLS_HOSTEL',
     label: 'Girls Hostels',
-    icon: '👧',
     stops: [
       { id: 'gh-1', name: 'Madame Curie Girls Hostel', lat: 12.0215, lng: 79.8565 },
       { id: 'gh-2', name: 'Mother Teresa Girls Hostel', lat: 12.0218, lng: 79.8570 },
@@ -46,7 +47,6 @@ const DEFAULT_GROUPED_CAMPUS_STOPS = [
   {
     key: 'BOYS_HOSTEL',
     label: 'Boys Hostels',
-    icon: '👦',
     stops: [
       { id: 'bh-1', name: 'Silver Jubilee Hostel (SJC)', lat: 12.0280, lng: 79.8520 },
       { id: 'bh-2', name: 'Bharathidasan Boys Hostel', lat: 12.0275, lng: 79.8515 },
@@ -60,7 +60,6 @@ const DEFAULT_GROUPED_CAMPUS_STOPS = [
   {
     key: 'DEPARTMENT',
     label: 'Departments & School Blocks',
-    icon: '🏛️',
     stops: [
       { id: 'dp-1', name: 'Science Complex / Physics Dept', lat: 12.0261, lng: 79.8550 },
       { id: 'dp-2', name: 'School of Management (SOM)', lat: 12.0255, lng: 79.8540 },
@@ -74,7 +73,6 @@ const DEFAULT_GROUPED_CAMPUS_STOPS = [
   {
     key: 'GATE_HUB',
     label: 'Gates & Campus Hubs',
-    icon: '🚪',
     stops: [
       { id: 'gt-1', name: 'PU Main Gate (Gate 1)', lat: 12.0228681, lng: 79.8509415 },
       { id: 'gt-2', name: 'Gate 2 (East Coast Road)', lat: 12.0295, lng: 79.8580 },
@@ -128,30 +126,30 @@ export function CustomerPortalView() {
     const s = stopName.toLowerCase();
     if (s.includes('sjc') || s.includes('silver') || s.includes('jubilee')) {
       return {
-        label: '🏢 Specific location in SJC (e.g. SOM Building, Kalidas Hostel, Mess)',
+        label: 'Specific location in SJC (e.g. SOM Building, Kalidas Hostel, Mess)',
         placeholder: 'e.g. SOM Block, Kalidas Hostel Room 12'
       };
     }
     if (s.includes('girl')) {
       return {
-        label: '👧 Specific Girls Hostel (e.g. Madame Curie, Mother Teresa, Ganga, Yamuna)',
+        label: 'Specific Girls Hostel (e.g. Madame Curie, Mother Teresa, Ganga, Yamuna)',
         placeholder: 'e.g. Madame Curie Girls Hostel'
       };
     }
     if (s.includes('boy')) {
       return {
-        label: '👦 Specific Boys Hostel (e.g. Bharathidasan, Kabilar, Subramania, Kalidas)',
+        label: 'Specific Boys Hostel (e.g. Bharathidasan, Kabilar, Subramania, Kalidas)',
         placeholder: 'e.g. Bharathidasan Boys Hostel'
       };
     }
     if (s.includes('science') || s.includes('department') || s.includes('block') || s.includes('dept')) {
       return {
-        label: '🏛️ Specific Department / Block (e.g. Physics, Math, Biotech, SOM)',
+        label: 'Specific Department / Block (e.g. Physics, Math, Biotech, SOM)',
         placeholder: 'e.g. Science Complex / Physics Dept'
       };
     }
     return {
-      label: `📍 Specific spot / Gate entry for ${stopName} (Optional)`,
+      label: `Specific spot / Gate entry for ${stopName} (Optional)`,
       placeholder: 'e.g. Near main security cabin / bus shelter'
     };
   };
@@ -360,7 +358,7 @@ export function CustomerPortalView() {
     if (driverLocation) {
       const driverIcon = window.L.divIcon({
         className: 'custom-map-pin',
-        html: `<div style="background: #06B6D4; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; border: 3px solid white; box-shadow: 0 4px 12px rgba(6,182,212,0.6);">🏍️</div>`,
+        html: `<div style="background: #06B6D4; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; border: 3px solid white; box-shadow: 0 4px 12px rgba(6,182,212,0.6);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg></div>`,
         iconSize: [34, 34],
         iconAnchor: [17, 17]
       });
@@ -785,7 +783,7 @@ export function CustomerPortalView() {
     setPassUpdating(true);
     try {
       await changePassword(currentPass, newPass);
-      setPassSuccess('✅ Password changed successfully!');
+      setPassSuccess('Password changed successfully!');
       setCurrentPass('');
       setNewPass('');
       setConfirmPass('');
@@ -945,9 +943,9 @@ export function CustomerPortalView() {
           <div>{statusMessage}</div>
           <button
             onClick={() => setStatusMessage(null)}
-            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
           >
-            ✕
+            <X size={14} />
           </button>
         </div>
       )}
@@ -1200,11 +1198,7 @@ export function CustomerPortalView() {
 
                     {fareEstimate?.appliedRuleDescription && (
                       <div style={{
-                        margin: '6px 0 8px 0',
-                        padding: '6px 10px',
-                        borderRadius: '6px',
-                        background: 'rgba(249, 115, 22, 0.12)',
-                        border: '1px solid rgba(249, 115, 22, 0.25)',
+                        marginTop: '6px',
                         fontSize: '11px',
                         fontWeight: 700,
                         color: '#EA580C',
@@ -1212,7 +1206,7 @@ export function CustomerPortalView() {
                         alignItems: 'center',
                         gap: '6px'
                       }}>
-                        <span>🏷️</span>
+                        <Tag size={13} color="#EA580C" />
                         <span>{fareEstimate.appliedRuleDescription}</span>
                       </div>
                     )}

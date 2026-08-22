@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { apiRequest } from '../api';
 import { useAuth } from '../context/AuthContext';
-import { User, Mail, Phone, Lock, ArrowRight, CheckCircle, Sparkles } from 'lucide-react';
+import { User, Mail, Phone, Lock, ArrowRight, CheckCircle, Sparkles, AlertTriangle } from 'lucide-react';
 
 export function CoreRegisterView({ onGoToLogin }) {
   const { login } = useAuth();
@@ -46,7 +46,7 @@ export function CoreRegisterView({ onGoToLogin }) {
         password: formData.password
       });
 
-      setSuccessMsg('🎉 Welcome to Papido Core Team! Logging you in...');
+      setSuccessMsg('Welcome to Papido Core Team! Logging you in...');
       
       // Auto login with returned credentials
       if (res.data?.tokens?.accessToken && res.data?.user) {
@@ -120,9 +120,13 @@ export function CoreRegisterView({ onGoToLogin }) {
             borderRadius: '10px',
             fontSize: '13px',
             fontWeight: 600,
-            marginBottom: '18px'
+            marginBottom: '18px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
           }}>
-            ⚠️ {errorMsg}
+            <AlertTriangle size={14} color="#EF4444" />
+            <span>{errorMsg}</span>
           </div>
         )}
 

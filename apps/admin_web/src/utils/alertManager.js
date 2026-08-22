@@ -190,7 +190,7 @@ export const alertManager = {
         return {
           success: false,
           reason: 'DENIED',
-          message: 'Notifications are blocked in your browser settings. To enable:\n1. Click the 🔒 Lock icon next to the website URL at the top\n2. Set Notifications to "Allow"\n3. Reload the page.'
+          message: 'Notifications are blocked in your browser settings. To enable:\n1. Click the Lock icon next to the website URL at the top\n2. Set Notifications to "Allow"\n3. Reload the page.'
         };
       }
 
@@ -232,7 +232,7 @@ export const alertManager = {
         console.log('[PWA] Background push subscription synced with backend.');
       }
 
-      return { success: true, reason: 'GRANTED', message: '✅ Lock-screen notifications are now ACTIVE! You will receive ride alerts even when this browser is closed.' };
+      return { success: true, reason: 'GRANTED', message: 'Lock-screen notifications are now ACTIVE! You will receive ride alerts even when this browser is closed.' };
     } catch (err) {
       console.warn('[PWA Push Error]', err);
       return { success: false, reason: 'ERROR', message: err.message || 'Failed to initialize push subscription.' };

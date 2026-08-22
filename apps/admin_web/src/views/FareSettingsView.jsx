@@ -466,7 +466,7 @@ export function FareSettingsView() {
       <div className="panel" style={{ marginTop: '24px' }}>
         <div className="panel-header">
           <h2 className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '18px' }}>⚖️</span> Company Revenue & Driver Split Policy
+            <Sliders size={18} color="var(--primary)" /> Company Revenue & Driver Split Policy
           </h2>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
             Automated settlement policy applied to all completed campus and outside trips.
@@ -485,7 +485,7 @@ export function FareSettingsView() {
               From each ride below <strong>₹80</strong>, the platform deducts a flat <strong>₹4.00</strong> fee. The driver takes home the full remainder. Controller cut is ₹0.
             </p>
             <div style={{ marginTop: '12px', fontSize: '12px', color: 'var(--text-muted)', background: 'var(--bg-card)', padding: '8px 12px', borderRadius: '8px' }}>
-              Example: ₹35 Campus Ride ➔ Driver gets <strong>₹31</strong>, Company gets <strong>₹4</strong>.
+              Example: ₹35 Campus Ride → Driver gets <strong>₹31</strong>, Company gets <strong>₹4</strong>.
             </div>
           </div>
 
@@ -500,7 +500,7 @@ export function FareSettingsView() {
               For rides of <strong>₹80 or above</strong>, the company takes <strong>10%</strong> of the total fare, and <strong>₹2.00</strong> is allocated to the controller. The driver receives the remaining 90% minus ₹2.
             </p>
             <div style={{ marginTop: '12px', fontSize: '12px', color: 'var(--text-muted)', background: 'var(--bg-card)', padding: '8px 12px', borderRadius: '8px' }}>
-              Example: ₹120 Outside Ride ➔ Driver gets <strong>₹106</strong> (90% - ₹2), Company gets <strong>₹12</strong> (10%), Controller gets <strong>₹2</strong>.
+              Example: ₹120 Outside Ride → Driver gets <strong>₹106</strong> (90% - ₹2), Company gets <strong>₹12</strong> (10%), Controller gets <strong>₹2</strong>.
             </div>
           </div>
         </div>

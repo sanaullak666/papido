@@ -13,7 +13,9 @@ import {
   AlertCircle,
   Phone,
   ShieldCheck,
-  Send
+  Send,
+  Smartphone,
+  Globe
 } from 'lucide-react';
 
 export function SimulatorView() {
@@ -316,8 +318,8 @@ export function SimulatorView() {
   return (
     <div>
       <div style={{ marginBottom: '18px', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '14px 18px', borderRadius: '8px' }}>
-        <h3 style={{ color: 'var(--primary)', fontSize: '15px', fontWeight: 700, marginBottom: '4px' }}>
-          📱 Real-Time Interactive Multi-App Test Simulator
+        <h3 style={{ color: 'var(--primary)', fontSize: '15px', fontWeight: 700, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Smartphone size={16} /> Real-Time Interactive Multi-App Test Simulator
         </h3>
         <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
           Test the live ride lifecycle between <strong>Customer Mobile App (Passenger)</strong> and <strong>Rider Mobile App (Driver)</strong>. 
@@ -342,12 +344,10 @@ export function SimulatorView() {
                 <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--primary)' }}>PAPIDO</div>
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Passenger App</div>
               </div>
-              {customerUser && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 600 }}>{customerUser.name.split(' ')[0]}</span>
-                  <img src={customerUser.profile_image} alt="" style={{ width: '26px', height: '26px', borderRadius: '50%' }} />
-                </div>
-              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#10B981' }}>
+                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10B981' }} />
+                <span>Online</span>
+              </div>
             </div>
 
             {/* Content Body */}
@@ -355,73 +355,68 @@ export function SimulatorView() {
               {!customerRide ? (
                 /* Booking Mode */
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  <div style={{ background: 'var(--bg-card)', padding: '14px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                    <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>WHERE TO?</div>
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <MapPin size={16} color="#10B981" />
-                        <select
-                          className="form-select"
-                          style={{ padding: '6px 10px', fontSize: '12px', width: '100%' }}
-                          value={pickupPlace}
-                          onChange={(e) => setPickupPlace(e.target.value)}
-                        >
-                          <option value="University Main Gate">University Main Gate</option>
-                          <option value="Hostel Complex Block A">Hostel Complex Block A</option>
-                          <option value="Food Court & Student Center">Food Court & Student Center</option>
-                        </select>
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <MapPin size={16} color="#F43F5E" />
-                        <select
-                          className="form-select"
-                          style={{ padding: '6px 10px', fontSize: '12px', width: '100%' }}
-                          value={destPlace}
-                          onChange={(e) => setDestPlace(e.target.value)}
-                        >
-                          <option value="Central Library & Admin Block">Central Library & Admin Block</option>
-                          <option value="Engineering Block 3">Engineering Block 3</option>
-                          <option value="Metro Station Entrance">Metro Station Entrance</option>
-                          <option value="Sports Stadium & Gym">Sports Stadium & Gym</option>
-                        </select>
-                      </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '4px' }}>PICKUP POINT</label>
+                    <div style={{ position: 'relative' }}>
+                      <MapPin size={16} style={{ position: 'absolute', left: '10px', top: '10px', color: '#10B981' }} />
+                      <input
+                        type="text"
+                        className="form-input"
+                        style={{ paddingLeft: '32px', width: '100%', fontSize: '13px' }}
+                        value={pickupPlace}
+                        onChange={(e) => setPickupPlace(e.target.value)}
+                      />
                     </div>
                   </div>
 
-                  {/* Vehicle Type Selection (Bike Only) */}
                   <div>
-                    <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' }}>RIDE SERVICE</div>
-                    <div
-                      style={{
-                        background: 'rgba(245, 158, 11, 0.12)',
-                        border: '1.5px solid var(--primary)',
-                        borderRadius: '10px',
-                        padding: '12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ background: 'var(--primary)', padding: '8px', borderRadius: '8px' }}>
-                          <Bike size={20} color="#000" />
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '13px', fontWeight: 800 }}>Papido Bike (Two-Wheeler)</div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Fastest campus transit &bull; Base ₹20</div>
-                        </div>
-                      </div>
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--primary)', background: 'rgba(245, 158, 11, 0.2)', padding: '4px 8px', borderRadius: '6px' }}>
-                        BIKE ONLY
-                      </span>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '4px' }}>DROP-OFF DESTINATION</label>
+                    <div style={{ position: 'relative' }}>
+                      <Navigation size={16} style={{ position: 'absolute', left: '10px', top: '10px', color: '#EF4444' }} />
+                      <input
+                        type="text"
+                        className="form-input"
+                        style={{ paddingLeft: '32px', width: '100%', fontSize: '13px' }}
+                        value={destPlace}
+                        onChange={(e) => setDestPlace(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Vehicle Type Selection */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '4px' }}>SELECT RIDE TYPE</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                      {['BIKE', 'AUTO', 'CAB_MINI', 'CAB_SEDAN'].map((v) => (
+                        <button
+                          key={v}
+                          type="button"
+                          onClick={() => setVehicleType(v)}
+                          style={{
+                            padding: '8px 4px',
+                            background: vehicleType === v ? 'rgba(245, 158, 11, 0.2)' : 'var(--bg-sidebar)',
+                            border: `1px solid ${vehicleType === v ? 'var(--primary)' : 'var(--border)'}`,
+                            borderRadius: '8px',
+                            color: vehicleType === v ? 'var(--primary)' : 'var(--text-secondary)',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          {v === 'BIKE' ? <Bike size={16} /> : <Car size={16} />}
+                          <span>{v.replace('CAB_', '')}</span>
+                        </button>
+                      ))}
                     </div>
                   </div>
 
                   {/* Outside Trip Toggle */}
                   <div style={{
-                    background: isSimulateOutside ? 'rgba(59, 130, 246, 0.15)' : 'var(--bg-card)',
+                    background: isSimulateOutside ? 'rgba(59, 130, 246, 0.15)' : 'var(--bg-sidebar)',
                     border: `1px solid ${isSimulateOutside ? '#3b82f6' : 'var(--border)'}`,
                     padding: '10px 14px',
                     borderRadius: '10px',
@@ -430,8 +425,8 @@ export function SimulatorView() {
                     justifyContent: 'space-between'
                   }}>
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: isSimulateOutside ? '#60a5fa' : '#fff' }}>
-                        🌐 Outside Campus Ride
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: isSimulateOutside ? '#60a5fa' : '#fff', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Globe size={13} /> Outside Campus Ride
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                         Route to Admin Quoting & Dispatch
@@ -487,7 +482,7 @@ export function SimulatorView() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   <div style={{ background: 'var(--bg-sidebar)', padding: '14px', borderRadius: '12px', border: '1px solid var(--border)', textAlign: 'center' }}>
                     <span className={`badge ${customerRide.status === 'COMPLETED' ? 'badge-success' : customerRide.status === 'PENDING_ADMIN_QUOTE' ? 'badge-info' : 'badge-warning'}`} style={{ fontSize: '12px', marginBottom: '8px' }}>
-                      {customerRide.status === 'PENDING_ADMIN_QUOTE' ? '⏳ AWAITING ADMIN QUOTE' : customerRide.status}
+                      {customerRide.status === 'PENDING_ADMIN_QUOTE' ? 'AWAITING ADMIN QUOTE' : customerRide.status}
                     </span>
                     <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--primary)', fontFamily: 'monospace' }}>
                       {customerRide.ride_code}
@@ -496,7 +491,7 @@ export function SimulatorView() {
                     {customerRide.status === 'PENDING_ADMIN_QUOTE' && (
                       <div style={{ marginTop: '10px', textAlign: 'left', background: 'rgba(59, 130, 246, 0.12)', border: '1px solid rgba(59, 130, 246, 0.3)', padding: '12px', borderRadius: '8px' }}>
                         <div style={{ fontSize: '12px', fontWeight: 700, color: '#60a5fa', marginBottom: '4px' }}>
-                          ⏳ Awaiting Dispatch Review
+                          Awaiting Dispatch Review
                         </div>
                         <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                           Admin is reviewing your outside route in the <strong>Outside Trips Dispatch</strong> tab to set the custom fare & assign a rider.
@@ -536,7 +531,7 @@ export function SimulatorView() {
 
                     {customerRide.status === 'COMPLETED' && (
                       <div style={{ marginTop: '12px', textAlign: 'center' }}>
-                        <div style={{ color: '#10B981', fontWeight: 700, fontSize: '15px' }}>🎉 Ride Completed!</div>
+                        <div style={{ color: '#10B981', fontWeight: 700, fontSize: '15px' }}>Ride Completed!</div>
                         <div style={{ fontSize: '20px', fontWeight: 800, marginTop: '4px' }}>
                           Total Fare: ₹{customerRide.final_fare || customerRide.estimated_fare}
                         </div>
@@ -652,8 +647,14 @@ export function SimulatorView() {
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '8px' }}>{incomingRequest.estimatedDistance} km &bull; {incomingRequest.estimatedDuration} mins</div>
 
                   <div style={{ fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '12px' }}>
-                    <div>🟢 <strong>Pickup:</strong> {incomingRequest.pickupAddress}</div>
-                    <div>🔴 <strong>Drop:</strong> {incomingRequest.destinationAddress}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981', flexShrink: 0 }}></span>
+                      <span><strong>Pickup:</strong> {incomingRequest.pickupAddress}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#EF4444', flexShrink: 0 }}></span>
+                      <span><strong>Drop:</strong> {incomingRequest.destinationAddress}</span>
+                    </div>
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
