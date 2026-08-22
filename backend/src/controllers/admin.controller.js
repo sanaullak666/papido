@@ -413,6 +413,33 @@ const AdminController = {
     } catch (err) {
       return error(res, err.message, 400);
     }
+  },
+
+  async listCoreMembers(req, res, next) {
+    try {
+      const coreMembers = await db.query(`
+        SELECT u.id, u.name, u.email, u.phone, u.gender, u.status, u.is_core_member, u.created_at,
+               rp.vehicle_type, rp.vehicle_model, rp.vehicle_number, rp.rating, rp.total_rides, rp.is_online, rp.verification_status
+        FROM users u
+        LEFT JOIN rider_profiles rp ON u.id = rp.user_id
+        WHERE u.is_core_member = 1 OR (rp.is_core_member = 1)
+        ORDER BY u.created_at DESC
+      `);
+      return success(res, 'Core team members fetched.', coreMembers);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async toggleCoreMemberStatus(req, res, next) {
+    try {
+      const userId = req.params.id;
+      const { isCoreMember } = req.body;
+      const updatedUser = await UserModel.setCoreMemberStatus(userId, isCoreMember);
+      return success(res, `Core member status updated successfully.`, updatedUser);
+    } catch (err) {
+      return error(res, err.message, 400);
+    }
   }
 };
 

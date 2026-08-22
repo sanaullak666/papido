@@ -2,7 +2,7 @@ const db = require('../config/database');
 
 const UserModel = {
   async findById(id) {
-    return db.queryOne('SELECT id, name, email, phone, gender, role, status, suspension_reason, profile_image, created_at, updated_at FROM users WHERE id = ?', [id]);
+    return db.queryOne('SELECT id, name, email, phone, gender, role, status, suspension_reason, profile_image, is_core_member, created_at, updated_at FROM users WHERE id = ?', [id]);
   },
 
   async findByEmail(email) {
@@ -13,10 +13,10 @@ const UserModel = {
     return db.queryOne('SELECT * FROM users WHERE phone = ?', [phone]);
   },
 
-  async create({ name, email, phone, gender = 'OTHER', passwordHash, role, status = 'ACTIVE', profileImage = null, suspensionReason = null }) {
+  async create({ name, email, phone, gender = 'OTHER', passwordHash, role, status = 'ACTIVE', profileImage = null, suspensionReason = null, isCoreMember = false }) {
     const result = await db.query(
-      'INSERT INTO users (name, email, phone, gender, password_hash, role, status, suspension_reason, profile_image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [name, email.toLowerCase(), phone, gender || 'OTHER', passwordHash, role, status, suspensionReason, profileImage]
+      'INSERT INTO users (name, email, phone, gender, password_hash, role, status, suspension_reason, profile_image, is_core_member) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [name, email.toLowerCase(), phone, gender || 'OTHER', passwordHash, role, status, suspensionReason, profileImage, isCoreMember ? 1 : 0]
     );
     return this.findById(result.insertId);
   },
@@ -42,13 +42,23 @@ const UserModel = {
     return this.findById(id);
   },
 
-  async listAll({ role, status, search, limit = 20, offset = 0 }) {
-    let sql = 'SELECT id, name, email, phone, gender, role, status, suspension_reason, profile_image, created_at FROM users WHERE 1=1';
+  async setCoreMemberStatus(id, isCoreMember) {
+    await db.query('UPDATE users SET is_core_member = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [isCoreMember ? 1 : 0, id]);
+    await db.query('UPDATE rider_profiles SET is_core_member = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?', [isCoreMember ? 1 : 0, id]);
+    return this.findById(id);
+  },
+
+  async listAll({ role, status, isCoreMember, search, limit = 20, offset = 0 }) {
+    let sql = 'SELECT id, name, email, phone, gender, role, status, suspension_reason, profile_image, is_core_member, created_at FROM users WHERE 1=1';
     const params = [];
 
     if (role) {
       sql += ' AND role = ?';
       params.push(role);
+    }
+    if (isCoreMember !== undefined && isCoreMember !== null) {
+      sql += ' AND is_core_member = ?';
+      params.push(isCoreMember ? 1 : 0);
     }
     if (status) {
       sql += ' AND status = ?';

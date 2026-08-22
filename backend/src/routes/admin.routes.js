@@ -26,5 +26,7 @@ router.get('/reports', AdminController.getReports);
 router.get('/outside-rides', AdminController.listPendingOutsideRides);
 router.get('/active-riders', AdminController.listActiveRiders);
 router.post('/outside-rides/:id/dispatch', AdminController.dispatchOutsideRide);
+router.get('/core-members', AdminController.listCoreMembers);
+router.patch('/users/:id/core-status', AdminController.toggleCoreMemberStatus);
 
 module.exports = router;

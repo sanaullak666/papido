@@ -211,7 +211,22 @@ export function RidersView() {
                           style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
                         />
                         <div>
-                          <strong>{r.name}</strong>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <strong>{r.name}</strong>
+                            {Boolean(r.is_core_member) && (
+                              <span style={{
+                                background: '#FEF3C7',
+                                color: '#92400E',
+                                fontSize: '10px',
+                                fontWeight: 800,
+                                padding: '1px 6px',
+                                borderRadius: '6px',
+                                border: '1px solid #FCD34D'
+                              }}>
+                                ⭐ CORE
+                              </span>
+                            )}
+                          </div>
                           <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{r.phone}</div>
                         </div>
                       </div>

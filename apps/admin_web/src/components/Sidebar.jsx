@@ -25,6 +25,7 @@ export function Sidebar({ currentTab, setCurrentTab, isOpen, onClose, hasPending
     { id: 'passenger-portal', label: 'Passenger Web Portal', icon: Users, badge: 'WEB' },
     { id: 'driver-portal', label: 'Driver Web Portal', icon: Bike, badge: 'WEB' },
     { id: 'outside-trips', label: 'Outside Trips Dispatch', icon: Globe, badge: hasPendingOutsideAlert ? '🚨 NEW' : 'DISPATCH' },
+    { id: 'core-team', label: 'Core Team Management', icon: Shield, badge: 'CORE' },
     { id: 'customers', label: 'Customers Directory', icon: Users },
     { id: 'riders', label: 'Riders (Drivers)', icon: Bike },
     { id: 'rides', label: 'Ride Operations', icon: Navigation },

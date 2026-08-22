@@ -45,8 +45,8 @@ const AuthController = {
         collegeIdDocUrl: collegeIdDocUrl || (profileData && profileData.collegeIdDocUrl) || null
       };
 
-      // If registering as Rider, validate Vehicle Model + 3 mandatory Document Uploads
-      if (role === 'RIDER') {
+      // If registering as Rider, validate Vehicle Model + 3 mandatory Document Uploads (bypassed for Core Members)
+      if (role === 'RIDER' && !req.body.isCoreMember) {
         const missing = [];
         if (!mergedProfileData.vehicleModel) {
           missing.push('Vehicle Model (e.g. Honda Activa 6G / Splendor)');
@@ -67,11 +67,45 @@ const AuthController = {
         gender: validGender,
         password,
         role,
+        isCoreMember: Boolean(req.body.isCoreMember),
         profileImage: mergedProfileData.profileImage,
         profileData: mergedProfileData
       });
 
       return success(res, 'Account registered successfully.', result, 201);
+    } catch (err) {
+      return error(res, err.message, 400);
+    }
+  },
+
+  async registerCore(req, res, next) {
+    try {
+      const { name, email, phone, gender, password } = req.body;
+
+      if (!name || !email || !phone || !password) {
+        return error(res, 'Name, email, phone, and password are required to register as a Core Team member.', 400);
+      }
+
+      const validGender = ['MALE', 'FEMALE', 'OTHER'].includes((gender || '').toUpperCase())
+        ? gender.toUpperCase()
+        : 'OTHER';
+
+      const result = await AuthService.register({
+        name,
+        email,
+        phone,
+        gender: validGender,
+        password,
+        role: 'RIDER',
+        isCoreMember: true,
+        profileData: {
+          vehicleType: 'BIKE',
+          vehicleModel: 'Papido Campus Fleet / Core Bike',
+          verificationStatus: 'APPROVED'
+        }
+      });
+
+      return success(res, 'Welcome to Papido Core Team! Your driver account has been activated with fleet privileges.', result, 201);
     } catch (err) {
       return error(res, err.message, 400);
     }

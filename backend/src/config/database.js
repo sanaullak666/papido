@@ -78,6 +78,7 @@ async function bootstrapMysqlSchema(targetPool) {
         status VARCHAR(30) DEFAULT 'ACTIVE',
         suspension_reason VARCHAR(500) DEFAULT NULL,
         profile_image VARCHAR(500) DEFAULT NULL,
+        is_core_member BOOLEAN DEFAULT FALSE,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX idx_users_email (email),
@@ -90,9 +91,9 @@ async function bootstrapMysqlSchema(targetPool) {
         id INT AUTO_INCREMENT PRIMARY KEY,
         user_id INT NOT NULL UNIQUE,
         vehicle_type VARCHAR(30) NOT NULL DEFAULT 'BIKE',
-        vehicle_number VARCHAR(30) NOT NULL UNIQUE,
+        vehicle_number VARCHAR(30) DEFAULT NULL,
         vehicle_model VARCHAR(100) NOT NULL,
-        license_number VARCHAR(50) NOT NULL UNIQUE,
+        license_number VARCHAR(50) DEFAULT NULL,
         license_doc_url VARCHAR(500) DEFAULT NULL,
         rc_doc_url VARCHAR(500) DEFAULT NULL,
         college_id_doc_url VARCHAR(500) DEFAULT NULL,
@@ -101,6 +102,7 @@ async function bootstrapMysqlSchema(targetPool) {
         rating DECIMAL(3, 2) DEFAULT 5.00,
         total_ratings_count INT DEFAULT 0,
         total_rides INT DEFAULT 0,
+        is_core_member BOOLEAN DEFAULT FALSE,
         is_online BOOLEAN DEFAULT FALSE,
         current_latitude DECIMAL(10, 8) DEFAULT NULL,
         current_longitude DECIMAL(11, 8) DEFAULT NULL,
@@ -402,6 +404,14 @@ async function bootstrapMysqlSchema(targetPool) {
     // Ensure payments table has gateway_response column
     try {
       await targetPool.query('ALTER TABLE payments ADD COLUMN gateway_response LONGTEXT DEFAULT NULL AFTER transaction_reference;');
+    } catch (_) {}
+
+    // Ensure is_core_member column exists in users and rider_profiles
+    try {
+      await targetPool.query('ALTER TABLE users ADD COLUMN is_core_member BOOLEAN DEFAULT FALSE AFTER profile_image;');
+    } catch (_) {}
+    try {
+      await targetPool.query('ALTER TABLE rider_profiles ADD COLUMN is_core_member BOOLEAN DEFAULT FALSE AFTER total_rides;');
     } catch (_) {}
   } catch (err) {
     console.warn('[Database Warning] MySQL bootstrap notice:', err.message);

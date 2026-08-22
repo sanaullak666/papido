@@ -4,7 +4,7 @@ const { calculateDistance } = require('../utils/geo');
 const RiderModel = {
   async findByUserId(userId) {
     const sql = `
-      SELECT rp.*, u.name, u.email, u.phone, u.status as user_status, u.suspension_reason, u.profile_image
+      SELECT rp.*, u.name, u.email, u.phone, u.status as user_status, u.suspension_reason, u.profile_image, COALESCE(rp.is_core_member, u.is_core_member, 0) as is_core_member
       FROM rider_profiles rp
       JOIN users u ON rp.user_id = u.id
       WHERE rp.user_id = ?
@@ -14,7 +14,7 @@ const RiderModel = {
 
   async findById(profileId) {
     const sql = `
-      SELECT rp.*, u.name, u.email, u.phone, u.status as user_status, u.suspension_reason, u.profile_image
+      SELECT rp.*, u.name, u.email, u.phone, u.status as user_status, u.suspension_reason, u.profile_image, COALESCE(rp.is_core_member, u.is_core_member, 0) as is_core_member
       FROM rider_profiles rp
       JOIN users u ON rp.user_id = u.id
       WHERE rp.id = ?
@@ -32,13 +32,14 @@ const RiderModel = {
     licenseDocUrl = null,
     rcDocUrl = null,
     collegeIdDocUrl = null,
-    verificationStatus = 'PENDING'
+    verificationStatus = 'PENDING',
+    isCoreMember = false
   }) {
     const result = await db.query(
       `INSERT INTO rider_profiles 
-       (user_id, vehicle_type, vehicle_number, vehicle_model, license_number, license_doc_url, rc_doc_url, college_id_doc_url, verification_status) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [userId, vehicleType, vehicleNumber, vehicleModel, licenseNumber, licenseDocUrl || null, rcDocUrl || null, collegeIdDocUrl || null, verificationStatus]
+       (user_id, vehicle_type, vehicle_number, vehicle_model, license_number, license_doc_url, rc_doc_url, college_id_doc_url, verification_status, is_core_member) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [userId, vehicleType, vehicleNumber, vehicleModel, licenseNumber, licenseDocUrl || null, rcDocUrl || null, collegeIdDocUrl || null, verificationStatus, isCoreMember ? 1 : 0]
     );
     return this.findById(result.insertId);
   },
@@ -177,6 +178,7 @@ const RiderModel = {
         COALESCE(rp.total_ratings_count, 0) as total_ratings_count,
         COALESCE(rp.total_rides, 0) as total_rides,
         COALESCE(rp.is_online, 0) as is_online,
+        COALESCE(rp.is_core_member, u.is_core_member, 0) as is_core_member,
         rp.current_latitude,
         rp.current_longitude,
         rp.last_location_update,

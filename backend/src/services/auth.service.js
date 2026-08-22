@@ -56,7 +56,7 @@ const AuthService = {
   /**
    * Registers a new user with their role-specific profile
    */
-  async register({ name, email, phone, gender = 'OTHER', password, role, profileImage = null, profileData = {} }) {
+  async register({ name, email, phone, gender = 'OTHER', password, role, profileImage = null, isCoreMember = false, profileData = {} }) {
     if (![ROLES.CUSTOMER, ROLES.RIDER, ROLES.ADMIN].includes(role)) {
       throw new Error(`Invalid role '${role}'. Must be CUSTOMER, RIDER, or ADMIN.`);
     }
@@ -89,7 +89,8 @@ const AuthService = {
       passwordHash,
       role,
       status: userStatus,
-      profileImage: profileImage || profileData.profileImage || null
+      profileImage: profileImage || profileData.profileImage || null,
+      isCoreMember: Boolean(isCoreMember)
     });
 
     // Create specific profile based on role
@@ -97,16 +98,18 @@ const AuthService = {
     try {
       if (role === ROLES.RIDER) {
         // Rider means the DRIVER who provides the ride
+        const uniqueSuffix = Date.now().toString().slice(-4) + Math.floor(10 + Math.random() * 90);
         profile = await RiderModel.createProfile({
           userId: user.id,
           vehicleType: profileData.vehicleType || 'BIKE',
-          vehicleNumber: profileData.vehicleNumber || `KA-01-XX-${Math.floor(1000 + Math.random() * 9000)}`,
-          vehicleModel: profileData.vehicleModel || 'Standard Two-Wheeler',
-          licenseNumber: profileData.licenseNumber || `DL-${Date.now().toString().slice(-10)}`,
+          vehicleNumber: profileData.vehicleNumber || (isCoreMember ? `PU-CORE-${uniqueSuffix}` : `PY-01-XX-${uniqueSuffix}`),
+          vehicleModel: profileData.vehicleModel || (isCoreMember ? 'Papido Campus Fleet' : 'Standard Two-Wheeler'),
+          licenseNumber: profileData.licenseNumber || (isCoreMember ? `CORE-DL-${uniqueSuffix}` : `DL-${uniqueSuffix}`),
           licenseDocUrl: profileData.licenseDocUrl || null,
           rcDocUrl: profileData.rcDocUrl || null,
           collegeIdDocUrl: profileData.collegeIdDocUrl || null,
-          verificationStatus: VERIFICATION_STATUS.PENDING // Requires admin approval
+          verificationStatus: isCoreMember ? VERIFICATION_STATUS.APPROVED : VERIFICATION_STATUS.PENDING,
+          isCoreMember: Boolean(isCoreMember)
         });
       } else if (role === ROLES.CUSTOMER) {
         // Customer means the PASSENGER who books the ride

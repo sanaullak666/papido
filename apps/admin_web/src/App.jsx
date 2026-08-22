@@ -15,6 +15,8 @@ import { FareSettingsView } from './views/FareSettingsView';
 import { PaymentsView } from './views/PaymentsView';
 import { ReportsView } from './views/ReportsView';
 import { SimulatorView } from './views/SimulatorView';
+import { CoreRegisterView } from './views/CoreRegisterView';
+import { CoreTeamView } from './views/CoreTeamView';
 import { useSocket } from './context/SocketContext';
 import { alertManager } from './utils/alertManager';
 import { apiRequest } from './api';
@@ -138,6 +140,17 @@ export function App() {
   }
 
   // ============================================================
+  // 0. DEDICATED CORE MEMBER REGISTRATION (/register/core)
+  // ============================================================
+  if (currentPath === '/register/core' || currentPath.startsWith('/register/core') || currentPath === '/core-register') {
+    return (
+      <CoreRegisterView
+        onGoToLogin={() => navigateTo('/login')}
+      />
+    );
+  }
+
+  // ============================================================
   // 1. ADMIN PORTAL (/admin or /admin/*)
   // ============================================================
   if (currentPath.startsWith('/admin')) {
@@ -159,6 +172,8 @@ export function App() {
           return { title: 'Driver Web Portal View', subtitle: 'Live preview of the driver dispatch radar and active trips' };
         case 'outside-trips':
           return { title: 'Outside Trips Dispatch', subtitle: 'Review passenger custom routes, set fair pricing, and dispatch to riders' };
+        case 'core-team':
+          return { title: 'Core Team Management', subtitle: 'Manage core organizers, generate invite links, and track driver shifts' };
         case 'customers':
           return { title: 'Customer Management', subtitle: 'Campus passenger directory and history' };
         case 'riders':
@@ -256,6 +271,7 @@ export function App() {
             {currentTab === 'passenger-portal' && <CustomerPortalView />}
             {currentTab === 'driver-portal' && <RiderPortalView />}
             {currentTab === 'outside-trips' && <OutsideTripsView />}
+            {currentTab === 'core-team' && <CoreTeamView />}
             {currentTab === 'customers' && <CustomersView />}
             {currentTab === 'riders' && <RidersView />}
             {currentTab === 'rides' && <RidesView />}
