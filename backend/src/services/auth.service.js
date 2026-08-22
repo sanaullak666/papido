@@ -102,9 +102,9 @@ const AuthService = {
         profile = await RiderModel.createProfile({
           userId: user.id,
           vehicleType: profileData.vehicleType || 'BIKE',
-          vehicleNumber: profileData.vehicleNumber || (isCoreMember ? `PU-CORE-${uniqueSuffix}` : `PY-01-XX-${uniqueSuffix}`),
-          vehicleModel: profileData.vehicleModel || (isCoreMember ? 'Papido Campus Fleet' : 'Standard Two-Wheeler'),
-          licenseNumber: profileData.licenseNumber || (isCoreMember ? `CORE-DL-${uniqueSuffix}` : `DL-${uniqueSuffix}`),
+          vehicleNumber: profileData.vehicleNumber || (isCoreMember ? `PY-01-PU-${uniqueSuffix}` : `PY-01-XX-${uniqueSuffix}`),
+          vehicleModel: profileData.vehicleModel || (isCoreMember ? 'Papido Campus Bike' : 'Standard Two-Wheeler'),
+          licenseNumber: profileData.licenseNumber || (isCoreMember ? `DL-PU-${uniqueSuffix}` : `DL-${uniqueSuffix}`),
           licenseDocUrl: profileData.licenseDocUrl || null,
           rcDocUrl: profileData.rcDocUrl || null,
           collegeIdDocUrl: profileData.collegeIdDocUrl || null,

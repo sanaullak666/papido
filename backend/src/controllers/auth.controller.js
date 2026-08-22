@@ -100,7 +100,7 @@ const AuthController = {
         isCoreMember: true,
         profileData: {
           vehicleType: 'BIKE',
-          vehicleModel: 'Papido Campus Fleet / Core Bike',
+          vehicleModel: 'Papido Campus Bike',
           verificationStatus: 'APPROVED'
         }
       });

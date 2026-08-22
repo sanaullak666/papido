@@ -1336,7 +1336,13 @@ export function CustomerPortalView() {
                           <div>
                             <div style={{ fontWeight: 800, fontSize: '15px' }}>{activeRide.rider_name}</div>
                             <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                              {activeRide.rider_vehicle_model || activeRide.vehicle_model || 'Honda Activa 6G'} • {activeRide.rider_vehicle_number || activeRide.vehicle_number || 'PY 01 AB 1234'}
+                              {(() => {
+                                let model = activeRide.rider_vehicle_model || activeRide.vehicle_model || 'Papido Campus Bike';
+                                if (/core/i.test(model)) model = 'Papido Campus Bike';
+                                let plate = activeRide.rider_vehicle_number || activeRide.vehicle_number || 'PY 01 AB 1234';
+                                if (/core/i.test(plate)) plate = plate.replace(/CORE/gi, 'PU');
+                                return `${model} • ${plate}`;
+                              })()}
                             </div>
                           </div>
                         </div>
