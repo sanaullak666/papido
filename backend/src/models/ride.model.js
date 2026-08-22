@@ -255,7 +255,7 @@ const RideModel = {
              rp.vehicle_number, rp.vehicle_model,
              rt.rating as rating, rt.review as review
       FROM rides r
-      JOIN users c ON r.customer_id = c.id
+      LEFT JOIN users c ON r.customer_id = c.id
       LEFT JOIN users rd ON r.rider_id = rd.id
       LEFT JOIN rider_profiles rp ON rd.id = rp.user_id
       LEFT JOIN ratings rt ON r.id = rt.ride_id
@@ -295,7 +295,7 @@ const RideModel = {
     let sql = `
       SELECT COUNT(*) as total
       FROM rides r
-      JOIN users c ON r.customer_id = c.id
+      LEFT JOIN users c ON r.customer_id = c.id
       LEFT JOIN users rd ON r.rider_id = rd.id
       WHERE 1=1
     `;
