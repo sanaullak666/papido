@@ -34,9 +34,66 @@ import {
 } from 'lucide-react';
 import { alertManager } from '../utils/alertManager';
 
+const getRiderTabFromPath = (path) => {
+  const clean = (path || window.location.pathname || '').toLowerCase().replace(/\/+$/, '');
+  if (clean.endsWith('/active') || clean.endsWith('/trip')) return 'active';
+  if (clean.endsWith('/earnings')) return 'earnings';
+  if (clean.endsWith('/kyc') || clean.endsWith('/vehicle')) return 'kyc';
+  if (clean.endsWith('/profile')) return 'profile';
+  return 'radar';
+};
+
 export function RiderPortalView() {
   const { user, token, logout, updateProfile, changePassword } = useAuth();
-  const [currentTab, setCurrentTab] = useState('radar'); // 'radar', 'active', 'earnings', 'kyc', 'profile'
+  const [currentTab, setCurrentTab] = useState(() => getRiderTabFromPath(window.location.pathname));
+
+  // Sync tab with URL on popstate
+  useEffect(() => {
+    const handleLocationChange = () => {
+      if (!window.location.pathname.startsWith('/admin')) {
+        setCurrentTab(getRiderTabFromPath(window.location.pathname));
+      }
+    };
+    window.addEventListener('popstate', handleLocationChange);
+    return () => window.removeEventListener('popstate', handleLocationChange);
+  }, []);
+
+  // Normalize initial path if at root /driver or /rider
+  useEffect(() => {
+    if (!window.location.pathname.startsWith('/admin')) {
+      const tab = getRiderTabFromPath(window.location.pathname);
+      setCurrentTab(tab);
+      const pathMap = {
+        radar: '/driver/radar',
+        active: '/driver/active',
+        earnings: '/driver/earnings',
+        kyc: '/driver/kyc',
+        profile: '/driver/profile'
+      };
+      const cleanPath = window.location.pathname.replace(/\/+$/, '');
+      if (cleanPath === '/driver' || cleanPath === '/rider' || cleanPath === '' || cleanPath === '/') {
+        window.history.replaceState({}, '', pathMap[tab]);
+      }
+    }
+  }, []);
+
+  const handleTabChange = (tabId) => {
+    setCurrentTab(tabId);
+    if (!window.location.pathname.startsWith('/admin')) {
+      const pathMap = {
+        radar: '/driver/radar',
+        active: '/driver/active',
+        earnings: '/driver/earnings',
+        kyc: '/driver/kyc',
+        profile: '/driver/profile'
+      };
+      const targetPath = pathMap[tabId] || '/driver/radar';
+      if (window.location.pathname !== targetPath) {
+        window.history.pushState({}, '', targetPath);
+      }
+    }
+  };
+
   const [isOnline, setIsOnline] = useState(user?.profile?.verification_status === 'APPROVED' ? Boolean(user?.profile?.is_online) : false);
 
   // Incoming Requests & Active Ride
@@ -837,8 +894,12 @@ export function RiderPortalView() {
 
         {/* Navigation Tabs */}
         <div className="nav-scrollable-tabs" style={{ background: '#2D2319', borderColor: '#43362A' }}>
-          <button
-            onClick={() => setCurrentTab('radar')}
+          <a
+            href="/driver/radar"
+            onClick={(e) => {
+              e.preventDefault();
+              handleTabChange('radar');
+            }}
             style={{
               padding: '6px 14px',
               borderRadius: '8px',
@@ -849,14 +910,18 @@ export function RiderPortalView() {
               gap: '6px',
               background: currentTab === 'radar' ? 'linear-gradient(135deg, #F97316, #EA580C)' : 'transparent',
               color: currentTab === 'radar' ? '#FFFFFF' : '#D6C7B2',
-              border: 'none',
+              textDecoration: 'none',
               cursor: 'pointer'
             }}
           >
             <Radio size={16} /> Radar & Requests {incomingRequests.length > 0 && <span style={{ background: '#FFFFFF', color: '#EA580C', padding: '1px 6px', borderRadius: '10px', fontSize: '10px', fontWeight: 900 }}>{incomingRequests.length}</span>}
-          </button>
-          <button
-            onClick={() => setCurrentTab('active')}
+          </a>
+          <a
+            href="/driver/active"
+            onClick={(e) => {
+              e.preventDefault();
+              handleTabChange('active');
+            }}
             style={{
               padding: '6px 14px',
               borderRadius: '8px',
@@ -867,14 +932,18 @@ export function RiderPortalView() {
               gap: '6px',
               background: currentTab === 'active' ? 'linear-gradient(135deg, #F97316, #EA580C)' : 'transparent',
               color: currentTab === 'active' ? '#FFFFFF' : '#D6C7B2',
-              border: 'none',
+              textDecoration: 'none',
               cursor: 'pointer'
             }}
           >
             <Bike size={16} /> Active Trip {activeRide && '●'}
-          </button>
-          <button
-            onClick={() => setCurrentTab('earnings')}
+          </a>
+          <a
+            href="/driver/earnings"
+            onClick={(e) => {
+              e.preventDefault();
+              handleTabChange('earnings');
+            }}
             style={{
               padding: '6px 14px',
               borderRadius: '8px',
@@ -885,14 +954,18 @@ export function RiderPortalView() {
               gap: '6px',
               background: currentTab === 'earnings' ? 'linear-gradient(135deg, #F97316, #EA580C)' : 'transparent',
               color: currentTab === 'earnings' ? '#FFFFFF' : '#D6C7B2',
-              border: 'none',
+              textDecoration: 'none',
               cursor: 'pointer'
             }}
           >
             <DollarSign size={16} /> Shift Earnings
-          </button>
-          <button
-            onClick={() => setCurrentTab('kyc')}
+          </a>
+          <a
+            href="/driver/kyc"
+            onClick={(e) => {
+              e.preventDefault();
+              handleTabChange('kyc');
+            }}
             style={{
               padding: '6px 14px',
               borderRadius: '8px',
@@ -903,14 +976,18 @@ export function RiderPortalView() {
               gap: '6px',
               background: currentTab === 'kyc' ? 'linear-gradient(135deg, #F97316, #EA580C)' : 'transparent',
               color: currentTab === 'kyc' ? '#FFFFFF' : '#D6C7B2',
-              border: 'none',
+              textDecoration: 'none',
               cursor: 'pointer'
             }}
           >
             <FileText size={16} /> KYC & Vehicle
-          </button>
-          <button
-            onClick={() => setCurrentTab('profile')}
+          </a>
+          <a
+            href="/driver/profile"
+            onClick={(e) => {
+              e.preventDefault();
+              handleTabChange('profile');
+            }}
             style={{
               padding: '6px 14px',
               borderRadius: '8px',
@@ -921,12 +998,12 @@ export function RiderPortalView() {
               gap: '6px',
               background: currentTab === 'profile' ? 'linear-gradient(135deg, #F97316, #EA580C)' : 'transparent',
               color: currentTab === 'profile' ? '#FFFFFF' : '#D6C7B2',
-              border: 'none',
+              textDecoration: 'none',
               cursor: 'pointer'
             }}
           >
             <User size={16} /> Profile
-          </button>
+          </a>
         </div>
 
         {/* User Info & Logout */}

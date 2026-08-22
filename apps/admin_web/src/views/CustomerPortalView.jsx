@@ -99,9 +99,62 @@ const POPULAR_OUTSIDE_SPOTS = [
   { name: 'ECR Toll Plaza (Kalapet)', lat: 12.0360, lng: 79.8620 }
 ];
 
+const getCustomerTabFromPath = (path) => {
+  const clean = (path || window.location.pathname || '').toLowerCase().replace(/\/+$/, '');
+  if (clean.endsWith('/outside')) return 'outside';
+  if (clean.endsWith('/rides') || clean.endsWith('/history')) return 'history';
+  if (clean.endsWith('/profile')) return 'profile';
+  return 'book';
+};
+
 export function CustomerPortalView() {
   const { user, token, logout, updateProfile, changePassword } = useAuth();
-  const [currentTab, setCurrentTab] = useState('book'); // 'book', 'outside', 'history', 'profile'
+  const [currentTab, setCurrentTab] = useState(() => getCustomerTabFromPath(window.location.pathname));
+
+  // Sync tab with URL on popstate
+  useEffect(() => {
+    const handleLocationChange = () => {
+      if (!window.location.pathname.startsWith('/admin')) {
+        setCurrentTab(getCustomerTabFromPath(window.location.pathname));
+      }
+    };
+    window.addEventListener('popstate', handleLocationChange);
+    return () => window.removeEventListener('popstate', handleLocationChange);
+  }, []);
+
+  // Normalize initial path if at root /passenger or /customer
+  useEffect(() => {
+    if (!window.location.pathname.startsWith('/admin')) {
+      const tab = getCustomerTabFromPath(window.location.pathname);
+      setCurrentTab(tab);
+      const pathMap = {
+        book: '/passenger/book',
+        outside: '/passenger/outside',
+        history: '/passenger/rides',
+        profile: '/passenger/profile'
+      };
+      const cleanPath = window.location.pathname.replace(/\/+$/, '');
+      if (cleanPath === '/passenger' || cleanPath === '/customer' || cleanPath === '' || cleanPath === '/') {
+        window.history.replaceState({}, '', pathMap[tab]);
+      }
+    }
+  }, []);
+
+  const handleTabChange = (tabId) => {
+    setCurrentTab(tabId);
+    if (!window.location.pathname.startsWith('/admin')) {
+      const pathMap = {
+        book: '/passenger/book',
+        outside: '/passenger/outside',
+        history: '/passenger/rides',
+        profile: '/passenger/profile'
+      };
+      const targetPath = pathMap[tabId] || '/passenger/book';
+      if (window.location.pathname !== targetPath) {
+        window.history.pushState({}, '', targetPath);
+      }
+    }
+  };
 
   // Booking Form State & Interactive Map Picking
   const [activePinMode, setActivePinMode] = useState('pickup'); // 'pickup' or 'drop'
@@ -837,8 +890,12 @@ export function CustomerPortalView() {
 
         {/* Navigation Tabs */}
         <div className="nav-scrollable-tabs" style={{ background: '#2D2319', borderColor: '#43362A' }}>
-          <button
-            onClick={() => setCurrentTab('book')}
+          <a
+            href="/passenger/book"
+            onClick={(e) => {
+              e.preventDefault();
+              handleTabChange('book');
+            }}
             style={{
               padding: '6px 14px',
               borderRadius: '8px',
@@ -849,14 +906,18 @@ export function CustomerPortalView() {
               gap: '6px',
               background: currentTab === 'book' ? 'linear-gradient(135deg, #F97316, #EA580C)' : 'transparent',
               color: currentTab === 'book' ? '#FFFFFF' : '#D6C7B2',
-              border: 'none',
+              textDecoration: 'none',
               cursor: 'pointer'
             }}
           >
             <Bike size={16} /> Book Ride
-          </button>
-          <button
-            onClick={() => setCurrentTab('outside')}
+          </a>
+          <a
+            href="/passenger/outside"
+            onClick={(e) => {
+              e.preventDefault();
+              handleTabChange('outside');
+            }}
             style={{
               padding: '6px 14px',
               borderRadius: '8px',
@@ -867,14 +928,18 @@ export function CustomerPortalView() {
               gap: '6px',
               background: currentTab === 'outside' ? 'linear-gradient(135deg, #F97316, #EA580C)' : 'transparent',
               color: currentTab === 'outside' ? '#FFFFFF' : '#D6C7B2',
-              border: 'none',
+              textDecoration: 'none',
               cursor: 'pointer'
             }}
           >
             <Compass size={16} /> Outside Trips
-          </button>
-          <button
-            onClick={() => setCurrentTab('history')}
+          </a>
+          <a
+            href="/passenger/rides"
+            onClick={(e) => {
+              e.preventDefault();
+              handleTabChange('history');
+            }}
             style={{
               padding: '6px 14px',
               borderRadius: '8px',
@@ -885,14 +950,18 @@ export function CustomerPortalView() {
               gap: '6px',
               background: currentTab === 'history' ? 'linear-gradient(135deg, #F97316, #EA580C)' : 'transparent',
               color: currentTab === 'history' ? '#FFFFFF' : '#D6C7B2',
-              border: 'none',
+              textDecoration: 'none',
               cursor: 'pointer'
             }}
           >
             <History size={16} /> My Rides
-          </button>
-          <button
-            onClick={() => setCurrentTab('profile')}
+          </a>
+          <a
+            href="/passenger/profile"
+            onClick={(e) => {
+              e.preventDefault();
+              handleTabChange('profile');
+            }}
             style={{
               padding: '6px 14px',
               borderRadius: '8px',
@@ -903,12 +972,12 @@ export function CustomerPortalView() {
               gap: '6px',
               background: currentTab === 'profile' ? 'linear-gradient(135deg, #F97316, #EA580C)' : 'transparent',
               color: currentTab === 'profile' ? '#FFFFFF' : '#D6C7B2',
-              border: 'none',
+              textDecoration: 'none',
               cursor: 'pointer'
             }}
           >
             <User size={16} /> Profile & Security
-          </button>
+          </a>
         </div>
 
         {/* User Chip & Logout */}
