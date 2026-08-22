@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from './context/AuthContext';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
@@ -17,6 +17,7 @@ import { ReportsView } from './views/ReportsView';
 import { SimulatorView } from './views/SimulatorView';
 import { useSocket } from './context/SocketContext';
 import { alertManager } from './utils/alertManager';
+import { apiRequest } from './api';
 import { ArrowRight, AlertTriangle } from 'lucide-react';
 
 export function App() {
@@ -27,18 +28,50 @@ export function App() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [newOutsideAlert, setNewOutsideAlert] = useState(null);
+  const prevAdminPendingCountRef = useRef(null);
 
-  // Global socket listener for Admin alerts across all pages
+  // Background polling + Socket listener for Admin alerts across all pages
   useEffect(() => {
-    if (!socket || !adminUser) return;
+    if (!adminUser) return;
+
+    const checkPendingOutsideRides = async () => {
+      try {
+        const res = await apiRequest('/admin/outside-rides');
+        const pending = res.data?.pending || (Array.isArray(res.data) ? res.data : []);
+        
+        if (prevAdminPendingCountRef.current !== null && pending.length > prevAdminPendingCountRef.current) {
+          const newest = pending[0];
+          const custName = newest?.customer_name || 'Passenger';
+          const pAddress = newest?.pickup_address || 'Pickup';
+          const dAddress = newest?.destination_address || 'Destination';
+
+          alertManager.triggerRideAlert({
+            title: `🚨 NEW OUTSIDE CAMPUS TRIP REQUEST (${pending.length})`,
+            body: `${custName} requested: ${pAddress} ➔ ${dAddress}. Review & dispatch now.`,
+            repeat: true
+          });
+
+          setNewOutsideAlert({
+            rideId: newest.id,
+            customerName: custName,
+            pickupAddress: pAddress,
+            destinationAddress: dAddress,
+            time: new Date().toLocaleTimeString()
+          });
+        }
+
+        prevAdminPendingCountRef.current = pending.length;
+      } catch (_) {}
+    };
+
+    checkPendingOutsideRides();
+    const interval = setInterval(checkPendingOutsideRides, 3000);
 
     const handleOutsideRide = (data) => {
-      console.log('[Admin Socket] New Outside Ride Request:', data);
       const custName = data.customerName || data.customer_name || 'Passenger';
       const pAddress = data.pickupAddress || data.pickup_address || 'Pickup';
       const dAddress = data.destinationAddress || data.destination_address || 'Destination';
 
-      // Play continuous alert chime and show browser notification
       alertManager.triggerRideAlert({
         title: '🚨 NEW OUTSIDE CAMPUS TRIP REQUEST',
         body: `${custName} requested route: ${pAddress} ➔ ${dAddress}. Click to open Dispatch & quote fare.`,
@@ -54,10 +87,15 @@ export function App() {
       });
     };
 
-    socket.on('admin:outside_ride_requested', handleOutsideRide);
+    if (socket) {
+      socket.on('admin:outside_ride_requested', handleOutsideRide);
+    }
 
     return () => {
-      socket.off('admin:outside_ride_requested', handleOutsideRide);
+      clearInterval(interval);
+      if (socket) {
+        socket.off('admin:outside_ride_requested', handleOutsideRide);
+      }
     };
   }, [socket, adminUser]);
 

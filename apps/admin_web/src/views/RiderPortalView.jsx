@@ -107,6 +107,7 @@ export function RiderPortalView() {
 
   // Socket reference
   const socketRef = useRef(null);
+  const prevKnownRideIdsRef = useRef(new Set());
 
   // Dynamic Company & Rider Fare Split Policy
   // < 80 Rs => Company ₹4, Controller ₹0, Rider remainder
@@ -183,19 +184,13 @@ export function RiderPortalView() {
           ...r,
           total_fare: fare,
           estimated_fare: fare,
-          rider_earning: r.rider_earning || split.rider,
-          company_earning: r.company_earning || split.company,
-          controller_earning: r.controller_earning || split.controller
+          final_fare: fare
         });
       } else {
-        if (activeRide) {
-          setTripCancelledNotice('⚠️ Current trip was cancelled or closed.');
-          setCurrentTab('radar');
-        }
         setActiveRide(null);
       }
     } catch (err) {
-      console.warn('Failed to fetch active ride:', err);
+      console.warn('Failed to fetch active rider trip:', err);
     } finally {
       setActiveRideLoading(false);
     }
@@ -206,7 +201,7 @@ export function RiderPortalView() {
       setLoadingEarnings(true);
       const [earningsRes, ridesRes] = await Promise.all([
         apiRequest('/rider/earnings', 'GET', null, token),
-        apiRequest('/rider/rides/history', 'GET', null, token)
+        apiRequest('/rider/rides?limit=5', 'GET', null, token)
       ]);
       if (earningsRes.data) {
         setEarnings(earningsRes.data);
@@ -254,6 +249,20 @@ export function RiderPortalView() {
             vehicle_type: r.vehicle_type || r.vehicleType || 'BIKE'
           };
         });
+
+      // Check if newly arrived requests need an audible ringtone
+      const hasNewRequest = available.some(r => !prevKnownRideIdsRef.current.has(String(r.id)));
+
+      if (hasNewRequest && available.length > 0 && !activeRide && soundEnabled) {
+        const topReq = available[0];
+        alertManager.triggerRideAlert({
+          title: `🔔 New Ride Request: ₹${topReq.total_fare || 20}`,
+          body: `Pickup: ${topReq.pickup_address} ➔ Drop: ${topReq.destination_address}`,
+          repeat: true
+        });
+      }
+
+      prevKnownRideIdsRef.current = new Set(available.map(r => String(r.id)));
       setIncomingRequests(available);
     } catch (err) {
       console.warn('Failed to poll available requests:', err);
