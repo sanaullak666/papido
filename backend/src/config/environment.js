@@ -2,6 +2,9 @@ const dotenv = require('dotenv');
 const path = require('path');
 
 dotenv.config({ path: path.join(__dirname, '../../.env') });
+dotenv.config({ path: path.join(__dirname, '../.env') });
+dotenv.config({ path: path.join(__dirname, '../../backend/.env') });
+dotenv.config();
 
 const isProduction = process.env.NODE_ENV === 'production';
 
