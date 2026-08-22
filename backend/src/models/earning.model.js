@@ -158,6 +158,17 @@ const EarningModel = {
   async getDailySettlements({ date, search, riderId = null }) {
     const targetDate = date || new Date().toISOString().slice(0, 10);
     
+    // Auto-sync legacy rider_earnings rows to ensure controller_earning is Rs 2 per completed ride
+    try {
+      await db.query(`
+        UPDATE rider_earnings 
+        SET controller_earning = 2.00,
+            company_earning = (CASE WHEN total_fare <= 80.00 THEN 2.00 ELSE ROUND(total_fare * 0.10, 2) END),
+            rider_earning = (CASE WHEN total_fare <= 80.00 THEN GREATEST(0.00, total_fare - 4.00) ELSE GREATEST(0.00, total_fare - ROUND(total_fare * 0.10, 2) - 2.00) END)
+        WHERE controller_earning = 0.00 OR controller_earning IS NULL OR (total_fare <= 80.00 AND company_earning = 4.00)
+      `);
+    } catch (_) {}
+
     let sql = `
       SELECT 
         re.id as earning_id,
@@ -214,9 +225,19 @@ const EarningModel = {
 
     for (const row of rows) {
       const fare = parseFloat(row.total_fare || 0);
-      const company = parseFloat(row.company_earning || 0);
-      const controller = parseFloat(row.controller_earning || 0);
-      const riderNet = parseFloat(row.rider_earning || 0);
+      
+      // Each completed ride gives exactly Rs. 2 to the Controller
+      const controller = 2.00;
+      
+      // Company cut: Rs. 2 if fare <= 80, or 10% if fare > 80
+      let company = 0.00;
+      if (fare <= 80.00) {
+        company = fare < 4.00 ? Number(Math.max(0, fare - controller).toFixed(2)) : 2.00;
+      } else {
+        company = Number((fare * 0.10).toFixed(2));
+      }
+
+      const riderNet = Number(Math.max(0, fare - company - controller).toFixed(2));
       const deduction = Number((company + controller).toFixed(2));
 
       totalGrossVolume += fare;
@@ -271,7 +292,9 @@ const EarningModel = {
         controllerEarning: controller,
         totalDeduction: deduction,
         riderEarning: riderNet,
-        appliedRuleDescription: row.applied_rule_description,
+        appliedRuleDescription: fare <= 80.00
+          ? `Standard Policy (Fare ≤ ₹80): Company ₹${company.toFixed(2)}, Controller ₹${controller.toFixed(2)}, Rider ₹${riderNet.toFixed(2)}`
+          : `Outside / Long Trip Policy (Fare > ₹80): Company 10% (₹${company.toFixed(2)}), Controller ₹${controller.toFixed(2)}, Rider ₹${riderNet.toFixed(2)}`,
         settlementStatus: row.settlement_status || 'UNSETTLED',
         settledAt: row.settled_at,
         time: row.completed_at || row.created_at
@@ -288,6 +311,29 @@ const EarningModel = {
       settlementStatus: r.totalTrips > 0 && r.settledTrips === r.totalTrips ? 'SETTLED' : (r.settledTrips > 0 ? 'PARTIALLY_SETTLED' : 'UNSETTLED')
     }));
 
+    // Fetch assigned Duty Controller for this day and list of available Core Members
+    let dutyController = null;
+    let availableCoreMembers = [];
+
+    try {
+      dutyController = await db.queryOne(`
+        SELECT ddc.*, u.name as controller_name, u.email as controller_email, u.phone as controller_phone, u.profile_image as controller_profile_image
+        FROM daily_duty_controllers ddc
+        JOIN users u ON ddc.core_member_id = u.id
+        WHERE ddc.date = ?
+      `, [targetDate]);
+    } catch (_) {}
+
+    try {
+      availableCoreMembers = await db.query(`
+        SELECT u.id, u.name, u.email, u.phone, u.profile_image
+        FROM users u
+        LEFT JOIN rider_profiles rp ON u.id = rp.user_id
+        WHERE u.is_core_member = 1 OR rp.is_core_member = 1
+        ORDER BY u.name ASC
+      `);
+    } catch (_) {}
+
     return {
       date: targetDate,
       summary: {
@@ -299,6 +345,19 @@ const EarningModel = {
         totalDeductionsDue: Number(totalDeductionsDue.toFixed(2)),
         totalRiderNet: Number(totalRiderNet.toFixed(2))
       },
+      dutyController: dutyController ? {
+        id: dutyController.id,
+        date: dutyController.date,
+        coreMemberId: dutyController.core_member_id,
+        controllerName: dutyController.controller_name,
+        controllerEmail: dutyController.controller_email,
+        controllerPhone: dutyController.controller_phone,
+        controllerProfileImage: dutyController.controller_profile_image,
+        payoutStatus: dutyController.payout_status || 'PENDING',
+        notes: dutyController.notes,
+        totalEarned: Number(totalControllerCut.toFixed(2))
+      } : null,
+      availableCoreMembers: availableCoreMembers || [],
       riders: ridersList,
       rawRidesCount: rows.length
     };
@@ -325,6 +384,23 @@ const EarningModel = {
     }
 
     return this.getDailySettlements({ date: targetDate, riderId });
+  },
+
+  async saveDailyDutyController({ date, coreMemberId, payoutStatus = 'PENDING', notes = null, assignedBy = null }) {
+    const targetDate = date || new Date().toISOString().slice(0, 10);
+    
+    await db.query(`
+      INSERT INTO daily_duty_controllers (date, core_member_id, payout_status, notes, assigned_by)
+      VALUES (?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE 
+        core_member_id = VALUES(core_member_id),
+        payout_status = VALUES(payout_status),
+        notes = VALUES(notes),
+        assigned_by = VALUES(assigned_by),
+        updated_at = CURRENT_TIMESTAMP
+    `, [targetDate, coreMemberId, payoutStatus, notes, assignedBy]);
+
+    return this.getDailySettlements({ date: targetDate });
   }
 };
 

@@ -338,6 +338,20 @@ async function bootstrapMysqlSchema(targetPool) {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
 
+    await targetPool.query(`
+      CREATE TABLE IF NOT EXISTS daily_duty_controllers (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        date DATE NOT NULL UNIQUE,
+        core_member_id INT NOT NULL,
+        payout_status VARCHAR(30) DEFAULT 'PENDING',
+        notes VARCHAR(255) DEFAULT NULL,
+        assigned_by INT DEFAULT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (core_member_id) REFERENCES users(id) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
     // Check if master admin exists
     const [rows] = await targetPool.query('SELECT COUNT(*) as count FROM users');
     if (rows[0].count === 0) {

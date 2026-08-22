@@ -18,7 +18,13 @@ import {
   FileText,
   Copy,
   Check,
-  AlertCircle
+  AlertCircle,
+  UserCheck,
+  Save,
+  User,
+  Phone,
+  Mail,
+  Shield
 } from 'lucide-react';
 
 const getTodayDateString = () => {
@@ -47,6 +53,13 @@ export function DailySettlementsView() {
   const [copiedRiderId, setCopiedRiderId] = useState(null);
   const [updatingRiderId, setUpdatingRiderId] = useState(null);
 
+  // Duty Controller State (Core Member Shift)
+  const [selectedCoreMemberId, setSelectedCoreMemberId] = useState('');
+  const [controllerPayoutStatus, setControllerPayoutStatus] = useState('PENDING');
+  const [controllerNotes, setControllerNotes] = useState('');
+  const [isSavingController, setIsSavingController] = useState(false);
+  const [controllerSuccessMsg, setControllerSuccessMsg] = useState('');
+
   const fetchSettlements = async () => {
     try {
       setLoading(true);
@@ -56,6 +69,16 @@ export function DailySettlementsView() {
 
       const res = await apiRequest(`/admin/daily-settlements?${params.toString()}`);
       setSettlementData(res.data);
+
+      if (res.data?.dutyController) {
+        setSelectedCoreMemberId(String(res.data.dutyController.coreMemberId));
+        setControllerPayoutStatus(res.data.dutyController.payoutStatus || 'PENDING');
+        setControllerNotes(res.data.dutyController.notes || '');
+      } else {
+        setSelectedCoreMemberId('');
+        setControllerPayoutStatus('PENDING');
+        setControllerNotes('');
+      }
     } catch (err) {
       console.error('Failed to fetch daily settlements', err);
     } finally {
@@ -66,6 +89,32 @@ export function DailySettlementsView() {
   useEffect(() => {
     fetchSettlements();
   }, [selectedDate, search]);
+
+  const handleSaveDutyController = async (e) => {
+    if (e) e.preventDefault();
+    if (!selectedCoreMemberId) {
+      alert('Please select a Core Member to assign as the duty controller.');
+      return;
+    }
+
+    try {
+      setIsSavingController(true);
+      setControllerSuccessMsg('');
+      const res = await apiRequest('/admin/daily-settlements/controller', 'POST', {
+        date: selectedDate,
+        coreMemberId: parseInt(selectedCoreMemberId, 10),
+        payoutStatus: controllerPayoutStatus,
+        notes: controllerNotes.trim()
+      });
+      setSettlementData(res.data);
+      setControllerSuccessMsg('Duty Controller saved successfully for ' + selectedDate);
+      setTimeout(() => setControllerSuccessMsg(''), 4000);
+    } catch (err) {
+      alert(`Failed to save duty controller: ${err.message}`);
+    } finally {
+      setIsSavingController(false);
+    }
+  };
 
   const handleToggleSettlement = async (rider) => {
     try {
@@ -99,7 +148,7 @@ export function DailySettlementsView() {
       `---------------------------------`,
       `DEDUCTIONS:`,
       `- Company Platform Share: Rs. ${rider.companyDue.toFixed(2)}`,
-      `- Controller Pool Share: Rs. ${rider.controllerDue.toFixed(2)}`,
+      `- Controller Pool Share (Rs. 2/ride): Rs. ${rider.controllerDue.toFixed(2)}`,
       `*TOTAL DUE TO PAY PAPIDO: Rs. ${rider.totalDeductionDue.toFixed(2)}*`,
       `---------------------------------`,
       `Driver Net Earnings Kept: Rs. ${rider.riderNetEarnings.toFixed(2)}`,
@@ -172,6 +221,8 @@ export function DailySettlementsView() {
   };
 
   const riders = settlementData?.riders || [];
+  const availableCoreMembers = settlementData?.availableCoreMembers || [];
+  const dutyController = settlementData?.dutyController || null;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -291,17 +342,17 @@ export function DailySettlementsView() {
             </div>
           </div>
 
-          {/* Card 4: Controller Share */}
-          <div style={{ background: 'var(--bg-sidebar)', padding: '14px 16px', borderRadius: '10px', border: '1px solid rgba(6, 182, 212, 0.3)' }}>
+          {/* Card 4: Controller Share (Rs. 2 per ride) */}
+          <div style={{ background: 'var(--bg-sidebar)', padding: '14px 16px', borderRadius: '10px', border: '1px solid rgba(6, 182, 212, 0.35)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-              <span style={{ fontSize: '11px', color: '#06B6D4', fontWeight: 700, textTransform: 'uppercase' }}>Controller Share</span>
+              <span style={{ fontSize: '11px', color: '#06B6D4', fontWeight: 700, textTransform: 'uppercase' }}>Controller Share (Rs. 2/Ride)</span>
               <ShieldCheck size={15} color="#06B6D4" />
             </div>
             <div style={{ fontSize: '22px', fontWeight: 800, color: '#06B6D4' }}>
               Rs. {summary.totalControllerCut.toFixed(2)}
             </div>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-              Rs. 2 flat per trip
+              {summary.totalRides} rides &times; Rs. 2.00
             </div>
           </div>
 
@@ -351,11 +402,183 @@ export function DailySettlementsView() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <AlertCircle size={15} color="var(--primary)" style={{ flexShrink: 0 }} />
             <span>
-              <strong>Deduction Policy for {selectedDate}:</strong> Trips &le; Rs. 80 deducts <strong>Rs. 4.00</strong> (Rs. 2 Company + Rs. 2 Controller). Trips &gt; Rs. 80 deducts <strong>10% of Fare</strong> (Company) + <strong>Rs. 2.00</strong> (Controller).
+              <strong>Deduction Policy for {selectedDate}:</strong> Trips &le; Rs. 80 deducts <strong>Rs. 4.00</strong> (Rs. 2 Company + Rs. 2 Controller). Trips &gt; Rs. 80 deducts <strong>10% of Fare</strong> (Company) + <strong>Rs. 2.00</strong> (Controller). Controller receives exactly Rs. 2.00 for every single ride.
             </span>
           </div>
           <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
             Total Collections for Day: <strong style={{ color: '#EF4444' }}>Rs. {summary.totalDeductionsDue.toFixed(2)}</strong>
+          </div>
+        </div>
+      </div>
+
+      {/* Duty Controller (Core Member Management for that Day) Panel */}
+      <div className="panel" style={{ border: '1px solid rgba(6, 182, 212, 0.35)' }}>
+        <div className="panel-header" style={{ flexWrap: 'wrap', gap: '10px' }}>
+          <div>
+            <h3 className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#06B6D4' }}>
+              <ShieldCheck size={18} color="#06B6D4" />
+              Daily Operations Controller (Core Member Shift)
+            </h3>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+              Core Team members are authorized to control operations on duty and receive the daily controller pool (Rs. 2 per ride)
+            </p>
+          </div>
+
+          {dutyController && (
+            <span className={`badge ${dutyController.payoutStatus === 'PAID' ? 'badge-success' : 'badge-warning'}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <CheckCircle2 size={12} /> Payout: {dutyController.payoutStatus}
+            </span>
+          )}
+        </div>
+
+        {controllerSuccessMsg && (
+          <div style={{
+            padding: '10px 16px',
+            background: 'rgba(16, 185, 129, 0.15)',
+            border: '1px solid rgba(16, 185, 129, 0.4)',
+            borderRadius: '8px',
+            color: '#34D399',
+            fontSize: '13px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            marginBottom: '16px'
+          }}>
+            <CheckCircle2 size={16} />
+            <span>{controllerSuccessMsg}</span>
+          </div>
+        )}
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginTop: '10px' }}>
+          {/* Assignment Form */}
+          <form onSubmit={handleSaveDutyController} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                Select Core Member on Duty for {selectedDate} *
+              </label>
+              <select
+                className="form-select"
+                style={{ width: '100%', fontSize: '13px' }}
+                value={selectedCoreMemberId}
+                onChange={(e) => setSelectedCoreMemberId(e.target.value)}
+                required
+              >
+                <option value="">-- Choose Authorized Core Member --</option>
+                {availableCoreMembers.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.name} ({member.phone || member.email})
+                  </option>
+                ))}
+              </select>
+              {availableCoreMembers.length === 0 && (
+                <div style={{ fontSize: '11px', color: '#F87171', marginTop: '4px' }}>
+                  No core members found. Register core members in Core Team Management.
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                  Controller Payout Status
+                </label>
+                <select
+                  className="form-select"
+                  style={{ width: '100%', fontSize: '13px' }}
+                  value={controllerPayoutStatus}
+                  onChange={(e) => setControllerPayoutStatus(e.target.value)}
+                >
+                  <option value="PENDING">PENDING (Unpaid)</option>
+                  <option value="PAID">PAID (Settled to Controller)</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                  Shift Notes / Time (Optional)
+                </label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="e.g. Full Day / Evening Shift"
+                  style={{ width: '100%', fontSize: '13px' }}
+                  value={controllerNotes}
+                  onChange={(e) => setControllerNotes(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div>
+              <button
+                type="submit"
+                className="btn btn-primary btn-sm"
+                disabled={isSavingController || !selectedCoreMemberId}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontWeight: 700 }}
+              >
+                <Save size={14} />
+                <span>{isSavingController ? 'Saving...' : 'Save / Assign Duty Controller'}</span>
+              </button>
+            </div>
+          </form>
+
+          {/* Assigned Controller Summary Card */}
+          <div style={{
+            background: 'var(--bg-sidebar)',
+            border: '1px solid var(--border)',
+            borderRadius: '10px',
+            padding: '16px 20px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between'
+          }}>
+            {dutyController ? (
+              <div>
+                <div style={{ fontSize: '11px', color: '#06B6D4', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>
+                  Assigned Duty Controller for {selectedDate}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                  <img
+                    src={dutyController.controllerProfileImage || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
+                    alt={dutyController.controllerName}
+                    style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #06B6D4' }}
+                  />
+                  <div>
+                    <div style={{ fontSize: '16px', fontWeight: 800, color: '#FFF' }}>{dutyController.controllerName}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{dutyController.controllerPhone} &bull; {dutyController.controllerEmail}</div>
+                  </div>
+                </div>
+
+                <div style={{ background: 'rgba(6, 182, 212, 0.1)', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: '8px', padding: '10px 14px', marginTop: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Total Trips Managed:</span>
+                    <strong style={{ fontSize: '13px' }}>{summary.totalRides} trips</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Controller Pool Earned (Rs. 2/ride):</span>
+                    <strong style={{ fontSize: '16px', color: '#06B6D4' }}>Rs. {summary.totalControllerCut.toFixed(2)}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Payout Status:</span>
+                    <span className={`badge ${dutyController.payoutStatus === 'PAID' ? 'badge-success' : 'badge-danger'}`} style={{ fontSize: '10px' }}>
+                      {dutyController.payoutStatus}
+                    </span>
+                  </div>
+                  {dutyController.notes && (
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px', fontStyle: 'italic' }}>
+                      Note: "{dutyController.notes}"
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>
+                <Shield size={32} color="#06B6D4" style={{ marginBottom: '8px', opacity: 0.6 }} />
+                <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text-secondary)' }}>No Duty Controller Assigned Yet</div>
+                <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                  Select a Core Member on the left to assign who controlled the {summary.totalRides} trips (Rs. {summary.totalControllerCut.toFixed(2)} pool) on {selectedDate}.
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

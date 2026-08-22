@@ -25,6 +25,7 @@ router.patch('/split-rules/:id', AdminController.updateSplitRule);
 router.get('/reports', AdminController.getReports);
 router.get('/daily-settlements', AdminController.getDailySettlements);
 router.patch('/daily-settlements/status', AdminController.updateDailySettlementStatus);
+router.post('/daily-settlements/controller', AdminController.saveDailyDutyController);
 router.get('/outside-rides', AdminController.listPendingOutsideRides);
 router.get('/active-riders', AdminController.listActiveRiders);
 router.post('/outside-rides/:id/dispatch', AdminController.dispatchOutsideRide);

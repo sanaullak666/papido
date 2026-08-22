@@ -487,6 +487,25 @@ const AdminController = {
     } catch (err) {
       next(err);
     }
+  },
+
+  async saveDailyDutyController(req, res, next) {
+    try {
+      const { date, coreMemberId, payoutStatus, notes } = req.body;
+      if (!coreMemberId) {
+        return error(res, 'Please select a valid Core Member as the duty controller.', 400);
+      }
+      const data = await EarningModel.saveDailyDutyController({
+        date,
+        coreMemberId: parseInt(coreMemberId, 10),
+        payoutStatus: payoutStatus || 'PENDING',
+        notes: notes || null,
+        assignedBy: req.user?.id || null
+      });
+      return success(res, 'Duty controller assigned and recorded successfully.', data);
+    } catch (err) {
+      next(err);
+    }
   }
 };
 
