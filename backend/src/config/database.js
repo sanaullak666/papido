@@ -219,6 +219,7 @@ async function bootstrapMysqlSchema(targetPool) {
         payment_method VARCHAR(30) NOT NULL DEFAULT 'CASH',
         payment_status VARCHAR(30) NOT NULL DEFAULT 'PENDING',
         transaction_reference VARCHAR(100) UNIQUE DEFAULT NULL,
+        gateway_response LONGTEXT DEFAULT NULL,
         paid_at DATETIME DEFAULT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (ride_id) REFERENCES rides(id) ON DELETE CASCADE,
@@ -396,6 +397,11 @@ async function bootstrapMysqlSchema(targetPool) {
     } catch (_) {}
     try {
       await targetPool.query('ALTER TABLE rider_earnings ADD COLUMN applied_rule_description VARCHAR(255) DEFAULT NULL AFTER controller_earning;');
+    } catch (_) {}
+
+    // Ensure payments table has gateway_response column
+    try {
+      await targetPool.query('ALTER TABLE payments ADD COLUMN gateway_response LONGTEXT DEFAULT NULL AFTER transaction_reference;');
     } catch (_) {}
   } catch (err) {
     console.warn('[Database Warning] MySQL bootstrap notice:', err.message);
