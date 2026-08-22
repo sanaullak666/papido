@@ -34,7 +34,7 @@ class EmailService {
     logger.info('================================================================');
 
     // Nodemailer dispatch using configured Gmail App Password
-    const smtpUser = env.SMTP?.USER || process.env.SMTP_USER || 'sanaullak294@gmail.com';
+    const smtpUser = env.SMTP?.USER || process.env.SMTP_USER || 'pupapido@gmail.com';
     const smtpPass = (env.SMTP?.PASS || process.env.SMTP_PASS || 'plfilaeftmkzgkzm').replace(/\s+/g, '');
 
     if (smtpUser && smtpPass) {
@@ -99,9 +99,10 @@ class EmailService {
             </div>
           `
         });
-        logger.info(`✅ [EMAIL SENT] Verification OTP sent successfully via Gmail to: ${cleanEmail}`);
+        logger.info(`✅ [EMAIL SENT] Verification OTP sent successfully via Gmail from ${smtpUser} to: ${cleanEmail}`);
       } catch (mailErr) {
         logger.error(`❌ [EMAIL ERROR] Failed to send email via SMTP: ${mailErr.message}`);
+        throw new Error(`Email delivery failed (${mailErr.message}). Please verify that ${smtpUser} can send emails.`);
       }
     } else {
       logger.warn('⚠️ [EMAIL NOTICE] SMTP configuration missing. Real email not dispatched.');

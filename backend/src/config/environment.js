@@ -106,8 +106,8 @@ module.exports = {
     HOST: process.env.SMTP_HOST || 'smtp.gmail.com',
     PORT: parseInt(process.env.SMTP_PORT, 10) || 587,
     SECURE: process.env.SMTP_SECURE === 'true',
-    USER: process.env.SMTP_USER || 'sanaullak294@gmail.com',
+    USER: process.env.SMTP_USER || 'pupapido@gmail.com',
     PASS: (process.env.SMTP_PASS || 'plfilaeftmkzgkzm').replace(/\s+/g, ''),
-    FROM: process.env.SMTP_FROM || '"Papido" <sanaullak294@gmail.com>'
+    FROM: process.env.SMTP_FROM || '"Papido" <pupapido@gmail.com>'
   }
 };
