@@ -941,28 +941,6 @@ export function LoginView({ onGoToAdminPortal }) {
             </button>
           </div>
         </div>
-
-        {/* Discrete Admin Link at bottom */}
-        <div style={{ textAlign: 'center', marginTop: '20px' }}>
-          <button
-            type="button"
-            onClick={onGoToAdminPortal}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#796D61',
-              fontSize: '11px',
-              cursor: 'pointer',
-              textDecoration: 'underline',
-              fontWeight: 600,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
-          >
-            <Lock size={12} /> Campus Administration Portal →
-          </button>
-        </div>
       </div>
     </div>
   );
