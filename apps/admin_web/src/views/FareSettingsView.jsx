@@ -476,31 +476,31 @@ export function FareSettingsView() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginTop: '16px' }}>
           <div style={{ background: 'var(--bg-sidebar)', border: '1px solid var(--border)', borderRadius: '12px', padding: '18px' }}>
             <div style={{ display: 'inline-block', background: 'rgba(245, 158, 11, 0.15)', color: 'var(--primary)', padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 800, marginBottom: '8px' }}>
-              CAMPUS & SHORT TRIPS (FARE &lt; ₹80)
+              CAMPUS & SHORT TRIPS (FARE &le; ₹80)
             </div>
             <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px' }}>
-              Flat ₹4 Company Cut
+              ₹2 Company + ₹2 Controller (₹4 Total)
             </div>
             <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              From each ride below <strong>₹80</strong>, the platform deducts a flat <strong>₹4.00</strong> fee. The driver takes home the full remainder. Controller cut is ₹0.
+              From each ride of <strong>₹80 or below</strong>, the platform deducts a total of <strong>₹4.00</strong> (₹2.00 for Company and ₹2.00 for Controller). The driver retains the remaining fare.
             </p>
             <div style={{ marginTop: '12px', fontSize: '12px', color: 'var(--text-muted)', background: 'var(--bg-card)', padding: '8px 12px', borderRadius: '8px' }}>
-              Example: ₹35 Campus Ride → Driver gets <strong>₹31</strong>, Company gets <strong>₹4</strong>.
+              Example: ₹30 Campus Ride &rarr; Driver gets <strong>₹26</strong>, Company gets <strong>₹2</strong>, Controller gets <strong>₹2</strong>.
             </div>
           </div>
 
           <div style={{ background: 'var(--bg-sidebar)', border: '1px solid var(--border)', borderRadius: '12px', padding: '18px' }}>
             <div style={{ display: 'inline-block', background: 'rgba(6, 182, 212, 0.15)', color: '#06B6D4', padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 800, marginBottom: '8px' }}>
-              OUTSIDE & LONG TRIPS (FARE ≥ ₹80)
+              OUTSIDE & LONG TRIPS (FARE &gt; ₹80)
             </div>
             <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px' }}>
               10% Company + ₹2 Controller
             </div>
             <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              For rides of <strong>₹80 or above</strong>, the company takes <strong>10%</strong> of the total fare, and <strong>₹2.00</strong> is allocated to the controller. The driver receives the remaining 90% minus ₹2.
+              For rides <strong>above ₹80</strong>, the company takes <strong>10%</strong> of the total fare, and <strong>₹2.00</strong> is allocated to the controller. The driver receives the remaining 90% minus ₹2.
             </p>
             <div style={{ marginTop: '12px', fontSize: '12px', color: 'var(--text-muted)', background: 'var(--bg-card)', padding: '8px 12px', borderRadius: '8px' }}>
-              Example: ₹120 Outside Ride → Driver gets <strong>₹106</strong> (90% - ₹2), Company gets <strong>₹12</strong> (10%), Controller gets <strong>₹2</strong>.
+              Example: ₹120 Outside Ride &rarr; Driver gets <strong>₹106</strong> (90% - ₹2), Company gets <strong>₹12</strong> (10%), Controller gets <strong>₹2</strong>.
             </div>
           </div>
         </div>

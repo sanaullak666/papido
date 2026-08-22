@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   LayoutDashboard,
+  CreditCard,
   Users,
   Bike,
   Navigation,
@@ -21,6 +22,7 @@ export function Sidebar({ currentTab, onNavigate, isOpen, onClose, hasPendingOut
 
   const navItems = [
     { id: 'dashboard', path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'daily-settlements', path: '/admin/daily-settlements', label: 'Daily Rider Deductions', icon: CreditCard, badge: 'DAILY' },
     { id: 'outside-trips', path: '/admin/outside-trips', label: 'Outside Trips Dispatch', icon: Globe, badge: hasPendingOutsideAlert ? 'NEW' : 'DISPATCH' },
     { id: 'core-team', path: '/admin/core-team', label: 'Core Team Management', icon: Shield, badge: 'CORE' },
     { id: 'customers', path: '/admin/customers', label: 'Customers Directory', icon: Users },

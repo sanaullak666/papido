@@ -14,6 +14,7 @@ import { RidesView } from './views/RidesView';
 import { FareSettingsView } from './views/FareSettingsView';
 import { PaymentsView } from './views/PaymentsView';
 import { ReportsView } from './views/ReportsView';
+import { DailySettlementsView } from './views/DailySettlementsView';
 import { CoreRegisterView } from './views/CoreRegisterView';
 import { CoreTeamView } from './views/CoreTeamView';
 import { useSocket } from './context/SocketContext';
@@ -24,6 +25,7 @@ import { ArrowRight, AlertTriangle, X } from 'lucide-react';
 const getAdminTabFromPath = (path) => {
   const cleanPath = (path || '').toLowerCase().replace(/\/+$/, '');
   if (!cleanPath || cleanPath === '/admin' || cleanPath === '/admin/dashboard' || cleanPath === '/admin/overview') return 'dashboard';
+  if (cleanPath === '/admin/daily-settlements' || cleanPath === '/admin/settlements' || cleanPath === '/admin/deductions') return 'daily-settlements';
   if (cleanPath === '/admin/outside-trips' || cleanPath === '/admin/outside' || cleanPath === '/admin/dispatch') return 'outside-trips';
   if (cleanPath === '/admin/core-team' || cleanPath === '/admin/core' || cleanPath === '/admin/team') return 'core-team';
   if (cleanPath === '/admin/customers' || cleanPath === '/admin/passengers') return 'customers';
@@ -201,6 +203,8 @@ export function App() {
       switch (currentTab) {
         case 'dashboard':
           return { title: 'Platform Overview', subtitle: 'Real-time metrics, fleet activity, and dispatch statistics' };
+        case 'daily-settlements':
+          return { title: 'Daily Driver Deductions & Settlements', subtitle: 'Track daily platform and controller deductions, driver dues, and payment collections' };
         case 'outside-trips':
           return { title: 'Outside Trips Dispatch', subtitle: 'Review passenger custom routes, set fair pricing, and dispatch to riders' };
         case 'core-team':
@@ -297,6 +301,7 @@ export function App() {
 
           <div className="content-body" key={refreshKey}>
             {currentTab === 'dashboard' && <DashboardView />}
+            {currentTab === 'daily-settlements' && <DailySettlementsView />}
             {currentTab === 'outside-trips' && <OutsideTripsView />}
             {currentTab === 'core-team' && <CoreTeamView />}
             {currentTab === 'customers' && <CustomersView />}

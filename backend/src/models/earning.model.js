@@ -150,7 +150,183 @@ const EarningModel = {
       LIMIT ? OFFSET ?
     `;
     return db.query(sql, [riderId, Number(limit), Number(offset)]);
+  },
+
+  /**
+   * Daily Rider Settlement & Deductions aggregation
+   */
+  async getDailySettlements({ date, search, riderId = null }) {
+    const targetDate = date || new Date().toISOString().slice(0, 10);
+    
+    let sql = `
+      SELECT 
+        re.id as earning_id,
+        re.rider_id,
+        re.ride_id,
+        re.total_fare,
+        re.rider_earning,
+        re.company_earning,
+        re.controller_earning,
+        re.applied_rule_description,
+        re.settlement_status,
+        re.settled_at,
+        re.created_at,
+        r.ride_code,
+        r.pickup_address,
+        r.destination_address,
+        r.vehicle_type,
+        r.completed_at,
+        u.name as rider_name,
+        u.phone as rider_phone,
+        u.email as rider_email,
+        rp.vehicle_model,
+        rp.vehicle_number
+      FROM rider_earnings re
+      JOIN rides r ON re.ride_id = r.id
+      JOIN users u ON re.rider_id = u.id
+      LEFT JOIN rider_profiles rp ON u.id = rp.user_id
+      WHERE (DATE(re.created_at) = ? OR DATE(r.completed_at) = ?)
+    `;
+    const params = [targetDate, targetDate];
+
+    if (riderId) {
+      sql += ' AND re.rider_id = ?';
+      params.push(riderId);
+    }
+
+    if (search) {
+      sql += ' AND (u.name LIKE ? OR u.phone LIKE ? OR u.email LIKE ? OR r.ride_code LIKE ?)';
+      const term = `%${search}%`;
+      params.push(term, term, term, term);
+    }
+
+    sql += ' ORDER BY re.id DESC';
+
+    const rows = await db.query(sql, params);
+
+    // Group rides by rider
+    const riderMap = new Map();
+    let totalGrossVolume = 0;
+    let totalCompanyCut = 0;
+    let totalControllerCut = 0;
+    let totalRiderNet = 0;
+    let totalDeductionsDue = 0;
+
+    for (const row of rows) {
+      const fare = parseFloat(row.total_fare || 0);
+      const company = parseFloat(row.company_earning || 0);
+      const controller = parseFloat(row.controller_earning || 0);
+      const riderNet = parseFloat(row.rider_earning || 0);
+      const deduction = Number((company + controller).toFixed(2));
+
+      totalGrossVolume += fare;
+      totalCompanyCut += company;
+      totalControllerCut += controller;
+      totalDeductionsDue += deduction;
+      totalRiderNet += riderNet;
+
+      if (!riderMap.has(row.rider_id)) {
+        riderMap.set(row.rider_id, {
+          riderId: row.rider_id,
+          riderName: row.rider_name,
+          riderPhone: row.rider_phone,
+          riderEmail: row.rider_email,
+          vehicleModel: row.vehicle_model || 'N/A',
+          vehicleNumber: row.vehicle_number || 'N/A',
+          vehicleType: row.vehicle_type || 'BIKE',
+          totalTrips: 0,
+          grossFare: 0,
+          companyDue: 0,
+          controllerDue: 0,
+          totalDeductionDue: 0,
+          riderNetEarnings: 0,
+          settledTrips: 0,
+          allSettled: true,
+          rides: []
+        });
+      }
+
+      const rData = riderMap.get(row.rider_id);
+      rData.totalTrips += 1;
+      rData.grossFare += fare;
+      rData.companyDue += company;
+      rData.controllerDue += controller;
+      rData.totalDeductionDue += deduction;
+      rData.riderNetEarnings += riderNet;
+      if (row.settlement_status === 'SETTLED') {
+        rData.settledTrips += 1;
+      } else {
+        rData.allSettled = false;
+      }
+
+      rData.rides.push({
+        earningId: row.earning_id,
+        rideId: row.ride_id,
+        rideCode: row.ride_code,
+        pickupAddress: row.pickup_address,
+        destinationAddress: row.destination_address,
+        vehicleType: row.vehicle_type,
+        totalFare: fare,
+        companyEarning: company,
+        controllerEarning: controller,
+        totalDeduction: deduction,
+        riderEarning: riderNet,
+        appliedRuleDescription: row.applied_rule_description,
+        settlementStatus: row.settlement_status || 'UNSETTLED',
+        settledAt: row.settled_at,
+        time: row.completed_at || row.created_at
+      });
+    }
+
+    const ridersList = Array.from(riderMap.values()).map(r => ({
+      ...r,
+      grossFare: Number(r.grossFare.toFixed(2)),
+      companyDue: Number(r.companyDue.toFixed(2)),
+      controllerDue: Number(r.controllerDue.toFixed(2)),
+      totalDeductionDue: Number(r.totalDeductionDue.toFixed(2)),
+      riderNetEarnings: Number(r.riderNetEarnings.toFixed(2)),
+      settlementStatus: r.totalTrips > 0 && r.settledTrips === r.totalTrips ? 'SETTLED' : (r.settledTrips > 0 ? 'PARTIALLY_SETTLED' : 'UNSETTLED')
+    }));
+
+    return {
+      date: targetDate,
+      summary: {
+        totalRides: rows.length,
+        totalActiveRiders: ridersList.length,
+        totalGrossVolume: Number(totalGrossVolume.toFixed(2)),
+        totalCompanyCut: Number(totalCompanyCut.toFixed(2)),
+        totalControllerCut: Number(totalControllerCut.toFixed(2)),
+        totalDeductionsDue: Number(totalDeductionsDue.toFixed(2)),
+        totalRiderNet: Number(totalRiderNet.toFixed(2))
+      },
+      riders: ridersList,
+      rawRidesCount: rows.length
+    };
+  },
+
+  async updateDailySettlementStatus({ riderId, date, status }) {
+    const targetStatus = status === 'SETTLED' ? 'SETTLED' : 'UNSETTLED';
+    const targetDate = date || new Date().toISOString().slice(0, 10);
+    
+    if (targetStatus === 'SETTLED') {
+      await db.query(
+        `UPDATE rider_earnings 
+         SET settlement_status = 'SETTLED', settled_at = CURRENT_TIMESTAMP 
+         WHERE rider_id = ? AND (DATE(created_at) = ? OR DATE(created_at) = DATE(?))`,
+        [riderId, targetDate, targetDate]
+      );
+    } else {
+      await db.query(
+        `UPDATE rider_earnings 
+         SET settlement_status = 'UNSETTLED', settled_at = NULL 
+         WHERE rider_id = ? AND (DATE(created_at) = ? OR DATE(created_at) = DATE(?))`,
+        [riderId, targetDate, targetDate]
+      );
+    }
+
+    return this.getDailySettlements({ date: targetDate, riderId });
   }
 };
 
 module.exports = EarningModel;
+

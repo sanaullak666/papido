@@ -460,6 +460,33 @@ const AdminController = {
     } catch (err) {
       return error(res, err.message, 400);
     }
+  },
+
+  async getDailySettlements(req, res, next) {
+    try {
+      const { date, search, riderId } = req.query;
+      const data = await EarningModel.getDailySettlements({ date, search, riderId: riderId ? parseInt(riderId, 10) : null });
+      return success(res, 'Daily settlements fetched successfully.', data);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async updateDailySettlementStatus(req, res, next) {
+    try {
+      const { riderId, date, status } = req.body;
+      if (!riderId) {
+        return error(res, 'riderId is required.', 400);
+      }
+      const data = await EarningModel.updateDailySettlementStatus({
+        riderId: parseInt(riderId, 10),
+        date,
+        status: status === 'SETTLED' ? 'SETTLED' : 'UNSETTLED'
+      });
+      return success(res, `Settlement status updated to ${status}.`, data);
+    } catch (err) {
+      next(err);
+    }
   }
 };
 

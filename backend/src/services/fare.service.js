@@ -105,9 +105,9 @@ const FareService = {
   },
 
   /**
-   * Calculates dynamic fare split between platform company, controller, and rider based on company policy:
-   * - Below ₹80: Company takes ₹4 flat per ride. Controller takes ₹0. Rider gets remainder.
-   * - ₹80 or above: Company takes 10% of fare. Controller takes ₹2 flat. Rider gets remainder.
+   * Calculates dynamic fare split between platform company, controller, and rider based on Papido deduction policy:
+   * - Fare <= ₹80: Total deduction ₹4 (₹2 to Company, ₹2 to Controller). Rider keeps remainder.
+   * - Fare > ₹80: 10% of fare to Company, ₹2 to Controller. Rider keeps remainder.
    */
   async calculateFareSplit(finalFare) {
     const fare = parseFloat(finalFare) || 0;
@@ -116,18 +116,23 @@ const FareService = {
     let riderEarning = 0.00;
     let description = '';
 
-    if (fare < 80.00) {
-      // Below ₹80: Flat ₹4 to Company, ₹0 to Controller
-      companyEarning = Math.min(fare, 4.00);
-      controllerEarning = 0.00;
-      riderEarning = Number(Math.max(0, fare - companyEarning).toFixed(2));
-      description = `Standard Policy (Fare < ₹80): Company ₹4.00, Controller ₹0.00, Rider ₹${riderEarning.toFixed(2)}`;
+    if (fare <= 80.00) {
+      // Fare <= ₹80: ₹4 Total Platform Deduction (₹2 to Company, ₹2 to Controller)
+      if (fare < 4.00) {
+        companyEarning = Number((fare / 2).toFixed(2));
+        controllerEarning = Number((fare - companyEarning).toFixed(2));
+      } else {
+        companyEarning = 2.00;
+        controllerEarning = 2.00;
+      }
+      riderEarning = Number(Math.max(0, fare - companyEarning - controllerEarning).toFixed(2));
+      description = `Standard Policy (Fare ≤ ₹80): Company ₹${companyEarning.toFixed(2)}, Controller ₹${controllerEarning.toFixed(2)}, Rider ₹${riderEarning.toFixed(2)}`;
     } else {
-      // ₹80 or above: 10% to Company, ₹2 to Controller
+      // Fare > ₹80: 10% to Company, ₹2 to Controller
       companyEarning = Number((fare * 0.10).toFixed(2));
       controllerEarning = 2.00;
       riderEarning = Number(Math.max(0, fare - companyEarning - controllerEarning).toFixed(2));
-      description = `Outside / Long Trip Policy (Fare ≥ ₹80): Company 10% (₹${companyEarning.toFixed(2)}), Controller ₹2.00, Rider ₹${riderEarning.toFixed(2)}`;
+      description = `Outside / Long Trip Policy (Fare > ₹80): Company 10% (₹${companyEarning.toFixed(2)}), Controller ₹2.00, Rider ₹${riderEarning.toFixed(2)}`;
     }
 
     return {
@@ -135,6 +140,7 @@ const FareService = {
       riderEarning,
       companyEarning,
       controllerEarning,
+      totalDeduction: Number((companyEarning + controllerEarning).toFixed(2)),
       appliedRuleDescription: description
     };
   },
