@@ -2,6 +2,7 @@ const db = require('../config/database');
 const UserModel = require('../models/user.model');
 const bcrypt = require('bcryptjs');
 const logger = require('../utils/logger');
+const env = require('../config/environment');
 
 class EmailService {
   /**
@@ -16,15 +17,14 @@ class EmailService {
 
     // Generate secure 6-digit numeric OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = Date.now() + 15 * 60 * 1000;
 
     // Invalidate previous unused OTPs for this email
     await db.query('UPDATE password_resets SET used = 1 WHERE email = ? AND used = 0', [cleanEmail]);
 
-    // Insert new OTP record
+    // Insert new OTP record with 15-minute expiration
     await db.query(
-      'INSERT INTO password_resets (email, otp, expires_at, used) VALUES (?, ?, ?, 0)',
-      [cleanEmail, otp, expiresAt]
+      'INSERT INTO password_resets (email, otp, expires_at, used) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 15 MINUTE), 0)',
+      [cleanEmail, otp]
     );
 
     // Log high-visibility OTP banner for local debugging and zero-setup testing
@@ -33,29 +33,32 @@ class EmailService {
     logger.info(`🔑 Verification OTP Code: >>> ${otp} <<< (Valid for 15 minutes)`);
     logger.info('================================================================');
 
-    // Optional Nodemailer dispatch if SMTP environment variables are present
-    if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+    // Nodemailer dispatch using configured Gmail App Password
+    const smtpUser = env.SMTP?.USER || process.env.SMTP_USER || 'sanaullak294@gmail.com';
+    const smtpPass = (env.SMTP?.PASS || process.env.SMTP_PASS || 'plfilaeftmkzgkzm').replace(/\s+/g, '');
+
+    if (smtpUser && smtpPass) {
       try {
         const nodemailer = require('nodemailer');
         let transportConfig;
         
-        if (process.env.SMTP_HOST && process.env.SMTP_HOST !== 'smtp.gmail.com') {
+        if (env.SMTP?.HOST && env.SMTP.HOST !== 'smtp.gmail.com') {
           transportConfig = {
-            host: process.env.SMTP_HOST,
-            port: parseInt(process.env.SMTP_PORT || '587', 10),
-            secure: process.env.SMTP_SECURE === 'true',
+            host: env.SMTP.HOST,
+            port: parseInt(env.SMTP.PORT || '587', 10),
+            secure: env.SMTP.SECURE === true,
             auth: {
-              user: process.env.SMTP_USER,
-              pass: process.env.SMTP_PASS
+              user: smtpUser,
+              pass: smtpPass
             }
           };
         } else {
-          // Dedicated Gmail service preset for optimal reliability
+          // Dedicated Gmail service preset
           transportConfig = {
             service: 'gmail',
             auth: {
-              user: process.env.SMTP_USER,
-              pass: process.env.SMTP_PASS.replace(/\s+/g, '') // remove any accidental spaces in app password
+              user: smtpUser,
+              pass: smtpPass
             }
           };
         }
@@ -63,18 +66,36 @@ class EmailService {
         const transporter = nodemailer.createTransport(transportConfig);
 
         await transporter.sendMail({
-          from: `"papidoapp" <${process.env.SMTP_USER}>`,
+          from: `"Papido Mobility" <${smtpUser}>`,
           to: cleanEmail,
-          subject: 'Your papidoapp Password Reset Verification Code',
+          subject: '🔐 Your Papido Password Reset Verification Code',
           html: `
-            <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; background: #0f172a; color: #ffffff; padding: 24px; border-radius: 12px;">
-              <h2 style="color: #f59e0b; margin-top: 0;">papidoapp Password Reset</h2>
-              <p>Hi ${user.name || 'there'},</p>
-              <p>We received a request to reset your password. Use the following 6-digit verification code to reset your account password:</p>
-              <div style="background: #1e293b; padding: 16px; text-align: center; border-radius: 8px; font-size: 28px; font-weight: bold; letter-spacing: 6px; color: #f59e0b; margin: 20px 0;">
-                ${otp}
+            <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 520px; margin: 0 auto; background: #FAF5EE; color: #271E16; padding: 32px 24px; border-radius: 16px; border: 1.5px solid #E8DCCB;">
+              <div style="text-align: center; margin-bottom: 24px;">
+                <div style="display: inline-block; background: linear-gradient(135deg, #F97316, #EA580C); color: #FFFFFF; font-size: 28px; font-weight: 900; width: 60px; height: 60px; line-height: 60px; border-radius: 16px; margin-bottom: 12px; box-shadow: 0 4px 14px rgba(234, 88, 12, 0.3);">P</div>
+                <h2 style="color: #271E16; margin: 0; font-size: 22px; font-weight: 800;">Password Reset Request</h2>
+                <p style="color: #796D61; font-size: 13px; margin-top: 4px;">Pondicherry University Campus Mobility</p>
               </div>
-              <p style="font-size: 12px; color: #94a3b8;">This code is valid for 15 minutes. If you did not request a password reset, please ignore this email.</p>
+
+              <div style="background: #FFFFFF; padding: 24px; border-radius: 12px; border: 1px solid #E8DCCB; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+                <p style="font-size: 15px; margin-top: 0;">Hi <strong>${user.name || 'Student/Driver'}</strong>,</p>
+                <p style="font-size: 14px; line-height: 1.6; color: #4B3F33;">
+                  We received a request to reset the password for your Papido account (<strong>${cleanEmail}</strong>).
+                </p>
+                <p style="font-size: 14px; color: #4B3F33;">Use the 6-digit verification code below to complete the reset:</p>
+
+                <div style="background: #FFF7ED; border: 2px dashed #EA580C; padding: 18px; text-align: center; border-radius: 12px; font-size: 32px; font-weight: 900; letter-spacing: 8px; color: #EA580C; margin: 20px 0;">
+                  ${otp}
+                </div>
+
+                <p style="font-size: 12px; color: #796D61; margin-bottom: 0; line-height: 1.5;">
+                  ⏱️ <strong>Note:</strong> This verification code will expire in <strong>15 minutes</strong>. If you did not request this change, you can safely ignore this email.
+                </p>
+              </div>
+
+              <div style="text-align: center; margin-top: 24px; font-size: 11px; color: #A89B8C;">
+                &copy; ${new Date().getFullYear()} Papido Campus Mobility &bull; Secure Account Services
+              </div>
             </div>
           `
         });
@@ -83,7 +104,7 @@ class EmailService {
         logger.error(`❌ [EMAIL ERROR] Failed to send email via SMTP: ${mailErr.message}`);
       }
     } else {
-      logger.warn('⚠️ [EMAIL NOTICE] SMTP_USER / SMTP_PASS not set in backend/.env. Real email not dispatched.');
+      logger.warn('⚠️ [EMAIL NOTICE] SMTP configuration missing. Real email not dispatched.');
     }
 
     return {
@@ -108,8 +129,12 @@ class EmailService {
       throw new Error('Invalid OTP code. Please check and try again.');
     }
 
-    const expiresAtMs = Number(record.expires_at) || new Date(record.expires_at).getTime();
-    if (Date.now() > expiresAtMs) {
+    const validRecord = await db.queryOne(
+      'SELECT id FROM password_resets WHERE id = ? AND expires_at >= NOW()',
+      [record.id]
+    );
+
+    if (!validRecord) {
       throw new Error('This OTP code has expired. Please request a new code.');
     }
 

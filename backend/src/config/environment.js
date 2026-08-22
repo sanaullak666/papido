@@ -100,5 +100,14 @@ module.exports = {
     SUBJECT: process.env.VAPID_SUBJECT || 'mailto:admin@papido.com'
   },
 
-  PUSH_NOTIFICATION_KEY: process.env.PUSH_NOTIFICATION_KEY || ''
+  PUSH_NOTIFICATION_KEY: process.env.PUSH_NOTIFICATION_KEY || '',
+
+  SMTP: {
+    HOST: process.env.SMTP_HOST || 'smtp.gmail.com',
+    PORT: parseInt(process.env.SMTP_PORT, 10) || 587,
+    SECURE: process.env.SMTP_SECURE === 'true',
+    USER: process.env.SMTP_USER || 'sanaullak294@gmail.com',
+    PASS: (process.env.SMTP_PASS || 'plfilaeftmkzgkzm').replace(/\s+/g, ''),
+    FROM: process.env.SMTP_FROM || '"Papido" <sanaullak294@gmail.com>'
+  }
 };
