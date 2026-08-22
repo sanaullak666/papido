@@ -153,21 +153,10 @@ const EarningModel = {
   },
 
   /**
-   * Daily Rider Settlement & Deductions aggregation
+   * Daily Rider Settlement & Deductions aggregation (High Performance Parallel Execution)
    */
   async getDailySettlements({ date, search, riderId = null }) {
     const targetDate = date || new Date().toISOString().slice(0, 10);
-    
-    // Auto-sync legacy rider_earnings rows to ensure controller_earning is Rs 2 per completed ride
-    try {
-      await db.query(`
-        UPDATE rider_earnings 
-        SET controller_earning = 2.00,
-            company_earning = (CASE WHEN total_fare <= 80.00 THEN 2.00 ELSE ROUND(total_fare * 0.10, 2) END),
-            rider_earning = (CASE WHEN total_fare <= 80.00 THEN GREATEST(0.00, total_fare - 4.00) ELSE GREATEST(0.00, total_fare - ROUND(total_fare * 0.10, 2) - 2.00) END)
-        WHERE controller_earning = 0.00 OR controller_earning IS NULL OR (total_fare <= 80.00 AND company_earning = 4.00)
-      `);
-    } catch (_) {}
 
     let sql = `
       SELECT 
@@ -213,7 +202,23 @@ const EarningModel = {
 
     sql += ' ORDER BY re.id DESC';
 
-    const rows = await db.query(sql, params);
+    // Execute queries in parallel for instant data response
+    const [rows, dutyController, availableCoreMembers] = await Promise.all([
+      db.query(sql, params),
+      db.queryOne(`
+        SELECT ddc.*, u.name as controller_name, u.email as controller_email, u.phone as controller_phone, u.profile_image as controller_profile_image
+        FROM daily_duty_controllers ddc
+        JOIN users u ON ddc.core_member_id = u.id
+        WHERE ddc.date = ?
+      `, [targetDate]).catch(() => null),
+      db.query(`
+        SELECT u.id, u.name, u.email, u.phone, u.profile_image
+        FROM users u
+        LEFT JOIN rider_profiles rp ON u.id = rp.user_id
+        WHERE u.is_core_member = 1 OR rp.is_core_member = 1
+        ORDER BY u.name ASC
+      `).catch(() => [])
+    ]);
 
     // Group rides by rider
     const riderMap = new Map();
@@ -310,29 +315,6 @@ const EarningModel = {
       riderNetEarnings: Number(r.riderNetEarnings.toFixed(2)),
       settlementStatus: r.totalTrips > 0 && r.settledTrips === r.totalTrips ? 'SETTLED' : (r.settledTrips > 0 ? 'PARTIALLY_SETTLED' : 'UNSETTLED')
     }));
-
-    // Fetch assigned Duty Controller for this day and list of available Core Members
-    let dutyController = null;
-    let availableCoreMembers = [];
-
-    try {
-      dutyController = await db.queryOne(`
-        SELECT ddc.*, u.name as controller_name, u.email as controller_email, u.phone as controller_phone, u.profile_image as controller_profile_image
-        FROM daily_duty_controllers ddc
-        JOIN users u ON ddc.core_member_id = u.id
-        WHERE ddc.date = ?
-      `, [targetDate]);
-    } catch (_) {}
-
-    try {
-      availableCoreMembers = await db.query(`
-        SELECT u.id, u.name, u.email, u.phone, u.profile_image
-        FROM users u
-        LEFT JOIN rider_profiles rp ON u.id = rp.user_id
-        WHERE u.is_core_member = 1 OR rp.is_core_member = 1
-        ORDER BY u.name ASC
-      `);
-    } catch (_) {}
 
     return {
       date: targetDate,

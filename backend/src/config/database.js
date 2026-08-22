@@ -19,10 +19,14 @@ async function initializeDatabase() {
     password: env.DB.PASSWORD,
     database: env.DB.NAME,
     waitForConnections: true,
-    connectionLimit: env.DB.CONNECTION_LIMIT,
+    connectionLimit: 30,
+    maxIdle: 10,
+    idleTimeout: 60000,
     queueLimit: 0,
     enableKeepAlive: true,
-    keepAliveInitialDelay: 0
+    keepAliveInitialDelay: 10000,
+    connectTimeout: 10000,
+    compress: true
   };
 
   if (env.DB.SSL || (env.DB.HOST && (env.DB.HOST.includes('tidbcloud.com') || env.DB.HOST.includes('aws.')))) {
@@ -46,6 +50,7 @@ async function initializeDatabase() {
       
       // Auto-bootstrap schema in MySQL/TiDB if tables do not exist (Non-destructive)
       await bootstrapMysqlSchema(testPool);
+      await ensureDatabaseIndexes(testPool);
 
       return { engine: 'mysql', pool };
     } catch (mysqlErr) {
@@ -430,6 +435,61 @@ async function bootstrapMysqlSchema(targetPool) {
   } catch (err) {
     console.warn('[Database Warning] MySQL bootstrap notice:', err.message);
   }
+}
+
+/**
+ * Ensures optimal performance indexes exist on high-traffic tables
+ */
+async function ensureDatabaseIndexes(targetPool) {
+  const indexList = [
+    { table: 'rides', name: 'idx_rides_status', cols: 'status' },
+    { table: 'rides', name: 'idx_rides_customer_id', cols: 'customer_id' },
+    { table: 'rides', name: 'idx_rides_rider_id', cols: 'rider_id' },
+    { table: 'rides', name: 'idx_rides_created_at', cols: 'created_at' },
+    { table: 'rides', name: 'idx_rides_requested_at', cols: 'requested_at' },
+    { table: 'rides', name: 'idx_rides_completed_at', cols: 'completed_at' },
+    { table: 'rides', name: 'idx_rides_is_outside', cols: 'is_outside' },
+    { table: 'rides', name: 'idx_rides_vehicle_type', cols: 'vehicle_type' },
+    { table: 'rides', name: 'idx_rides_code', cols: 'ride_code' },
+    { table: 'rides', name: 'idx_rides_status_created', cols: 'status, created_at' },
+
+    { table: 'rider_earnings', name: 'idx_re_rider_id', cols: 'rider_id' },
+    { table: 'rider_earnings', name: 'idx_re_ride_id', cols: 'ride_id' },
+    { table: 'rider_earnings', name: 'idx_re_created_at', cols: 'created_at' },
+    { table: 'rider_earnings', name: 'idx_re_settlement_status', cols: 'settlement_status' },
+    { table: 'rider_earnings', name: 'idx_re_rider_created', cols: 'rider_id, created_at' },
+
+    { table: 'users', name: 'idx_users_role', cols: 'role' },
+    { table: 'users', name: 'idx_users_status', cols: 'status' },
+    { table: 'users', name: 'idx_users_is_core', cols: 'is_core_member' },
+    { table: 'users', name: 'idx_users_phone', cols: 'phone' },
+    { table: 'users', name: 'idx_users_created_at', cols: 'created_at' },
+
+    { table: 'rider_profiles', name: 'idx_rp_user_id', cols: 'user_id' },
+    { table: 'rider_profiles', name: 'idx_rp_online_verif', cols: 'is_online, verification_status' },
+    { table: 'rider_profiles', name: 'idx_rp_is_core', cols: 'is_core_member' },
+
+    { table: 'payments', name: 'idx_payments_ride_id', cols: 'ride_id' },
+    { table: 'payments', name: 'idx_payments_customer_id', cols: 'customer_id' },
+    { table: 'payments', name: 'idx_payments_status', cols: 'payment_status' },
+    { table: 'payments', name: 'idx_payments_created_at', cols: 'created_at' },
+
+    { table: 'ratings', name: 'idx_ratings_rider_id', cols: 'rider_id' },
+    { table: 'ratings', name: 'idx_ratings_customer_id', cols: 'customer_id' },
+
+    { table: 'notifications', name: 'idx_notif_user_read', cols: 'user_id, is_read, created_at' },
+    { table: 'daily_duty_controllers', name: 'idx_ddc_date', cols: 'date' },
+    { table: 'daily_duty_controllers', name: 'idx_ddc_core_member', cols: 'core_member_id' },
+    { table: 'route_fares', name: 'idx_rf_active', cols: 'is_active' }
+  ];
+
+  await Promise.all(
+    indexList.map(async (idx) => {
+      try {
+        await targetPool.query(`CREATE INDEX ${idx.name} ON ${idx.table} (${idx.cols})`);
+      } catch (_) {}
+    })
+  );
 }
 
 /**
