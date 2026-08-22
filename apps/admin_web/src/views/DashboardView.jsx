@@ -33,6 +33,8 @@ export function DashboardView() {
 
   useEffect(() => {
     loadDashboardData();
+    const interval = setInterval(loadDashboardData, 15000);
+    return () => clearInterval(interval);
   }, []);
 
   // Listen to live socket events to update dashboard in real time

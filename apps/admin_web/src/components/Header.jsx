@@ -51,21 +51,21 @@ export function Header({ title, subtitle, onRefresh, isRefreshing, onToggleMobil
           <span>{alertTested ? '🔔 Sound Playing...' : 'Test Sound & Push'}</span>
         </button>
 
-        {/* Real-time Socket Indicator */}
+        {/* Real-time Socket / Live Sync Indicator */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
           padding: '6px 12px',
-          background: isConnected ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)',
-          border: `1px solid ${isConnected ? 'rgba(16, 185, 129, 0.3)' : 'rgba(244, 63, 94, 0.3)'}`,
+          background: isConnected ? 'rgba(16, 185, 129, 0.12)' : 'rgba(16, 185, 129, 0.08)',
+          border: `1px solid ${isConnected ? 'rgba(16, 185, 129, 0.3)' : 'rgba(16, 185, 129, 0.2)'}`,
           borderRadius: 'var(--radius-full)',
           fontSize: '12px',
           fontWeight: 600,
-          color: isConnected ? '#34D399' : '#FB7185'
+          color: '#34D399'
         }}>
-          {isConnected ? <Wifi size={14} /> : <WifiOff size={14} />}
-          <span>{isConnected ? 'Real-Time Connected' : 'Connecting...'}</span>
+          <Wifi size={14} color="#34D399" />
+          <span>{isConnected ? 'Real-Time Connected' : 'Live Sync Active'}</span>
         </div>
 
         {onRefresh && (

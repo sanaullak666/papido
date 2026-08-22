@@ -231,10 +231,15 @@ async function bootstrapMysqlSchema(targetPool) {
         id INT AUTO_INCREMENT PRIMARY KEY,
         rider_id INT NOT NULL,
         ride_id INT NOT NULL,
-        gross_fare DECIMAL(10, 2) NOT NULL,
-        platform_fee DECIMAL(10, 2) NOT NULL,
+        total_fare DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+        rider_earning DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+        company_earning DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+        controller_earning DECIMAL(10, 2) DEFAULT 0.00,
+        applied_rule_description VARCHAR(255) DEFAULT NULL,
+        gross_fare DECIMAL(10, 2) DEFAULT NULL,
+        platform_fee DECIMAL(10, 2) DEFAULT NULL,
         controller_fee DECIMAL(10, 2) DEFAULT 0.00,
-        net_earning DECIMAL(10, 2) NOT NULL,
+        net_earning DECIMAL(10, 2) DEFAULT NULL,
         settlement_status VARCHAR(30) DEFAULT 'UNSETTLED',
         settled_at DATETIME DEFAULT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -374,6 +379,23 @@ async function bootstrapMysqlSchema(targetPool) {
       await targetPool.query('ALTER TABLE rider_profiles MODIFY COLUMN rc_doc_url MEDIUMTEXT;');
       await targetPool.query('ALTER TABLE rider_profiles MODIFY COLUMN college_id_doc_url MEDIUMTEXT;');
       await targetPool.query('ALTER TABLE users MODIFY COLUMN profile_image MEDIUMTEXT;');
+    } catch (_) {}
+
+    // Ensure rider_earnings columns match models and reporting
+    try {
+      await targetPool.query('ALTER TABLE rider_earnings ADD COLUMN total_fare DECIMAL(10, 2) NOT NULL DEFAULT 0.00 AFTER ride_id;');
+    } catch (_) {}
+    try {
+      await targetPool.query('ALTER TABLE rider_earnings ADD COLUMN rider_earning DECIMAL(10, 2) NOT NULL DEFAULT 0.00 AFTER total_fare;');
+    } catch (_) {}
+    try {
+      await targetPool.query('ALTER TABLE rider_earnings ADD COLUMN company_earning DECIMAL(10, 2) NOT NULL DEFAULT 0.00 AFTER rider_earning;');
+    } catch (_) {}
+    try {
+      await targetPool.query('ALTER TABLE rider_earnings ADD COLUMN controller_earning DECIMAL(10, 2) DEFAULT 0.00 AFTER company_earning;');
+    } catch (_) {}
+    try {
+      await targetPool.query('ALTER TABLE rider_earnings ADD COLUMN applied_rule_description VARCHAR(255) DEFAULT NULL AFTER controller_earning;');
     } catch (_) {}
   } catch (err) {
     console.warn('[Database Warning] MySQL bootstrap notice:', err.message);
