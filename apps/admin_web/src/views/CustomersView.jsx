@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../api';
-import { Search, UserCheck, UserX, Star, Wallet, RefreshCw, AlertTriangle, ShieldAlert } from 'lucide-react';
+import { Search, UserCheck, UserX, Star, RefreshCw, AlertTriangle, ShieldAlert } from 'lucide-react';
 
 export function CustomersView() {
   const [customers, setCustomers] = useState([]);
@@ -127,7 +127,6 @@ export function CustomersView() {
                 <th>Contact</th>
                 <th>Rating</th>
                 <th>Total Rides</th>
-                <th>Wallet Balance</th>
                 <th>Account Status</th>
                 <th>Actions</th>
               </tr>
@@ -135,13 +134,13 @@ export function CustomersView() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+                  <td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
                     Loading customer accounts...
                   </td>
                 </tr>
               ) : customers.length === 0 ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+                  <td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
                     No customers found matching search.
                   </td>
                 </tr>
@@ -173,9 +172,6 @@ export function CustomersView() {
                     </td>
                     <td>
                       <strong>{c.total_rides || 0}</strong> trips
-                    </td>
-                    <td>
-                      <strong style={{ color: '#10B981' }}>₹{parseFloat(c.wallet_balance || 0).toFixed(2)}</strong>
                     </td>
                     <td>
                       {c.user_status === 'ACTIVE' ? (
