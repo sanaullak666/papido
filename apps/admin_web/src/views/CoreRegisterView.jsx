@@ -46,7 +46,7 @@ export function CoreRegisterView({ onGoToLogin }) {
         password: formData.password
       });
 
-      setSuccessMsg('🎉 Welcome to Papido Core Team! Logging you in as an Approved Driver...');
+      setSuccessMsg('🎉 Welcome to Papido Core Team! Logging you in...');
       
       // Auto login with returned credentials
       if (res.data?.tokens?.accessToken && res.data?.user) {
@@ -105,10 +105,10 @@ export function CoreRegisterView({ onGoToLogin }) {
         </div>
 
         <h1 style={{ fontSize: '24px', fontWeight: 900, marginBottom: '8px', color: '#FFFFFF' }}>
-          Core Member Driver Registration
+          Core Member Registration
         </h1>
         <p style={{ fontSize: '13px', color: '#A8998A', lineHeight: 1.5, marginBottom: '24px' }}>
-          As a Papido Core Team organizer, your driver account is <strong>pre-approved with campus fleet privileges</strong>. No vehicle RC or document uploads required.
+          As a Papido Core Team member, your account is <strong>pre-approved with core team privileges</strong>. No vehicle RC or document uploads required.
         </p>
 
         {errorMsg && (
@@ -326,7 +326,7 @@ export function CoreRegisterView({ onGoToLogin }) {
           >
             {loading ? 'Activating Core Profile...' : (
               <>
-                <span>Complete Core Registration & Start Driving</span>
+                <span>Complete Core Member Registration</span>
                 <ArrowRight size={16} />
               </>
             )}
