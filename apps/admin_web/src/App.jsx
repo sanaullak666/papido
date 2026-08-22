@@ -14,7 +14,6 @@ import { RidesView } from './views/RidesView';
 import { FareSettingsView } from './views/FareSettingsView';
 import { PaymentsView } from './views/PaymentsView';
 import { ReportsView } from './views/ReportsView';
-import { SimulatorView } from './views/SimulatorView';
 import { CoreRegisterView } from './views/CoreRegisterView';
 import { CoreTeamView } from './views/CoreTeamView';
 import { useSocket } from './context/SocketContext';
@@ -25,8 +24,6 @@ import { ArrowRight, AlertTriangle, X } from 'lucide-react';
 const getAdminTabFromPath = (path) => {
   const cleanPath = (path || '').toLowerCase().replace(/\/+$/, '');
   if (!cleanPath || cleanPath === '/admin' || cleanPath === '/admin/dashboard' || cleanPath === '/admin/overview') return 'dashboard';
-  if (cleanPath === '/admin/passenger-portal' || cleanPath === '/admin/passenger' || cleanPath === '/admin/customer-portal') return 'passenger-portal';
-  if (cleanPath === '/admin/driver-portal' || cleanPath === '/admin/driver' || cleanPath === '/admin/rider-portal') return 'driver-portal';
   if (cleanPath === '/admin/outside-trips' || cleanPath === '/admin/outside' || cleanPath === '/admin/dispatch') return 'outside-trips';
   if (cleanPath === '/admin/core-team' || cleanPath === '/admin/core' || cleanPath === '/admin/team') return 'core-team';
   if (cleanPath === '/admin/customers' || cleanPath === '/admin/passengers') return 'customers';
@@ -35,7 +32,6 @@ const getAdminTabFromPath = (path) => {
   if (cleanPath === '/admin/fares' || cleanPath === '/admin/fare-settings' || cleanPath === '/admin/pricing') return 'fares';
   if (cleanPath === '/admin/payments' || cleanPath === '/admin/transactions' || cleanPath === '/admin/ledger') return 'payments';
   if (cleanPath === '/admin/reports' || cleanPath === '/admin/analytics') return 'reports';
-  if (cleanPath === '/admin/simulator' || cleanPath === '/admin/test') return 'simulator';
   return 'dashboard';
 };
 
@@ -205,10 +201,6 @@ export function App() {
       switch (currentTab) {
         case 'dashboard':
           return { title: 'Platform Overview', subtitle: 'Real-time metrics, fleet activity, and dispatch statistics' };
-        case 'passenger-portal':
-          return { title: 'Passenger Web Portal View', subtitle: 'Live preview of the student campus booking experience' };
-        case 'driver-portal':
-          return { title: 'Driver Web Portal View', subtitle: 'Live preview of the driver dispatch radar and active trips' };
         case 'outside-trips':
           return { title: 'Outside Trips Dispatch', subtitle: 'Review passenger custom routes, set fair pricing, and dispatch to riders' };
         case 'core-team':
@@ -225,8 +217,6 @@ export function App() {
           return { title: 'Financial Ledger', subtitle: 'All transaction settlements and driver payouts' };
         case 'reports':
           return { title: 'Reports & Analytics', subtitle: 'Performance metrics and CSV exports' };
-        case 'simulator':
-          return { title: 'Live Multi-App Test Simulator', subtitle: 'Customer App and Rider App interactive live testing' };
         default:
           return { title: 'Papido Admin', subtitle: '' };
       }
@@ -307,8 +297,6 @@ export function App() {
 
           <div className="content-body" key={refreshKey}>
             {currentTab === 'dashboard' && <DashboardView />}
-            {currentTab === 'passenger-portal' && <CustomerPortalView />}
-            {currentTab === 'driver-portal' && <RiderPortalView />}
             {currentTab === 'outside-trips' && <OutsideTripsView />}
             {currentTab === 'core-team' && <CoreTeamView />}
             {currentTab === 'customers' && <CustomersView />}
@@ -317,7 +305,6 @@ export function App() {
             {currentTab === 'fares' && <FareSettingsView />}
             {currentTab === 'payments' && <PaymentsView />}
             {currentTab === 'reports' && <ReportsView />}
-            {currentTab === 'simulator' && <SimulatorView />}
           </div>
         </main>
       </div>

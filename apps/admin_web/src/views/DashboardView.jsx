@@ -192,7 +192,7 @@ export function DashboardView() {
               {recentRides.length === 0 ? (
                 <tr>
                   <td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
-                    No recent rides found. Use the Live Multi-App Simulator to generate live rides!
+                    No recent rides found.
                   </td>
                 </tr>
               ) : (

@@ -8,7 +8,6 @@ import {
   DollarSign,
   Sliders,
   FileBarChart,
-  Smartphone,
   LogOut,
   Shield,
   X
@@ -22,8 +21,6 @@ export function Sidebar({ currentTab, onNavigate, isOpen, onClose, hasPendingOut
 
   const navItems = [
     { id: 'dashboard', path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'passenger-portal', path: '/admin/passenger-portal', label: 'Passenger Web Portal', icon: Users, badge: 'WEB' },
-    { id: 'driver-portal', path: '/admin/driver-portal', label: 'Driver Web Portal', icon: Bike, badge: 'WEB' },
     { id: 'outside-trips', path: '/admin/outside-trips', label: 'Outside Trips Dispatch', icon: Globe, badge: hasPendingOutsideAlert ? 'NEW' : 'DISPATCH' },
     { id: 'core-team', path: '/admin/core-team', label: 'Core Team Management', icon: Shield, badge: 'CORE' },
     { id: 'customers', path: '/admin/customers', label: 'Customers Directory', icon: Users },
@@ -31,8 +28,7 @@ export function Sidebar({ currentTab, onNavigate, isOpen, onClose, hasPendingOut
     { id: 'rides', path: '/admin/rides', label: 'Ride Operations', icon: Navigation },
     { id: 'fares', path: '/admin/fares', label: 'Fare & Split Rules', icon: Sliders },
     { id: 'payments', path: '/admin/payments', label: 'Payments Ledger', icon: DollarSign },
-    { id: 'reports', path: '/admin/reports', label: 'Reports & Analytics', icon: FileBarChart },
-    { id: 'simulator', path: '/admin/simulator', label: 'Live Multi-App Test', icon: Smartphone, badge: 'LIVE' }
+    { id: 'reports', path: '/admin/reports', label: 'Reports & Analytics', icon: FileBarChart }
   ];
 
   return (
