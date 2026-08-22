@@ -11,9 +11,9 @@ export function RidesView() {
   const [search, setSearch] = useState('');
   const [selectedRide, setSelectedRide] = useState(null);
 
-  const fetchRides = async () => {
+  const fetchRides = async (isBackground = false) => {
     try {
-      setLoading(true);
+      if (!isBackground) setLoading(true);
       const params = new URLSearchParams();
       if (statusFilter) params.append('status', statusFilter);
       if (vehicleFilter) params.append('vehicleType', vehicleFilter);
@@ -25,12 +25,14 @@ export function RidesView() {
     } catch (err) {
       console.error('Failed to fetch rides', err);
     } finally {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchRides();
+    fetchRides(false);
+    const interval = setInterval(() => fetchRides(true), 5000);
+    return () => clearInterval(interval);
   }, [statusFilter, vehicleFilter, search]);
 
   return (

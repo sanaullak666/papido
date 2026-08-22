@@ -44,9 +44,9 @@ export function OutsideTripsView() {
   const [formData, setFormData] = useState({});
   const [submittingId, setSubmittingId] = useState(null);
 
-  const fetchData = async () => {
+  const fetchData = async (isBackground = false) => {
     try {
-      setLoading(true);
+      if (!isBackground) setLoading(true);
       setError(null);
       const [ridesRes, ridersRes] = await Promise.all([
         apiRequest('/admin/outside-rides'),
@@ -83,13 +83,13 @@ export function OutsideTripsView() {
     } catch (err) {
       setError(err.message || 'Failed to fetch outside trips queue.');
     } finally {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 5000);
+    fetchData(false);
+    const interval = setInterval(() => fetchData(true), 3000);
     return () => clearInterval(interval);
   }, []);
 

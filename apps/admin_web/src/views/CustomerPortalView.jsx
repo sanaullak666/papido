@@ -505,24 +505,48 @@ export function CustomerPortalView() {
     calculateFare();
   }, [pickupCoords, destCoords, pickupAddress, destAddress, vehicleType, isDoubleRide]);
 
-  // 4. Fetch Active Ride on Load
-  const fetchActiveRide = async () => {
+  // 4. Fetch Active Ride on Load & Periodic Background Polling
+  const fetchActiveRide = async (isBackground = true) => {
+    if (!token) return;
     try {
-      setRideLoading(true);
+      if (!isBackground) setRideLoading(true);
       const res = await apiRequest('/customer/rides/active', 'GET', null, token);
-      setActiveRide(res.data || null);
+      const ride = res.data || null;
+      setActiveRide(ride);
+      if (ride) {
+        if (ride.status === 'PENDING_ADMIN_QUOTE') {
+          setStatusMessage('Submitted to Dispatch — Admin is setting the fare & assigning a rider.');
+        } else if (ride.status === 'REQUESTED') {
+          setStatusMessage('Searching for nearby campus riders...');
+        } else if (ride.status === 'ACCEPTED') {
+          setStatusMessage('A campus rider has accepted your trip!');
+        } else if (ride.status === 'RIDER_ARRIVING') {
+          setStatusMessage('Rider is on the way to your pickup location.');
+        } else if (ride.status === 'RIDER_REACHED') {
+          setStatusMessage('Rider has arrived! Share your 4-digit Ride OTP to start.');
+        } else if (ride.status === 'STARTED') {
+          setStatusMessage('Trip started! On the way to destination.');
+        } else if (ride.status === 'COMPLETED') {
+          setStatusMessage('Thank you for booking with Papido! Trip completed successfully.');
+        }
+      }
     } catch (err) {
       console.warn('Failed to fetch active ride:', err);
     } finally {
-      setRideLoading(false);
+      if (!isBackground) setRideLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchActiveRide();
+    if (!token) return;
+    fetchActiveRide(false);
+    const pollInterval = setInterval(() => {
+      fetchActiveRide(true);
+    }, 2500);
+    return () => clearInterval(pollInterval);
   }, [token]);
 
-  // 5. Setup Socket.IO for Real-time Updates
+  // 5. Setup Socket.IO for Real-time Updates (when available)
   useEffect(() => {
     if (!token) return;
     const socket = io(getSocketUrl(), {
@@ -534,15 +558,8 @@ export function CustomerPortalView() {
     socket.on('connect', () => {
       console.log('Customer Socket connected:', socket.id);
       socket.emit('identify', { id: user?.id, role: 'CUSTOMER', name: user?.name });
-      fetchActiveRide();
+      fetchActiveRide(true);
     });
-
-    // Polling fallback every 3s
-    const pollInterval = setInterval(() => {
-      if (activeRide) {
-        fetchActiveRide();
-      }
-    }, 3000);
 
     socket.on('ride:status_change', (data) => {
       console.log('Realtime ride status change:', data);
