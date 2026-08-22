@@ -518,9 +518,11 @@ export function SimulatorView() {
                       <div style={{ marginTop: '12px', textAlign: 'left', background: 'var(--bg-card)', padding: '12px', borderRadius: '8px' }}>
                         <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>YOUR DRIVER (RIDER)</div>
                         <div style={{ fontWeight: 700, fontSize: '14px' }}>{customerRide.rider_name || 'Rahul Sharma'}</div>
-                        <div style={{ fontSize: '12px', color: 'var(--primary)' }}>
-                          {customerRide.vehicle_model || 'Honda Activa 6G'} ({customerRide.vehicle_number || 'KA-01-EQ-1024'})
-                        </div>
+                        {!(customerRide.rider_is_core || customerRide.is_core_member) && (
+                          <div style={{ fontSize: '12px', color: 'var(--primary)' }}>
+                            {customerRide.vehicle_model || 'Honda Activa 6G'} ({customerRide.vehicle_number || 'PY-01-AB-1234'})
+                          </div>
+                        )}
 
                         <div style={{ marginTop: '10px', padding: '8px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ fontSize: '12px', fontWeight: 600 }}>Start OTP:</span>

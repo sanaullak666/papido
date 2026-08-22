@@ -7,6 +7,7 @@ const RideModel = {
              COALESCE(r.final_fare, r.estimated_fare) as total_fare,
              c.name as customer_name, c.gender as customer_gender, c.phone as customer_phone, c.profile_image as customer_avatar,
              rd.name as rider_name, rd.gender as rider_gender, rd.phone as rider_phone, rd.profile_image as rider_avatar,
+             COALESCE(rp.is_core_member, rd.is_core_member, 0) as rider_is_core,
              rp.vehicle_type as rider_vehicle_type, rp.vehicle_number, rp.vehicle_number as rider_vehicle_number,
              rp.vehicle_model, rp.vehicle_model as rider_vehicle_model, rp.rating as rider_rating,
              rp.current_latitude as rider_current_lat, rp.current_longitude as rider_current_lng,
@@ -114,6 +115,7 @@ const RideModel = {
              COALESCE(r.final_fare, r.estimated_fare) as total_fare,
              c.name as customer_name, c.gender as customer_gender,
              rd.name as rider_name, rd.gender as rider_gender, rd.phone as rider_phone, rd.profile_image as rider_avatar,
+             COALESCE(rp.is_core_member, rd.is_core_member, 0) as rider_is_core,
              rp.vehicle_type as rider_vehicle_type, rp.vehicle_number, rp.vehicle_number as rider_vehicle_number,
              rp.vehicle_model, rp.vehicle_model as rider_vehicle_model, rp.rating as rider_rating,
              rp.current_latitude as rider_current_lat, rp.current_longitude as rider_current_lng

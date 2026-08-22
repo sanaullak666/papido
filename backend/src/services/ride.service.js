@@ -277,10 +277,15 @@ const RideService = {
     const updatedRide = await RideModel.assignRider(rideId, riderId);
 
     // Notify customer & rider
+    const isCore = Boolean(rider.is_core_member || updatedRide.rider_is_core);
+    const riderMsg = isCore
+      ? `${rider.name} has accepted your ride request.`
+      : `${rider.name} (${rider.vehicle_model} - ${rider.vehicle_number}) has accepted your ride request.`;
+
     await NotificationModel.create({
       userId: ride.customer_id,
       title: 'Rider Assigned!',
-      message: `${rider.name} (${rider.vehicle_model} - ${rider.vehicle_number}) has accepted your ride request.`,
+      message: riderMsg,
       type: 'RIDE_ACCEPTED',
       data: { rideId: ride.id, riderId }
     });
