@@ -299,7 +299,15 @@ export function RiderPortalView() {
     }
   }, [token]);
 
-  // Refresh earnings and trip history whenever opening the earnings tab
+  // Refresh earnings and trip history whenever opening the earnings tab or periodically for top bar
+  useEffect(() => {
+    if (!token) return;
+    const earningsInterval = setInterval(() => {
+      fetchEarnings();
+    }, 5000);
+    return () => clearInterval(earningsInterval);
+  }, [token]);
+
   useEffect(() => {
     if (currentTab === 'earnings') {
       fetchEarnings();
