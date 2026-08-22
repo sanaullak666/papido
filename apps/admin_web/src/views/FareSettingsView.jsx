@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../api';
-import { MapPin, Save, Plus, Edit2, CheckCircle, RefreshCw, Trash2, ArrowRight } from 'lucide-react';
+import { MapPin, Save, Plus, Edit2, CheckCircle, RefreshCw, Trash2, ArrowRight, Sliders } from 'lucide-react';
 
 const CAMPUS_STOPS = [
   'SJC (Silver Jubilee Campus)',
