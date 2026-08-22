@@ -28,7 +28,7 @@ async function initializeDatabase() {
   if (env.DB.SSL || (env.DB.HOST && (env.DB.HOST.includes('tidbcloud.com') || env.DB.HOST.includes('aws.')))) {
     poolConfig.ssl = {
       minVersion: 'TLSv1.2',
-      rejectUnauthorized: true
+      rejectUnauthorized: false
     };
   }
 
