@@ -15,24 +15,24 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-export function Sidebar({ currentTab, setCurrentTab, isOpen, onClose, hasPendingOutsideAlert }) {
+export function Sidebar({ currentTab, onNavigate, isOpen, onClose, hasPendingOutsideAlert }) {
   const { user, adminUser, logout, adminLogout } = useAuth();
   const currentUser = adminUser || user;
   const handleLogout = adminUser ? adminLogout : logout;
 
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'passenger-portal', label: 'Passenger Web Portal', icon: Users, badge: 'WEB' },
-    { id: 'driver-portal', label: 'Driver Web Portal', icon: Bike, badge: 'WEB' },
-    { id: 'outside-trips', label: 'Outside Trips Dispatch', icon: Globe, badge: hasPendingOutsideAlert ? 'NEW' : 'DISPATCH' },
-    { id: 'core-team', label: 'Core Team Management', icon: Shield, badge: 'CORE' },
-    { id: 'customers', label: 'Customers Directory', icon: Users },
-    { id: 'riders', label: 'Riders (Drivers)', icon: Bike },
-    { id: 'rides', label: 'Ride Operations', icon: Navigation },
-    { id: 'fares', label: 'Fare & Split Rules', icon: Sliders },
-    { id: 'payments', label: 'Payments Ledger', icon: DollarSign },
-    { id: 'reports', label: 'Reports & Analytics', icon: FileBarChart },
-    { id: 'simulator', label: 'Live Multi-App Test', icon: Smartphone, badge: 'LIVE' }
+    { id: 'dashboard', path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'passenger-portal', path: '/admin/passenger-portal', label: 'Passenger Web Portal', icon: Users, badge: 'WEB' },
+    { id: 'driver-portal', path: '/admin/driver-portal', label: 'Driver Web Portal', icon: Bike, badge: 'WEB' },
+    { id: 'outside-trips', path: '/admin/outside-trips', label: 'Outside Trips Dispatch', icon: Globe, badge: hasPendingOutsideAlert ? 'NEW' : 'DISPATCH' },
+    { id: 'core-team', path: '/admin/core-team', label: 'Core Team Management', icon: Shield, badge: 'CORE' },
+    { id: 'customers', path: '/admin/customers', label: 'Customers Directory', icon: Users },
+    { id: 'riders', path: '/admin/riders', label: 'Riders (Drivers)', icon: Bike },
+    { id: 'rides', path: '/admin/rides', label: 'Ride Operations', icon: Navigation },
+    { id: 'fares', path: '/admin/fares', label: 'Fare & Split Rules', icon: Sliders },
+    { id: 'payments', path: '/admin/payments', label: 'Payments Ledger', icon: DollarSign },
+    { id: 'reports', path: '/admin/reports', label: 'Reports & Analytics', icon: FileBarChart },
+    { id: 'simulator', path: '/admin/simulator', label: 'Live Multi-App Test', icon: Smartphone, badge: 'LIVE' }
   ];
 
   return (
@@ -78,16 +78,23 @@ export function Sidebar({ currentTab, setCurrentTab, isOpen, onClose, hasPending
           const isOutsideAlert = item.id === 'outside-trips' && hasPendingOutsideAlert;
           return (
             <li key={item.id}>
-              <button
+              <a
+                href={item.path}
                 className={`nav-item ${isActive ? 'active' : ''}`}
                 style={{
                   width: '100%',
+                  textDecoration: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
                   background: isOutsideAlert ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
                   textAlign: 'left',
                   border: isOutsideAlert ? '1px solid #F59E0B' : 'none'
                 }}
-                onClick={() => {
-                  setCurrentTab(item.id);
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (onNavigate) {
+                    onNavigate(item.path, item.id);
+                  }
                   if (onClose) onClose();
                 }}
               >
@@ -105,7 +112,7 @@ export function Sidebar({ currentTab, setCurrentTab, isOpen, onClose, hasPending
                     {item.badge}
                   </span>
                 )}
-              </button>
+              </a>
             </li>
           );
         })}

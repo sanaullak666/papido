@@ -20,13 +20,30 @@ import { CoreTeamView } from './views/CoreTeamView';
 import { useSocket } from './context/SocketContext';
 import { alertManager } from './utils/alertManager';
 import { apiRequest } from './api';
-import { ArrowRight, AlertTriangle } from 'lucide-react';
+import { ArrowRight, AlertTriangle, X } from 'lucide-react';
+
+const getAdminTabFromPath = (path) => {
+  const cleanPath = (path || '').toLowerCase().replace(/\/+$/, '');
+  if (!cleanPath || cleanPath === '/admin' || cleanPath === '/admin/dashboard' || cleanPath === '/admin/overview') return 'dashboard';
+  if (cleanPath === '/admin/passenger-portal' || cleanPath === '/admin/passenger' || cleanPath === '/admin/customer-portal') return 'passenger-portal';
+  if (cleanPath === '/admin/driver-portal' || cleanPath === '/admin/driver' || cleanPath === '/admin/rider-portal') return 'driver-portal';
+  if (cleanPath === '/admin/outside-trips' || cleanPath === '/admin/outside' || cleanPath === '/admin/dispatch') return 'outside-trips';
+  if (cleanPath === '/admin/core-team' || cleanPath === '/admin/core' || cleanPath === '/admin/team') return 'core-team';
+  if (cleanPath === '/admin/customers' || cleanPath === '/admin/passengers') return 'customers';
+  if (cleanPath === '/admin/riders' || cleanPath === '/admin/drivers') return 'riders';
+  if (cleanPath === '/admin/rides' || cleanPath === '/admin/trips' || cleanPath === '/admin/operations') return 'rides';
+  if (cleanPath === '/admin/fares' || cleanPath === '/admin/fare-settings' || cleanPath === '/admin/pricing') return 'fares';
+  if (cleanPath === '/admin/payments' || cleanPath === '/admin/transactions' || cleanPath === '/admin/ledger') return 'payments';
+  if (cleanPath === '/admin/reports' || cleanPath === '/admin/analytics') return 'reports';
+  if (cleanPath === '/admin/simulator' || cleanPath === '/admin/test') return 'simulator';
+  return 'dashboard';
+};
 
 export function App() {
   const { user, adminUser, loading } = useAuth();
   const { socket } = useSocket() || {};
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
-  const [currentTab, setCurrentTab] = useState('dashboard');
+  const [currentTab, setCurrentTab] = useState(() => getAdminTabFromPath(window.location.pathname));
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [newOutsideAlert, setNewOutsideAlert] = useState(null);
@@ -111,15 +128,37 @@ export function App() {
   // Sync route on popstate or pushState
   useEffect(() => {
     const handleLocationChange = () => {
-      setCurrentPath(window.location.pathname);
+      const path = window.location.pathname;
+      setCurrentPath(path);
+      if (path.startsWith('/admin')) {
+        setCurrentTab(getAdminTabFromPath(path));
+      }
     };
     window.addEventListener('popstate', handleLocationChange);
     return () => window.removeEventListener('popstate', handleLocationChange);
   }, []);
 
-  const navigateTo = (path) => {
-    window.history.pushState({}, '', path);
+  // Auto-normalize /admin or /admin/ to /admin/dashboard
+  useEffect(() => {
+    if (adminUser) {
+      const path = window.location.pathname.replace(/\/+$/, '');
+      if (path === '/admin') {
+        window.history.replaceState({}, '', '/admin/dashboard');
+        setCurrentPath('/admin/dashboard');
+        setCurrentTab('dashboard');
+      }
+    }
+  }, [adminUser]);
+
+  const navigateTo = (path, tabId = null) => {
+    if (window.location.pathname !== path) {
+      window.history.pushState({}, '', path);
+    }
     setCurrentPath(path);
+    if (path.startsWith('/admin')) {
+      const targetTab = tabId || getAdminTabFromPath(path);
+      setCurrentTab(targetTab);
+    }
   };
 
   if (loading) {
@@ -199,7 +238,7 @@ export function App() {
       <div className="app-container">
         <Sidebar
           currentTab={currentTab}
-          setCurrentTab={setCurrentTab}
+          onNavigate={navigateTo}
           isOpen={mobileSidebarOpen}
           onClose={() => setMobileSidebarOpen(false)}
           hasPendingOutsideAlert={Boolean(newOutsideAlert)}
@@ -224,7 +263,7 @@ export function App() {
               }}
               onClick={() => {
                 alertManager.stopRingtone();
-                setCurrentTab('outside-trips');
+                navigateTo('/admin/outside-trips', 'outside-trips');
                 setNewOutsideAlert(null);
               }}
             >
@@ -286,18 +325,29 @@ export function App() {
   }
 
   // ============================================================
-  // 2. AUTHENTICATION (Not Logged In)
+  // 2. DIRECT STANDALONE PORTAL ROUTES
+  // ============================================================
+  if (currentPath === '/passenger' || currentPath === '/customer' || currentPath === '/book') {
+    return <CustomerPortalView />;
+  }
+
+  if (currentPath === '/driver' || currentPath === '/rider') {
+    return <RiderPortalView />;
+  }
+
+  // ============================================================
+  // 3. AUTHENTICATION (Not Logged In)
   // ============================================================
   if (!user) {
     return (
       <LoginView
-        onGoToAdminPortal={() => navigateTo('/admin')}
+        onGoToAdminPortal={() => navigateTo('/admin/dashboard')}
       />
     );
   }
 
   // ============================================================
-  // 3. ROLE-BASED ROUTING FOR AUTHENTICATED USERS
+  // 4. ROLE-BASED ROUTING FOR AUTHENTICATED USERS
   // ============================================================
   if (user.role === 'CUSTOMER') {
     return <CustomerPortalView />;
@@ -310,7 +360,7 @@ export function App() {
   // Fallback
   return (
     <LoginView
-      onGoToAdminPortal={() => navigateTo('/admin')}
+      onGoToAdminPortal={() => navigateTo('/admin/dashboard')}
     />
   );
 }
