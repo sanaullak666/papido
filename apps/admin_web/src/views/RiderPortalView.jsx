@@ -196,12 +196,12 @@ export function RiderPortalView() {
     }
   };
 
-  const fetchEarnings = async () => {
+  const fetchEarnings = async (isBackground = false) => {
     try {
-      setLoadingEarnings(true);
+      if (!isBackground) setLoadingEarnings(true);
       const [earningsRes, ridesRes] = await Promise.all([
         apiRequest('/rider/earnings', 'GET', null, token),
-        apiRequest('/rider/rides?limit=5', 'GET', null, token)
+        apiRequest('/rider/rides?limit=10', 'GET', null, token)
       ]);
       if (earningsRes.data) {
         setEarnings(earningsRes.data);
@@ -211,7 +211,7 @@ export function RiderPortalView() {
     } catch (err) {
       console.warn('Failed to fetch rider earnings:', err);
     } finally {
-      setLoadingEarnings(false);
+      if (!isBackground) setLoadingEarnings(false);
     }
   };
 
@@ -299,18 +299,18 @@ export function RiderPortalView() {
     }
   }, [token]);
 
-  // Refresh earnings and trip history whenever opening the earnings tab or periodically for top bar
+  // Refresh earnings and trip history periodically for top bar without flickering
   useEffect(() => {
     if (!token) return;
     const earningsInterval = setInterval(() => {
-      fetchEarnings();
+      fetchEarnings(true);
     }, 5000);
     return () => clearInterval(earningsInterval);
   }, [token]);
 
   useEffect(() => {
     if (currentTab === 'earnings') {
-      fetchEarnings();
+      fetchEarnings(false);
     }
   }, [currentTab]);
 
