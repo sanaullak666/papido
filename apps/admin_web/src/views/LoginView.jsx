@@ -27,11 +27,48 @@ export function LoginView({ onGoToAdminPortal }) {
   const [regLicenseNumber, setRegLicenseNumber] = useState('');
   const [regCollegeIdNumber, setRegCollegeIdNumber] = useState('');
 
-  // Rider KYC Document Files
+  // Rider KYC Document Files (Max 150 KB, PDF / JPG / PNG)
+  const MAX_DOC_SIZE_BYTES = 150 * 1024; // 150 KB limit
   const [collegeIdFile, setCollegeIdFile] = useState(null);
   const [licenseFile, setLicenseFile] = useState(null);
   const [rcFile, setRcFile] = useState(null);
   const [uploadStatus, setUploadStatus] = useState('');
+
+  const validateDocFile = (file, docName) => {
+    if (!file) return null;
+    const fileName = (file.name || '').toLowerCase();
+    const ext = fileName.slice(fileName.lastIndexOf('.'));
+    const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png'];
+    const allowedMimeTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+
+    if (!allowedMimeTypes.includes(file.type) && !allowedExtensions.includes(ext)) {
+      return `${docName}: Invalid file format. Only PDF and JPG / PNG images are allowed.`;
+    }
+
+    if (file.size > MAX_DOC_SIZE_BYTES) {
+      const sizeKb = (file.size / 1024).toFixed(1);
+      return `${docName}: File size is ${sizeKb} KB. Maximum allowed size is 150 KB. Please compress or choose a smaller file.`;
+    }
+
+    return null;
+  };
+
+  const handleDocFileChange = (e, setFile, docName) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    const validationError = validateDocFile(file, docName);
+    if (validationError) {
+      alert(validationError);
+      setError(validationError);
+      e.target.value = '';
+      setFile(null);
+      return;
+    }
+
+    setError('');
+    setFile(file);
+  };
 
   // Forgot Password State
   const [forgotStep, setForgotStep] = useState(1); // 1 = enter email, 2 = enter OTP & new pass
@@ -66,15 +103,32 @@ export function LoginView({ onGoToAdminPortal }) {
         return;
       }
       if (!collegeIdFile) {
-        setError('Please upload your Campus / College ID Card (Photo or PDF).');
+        setError('Please upload your Campus / College ID Card (PDF or JPG, max 150 KB).');
         return;
       }
+      const cidErr = validateDocFile(collegeIdFile, 'Campus ID Card');
+      if (cidErr) {
+        setError(cidErr);
+        return;
+      }
+
       if (!licenseFile) {
-        setError('Please upload your Driving Licence (DL) (Photo or PDF).');
+        setError('Please upload your Driving Licence (DL) (PDF or JPG, max 150 KB).');
         return;
       }
+      const dlErr = validateDocFile(licenseFile, 'Driving Licence');
+      if (dlErr) {
+        setError(dlErr);
+        return;
+      }
+
       if (!rcFile) {
-        setError('Please upload your Vehicle RC Document (Photo or PDF).');
+        setError('Please upload your Vehicle RC Document (PDF or JPG, max 150 KB).');
+        return;
+      }
+      const rcErr = validateDocFile(rcFile, 'Vehicle RC Document');
+      if (rcErr) {
+        setError(rcErr);
         return;
       }
     }
@@ -86,16 +140,16 @@ export function LoginView({ onGoToAdminPortal }) {
       let rcDocUrl = null;
 
       if (regRole === 'RIDER') {
-        setUploadStatus('1/3 Uploading Campus ID Card...');
-        const cidRes = await uploadFile(collegeIdFile);
+        setUploadStatus('1/3 Uploading Campus ID Card (max 150 KB)...');
+        const cidRes = await uploadFile(collegeIdFile, null, 150);
         collegeIdDocUrl = cidRes.url || cidRes.relativePath;
 
-        setUploadStatus('2/3 Uploading Driving Licence...');
-        const dlRes = await uploadFile(licenseFile);
+        setUploadStatus('2/3 Uploading Driving Licence (max 150 KB)...');
+        const dlRes = await uploadFile(licenseFile, null, 150);
         licenseDocUrl = dlRes.url || dlRes.relativePath;
 
-        setUploadStatus('3/3 Uploading Vehicle RC Document...');
-        const rcRes = await uploadFile(rcFile);
+        setUploadStatus('3/3 Uploading Vehicle RC Document (max 150 KB)...');
+        const rcRes = await uploadFile(rcFile, null, 150);
         rcDocUrl = rcRes.url || rcRes.relativePath;
 
         setUploadStatus('Submitting Driver Registration...');
@@ -570,9 +624,13 @@ export function LoginView({ onGoToAdminPortal }) {
                 <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '10px', border: '1px solid #E8DCCB', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <label style={{ fontSize: '12px', fontWeight: 700, color: '#271E16', margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span>1. Campus / College ID Card <span style={{ color: '#EA580C' }}>*</span></span>
-                    {collegeIdFile && (
-                      <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        <CheckCircle2 size={12} /> Uploaded
+                    {collegeIdFile ? (
+                      <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 600 }}>
+                        <CheckCircle2 size={12} /> {(collegeIdFile.size / 1024).toFixed(1)} KB (Ready)
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '11px', color: '#EA580C', fontWeight: 600 }}>
+                        Max: 150 KB (PDF / JPG)
                       </span>
                     )}
                   </label>
@@ -591,17 +649,13 @@ export function LoginView({ onGoToAdminPortal }) {
                     fontWeight: 700
                   }}>
                     <Upload size={14} />
-                    <span>{collegeIdFile ? collegeIdFile.name : 'Upload Campus ID Card (Photo / PDF)'}</span>
+                    <span>{collegeIdFile ? collegeIdFile.name : 'Upload Campus ID Card (PDF or JPG, &le; 150 KB)'}</span>
                     <input
                       type="file"
-                      accept="image/*,application/pdf"
+                      accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
                       required
                       style={{ display: 'none' }}
-                      onChange={(e) => {
-                        if (e.target.files && e.target.files[0]) {
-                          setCollegeIdFile(e.target.files[0]);
-                        }
-                      }}
+                      onChange={(e) => handleDocFileChange(e, setCollegeIdFile, 'Campus ID Card')}
                     />
                   </label>
                 </div>
@@ -610,9 +664,13 @@ export function LoginView({ onGoToAdminPortal }) {
                 <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '10px', border: '1px solid #E8DCCB', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <label style={{ fontSize: '12px', fontWeight: 700, color: '#271E16', margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span>2. Driving Licence (DL) <span style={{ color: '#EA580C' }}>*</span></span>
-                    {licenseFile && (
-                      <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        <CheckCircle2 size={12} /> Uploaded
+                    {licenseFile ? (
+                      <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 600 }}>
+                        <CheckCircle2 size={12} /> {(licenseFile.size / 1024).toFixed(1)} KB (Ready)
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '11px', color: '#EA580C', fontWeight: 600 }}>
+                        Max: 150 KB (PDF / JPG)
                       </span>
                     )}
                   </label>
@@ -631,17 +689,13 @@ export function LoginView({ onGoToAdminPortal }) {
                     fontWeight: 700
                   }}>
                     <Upload size={14} />
-                    <span>{licenseFile ? licenseFile.name : 'Upload Driving Licence (Photo / PDF)'}</span>
+                    <span>{licenseFile ? licenseFile.name : 'Upload Driving Licence (PDF or JPG, &le; 150 KB)'}</span>
                     <input
                       type="file"
-                      accept="image/*,application/pdf"
+                      accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
                       required
                       style={{ display: 'none' }}
-                      onChange={(e) => {
-                        if (e.target.files && e.target.files[0]) {
-                          setLicenseFile(e.target.files[0]);
-                        }
-                      }}
+                      onChange={(e) => handleDocFileChange(e, setLicenseFile, 'Driving Licence')}
                     />
                   </label>
                 </div>
@@ -650,9 +704,13 @@ export function LoginView({ onGoToAdminPortal }) {
                 <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '10px', border: '1px solid #E8DCCB', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <label style={{ fontSize: '12px', fontWeight: 700, color: '#271E16', margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span>3. Vehicle RC Document <span style={{ color: '#EA580C' }}>*</span></span>
-                    {rcFile && (
-                      <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        <CheckCircle2 size={12} /> Uploaded
+                    {rcFile ? (
+                      <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 600 }}>
+                        <CheckCircle2 size={12} /> {(rcFile.size / 1024).toFixed(1)} KB (Ready)
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '11px', color: '#EA580C', fontWeight: 600 }}>
+                        Max: 150 KB (PDF / JPG)
                       </span>
                     )}
                   </label>
@@ -671,17 +729,13 @@ export function LoginView({ onGoToAdminPortal }) {
                     fontWeight: 700
                   }}>
                     <Upload size={14} />
-                    <span>{rcFile ? rcFile.name : 'Upload Vehicle RC Card (Photo / PDF)'}</span>
+                    <span>{rcFile ? rcFile.name : 'Upload Vehicle RC Card (PDF or JPG, &le; 150 KB)'}</span>
                     <input
                       type="file"
-                      accept="image/*,application/pdf"
+                      accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
                       required
                       style={{ display: 'none' }}
-                      onChange={(e) => {
-                        if (e.target.files && e.target.files[0]) {
-                          setRcFile(e.target.files[0]);
-                        }
-                      }}
+                      onChange={(e) => handleDocFileChange(e, setRcFile, 'Vehicle RC Document')}
                     />
                   </label>
                 </div>

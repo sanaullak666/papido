@@ -82,7 +82,7 @@ export async function apiRequest(endpoint, method = 'GET', body = null, token = 
   }
 }
 
-export async function uploadFile(file, token = null) {
+export async function uploadFile(file, token = null, maxKb = null) {
   const formData = new FormData();
   formData.append('file', file);
 
@@ -92,7 +92,8 @@ export async function uploadFile(file, token = null) {
     headers['Authorization'] = `Bearer ${storedToken}`;
   }
 
-  const res = await fetch(`${BASE_URL}/upload/file`, {
+  const query = maxKb ? `?maxKb=${maxKb}` : '';
+  const res = await fetch(`${BASE_URL}/upload/file${query}`, {
     method: 'POST',
     headers,
     body: formData

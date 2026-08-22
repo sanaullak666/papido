@@ -19,6 +19,15 @@ router.post('/file', (req, res) => {
     }
 
     const fs = require('fs');
+    const requestedMaxKb = parseInt(req.query.maxKb || req.query.maxSizeKb, 10);
+    if (requestedMaxKb && req.file.size > requestedMaxKb * 1024) {
+      try {
+        if (req.file.path && fs.existsSync(req.file.path)) {
+          fs.unlinkSync(req.file.path);
+        }
+      } catch (_) {}
+      return error(res, `File size (${(req.file.size / 1024).toFixed(1)} KB) exceeds the ${requestedMaxKb} KB limit. Please upload a file smaller than ${requestedMaxKb} KB.`, 400);
+    }
     const host = req.get('host');
     const protocol = req.protocol;
     const fileUrl = `${protocol}://${host}/uploads/documents/${req.file.filename}`;
