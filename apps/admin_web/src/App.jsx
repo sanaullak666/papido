@@ -222,7 +222,7 @@ export function App() {
         case 'reports':
           return { title: 'Reports & Analytics', subtitle: 'Performance metrics and CSV exports' };
         default:
-          return { title: 'Papido Admin', subtitle: '' };
+          return { title: 'Papido Portal', subtitle: '' };
       }
     };
 

@@ -46,7 +46,7 @@ export function Sidebar({ currentTab, onNavigate, isOpen, onClose, hasPendingOut
           <div className="brand-logo">P</div>
           <div>
             <div className="brand-title">PAPIDO</div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Admin Portal</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Portal</div>
           </div>
           <span className="brand-badge">PROD</span>
           {onClose && (
