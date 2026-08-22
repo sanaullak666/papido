@@ -440,6 +440,26 @@ const AdminController = {
     } catch (err) {
       return error(res, err.message, 400);
     }
+  },
+
+  async deleteRider(req, res, next) {
+    try {
+      const riderId = req.params.id;
+      await UserModel.deleteUser(riderId);
+      return success(res, `Driver #${riderId} has been permanently deleted from the database.`);
+    } catch (err) {
+      return error(res, err.message, 400);
+    }
+  },
+
+  async deleteUser(req, res, next) {
+    try {
+      const userId = req.params.id;
+      await UserModel.deleteUser(userId);
+      return success(res, `User #${userId} has been permanently deleted from the database.`);
+    } catch (err) {
+      return error(res, err.message, 400);
+    }
   }
 };
 

@@ -96,6 +96,50 @@ const UserModel = {
 
     const row = await db.queryOne(sql, params);
     return row ? row.total : 0;
+  },
+
+  async deleteUser(id) {
+    // 1. Clean up or unassign from foreign key relations
+    try {
+      await db.query('UPDATE rides SET rider_id = NULL WHERE rider_id = ?', [id]);
+      await db.query('UPDATE rides SET assigned_rider_id = NULL WHERE assigned_rider_id = ?', [id]);
+    } catch (_) {}
+
+    try {
+      await db.query('DELETE FROM rider_earnings WHERE rider_id = ?', [id]);
+    } catch (_) {}
+
+    try {
+      await db.query('DELETE FROM ratings WHERE rider_id = ? OR customer_id = ?', [id, id]);
+    } catch (_) {}
+
+    try {
+      await db.query('DELETE FROM rider_profiles WHERE user_id = ?', [id]);
+    } catch (_) {}
+
+    try {
+      await db.query('DELETE FROM customer_profiles WHERE user_id = ?', [id]);
+    } catch (_) {}
+
+    try {
+      await db.query('DELETE FROM notifications WHERE user_id = ?', [id]);
+    } catch (_) {}
+
+    try {
+      await db.query('DELETE FROM push_subscriptions WHERE user_id = ?', [id]);
+    } catch (_) {}
+
+    try {
+      await db.query('DELETE FROM ride_declines WHERE rider_id = ?', [id]);
+    } catch (_) {}
+
+    try {
+      await db.query('DELETE FROM audit_logs WHERE user_id = ?', [id]);
+    } catch (_) {}
+
+    // 2. Permanently delete from users table
+    const result = await db.query('DELETE FROM users WHERE id = ?', [id]);
+    return result;
   }
 };
 

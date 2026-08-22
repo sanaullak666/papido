@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../api';
 import { useSocket } from '../context/SocketContext';
-import { Search, Check, X, Star, ShieldCheck, ShieldAlert, Bike, Car, RefreshCw, Eye, ExternalLink, FileText, Image as ImageIcon, Download } from 'lucide-react';
+import { Search, Check, X, Star, ShieldCheck, ShieldAlert, Bike, Car, RefreshCw, Eye, ExternalLink, FileText, Image as ImageIcon, Download, Trash2 } from 'lucide-react';
 
 const resolveDocUrl = (rawUrl) => {
   if (!rawUrl) return null;
@@ -118,6 +118,18 @@ export function RidersView() {
       fetchRiders();
     } catch (err) {
       alert(`Error updating verification: ${err.message}`);
+    }
+  };
+
+  const handleDeleteDriver = async (rider) => {
+    const confirmDelete = window.confirm(`⚠️ Permanently delete driver "${rider.name}" (ID #${rider.user_id || r.id}) from the database?\n\nThis will completely remove their profile, documents, and records.`);
+    if (!confirmDelete) return;
+
+    try {
+      await apiRequest(`/admin/riders/${rider.user_id || rider.id}`, 'DELETE');
+      fetchRiders();
+    } catch (err) {
+      alert(err.message || 'Failed to delete driver from database.');
     }
   };
 
@@ -317,6 +329,22 @@ export function RidersView() {
                             Reactivate
                           </button>
                         )}
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => handleDeleteDriver(r)}
+                          title="Permanently Delete Driver from Database"
+                          style={{
+                            padding: '6px 8px',
+                            background: 'rgba(239, 68, 68, 0.15)',
+                            border: '1px solid #EF4444',
+                            color: '#F87171',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          <Trash2 size={13} />
+                        </button>
                       </div>
                       {r.user_status === 'SUSPENDED' && (
                         <div style={{ marginTop: '4px' }}>
