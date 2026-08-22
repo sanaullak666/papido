@@ -1,7 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../api';
 import { useSocket } from '../context/SocketContext';
-import { Search, Check, X, Star, ShieldCheck, ShieldAlert, Bike, Car, RefreshCw, Eye, ExternalLink, FileText, Image as ImageIcon, Download, Trash2, Camera } from 'lucide-react';
+import {
+  Search,
+  Check,
+  X,
+  Star,
+  ShieldCheck,
+  ShieldAlert,
+  Bike,
+  Car,
+  RefreshCw,
+  Eye,
+  ExternalLink,
+  FileText,
+  Image as ImageIcon,
+  Download,
+  Trash2,
+  Camera,
+  AlertTriangle
+} from 'lucide-react';
 
 const resolveDocUrl = (rawUrl) => {
   if (!rawUrl) return null;
@@ -61,7 +79,8 @@ export function RidersView() {
 
     try {
       setIsSubmittingSuspension(true);
-      await apiRequest(`/admin/users/${suspendingRider.user_id}/status`, 'PATCH', {
+      const targetUserId = suspendingRider.user_id || suspendingRider.id;
+      await apiRequest(`/admin/users/${targetUserId}/status`, 'PATCH', {
         status: 'SUSPENDED',
         reason: suspensionReason.trim()
       });
@@ -78,7 +97,8 @@ export function RidersView() {
   const handleReactivateDriver = async (rider) => {
     if (!confirm(`Are you sure you want to reactivate ${rider.name}'s driver account?`)) return;
     try {
-      await apiRequest(`/admin/users/${rider.user_id}/status`, 'PATCH', { status: 'ACTIVE' });
+      const targetUserId = rider.user_id || rider.id;
+      await apiRequest(`/admin/users/${targetUserId}/status`, 'PATCH', { status: 'ACTIVE' });
       fetchRiders();
     } catch (err) {
       alert(`Error: ${err.message}`);
@@ -435,9 +455,31 @@ export function RidersView() {
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
                 Suspension Reason <span style={{ color: '#EF4444' }}>*</span>
               </label>
+
+              {/* Quick Preset Reason Chips */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
+                {[
+                  'Dangerous / reckless driving on campus',
+                  'Unprofessional behavior & safety complaint',
+                  'Failed to pay daily deductions & platform dues',
+                  'Vehicle document compliance / expired license',
+                  'Repeated ride cancellations & passenger refusal'
+                ].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '12px' }}
+                    onClick={() => setSuspensionReason(preset)}
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
+
               <textarea
                 className="form-input"
-                rows="4"
+                rows="3"
                 style={{ width: '100%', resize: 'vertical', fontSize: '13px', lineHeight: '1.4' }}
                 placeholder="e.g. Speeding on campus, rider complaints regarding safety, or expired document compliance."
                 value={suspensionReason}
@@ -456,8 +498,8 @@ export function RidersView() {
                 <button
                   type="button"
                   className="btn btn-danger"
-                  onClick={handleSubmitSuspension}
-                  disabled={isSubmittingSuspension}
+                  onClick={handleConfirmSuspension}
+                  disabled={isSubmittingSuspension || !suspensionReason.trim()}
                 >
                   {isSubmittingSuspension ? 'Suspending...' : 'Confirm Suspension'}
                 </button>
