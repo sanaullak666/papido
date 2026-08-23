@@ -399,6 +399,12 @@ export function RiderPortalView() {
     }
   }, [isOnline, incomingRequests.length, activeRide]);
 
+  // Reset OTP whenever active ride changes, ends, or is null
+  useEffect(() => {
+    setEnteredOtp('');
+    setOtpError(null);
+  }, [activeRide?.id]);
+
   // 3. Socket.IO Listener for Incoming Requests & Real-time Updates
   useEffect(() => {
     if (!token) return;
@@ -633,6 +639,8 @@ export function RiderPortalView() {
   const handleAcceptRequest = async (rideId) => {
     alertManager.stopRingtone();
     setActionLoading(true);
+    setEnteredOtp('');
+    setOtpError(null);
     try {
       const res = await apiRequest(`/rider/rides/${rideId}/accept`, 'POST', {}, token);
       const r = res.data;
@@ -682,6 +690,7 @@ export function RiderPortalView() {
       if (newStatus === 'RIDER_ARRIVING') {
         res = await apiRequest(`/rider/rides/${activeRide.id}/arriving`, 'POST', {}, token);
       } else if (newStatus === 'RIDER_REACHED') {
+        setEnteredOtp('');
         res = await apiRequest(`/rider/rides/${activeRide.id}/reached`, 'POST', {}, token);
       } else if (newStatus === 'STARTED') {
         if (!enteredOtp || enteredOtp.trim().length !== 4) {
@@ -690,8 +699,10 @@ export function RiderPortalView() {
           return;
         }
         res = await apiRequest(`/rider/rides/${activeRide.id}/start`, 'POST', { otp: enteredOtp.trim() }, token);
+        setEnteredOtp('');
       } else if (newStatus === 'COMPLETED') {
         res = await apiRequest(`/rider/rides/${activeRide.id}/complete`, 'POST', {}, token);
+        setEnteredOtp('');
         fetchEarnings();
       }
 
@@ -731,6 +742,8 @@ export function RiderPortalView() {
       }, token);
       setDeclinedRideIds(prev => new Set([...prev, String(activeRide.id)]));
       setActiveRide(null);
+      setEnteredOtp('');
+      setOtpError(null);
       alert('Trip cancelled. It has been re-opened for other drivers and will not appear on your radar again.');
       setCurrentTab('radar');
     } catch (err) {
@@ -1431,16 +1444,24 @@ export function RiderPortalView() {
                     </label>
                     <input
                       type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       maxLength={4}
-                      placeholder="e.g. 1234"
+                      autoComplete="off"
+                      autoCorrect="off"
+                      autoCapitalize="off"
+                      spellCheck="false"
+                      name={`ride_otp_${activeRide.id}`}
+                      id={`ride_otp_${activeRide.id}`}
+                      placeholder="••••"
                       className="form-input"
                       style={{ textAlign: 'center', fontSize: '24px', letterSpacing: '8px', fontWeight: 900 }}
                       value={enteredOtp}
-                      onChange={(e) => setEnteredOtp(e.target.value)}
+                      onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
                     />
                     <button
                       onClick={() => handleStatusChange('STARTED')}
-                      disabled={actionLoading}
+                      disabled={actionLoading || enteredOtp.length !== 4}
                       className="btn btn-success"
                       style={{ width: '100%', padding: '14px', fontWeight: 800, fontSize: '15px' }}
                     >
