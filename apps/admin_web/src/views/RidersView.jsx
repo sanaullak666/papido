@@ -63,7 +63,7 @@ export function RidersView() {
   const [previewDoc, setPreviewDoc] = useState(null);
 
   // Leaderboard State (Monthly & Yearly)
-  const [periodType, setPeriodType] = useState('MONTHLY'); // 'MONTHLY' | 'YEARLY' | 'ALL_TIME'
+  const [periodType, setPeriodType] = useState('ALL_TIME'); // Default to 'ALL_TIME' to immediately display lifetime completed rides
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [leaderboardFilter, setLeaderboardFilter] = useState('ALL'); // 'ALL' | 'TOP_PERFORMERS' | 'FLAGGED' | 'ONLINE' | 'SUSPENDED'
@@ -214,6 +214,7 @@ export function RidersView() {
   const summary = leaderboardData.summary || {};
   const topRiders = summary.topRiders || [];
   const leaderboardItems = leaderboardData.items || [];
+  const availableDates = summary.availableDates || [];
 
   return (
     <div>
@@ -327,6 +328,23 @@ export function RidersView() {
                 <div style={{ display: 'flex', background: 'var(--bg-input)', borderRadius: '8px', padding: '2px', border: '1px solid var(--border)' }}>
                   <button
                     type="button"
+                    onClick={() => setPeriodType('ALL_TIME')}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      background: periodType === 'ALL_TIME' ? 'var(--primary)' : 'transparent',
+                      color: periodType === 'ALL_TIME' ? '#FFFFFF' : 'var(--text-muted)'
+                    }}
+                  >
+                    All-Time
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => setPeriodType('MONTHLY')}
                     style={{
                       padding: '6px 12px',
@@ -358,43 +376,42 @@ export function RidersView() {
                   >
                     Yearly View
                   </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setPeriodType('ALL_TIME')}
-                    style={{
-                      padding: '6px 12px',
-                      borderRadius: '6px',
-                      border: 'none',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      background: periodType === 'ALL_TIME' ? 'var(--primary)' : 'transparent',
-                      color: periodType === 'ALL_TIME' ? '#FFFFFF' : 'var(--text-muted)'
-                    }}
-                  >
-                    All-Time
-                  </button>
                 </div>
 
                 {/* Specific Month Dropdown (If Monthly) */}
                 {periodType === 'MONTHLY' && (
                   <select
                     className="form-select"
-                    style={{ padding: '6px 12px', fontSize: '13px', fontWeight: 700, minWidth: '130px' }}
-                    value={selectedMonth}
-                    onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                    style={{ padding: '6px 12px', fontSize: '13px', fontWeight: 700, minWidth: '150px' }}
+                    value={availableDates.length > 0 ? `${selectedYear}-${selectedMonth}` : selectedMonth}
+                    onChange={(e) => {
+                      if (e.target.value.includes('-')) {
+                        const [yr, mo] = e.target.value.split('-');
+                        setSelectedYear(Number(yr));
+                        setSelectedMonth(Number(mo));
+                      } else {
+                        setSelectedMonth(Number(e.target.value));
+                      }
+                    }}
                   >
-                    {MONTH_NAMES.map((name, idx) => (
-                      <option key={idx + 1} value={idx + 1}>
-                        {name}
-                      </option>
-                    ))}
+                    {availableDates.length > 0 ? (
+                      availableDates.map((d) => (
+                        <option key={`${d.year}-${d.month}`} value={`${d.year}-${d.month}`}>
+                          {d.label}
+                        </option>
+                      ))
+                    ) : (
+                      MONTH_NAMES.map((name, idx) => (
+                        <option key={idx + 1} value={idx + 1}>
+                          {name} {selectedYear}
+                        </option>
+                      ))
+                    )}
                   </select>
                 )}
 
-                {/* Specific Year Dropdown (If Monthly or Yearly) */}
-                {periodType !== 'ALL_TIME' && (
+                {/* Specific Year Dropdown (If Yearly) */}
+                {periodType === 'YEARLY' && (
                   <select
                     className="form-select"
                     style={{ padding: '6px 12px', fontSize: '13px', fontWeight: 700, minWidth: '90px' }}
@@ -435,6 +452,43 @@ export function RidersView() {
                 </button>
               </div>
             </div>
+
+            {/* Helper Banner when Monthly view has 0 rides */}
+            {periodType === 'MONTHLY' && Number(summary.periodCompletedRides || 0) === 0 && (
+              <div style={{
+                background: 'rgba(56, 189, 248, 0.08)',
+                border: '1px solid rgba(56, 189, 248, 0.25)',
+                borderRadius: '8px',
+                padding: '8px 14px',
+                marginTop: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontSize: '12px',
+                color: 'var(--text-main, #FFFFFF)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Calendar size={14} color="var(--primary)" />
+                  <span>Viewing <strong>{MONTH_NAMES[selectedMonth - 1]} {selectedYear}</strong> (0 rides in this month).</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPeriodType('ALL_TIME')}
+                  style={{
+                    background: 'var(--primary)',
+                    color: '#0F172A',
+                    border: 'none',
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    fontWeight: 700,
+                    fontSize: '11px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  View All-Time Performance
+                </button>
+              </div>
+            )}
 
             {/* Quality & Status Filter Tabs */}
             <div style={{
@@ -749,7 +803,7 @@ export function RidersView() {
                     <tr>
                       <td colSpan="8" style={{ textAlign: 'center', padding: '36px', color: 'var(--text-muted)' }}>
                         <AlertCircle size={24} color="var(--text-muted)" style={{ margin: '0 auto 8px' }} />
-                        <div>No riders found matching the selected period and filter.</div>
+                        <div>No riders found matching the selected filter.</div>
                       </td>
                     </tr>
                   ) : (
@@ -906,7 +960,7 @@ export function RidersView() {
                                   <CheckCircle2 size={10} /> Good Standing
                                 </span>
                               ) : (
-                                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>No period trips</span>
+                                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Registered Rider</span>
                               )}
                             </div>
                           </td>
