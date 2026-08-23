@@ -42,6 +42,9 @@ const RideModel = {
     pickupAddress,
     pickupLatitude,
     pickupLongitude,
+    viaAddress = null,
+    viaLatitude = null,
+    viaLongitude = null,
     destinationAddress,
     destinationLatitude,
     destinationLongitude,
@@ -59,13 +62,15 @@ const RideModel = {
       `INSERT INTO rides (
         ride_code, customer_id, vehicle_type,
         pickup_address, pickup_latitude, pickup_longitude,
+        via_address, via_latitude, via_longitude,
         destination_address, destination_latitude, destination_longitude,
         estimated_distance, estimated_duration, estimated_fare,
         otp, status, payment_method, female_rider_only, is_double_ride, is_outside, payment_status, requested_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', CURRENT_TIMESTAMP)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', CURRENT_TIMESTAMP)`,
       [
         rideCode, customerId, vehicleType,
         pickupAddress, pickupLatitude, pickupLongitude,
+        viaAddress || null, viaLatitude || null, viaLongitude || null,
         destinationAddress, destinationLatitude, destinationLongitude,
         estimatedDistance, estimatedDuration, estimatedFare,
         otp, status, paymentMethod, femaleRiderOnly ? 1 : 0, isDoubleRide ? 1 : 0, isOutside ? 1 : 0
@@ -84,6 +89,58 @@ const RideModel = {
     return this.findById(rideId);
   },
 
+  async toggleWaiting(rideId, isWaiting) {
+    const ride = await this.findById(rideId);
+    if (!ride) return null;
+
+    if (isWaiting) {
+      await db.query(
+        `UPDATE rides 
+         SET is_waiting = 1, waiting_started_at = CURRENT_TIMESTAMP 
+         WHERE id = ?`,
+        [rideId]
+      );
+    } else {
+      let addedMinutes = 0;
+      if (ride.waiting_started_at) {
+        const start = new Date(ride.waiting_started_at).getTime();
+        const now = Date.now();
+        addedMinutes = Math.max(0, Math.round((now - start) / 60000));
+      }
+      const totalMinutes = (parseInt(ride.waiting_minutes || 0, 10)) + addedMinutes;
+      // Rate: ₹10 per 10 minutes
+      const waitingFare = Math.floor(totalMinutes / 10) * 10;
+      const baseFare = parseFloat(ride.estimated_fare || 20);
+      const newFinalFare = baseFare + waitingFare;
+
+      await db.query(
+        `UPDATE rides 
+         SET is_waiting = 0, waiting_started_at = NULL, waiting_minutes = ?, waiting_fare = ?, final_fare = ?
+         WHERE id = ?`,
+        [totalMinutes, waitingFare, newFinalFare, rideId]
+      );
+    }
+    return this.findById(rideId);
+  },
+
+  async updateWaitingDuration(rideId, waitingMinutes) {
+    const ride = await this.findById(rideId);
+    if (!ride) return null;
+
+    const totalMinutes = Math.max(0, parseInt(waitingMinutes, 10) || 0);
+    const waitingFare = Math.floor(totalMinutes / 10) * 10;
+    const baseFare = parseFloat(ride.estimated_fare || 20);
+    const newFinalFare = baseFare + waitingFare;
+
+    await db.query(
+      `UPDATE rides 
+       SET waiting_minutes = ?, waiting_fare = ?, final_fare = ?
+       WHERE id = ?`,
+      [totalMinutes, waitingFare, newFinalFare, rideId]
+    );
+    return this.findById(rideId);
+  },
+
   async updateStatus(rideId, status, extraFields = {}) {
     let sql = 'UPDATE rides SET status = ?';
     const params = [status];
@@ -95,10 +152,10 @@ const RideModel = {
     } else if (status === 'STARTED') {
       sql += ', started_at = CURRENT_TIMESTAMP';
     } else if (status === 'COMPLETED') {
-      sql += ', completed_at = CURRENT_TIMESTAMP, final_fare = COALESCE(?, estimated_fare), payment_status = ?';
+      sql += ', completed_at = CURRENT_TIMESTAMP, is_waiting = 0, waiting_started_at = NULL, final_fare = COALESCE(?, estimated_fare), payment_status = ?';
       params.push(extraFields.finalFare || null, extraFields.paymentStatus || 'COMPLETED');
     } else if (status === 'CANCELLED') {
-      sql += ', cancelled_at = CURRENT_TIMESTAMP, cancellation_reason = ?, cancelled_by_role = ?';
+      sql += ', cancelled_at = CURRENT_TIMESTAMP, is_waiting = 0, waiting_started_at = NULL, cancellation_reason = ?, cancelled_by_role = ?';
       params.push(extraFields.cancellationReason || null, extraFields.cancelledByRole || null);
     }
 

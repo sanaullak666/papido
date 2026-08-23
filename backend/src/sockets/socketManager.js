@@ -230,6 +230,8 @@ class SocketManager {
       pickup_address: ride.pickup_address || ride.pickupAddress,
       pickupLatitude: ride.pickup_latitude || ride.pickupLatitude,
       pickupLongitude: ride.pickup_longitude || ride.pickupLongitude,
+      viaAddress: ride.via_address || ride.viaAddress || null,
+      via_address: ride.via_address || ride.viaAddress || null,
       destinationAddress: ride.destination_address || ride.destinationAddress,
       destination_address: ride.destination_address || ride.destinationAddress,
       destinationLatitude: ride.destination_latitude || ride.destinationLatitude,
@@ -339,11 +341,46 @@ class SocketManager {
       this.io.to(`user_${ride.rider_id}`).emit(`ride:${status.toLowerCase()}`, payload);
     }
 
-    // Notify anyone subscribed to ride room
-    this.io.to(`ride_${ride.id}`).emit('ride:status_change', payload);
-
     // Notify Admin
     this.io.to('role_ADMIN').emit('admin:ride_status_change', payload);
+  }
+
+  /**
+   * Emits live driver waiting state and charges
+   */
+  emitWaitingStatusUpdate(ride, isWaiting, waitingMinutes, waitingFare) {
+    const baseFare = parseFloat(ride.estimated_fare || ride.total_fare || 20);
+    const wFare = parseFloat(waitingFare || 0);
+    const totalFare = baseFare + wFare;
+
+    const payload = {
+      rideId: ride.id,
+      id: ride.id,
+      rideCode: ride.ride_code,
+      isWaiting: Boolean(isWaiting),
+      is_waiting: Boolean(isWaiting),
+      waitingMinutes: parseInt(waitingMinutes || 0, 10),
+      waiting_minutes: parseInt(waitingMinutes || 0, 10),
+      waitingFare: wFare,
+      waiting_fare: wFare,
+      estimatedFare: baseFare,
+      estimated_fare: baseFare,
+      finalFare: totalFare,
+      final_fare: totalFare,
+      totalFare: totalFare,
+      total_fare: totalFare,
+      timestamp: new Date().toISOString()
+    };
+
+    if (ride.customer_id) {
+      this.io.to(`user_${ride.customer_id}`).emit('ride:waiting_update', payload);
+    }
+    if (ride.rider_id) {
+      this.io.to(`user_${ride.rider_id}`).emit('ride:waiting_update', payload);
+      this.io.to(`rider_${ride.rider_id}`).emit('ride:waiting_update', payload);
+    }
+    this.io.to(`ride_${ride.id}`).emit('ride:waiting_update', payload);
+    this.io.to('role_ADMIN').emit('admin:ride_waiting_update', payload);
   }
 }
 

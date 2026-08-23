@@ -56,6 +56,9 @@ const CustomerController = {
         pickupAddress,
         pickupLatitude,
         pickupLongitude,
+        viaAddress,
+        viaLatitude,
+        viaLongitude,
         destinationAddress,
         destinationLatitude,
         destinationLongitude,
@@ -70,9 +73,12 @@ const CustomerController = {
       }
 
       let finalPickup = pickupAddress.trim();
+      let finalVia = viaAddress ? viaAddress.trim() : null;
       let finalDest = destinationAddress.trim();
       let pLat = parseFloat(pickupLatitude) || 12.0240;
       let pLng = parseFloat(pickupLongitude) || 79.8530;
+      let vLat = viaLatitude ? parseFloat(viaLatitude) : null;
+      let vLng = viaLongitude ? parseFloat(viaLongitude) : null;
       let dLat = parseFloat(destinationLatitude) || 11.9350;
       let dLng = parseFloat(destinationLongitude) || 79.8300;
 
@@ -85,6 +91,17 @@ const CustomerController = {
           if (resolved.latitude && resolved.longitude) {
             pLat = resolved.latitude;
             pLng = resolved.longitude;
+          }
+        }
+      }
+
+      if (finalVia && (finalVia.includes('http://') || finalVia.includes('https://') || finalVia.includes('maps.app.goo.gl') || finalVia.includes('google.com/maps') || finalVia.includes('goo.gl/maps'))) {
+        const resolved = await MapService.resolveMapLink(finalVia);
+        if (resolved && resolved.name) {
+          finalVia = resolved.name;
+          if (resolved.latitude && resolved.longitude) {
+            vLat = resolved.latitude;
+            vLng = resolved.longitude;
           }
         }
       }
@@ -110,7 +127,6 @@ const CustomerController = {
       // Outside Trip Detection
       const isExplicitOutside = isOutside === true || isOutside === 'true' || isOutside === 1;
       const isKeywordsOutside = pLower.includes('other (type') || dLower.includes('other (type') ||
-                                pLower.startsWith('📍 other') || dLower.startsWith('📍 other') ||
                                 pLower.includes('outside') || dLower.includes('outside');
 
       const routeFare = await FareModel.findRouteFare(finalPickup, finalDest);
@@ -127,6 +143,9 @@ const CustomerController = {
         pickupAddress: finalPickup,
         pickupLatitude: pLat,
         pickupLongitude: pLng,
+        viaAddress: finalVia,
+        viaLatitude: vLat,
+        viaLongitude: vLng,
         destinationAddress: finalDest,
         destinationLatitude: dLat,
         destinationLongitude: dLng,

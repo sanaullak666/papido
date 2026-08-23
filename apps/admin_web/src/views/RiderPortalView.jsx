@@ -103,6 +103,7 @@ export function RiderPortalView() {
   const [declinedRideIds, setDeclinedRideIds] = useState(() => new Set());
   const [tripCancelledNotice, setTripCancelledNotice] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [waitingLoading, setWaitingLoading] = useState(false);
   const [enteredOtp, setEnteredOtp] = useState('');
   const [otpError, setOtpError] = useState(null);
 
@@ -574,6 +575,27 @@ export function RiderPortalView() {
       setIncomingRequests(prev => prev.filter(r => String(r.id) !== String(rideId)));
     });
 
+    socket.on('ride:waiting_update', (data) => {
+      const rideId = data?.rideId || data?.id;
+      if (activeRide && String(activeRide.id) === String(rideId)) {
+        const waitingFare = parseFloat(data.waitingFare || data.waiting_fare || 0);
+        const baseFare = parseFloat(activeRide.estimated_fare || activeRide.total_fare || 20);
+        const totalFare = baseFare + waitingFare;
+        const split = calcDriverSplit(totalFare);
+        setActiveRide(prev => ({
+          ...prev,
+          is_waiting: Boolean(data.isWaiting || data.is_waiting),
+          waiting_minutes: parseInt(data.waitingMinutes || data.waiting_minutes || 0, 10),
+          waiting_fare: waitingFare,
+          total_fare: totalFare,
+          final_fare: totalFare,
+          rider_earning: split.rider,
+          company_earning: split.company,
+          controller_earning: split.controller
+        }));
+      }
+    });
+
     return () => {
       socket.disconnect();
     };
@@ -726,6 +748,38 @@ export function RiderPortalView() {
       setOtpError(err.message || `Failed to update status to ${newStatus}`);
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  // 8b. Toggle Driver Waiting Mode & Charge
+  const handleToggleWaiting = async () => {
+    if (!activeRide) return;
+    setWaitingLoading(true);
+    try {
+      const nextState = !activeRide.is_waiting;
+      const res = await apiRequest(`/rider/rides/${activeRide.id}/waiting`, 'POST', {
+        isWaiting: nextState
+      }, token);
+
+      const rideObj = res.data?.ride || res.data;
+      if (rideObj) {
+        const fare = rideObj.final_fare || rideObj.total_fare || rideObj.estimated_fare || activeRide.total_fare || 20;
+        const split = calcDriverSplit(fare);
+        setActiveRide(prev => ({
+          ...prev,
+          ...rideObj,
+          total_fare: fare,
+          estimated_fare: fare,
+          final_fare: fare,
+          rider_earning: rideObj.rider_earning || split.rider,
+          company_earning: rideObj.company_earning || split.company,
+          controller_earning: rideObj.controller_earning || split.controller
+        }));
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to toggle waiting mode.');
+    } finally {
+      setWaitingLoading(false);
     }
   };
 
@@ -1218,6 +1272,23 @@ export function RiderPortalView() {
                             </a>
                           </div>
 
+                          {req.via_address && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '6px' }}>
+                              <div>
+                                <span style={{ color: '#F59E0B' }}>●</span> <strong>Via Stop:</strong> {req.via_address}
+                              </div>
+                              <a
+                                href={getMapLink(req.via_address, req.via_latitude, req.via_longitude)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '2px 8px', borderRadius: '6px', background: '#FEF3C7', border: '1px solid #FCD34D', color: '#B45309', fontSize: '11px', fontWeight: 700, textDecoration: 'none', flexShrink: 0 }}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <ExternalLink size={11} /> Maps
+                              </a>
+                            </div>
+                          )}
+
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '6px' }}>
                             <div>
                               <span style={{ color: '#EA580C' }}>●</span> <strong>Drop:</strong> {req.destination_address}
@@ -1343,8 +1414,13 @@ export function RiderPortalView() {
                   <div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>CASH TO COLLECT AT DROP:</div>
                     <div style={{ fontSize: '26px', fontWeight: 900, color: 'var(--primary)' }}>
-                      ₹{activeRide.total_fare}
+                      ₹{activeRide.total_fare || activeRide.final_fare || activeRide.estimated_fare || 20}
                     </div>
+                    {Boolean(activeRide.waiting_fare > 0) && (
+                      <div style={{ fontSize: '11px', color: '#EA580C', fontWeight: 700, marginTop: '2px' }}>
+                        Includes ₹{activeRide.waiting_fare} waiting charge ({activeRide.waiting_minutes || 0} mins)
+                      </div>
+                    )}
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: '13px', fontWeight: 800, color: '#10B981' }}>
@@ -1374,6 +1450,83 @@ export function RiderPortalView() {
                   )}
                 </div>
 
+                {/* Driver Waiting Timer & Control Action Card (Available for all active rides) */}
+                {['ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED'].includes(activeRide.status) && (
+                  <div style={{
+                    background: activeRide.is_waiting ? 'rgba(234, 88, 12, 0.12)' : '#F8F3EC',
+                    border: activeRide.is_waiting ? '2px solid #EA580C' : '1.5px dashed #E8DCCB',
+                    borderRadius: '14px',
+                    padding: '16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{
+                          background: activeRide.is_waiting ? '#EA580C' : '#796D61',
+                          color: '#FFFFFF',
+                          borderRadius: '50%',
+                          width: '32px',
+                          height: '32px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
+                        }}>
+                          <Clock size={16} />
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: '14px', color: activeRide.is_waiting ? '#EA580C' : '#271E16' }}>
+                            {activeRide.is_waiting ? 'DRIVER ON WAITING MODE' : 'Trip Waiting Controls'}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#796D61' }}>
+                            Policy: ₹10 per 10 minutes (₹1/min) added to passenger fare
+                          </div>
+                        </div>
+                      </div>
+
+                      {Boolean(activeRide.is_waiting) && (
+                        <span className="badge badge-warning" style={{ fontSize: '11px', fontWeight: 900 }}>
+                          ON WAITING
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FFFFFF', padding: '10px 14px', borderRadius: '10px', border: '1px solid #E8DCCB' }}>
+                      <div>
+                        <div style={{ fontSize: '11px', color: '#796D61', fontWeight: 600 }}>Total Waiting Recorded:</div>
+                        <div style={{ fontSize: '16px', fontWeight: 800, color: '#EA580C' }}>
+                          {activeRide.waiting_minutes || 0} mins (+₹{activeRide.waiting_fare || 0} added)
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleToggleWaiting}
+                        disabled={waitingLoading}
+                        style={{
+                          padding: '9px 18px',
+                          borderRadius: '8px',
+                          border: 'none',
+                          fontWeight: 800,
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          background: activeRide.is_waiting ? '#DC2626' : '#EA580C',
+                          color: '#FFFFFF',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          boxShadow: '0 2px 8px rgba(234, 88, 12, 0.3)'
+                        }}
+                      >
+                        <Clock size={14} />
+                        {waitingLoading ? 'Updating...' : activeRide.is_waiting ? 'Stop / End Waiting' : 'Start Waiting Timer'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Trip Route Details & Live Maps Navigation */}
                 <div style={{ background: 'var(--bg-input)', padding: '14px', borderRadius: '12px', fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
@@ -1390,6 +1543,23 @@ export function RiderPortalView() {
                       <ExternalLink size={12} /> Navigate Pickup
                     </a>
                   </div>
+
+                  {activeRide.via_address && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                      <div>
+                        <span style={{ color: '#F59E0B' }}>●</span> <strong>Via Stop:</strong> {activeRide.via_address}
+                      </div>
+                      <a
+                        href={getMapLink(activeRide.via_address, activeRide.via_latitude, activeRide.via_longitude)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-secondary btn-sm"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', fontSize: '11px', fontWeight: 800, textDecoration: 'none', background: '#FEF3C7', border: '1px solid #FCD34D', color: '#B45309', flexShrink: 0 }}
+                      >
+                        <ExternalLink size={12} /> Navigate Via Stop
+                      </a>
+                    </div>
+                  )}
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                     <div>

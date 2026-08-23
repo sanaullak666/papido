@@ -39,6 +39,9 @@ const RideService = {
     pickupAddress,
     pickupLatitude,
     pickupLongitude,
+    viaAddress = null,
+    viaLatitude = null,
+    viaLongitude = null,
     destinationAddress,
     destinationLatitude,
     destinationLongitude,
@@ -67,6 +70,9 @@ const RideService = {
         pickupAddress,
         pickupLatitude,
         pickupLongitude,
+        viaAddress,
+        viaLatitude,
+        viaLongitude,
         destinationAddress,
         destinationLatitude,
         destinationLongitude,
@@ -140,6 +146,9 @@ const RideService = {
       pickupAddress,
       pickupLatitude,
       pickupLongitude,
+      viaAddress,
+      viaLatitude,
+      viaLongitude,
       destinationAddress,
       destinationLatitude,
       destinationLongitude,
@@ -402,6 +411,36 @@ const RideService = {
   },
 
   /**
+   * Toggle / update Waiting state by Rider on any active ride
+   */
+  async toggleWaiting(rideId, riderId, isWaiting, manualWaitingMinutes = null) {
+    const ride = await RideModel.findById(rideId);
+    if (!ride) throw new Error('Ride not found.');
+    if (ride.rider_id !== riderId) throw new Error('Unauthorized rider.');
+    if (![RIDE_STATUS.ACCEPTED, RIDE_STATUS.RIDER_ARRIVING, RIDE_STATUS.RIDER_REACHED, RIDE_STATUS.STARTED].includes(ride.status)) {
+      throw new Error(`Cannot set waiting mode for ride with status ${ride.status}.`);
+    }
+
+    let updatedRide;
+    if (manualWaitingMinutes !== null && manualWaitingMinutes !== undefined) {
+      updatedRide = await RideModel.updateWaitingDuration(rideId, manualWaitingMinutes);
+    } else {
+      updatedRide = await RideModel.toggleWaiting(rideId, Boolean(isWaiting));
+    }
+
+    if (socketManager) {
+      socketManager.emitWaitingStatusUpdate(
+        updatedRide,
+        updatedRide.is_waiting,
+        updatedRide.waiting_minutes,
+        updatedRide.waiting_fare
+      );
+    }
+
+    return updatedRide;
+  },
+
+  /**
    * Step 6: Rider completes ride at destination
    * Triggers split calculation, payment ledger record, and earnings update
    */
@@ -413,7 +452,16 @@ const RideService = {
       throw new Error(`Cannot complete ride with status ${ride.status}. Must be STARTED first.`);
     }
 
-    const finalFare = customFinalFare ? parseFloat(customFinalFare) : parseFloat(ride.estimated_fare);
+    // If driver was still on waiting, finalize waiting timer before completing
+    let currentRide = ride;
+    if (ride.is_waiting) {
+      currentRide = await RideModel.toggleWaiting(rideId, false);
+    }
+
+    const waitingFare = parseFloat(currentRide.waiting_fare || 0);
+    const baseEstimatedFare = parseFloat(currentRide.estimated_fare || 20);
+    const calculatedTotal = baseEstimatedFare + waitingFare;
+    const finalFare = customFinalFare ? parseFloat(customFinalFare) : calculatedTotal;
 
     // 1. Calculate dynamic split rules
     const split = await FareService.calculateFareSplit(finalFare);

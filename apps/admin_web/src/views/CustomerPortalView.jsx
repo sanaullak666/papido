@@ -28,7 +28,8 @@ import {
   ExternalLink,
   Tag,
   RefreshCw,
-  X
+  X,
+  Plus
 } from 'lucide-react';
 
 const DEFAULT_GROUPED_CAMPUS_STOPS = [
@@ -167,6 +168,13 @@ export function CustomerPortalView() {
   const [pickupAddress, setPickupAddress] = useState('PU Main Gate (Gate 1)');
   const [pickupDetail, setPickupDetail] = useState('');
   const [pickupCoords, setPickupCoords] = useState({ lat: 12.0228681, lng: 79.8509415 });
+  
+  // Optional Via / Intermediate Stop
+  const [showViaStop, setShowViaStop] = useState(false);
+  const [viaAddress, setViaAddress] = useState('');
+  const [viaDetail, setViaDetail] = useState('');
+  const [viaCoords, setViaCoords] = useState(null);
+
   const [destAddress, setDestAddress] = useState('Madame Curie Girls Hostel');
   const [destDetail, setDestDetail] = useState('');
   const [destCoords, setDestCoords] = useState({ lat: 12.0215, lng: 79.8565 });
@@ -888,6 +896,27 @@ export function CustomerPortalView() {
       fetchActiveRide();
     });
 
+    socket.on('ride:waiting_update', (data) => {
+      console.log('Realtime ride waiting update:', data);
+      setActiveRide(prev => {
+        if (!prev) return prev;
+        const waitingFare = parseFloat(data.waitingFare || data.waiting_fare || 0);
+        const baseFare = parseFloat(prev.estimated_fare || prev.total_fare || 20);
+        const totalFare = baseFare + waitingFare;
+        return {
+          ...prev,
+          is_waiting: Boolean(data.isWaiting || data.is_waiting),
+          waiting_minutes: parseInt(data.waitingMinutes || data.waiting_minutes || 0, 10),
+          waiting_fare: waitingFare,
+          total_fare: totalFare,
+          final_fare: totalFare
+        };
+      });
+      if (data.isWaiting || data.is_waiting) {
+        setStatusMessage(`Driver is currently On Waiting (+₹${data.waitingFare || data.waiting_fare || 0} waiting fee)`);
+      }
+    });
+
     socket.on('rider:location_update', (loc) => {
       if (loc && loc.latitude && loc.longitude) {
         setDriverLocation({ lat: loc.latitude, lng: loc.longitude });
@@ -911,6 +940,9 @@ export function CustomerPortalView() {
     const finalPickup = pickupDetail.trim()
       ? `${pickupAddress} (${pickupDetail.trim()})`
       : pickupAddress;
+    const finalVia = showViaStop && viaAddress.trim()
+      ? (viaDetail.trim() ? `${viaAddress} (${viaDetail.trim()})` : viaAddress)
+      : null;
     const finalDest = destDetail.trim()
       ? `${destAddress} (${destDetail.trim()})`
       : destAddress;
@@ -920,6 +952,9 @@ export function CustomerPortalView() {
         pickupLatitude: pickupCoords.lat,
         pickupLongitude: pickupCoords.lng,
         pickupAddress: finalPickup,
+        viaLatitude: showViaStop && viaCoords ? viaCoords.lat : null,
+        viaLongitude: showViaStop && viaCoords ? viaCoords.lng : null,
+        viaAddress: finalVia,
         destinationLatitude: destCoords.lat,
         destinationLongitude: destCoords.lng,
         destinationAddress: finalDest,
@@ -1308,6 +1343,103 @@ export function CustomerPortalView() {
                     )}
                   </div>
 
+                  {/* Via / Add Stop Button or Stop Selector */}
+                  {!showViaStop ? (
+                    <div style={{ margin: '-6px 0 10px 0' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowViaStop(true);
+                          if (!viaAddress && adminStops && adminStops.length > 0) {
+                            setViaAddress(adminStops[2] || adminStops[0]);
+                            const c = findStopCoords(adminStops[2] || adminStops[0]);
+                            if (c) setViaCoords(c);
+                          }
+                        }}
+                        style={{
+                          background: '#FFF7ED',
+                          border: '1.5px dashed #F97316',
+                          color: '#EA580C',
+                          padding: '6px 14px',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <Plus size={14} /> Add Via / Intermediate Stop
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="form-group" style={{ background: '#FFF7ED', padding: '12px', borderRadius: '10px', border: '1.5px solid #FDBA74' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                        <label className="form-label" style={{ color: '#9A3412', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
+                          <MapPin size={15} color="#F59E0B" /> Via Stop (Intermediate Stop)
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowViaStop(false);
+                            setViaAddress('');
+                            setViaDetail('');
+                            setViaCoords(null);
+                          }}
+                          style={{
+                            background: '#FEE2E2',
+                            border: '1px solid #FCA5A5',
+                            color: '#DC2626',
+                            borderRadius: '6px',
+                            padding: '2px 8px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '3px'
+                          }}
+                        >
+                          <X size={12} /> Remove Stop
+                        </button>
+                      </div>
+
+                      <select
+                        className="form-input form-select"
+                        style={{ background: '#FFFFFF', border: '1.5px solid #FDBA74', fontWeight: 600, color: '#1C1917' }}
+                        value={viaAddress}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setViaAddress(val);
+                          const coords = findStopCoords(val);
+                          if (coords) setViaCoords(coords);
+                        }}
+                      >
+                        {adminStops && adminStops.length > 0 ? (
+                          adminStops.map((stopName, i) => (
+                            <option key={`v-stop-${i}`} value={stopName}>
+                              {stopName}
+                            </option>
+                          ))
+                        ) : (
+                          <option value="" disabled>No locations available</option>
+                        )}
+                      </select>
+
+                      <div style={{ marginTop: '6px' }}>
+                        <input
+                          type="text"
+                          className="form-input"
+                          style={{ background: '#FFFFFF', border: '1px solid #FED7AA', fontSize: '12px', padding: '6px 10px' }}
+                          placeholder="Specific spot / room at via stop (optional)..."
+                          value={viaDetail}
+                          onChange={(e) => setViaDetail(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   {/* Drop-off Campus Destination Selection */}
                   <div className="form-group">
                     <label className="form-label" style={{ color: '#271E16', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -1353,6 +1485,42 @@ export function CustomerPortalView() {
                         />
                       </div>
                     )}
+                  </div>
+
+                  {/* Waiting Policy & Multi-Stop Rules Information Box */}
+                  <div style={{
+                    background: 'rgba(249, 115, 22, 0.08)',
+                    border: '1.5px dashed #FDBA74',
+                    borderRadius: '12px',
+                    padding: '12px 14px',
+                    marginBottom: '16px',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '10px'
+                  }}>
+                    <div style={{
+                      background: '#EA580C',
+                      color: '#FFFFFF',
+                      borderRadius: '50%',
+                      width: '24px',
+                      height: '24px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      marginTop: '2px'
+                    }}>
+                      <Clock size={13} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '12px', fontWeight: 800, color: '#9A3412', marginBottom: '3px' }}>
+                        Waiting & Multi-Stop Rules Policy
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#796D61', lineHeight: '1.45' }}>
+                        • <strong>Waiting Charges:</strong> ₹10 per 10 minutes (₹1/min) automatically added if rider is requested to wait (e.g. 10 mins = +₹10, 20 mins = +₹20).<br />
+                        • <strong>On Waiting:</strong> Rider can activate the live waiting timer on arrival or during intermediate stops.
+                      </div>
+                    </div>
                   </div>
 
                   {/* Vehicle Type Selection */}
@@ -1556,6 +1724,46 @@ export function CustomerPortalView() {
                     </div>
                   </div>
 
+                  {/* Live Driver On Waiting Alert Banner */}
+                  {Boolean(activeRide.is_waiting) && (
+                    <div style={{
+                      background: 'rgba(234, 88, 12, 0.12)',
+                      border: '1.5px solid #EA580C',
+                      borderRadius: '12px',
+                      padding: '12px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{
+                          background: '#EA580C',
+                          color: '#FFFFFF',
+                          borderRadius: '50%',
+                          width: '28px',
+                          height: '28px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
+                        }}>
+                          <Clock size={15} />
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: '13px', color: '#EA580C' }}>
+                            Driver is Currently On Waiting
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                            Waiting Duration: <strong>{activeRide.waiting_minutes || 0} mins</strong> (+₹{activeRide.waiting_fare || 0} charge added)
+                          </div>
+                        </div>
+                      </div>
+                      <span className="badge badge-warning" style={{ fontWeight: 800, fontSize: '10px' }}>
+                        ON WAITING
+                      </span>
+                    </div>
+                  )}
+
                   {/* Customer Fare Card */}
                   <div style={{
                     background: 'var(--bg-sidebar)',
@@ -1569,8 +1777,13 @@ export function CustomerPortalView() {
                     <div>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>FARE TO PAY DRIVER:</div>
                       <div style={{ fontSize: '24px', fontWeight: 900, color: 'var(--primary)' }}>
-                        ₹{activeRide.total_fare || activeRide.estimated_fare || activeRide.final_fare || 20}
+                        ₹{activeRide.total_fare || activeRide.final_fare || activeRide.estimated_fare || 20}
                       </div>
+                      {Boolean(activeRide.waiting_fare > 0) && (
+                        <div style={{ fontSize: '11px', color: '#EA580C', fontWeight: 700, marginTop: '2px' }}>
+                          Includes ₹{activeRide.waiting_fare} waiting charge ({activeRide.waiting_minutes || 0} mins)
+                        </div>
+                      )}
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <span className="badge badge-warning" style={{ fontSize: '11px' }}>
@@ -1652,6 +1865,9 @@ export function CustomerPortalView() {
                   {/* Trip Route Details Card */}
                   <div style={{ background: 'var(--bg-input)', padding: '14px', borderRadius: '12px', fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <div><strong>Pickup:</strong> {activeRide.pickup_address}</div>
+                    {activeRide.via_address && (
+                      <div style={{ color: '#EA580C' }}><strong>Via Stop:</strong> {activeRide.via_address}</div>
+                    )}
                     <div><strong>Drop:</strong> {activeRide.destination_address}</div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: '8px', marginTop: '4px' }}>
                       <span>Fare: <strong>₹{activeRide.final_fare || activeRide.total_fare || activeRide.estimated_fare || 20}</strong></span>

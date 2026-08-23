@@ -18,6 +18,7 @@ router.post('/rides/:id/decline', RiderController.declineRide);
 router.post('/rides/:id/arriving', RiderController.setArriving);
 router.post('/rides/:id/reached', RiderController.setReached);
 router.post('/rides/:id/start', RiderController.startRide);
+router.post('/rides/:id/waiting', RiderController.toggleWaiting);
 router.post('/rides/:id/complete', RiderController.completeRide);
 router.post('/rides/:id/cancel', RiderController.cancelRide);
 router.get('/earnings', RiderController.getEarnings);

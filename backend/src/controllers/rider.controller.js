@@ -179,6 +179,18 @@ const RiderController = {
     }
   },
 
+  async toggleWaiting(req, res, next) {
+    try {
+      const rideId = req.params.id;
+      const { isWaiting, waitingMinutes } = req.body;
+
+      const ride = await RideService.toggleWaiting(rideId, req.user.id, isWaiting, waitingMinutes);
+      return success(res, isWaiting ? 'Driver is now on waiting.' : 'Driver waiting paused/ended.', ride);
+    } catch (err) {
+      return error(res, err.message, 400);
+    }
+  },
+
   async getEarnings(req, res, next) {
     try {
       const summary = await EarningModel.getRiderEarningsSummary(req.user.id);

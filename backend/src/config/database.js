@@ -432,6 +432,29 @@ async function bootstrapMysqlSchema(targetPool) {
     try {
       await targetPool.query('ALTER TABLE rider_profiles ADD COLUMN is_core_member BOOLEAN DEFAULT FALSE AFTER total_rides;');
     } catch (_) {}
+
+    // Ensure via stops and waiting fee columns exist in rides
+    try {
+      await targetPool.query('ALTER TABLE rides ADD COLUMN via_address VARCHAR(500) DEFAULT NULL AFTER pickup_address;');
+    } catch (_) {}
+    try {
+      await targetPool.query('ALTER TABLE rides ADD COLUMN via_latitude DECIMAL(10, 8) DEFAULT NULL AFTER via_address;');
+    } catch (_) {}
+    try {
+      await targetPool.query('ALTER TABLE rides ADD COLUMN via_longitude DECIMAL(11, 8) DEFAULT NULL AFTER via_latitude;');
+    } catch (_) {}
+    try {
+      await targetPool.query('ALTER TABLE rides ADD COLUMN waiting_minutes INT DEFAULT 0 AFTER final_fare;');
+    } catch (_) {}
+    try {
+      await targetPool.query('ALTER TABLE rides ADD COLUMN waiting_fare DECIMAL(10, 2) DEFAULT 0.00 AFTER waiting_minutes;');
+    } catch (_) {}
+    try {
+      await targetPool.query('ALTER TABLE rides ADD COLUMN is_waiting BOOLEAN DEFAULT FALSE AFTER waiting_fare;');
+    } catch (_) {}
+    try {
+      await targetPool.query('ALTER TABLE rides ADD COLUMN waiting_started_at DATETIME DEFAULT NULL AFTER is_waiting;');
+    } catch (_) {}
   } catch (err) {
     console.warn('[Database Warning] MySQL bootstrap notice:', err.message);
   }
