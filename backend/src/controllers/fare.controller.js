@@ -167,8 +167,8 @@ const FareController = {
   async searchPlaces(req, res, next) {
     try {
       const query = req.query.q || '';
-      const userLat = parseFloat(req.query.lat) || 12.9716;
-      const userLng = parseFloat(req.query.lng) || 77.5946;
+      const userLat = parseFloat(req.query.lat) || 12.0240;
+      const userLng = parseFloat(req.query.lng) || 79.8530;
       const places = await MapService.searchAddresses(query, userLat, userLng);
       return success(res, 'Locations found.', places);
     } catch (err) {

@@ -54,20 +54,25 @@ const MapService = {
   /**
    * Comprehensive Address / Places Autocomplete using Live Geocoding & Campus Presets
    */
-  async searchAddresses(query, userLat = 12.9716, userLng = 77.5946) {
+  async searchAddresses(query, userLat = 12.0240, userLng = 79.8530) {
     const campusPlaces = [
-      { name: 'Gate 1 (Main Entrance)', address: 'Main Campus Entrance, University Outer Road', latitude: 12.971598, longitude: 77.594566 },
-      { name: 'Gate 2 (Hostel Gate)', address: 'Hostel Block & Residential Entrance', latitude: 12.973500, longitude: 77.596500 },
-      { name: 'Silver Jubilee Campus (SJC)', address: 'Silver Jubilee Academic Block & Law School', latitude: 12.975500, longitude: 77.599000 },
-      { name: 'Central Food Court & Mess', address: 'Student Dining Hall & Canteen Area', latitude: 12.974500, longitude: 77.598000 },
-      { name: 'Sports Complex & Ground', address: 'Athletic Track, Cricket Ground & Indoor Stadium', latitude: 12.977500, longitude: 77.601000 },
-      { name: 'City Central Railway Station', address: 'Majestic Railway Station Terminal', latitude: 12.977800, longitude: 77.571300 },
-      { name: 'Central Bus Terminus (KSRTC)', address: 'Kempegowda Bus Station Majestic', latitude: 12.978000, longitude: 77.572500 },
-      { name: 'Metro Station Junction', address: 'MG Road Junction Metro Station', latitude: 12.975600, longitude: 77.606700 },
-      { name: 'City General Hospital', address: 'Hospital Cross Road, Cantonment Area', latitude: 12.986000, longitude: 77.599000 },
-      { name: 'Forum Mall & Multiplex', address: 'Hosur Main Road, Koramangala', latitude: 12.934500, longitude: 77.611000 },
-      { name: 'Tech Park SEZ & IT Hub', address: 'Outer Ring Road, Bellandur', latitude: 12.926000, longitude: 77.676200 },
-      { name: 'Airport Express Stop', address: 'NH 44 Airport Highway Junction', latitude: 13.035000, longitude: 77.597000 }
+      { name: 'PU Main Gate (Gate 1)', address: 'Pondicherry University Main Entrance, Kalapet', latitude: 12.0228681, longitude: 79.8509415 },
+      { name: 'Gate 2 (ECR Gate)', address: 'Pondicherry University East Coast Road Gate, Kalapet', latitude: 12.0295, longitude: 79.8580 },
+      { name: 'Silver Jubilee Campus (SJC)', address: 'Silver Jubilee Academic Block, Pondicherry University', latitude: 12.0280, longitude: 79.8520 },
+      { name: 'Central Food Court & Mess', address: 'Student Dining Hall, Pondicherry University', latitude: 12.0238, longitude: 79.8541 },
+      { name: 'Central Library', address: 'Ananda Rangapillai Central Library, PU Campus', latitude: 12.0245, longitude: 79.8532 },
+      { name: 'White Town / French Colony', address: 'White Town, Promenade, Puducherry', latitude: 11.9338, longitude: 79.8359 },
+      { name: 'Rock Beach / Promenade Beach', address: 'Goubert Avenue, White Town, Puducherry', latitude: 11.9310, longitude: 79.8365 },
+      { name: 'Pondicherry New Bus Stand', address: 'Maraimalai Adigal Salai, Orleanpet, Puducherry', latitude: 11.9350, longitude: 79.8150 },
+      { name: 'Pondicherry Railway Station', address: 'Subbiah Salai, South Boulevard, Puducherry', latitude: 11.9280, longitude: 79.8290 },
+      { name: 'JIPMER Hospital & Medical College', address: 'Dhanvantari Nagar, Gorimedu, Puducherry', latitude: 11.9560, longitude: 79.7990 },
+      { name: 'Auroville Visitor Centre', address: 'Auroville Main Road, Kuilapalayam', latitude: 12.0070, longitude: 79.8110 },
+      { name: 'Sri Aurobindo Ashram', address: 'Rue de la Marine, White Town, Puducherry', latitude: 11.9360, longitude: 79.8340 },
+      { name: 'Puducherry Airport (Lawspet)', address: 'Airport Road, Lawspet, Puducherry', latitude: 11.9680, longitude: 79.8120 },
+      { name: 'Providence Mall / INOX', address: 'Cuddalore Main Road, Orleanpet, Puducherry', latitude: 11.9300, longitude: 79.8190 },
+      { name: 'Serenity Beach (Kottakuppam)', address: 'Kottakuppam, East Coast Road, Puducherry', latitude: 11.9670, longitude: 79.8420 },
+      { name: 'Paradise Beach / Chunnambar', address: 'Chunnambar Boat House, Nonankuppam', latitude: 11.8840, longitude: 79.8050 },
+      { name: 'Kalapet Toll Plaza (ECR)', address: 'East Coast Road, Kalapet, Puducherry', latitude: 12.0360, longitude: 79.8620 }
     ];
 
     if (!query || query.trim().length === 0) return campusPlaces;

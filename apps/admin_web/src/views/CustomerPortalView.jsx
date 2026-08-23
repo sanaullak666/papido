@@ -342,6 +342,176 @@ export function CustomerPortalView() {
     }
   };
 
+  // Interactive Map Location Picker State
+  const [showMapPicker, setShowMapPicker] = useState(false);
+  const [mapPickerTarget, setMapPickerTarget] = useState('dest'); // 'pickup' | 'dest'
+  const [pickerSearchQuery, setPickerSearchQuery] = useState('');
+  const [pickerSearchResults, setPickerSearchResults] = useState([]);
+  const [searchingPlaces, setSearchingPlaces] = useState(false);
+  const [selectedPickerLocation, setSelectedPickerLocation] = useState({
+    name: POPULAR_OUTSIDE_SPOTS[0].name,
+    address: POPULAR_OUTSIDE_SPOTS[0].name,
+    lat: POPULAR_OUTSIDE_SPOTS[0].lat,
+    lng: POPULAR_OUTSIDE_SPOTS[0].lng
+  });
+  const [reverseGeocodingPicker, setReverseGeocodingPicker] = useState(false);
+  const pickerMapContainerRef = useRef(null);
+  const pickerLeafletMapRef = useRef(null);
+  const pickerMarkerRef = useRef(null);
+
+  // Open Map Picker Modal
+  const openMapPicker = (target) => {
+    setMapPickerTarget(target);
+    setPickerSearchQuery('');
+    setPickerSearchResults([]);
+
+    const initial = target === 'pickup'
+      ? { name: outsidePickup, address: outsidePickup, lat: outsidePickupCoords.lat || 12.0240, lng: outsidePickupCoords.lng || 79.8530 }
+      : { name: outsideDest, address: outsideDest, lat: outsideDestCoords.lat || 11.9338, lng: outsideDestCoords.lng || 79.8359 };
+
+    setSelectedPickerLocation(initial);
+    setShowMapPicker(true);
+  };
+
+  // Update Pin and Geocode on Picker Map
+  const updatePickerPin = async (lat, lng, knownName = null, knownAddress = null) => {
+    if (!lat || !lng) return;
+
+    if (pickerMarkerRef.current) {
+      pickerMarkerRef.current.setLatLng([lat, lng]);
+    }
+
+    if (knownName) {
+      setSelectedPickerLocation({
+        name: knownName,
+        address: knownAddress || knownName,
+        lat,
+        lng
+      });
+      return;
+    }
+
+    setReverseGeocodingPicker(true);
+    try {
+      const res = await apiRequest(`/fares/reverse?lat=${lat}&lng=${lng}`);
+      if (res.data && res.data.name) {
+        setSelectedPickerLocation({
+          name: res.data.name,
+          address: res.data.address || res.data.name,
+          lat,
+          lng
+        });
+      }
+    } catch (_) {
+      setSelectedPickerLocation({
+        name: `Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
+        address: `Selected Pin (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
+        lat,
+        lng
+      });
+    } finally {
+      setReverseGeocodingPicker(false);
+    }
+  };
+
+  // Place Search Autocomplete Debounce
+  useEffect(() => {
+    if (!pickerSearchQuery.trim() || pickerSearchQuery.trim().length < 2) {
+      setPickerSearchResults([]);
+      setSearchingPlaces(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setSearchingPlaces(true);
+      try {
+        const res = await apiRequest(`/fares/places?q=${encodeURIComponent(pickerSearchQuery.trim())}&lat=12.0240&lng=79.8530`);
+        setPickerSearchResults(res.data || []);
+      } catch (err) {
+        console.warn('Place search notice:', err);
+      } finally {
+        setSearchingPlaces(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [pickerSearchQuery]);
+
+  // Leaflet Map Initialization for Picker Modal
+  useEffect(() => {
+    if (!showMapPicker) {
+      if (pickerLeafletMapRef.current) {
+        try {
+          pickerLeafletMapRef.current.remove();
+        } catch (_) {}
+        pickerLeafletMapRef.current = null;
+        pickerMarkerRef.current = null;
+      }
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      if (!pickerMapContainerRef.current || !window.L) return;
+
+      const initLat = selectedPickerLocation.lat || 11.9338;
+      const initLng = selectedPickerLocation.lng || 79.8359;
+
+      const map = window.L.map(pickerMapContainerRef.current).setView([initLat, initLng], 14);
+      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap'
+      }).addTo(map);
+
+      const pinIcon = window.L.divIcon({
+        className: 'custom-picker-pin',
+        html: `<div style="width: 36px; height: 36px; background: linear-gradient(135deg, #F97316, #EA580C); border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(234, 88, 12, 0.5); border: 2px solid #FFFFFF;"><div style="width: 12px; height: 12px; background: #FFFFFF; border-radius: 50%; transform: rotate(45deg);"></div></div>`,
+        iconSize: [36, 36],
+        iconAnchor: [18, 36]
+      });
+
+      const marker = window.L.marker([initLat, initLng], {
+        icon: pinIcon,
+        draggable: true
+      }).addTo(map);
+
+      marker.on('dragend', (e) => {
+        const pos = e.target.getLatLng();
+        updatePickerPin(pos.lat, pos.lng);
+      });
+
+      map.on('click', (e) => {
+        marker.setLatLng(e.latlng);
+        updatePickerPin(e.latlng.lat, e.latlng.lng);
+      });
+
+      pickerLeafletMapRef.current = map;
+      pickerMarkerRef.current = marker;
+      map.invalidateSize();
+    }, 150);
+
+    return () => clearTimeout(timer);
+  }, [showMapPicker]);
+
+  // Confirm and Apply Selected Location from Map Picker
+  const handleConfirmPickerLocation = () => {
+    if (mapPickerTarget === 'pickup') {
+      setOutsidePickup(selectedPickerLocation.name);
+      setOutsidePickupCoords({ lat: selectedPickerLocation.lat, lng: selectedPickerLocation.lng });
+      setResolvedPickupBadge(selectedPickerLocation.name);
+    } else {
+      setOutsideDest(selectedPickerLocation.name);
+      setOutsideDestCoords({ lat: selectedPickerLocation.lat, lng: selectedPickerLocation.lng });
+      setResolvedDestBadge(selectedPickerLocation.name);
+    }
+
+    if (leafletOutsideMapRef.current && window.L && selectedPickerLocation.lat && selectedPickerLocation.lng) {
+      try {
+        leafletOutsideMapRef.current.setView([selectedPickerLocation.lat, selectedPickerLocation.lng], 14);
+      } catch (_) {}
+    }
+
+    setShowMapPicker(false);
+  };
+
   // History & Profile
   const [pastRides, setPastRides] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -1631,24 +1801,45 @@ export function CustomerPortalView() {
                 
                 {/* Pickup Location or Google Maps Link Input */}
                 <div className="form-group">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap', gap: '6px' }}>
                     <label className="form-label" style={{ color: '#271E16', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
-                      <MapPin size={15} color="#10B981" /> Pickup Location or Google Maps Link
+                      <MapPin size={15} color="#10B981" /> Pickup Location
                     </label>
-                    <a
-                      href="https://www.google.com/maps"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ fontSize: '11px', color: '#EA580C', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '3px' }}
-                    >
-                      <ExternalLink size={11} /> Open Google Maps
-                    </a>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => openMapPicker('pickup')}
+                        style={{
+                          background: '#ECFDF5',
+                          border: '1.5px solid #A7F3D0',
+                          color: '#047857',
+                          padding: '3px 9px',
+                          borderRadius: '8px',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        <Compass size={12} color="#047857" /> Pick on Map
+                      </button>
+                      <a
+                        href="https://www.google.com/maps"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ fontSize: '11px', color: '#EA580C', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '3px' }}
+                      >
+                        <ExternalLink size={11} /> Google Maps
+                      </a>
+                    </div>
                   </div>
                   <div style={{ position: 'relative' }}>
                     <input
                       type="text"
                       className="form-input"
-                      placeholder="Type pickup place OR paste Google Maps link (https://maps.app.goo.gl/...)"
+                      placeholder="Type pickup place, choose on map, or paste link..."
                       value={outsidePickup}
                       onChange={(e) => {
                         const val = e.target.value;
@@ -1693,24 +1884,45 @@ export function CustomerPortalView() {
 
                 {/* Drop-off Destination or Google Maps Link Input */}
                 <div className="form-group">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap', gap: '6px' }}>
                     <label className="form-label" style={{ color: '#271E16', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
-                      <MapPin size={15} color="#EA580C" /> Drop-off Destination or Google Maps Link
+                      <MapPin size={15} color="#EA580C" /> Drop-off Destination
                     </label>
-                    <a
-                      href="https://www.google.com/maps"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ fontSize: '11px', color: '#EA580C', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '3px' }}
-                    >
-                      <ExternalLink size={11} /> Open Google Maps
-                    </a>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => openMapPicker('dest')}
+                        style={{
+                          background: '#FFF7ED',
+                          border: '1.5px solid #FDBA74',
+                          color: '#EA580C',
+                          padding: '3px 9px',
+                          borderRadius: '8px',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        <Compass size={12} color="#EA580C" /> Pick on Map
+                      </button>
+                      <a
+                        href="https://www.google.com/maps"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ fontSize: '11px', color: '#EA580C', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '3px' }}
+                      >
+                        <ExternalLink size={11} /> Google Maps
+                      </a>
+                    </div>
                   </div>
                   <div style={{ position: 'relative' }}>
                     <input
                       type="text"
                       className="form-input"
-                      placeholder="Type destination OR paste Google Maps link (https://maps.app.goo.gl/...)"
+                      placeholder="Type destination, choose on map, or paste link..."
                       value={outsideDest}
                       onChange={(e) => {
                         const val = e.target.value;
@@ -2057,6 +2269,270 @@ export function CustomerPortalView() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Interactive Map Location Picker Modal */}
+      {showMapPicker && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 99999,
+          padding: '16px'
+        }}>
+          <div style={{
+            background: '#FAF5EE',
+            borderRadius: '20px',
+            width: '100%',
+            maxWidth: '680px',
+            maxHeight: '90vh',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
+            border: '1.5px solid #E8DCCB'
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: '1.5px solid #E8DCCB',
+              background: '#FFFFFF',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <div>
+                <h3 style={{ fontSize: '17px', fontWeight: 800, margin: 0, color: '#271E16', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <MapPin size={18} color="#EA580C" />
+                  {mapPickerTarget === 'pickup' ? 'Select Pickup Point on Map' : 'Select Destination on Map'}
+                </h3>
+                <p style={{ fontSize: '12px', color: '#796D61', margin: '2px 0 0 0' }}>
+                  Type in search bar, tap a quick spot, or drag pin anywhere in Pondicherry
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowMapPicker(false)}
+                style={{ background: '#F3ECE2', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#796D61' }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Search Bar & Autocomplete Dropdown */}
+            <div style={{ padding: '14px 20px', background: '#FFFFFF', borderBottom: '1px solid #E8DCCB', position: 'relative' }}>
+              <div style={{ position: 'relative' }}>
+                <Search size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: '#796D61' }} />
+                <input
+                  type="text"
+                  placeholder="Search place, beach, station, hostel, cafe (e.g. Rock Beach, JIPMER, Auroville)..."
+                  className="form-input"
+                  style={{
+                    paddingLeft: '36px',
+                    paddingRight: '36px',
+                    width: '100%',
+                    background: '#F8F3EC',
+                    border: '1.5px solid #E8DCCB',
+                    fontSize: '13px',
+                    color: '#271E16'
+                  }}
+                  value={pickerSearchQuery}
+                  onChange={(e) => setPickerSearchQuery(e.target.value)}
+                />
+                {searchingPlaces && (
+                  <div style={{ position: 'absolute', right: '12px', top: '12px', color: '#EA580C' }}>
+                    <RefreshCw size={14} className="animate-spin" />
+                  </div>
+                )}
+                {pickerSearchQuery && !searchingPlaces && (
+                  <button
+                    type="button"
+                    onClick={() => { setPickerSearchQuery(''); setPickerSearchResults([]); }}
+                    style={{ position: 'absolute', right: '10px', top: '10px', background: 'transparent', border: 'none', color: '#796D61', cursor: 'pointer' }}
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+
+              {/* Autocomplete Search Results Dropdown */}
+              {pickerSearchResults.length > 0 && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: '20px',
+                  right: '20px',
+                  background: '#FFFFFF',
+                  border: '1.5px solid #E8DCCB',
+                  borderRadius: '10px',
+                  maxHeight: '220px',
+                  overflowY: 'auto',
+                  zIndex: 99999,
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.15)'
+                }}>
+                  {pickerSearchResults.map((place, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => {
+                        if (pickerLeafletMapRef.current && place.latitude && place.longitude) {
+                          pickerLeafletMapRef.current.flyTo([place.latitude, place.longitude], 16);
+                        }
+                        updatePickerPin(place.latitude, place.longitude, place.name, place.address);
+                        setPickerSearchQuery('');
+                        setPickerSearchResults([]);
+                      }}
+                      style={{
+                        padding: '10px 14px',
+                        borderBottom: idx < pickerSearchResults.length - 1 ? '1px solid #F3ECE2' : 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#FFF7ED'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = '#FFFFFF'}
+                    >
+                      <MapPin size={15} color="#EA580C" style={{ flexShrink: 0 }} />
+                      <div>
+                        <div style={{ fontSize: '13px', fontWeight: 700, color: '#271E16' }}>{place.name}</div>
+                        <div style={{ fontSize: '11px', color: '#796D61' }}>{place.address}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Popular Spot Quick Chips */}
+            <div style={{ padding: '8px 20px', background: '#F8F3EC', borderBottom: '1px solid #E8DCCB', display: 'flex', gap: '6px', overflowX: 'auto', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: '#796D61', display: 'flex', alignItems: 'center', gap: '4px', marginRight: '4px' }}>
+                <Compass size={12} /> Popular:
+              </span>
+              {POPULAR_OUTSIDE_SPOTS.slice(0, 7).map((spot) => (
+                <button
+                  key={spot.name}
+                  type="button"
+                  onClick={() => {
+                    if (pickerLeafletMapRef.current) {
+                      pickerLeafletMapRef.current.flyTo([spot.lat, spot.lng], 15);
+                    }
+                    updatePickerPin(spot.lat, spot.lng, spot.name, spot.name);
+                  }}
+                  style={{
+                    padding: '4px 10px',
+                    borderRadius: '14px',
+                    border: '1px solid #E8DCCB',
+                    background: '#FFFFFF',
+                    color: '#271E16',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    flexShrink: 0
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.borderColor = '#EA580C'}
+                  onMouseLeave={(e) => e.currentTarget.style.borderColor = '#E8DCCB'}
+                >
+                  {spot.name.split('/')[0].trim()}
+                </button>
+              ))}
+            </div>
+
+            {/* Interactive Leaflet Map Container */}
+            <div style={{ position: 'relative', flex: 1, minHeight: '340px' }}>
+              <div ref={pickerMapContainerRef} style={{ width: '100%', height: '100%', minHeight: '340px' }} />
+              
+              {/* Map Helper Overlay */}
+              <div style={{
+                position: 'absolute',
+                top: '10px',
+                right: '10px',
+                background: 'rgba(255, 255, 255, 0.92)',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                border: '1px solid #E8DCCB',
+                fontSize: '11px',
+                fontWeight: 700,
+                color: '#271E16',
+                zIndex: 999,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}>
+                <Navigation size={12} color="#EA580C" />
+                <span>Tap or drag pin to position</span>
+              </div>
+            </div>
+
+            {/* Selected Location Card & Confirm Bar */}
+            <div style={{
+              padding: '16px 20px',
+              background: '#FFFFFF',
+              borderTop: '1.5px solid #E8DCCB',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: '14px',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{ flex: 1, minWidth: '220px' }}>
+                <div style={{ fontSize: '11px', color: '#796D61', fontWeight: 700, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span>Selected {mapPickerTarget === 'pickup' ? 'Pickup Spot' : 'Destination'}</span>
+                  {reverseGeocodingPicker && (
+                    <span style={{ color: '#EA580C', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                      <RefreshCw size={10} className="animate-spin" /> Detecting address...
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 800, color: '#271E16', marginTop: '2px' }}>
+                  {selectedPickerLocation.name}
+                </div>
+                {selectedPickerLocation.address && selectedPickerLocation.address !== selectedPickerLocation.name && (
+                  <div style={{ fontSize: '11px', color: '#796D61', maxWidth: '380px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {selectedPickerLocation.address}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowMapPicker(false)}
+                  className="btn btn-secondary"
+                  style={{ padding: '10px 16px', fontWeight: 700, fontSize: '13px', background: '#F3ECE2', border: '1px solid #E8DCCB', color: '#796D61' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmPickerLocation}
+                  className="btn btn-primary"
+                  style={{
+                    padding: '10px 20px',
+                    fontWeight: 800,
+                    fontSize: '13px',
+                    background: 'linear-gradient(135deg, #F97316, #EA580C)',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '10px',
+                    boxShadow: '0 4px 14px rgba(234, 88, 12, 0.4)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <CheckCircle2 size={16} />
+                  <span>Set as {mapPickerTarget === 'pickup' ? 'Pickup' : 'Destination'}</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
