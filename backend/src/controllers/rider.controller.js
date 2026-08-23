@@ -251,6 +251,35 @@ const RiderController = {
     } catch (err) {
       return error(res, err.message, 400);
     }
+  },
+
+  async getPendingPenaltyVerifications(req, res, next) {
+    try {
+      const PenaltyModel = require('../models/penalty.model');
+      const penalties = await PenaltyModel.getPendingConfirmationsForRider(req.user.id);
+      return success(res, 'Pending penalty verifications fetched.', penalties);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async confirmPenaltyPayment(req, res, next) {
+    try {
+      const penaltyId = req.params.id;
+      const { isConfirmed, confirmed, notes } = req.body;
+      const result = await RideService.confirmPenaltyPayment(
+        penaltyId,
+        req.user.id,
+        isConfirmed !== undefined ? Boolean(isConfirmed) : Boolean(confirmed),
+        notes
+      );
+      const msg = (isConfirmed || confirmed)
+        ? 'Payment receipt confirmed! ₹15 recorded and passenger unlocked.'
+        : 'Payment marked as not received. Passenger remains blocked.';
+      return success(res, msg, result);
+    } catch (err) {
+      return error(res, err.message, 400);
+    }
   }
 };
 

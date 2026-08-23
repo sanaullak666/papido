@@ -382,6 +382,60 @@ class SocketManager {
     this.io.to(`ride_${ride.id}`).emit('ride:waiting_update', payload);
     this.io.to('role_ADMIN').emit('admin:ride_waiting_update', payload);
   }
+
+  /**
+   * Emits notification to Driver that Passenger has marked ₹15 compensation as paid
+   */
+  emitPenaltyPaymentClaimed(penalty) {
+    if (!this.io || !penalty) return;
+    const payload = {
+      penaltyId: penalty.id,
+      id: penalty.id,
+      rideId: penalty.ride_id,
+      rideCode: penalty.ride_code,
+      amount: penalty.amount,
+      customerId: penalty.customer_id,
+      customerName: penalty.customer_name,
+      customerPhone: penalty.customer_phone,
+      riderId: penalty.rider_id,
+      status: penalty.status,
+      timestamp: new Date().toISOString()
+    };
+
+    if (penalty.rider_id) {
+      this.io.to(`user_${penalty.rider_id}`).emit('penalty:payment_claimed', payload);
+      this.io.to(`rider_${penalty.rider_id}`).emit('penalty:payment_claimed', payload);
+    }
+    this.io.to('role_RIDER').emit('penalty:payment_claimed', payload);
+    this.io.to('role_ADMIN').emit('admin:penalty_claimed', payload);
+  }
+
+  /**
+   * Emits status update when Driver or Admin confirms or rejects penalty
+   */
+  emitPenaltyStatusUpdate(penalty) {
+    if (!this.io || !penalty) return;
+    const payload = {
+      penaltyId: penalty.id,
+      id: penalty.id,
+      rideId: penalty.ride_id,
+      rideCode: penalty.ride_code,
+      amount: penalty.amount,
+      customerId: penalty.customer_id,
+      riderId: penalty.rider_id,
+      status: penalty.status,
+      timestamp: new Date().toISOString()
+    };
+
+    if (penalty.customer_id) {
+      this.io.to(`user_${penalty.customer_id}`).emit('penalty:status_update', payload);
+    }
+    if (penalty.rider_id) {
+      this.io.to(`user_${penalty.rider_id}`).emit('penalty:status_update', payload);
+      this.io.to(`rider_${penalty.rider_id}`).emit('penalty:status_update', payload);
+    }
+    this.io.to('role_ADMIN').emit('admin:penalty_status_update', payload);
+  }
 }
 
 module.exports = SocketManager;

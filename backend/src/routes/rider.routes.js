@@ -22,6 +22,8 @@ router.post('/rides/:id/waiting', RiderController.toggleWaiting);
 router.post('/rides/:id/complete', RiderController.completeRide);
 router.post('/rides/:id/cancel', RiderController.cancelRide);
 router.get('/earnings', RiderController.getEarnings);
+router.get('/penalties/pending', RiderController.getPendingPenaltyVerifications);
+router.post('/penalties/:id/confirm', RiderController.confirmPenaltyPayment);
 router.get('/rides/history', RiderController.getMyRides);
 router.get('/rides', RiderController.getMyRides);
 

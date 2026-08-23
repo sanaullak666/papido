@@ -194,6 +194,17 @@ const CustomerController = {
     }
   },
 
+  async claimPenaltyPaid(req, res, next) {
+    try {
+      const penaltyId = req.params.id;
+      const { paymentReference } = req.body;
+      const result = await RideService.claimPenaltyPaid(penaltyId, req.user.id, paymentReference);
+      return success(res, 'Payment claimed! Notification sent to driver to verify.', result);
+    } catch (err) {
+      return error(res, err.message, 400);
+    }
+  },
+
   async settlePenalty(req, res, next) {
     try {
       const penaltyId = req.params.id;

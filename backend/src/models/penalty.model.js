@@ -49,11 +49,54 @@ const PenaltyModel = {
       LEFT JOIN rides r ON cp.ride_id = r.id
       LEFT JOIN users rd ON cp.rider_id = rd.id
       LEFT JOIN rider_profiles rp ON cp.rider_id = rp.user_id
-      WHERE cp.customer_id = ? AND cp.status = 'UNPAID'
+      WHERE cp.customer_id = ? AND cp.status IN ('UNPAID', 'PENDING_DRIVER_CONFIRMATION')
       ORDER BY cp.id DESC
       LIMIT 1
     `;
     return db.queryOne(sql, [customerId]);
+  },
+
+  async claimPaid(id, paymentReference = 'CLAIMED_BY_CUSTOMER') {
+    await db.query(
+      `UPDATE cancellation_penalties
+       SET status = 'PENDING_DRIVER_CONFIRMATION', payment_reference = ?
+       WHERE id = ?`,
+      [paymentReference, id]
+    );
+    return this.findById(id);
+  },
+
+  async confirmByRider(id, isConfirmed, riderNotes = null) {
+    if (isConfirmed) {
+      await db.query(
+        `UPDATE cancellation_penalties
+         SET status = 'PAID', paid_at = CURRENT_TIMESTAMP, notes = COALESCE(?, notes)
+         WHERE id = ?`,
+        [riderNotes || 'Payment confirmed by driver', id]
+      );
+    } else {
+      await db.query(
+        `UPDATE cancellation_penalties
+         SET status = 'UNPAID', payment_reference = 'REJECTED_BY_DRIVER', notes = COALESCE(?, notes)
+         WHERE id = ?`,
+        [riderNotes || 'Payment rejected by driver - not received', id]
+      );
+    }
+    return this.findById(id);
+  },
+
+  async getPendingConfirmationsForRider(riderId) {
+    const sql = `
+      SELECT cp.*,
+             r.ride_code, r.pickup_address, r.destination_address,
+             c.name as customer_name, c.phone as customer_phone
+      FROM cancellation_penalties cp
+      LEFT JOIN rides r ON cp.ride_id = r.id
+      LEFT JOIN users c ON cp.customer_id = c.id
+      WHERE cp.rider_id = ? AND cp.status = 'PENDING_DRIVER_CONFIRMATION'
+      ORDER BY cp.id DESC
+    `;
+    return db.query(sql, [riderId]);
   },
 
   async markAsPaid(id, paymentReference = null) {

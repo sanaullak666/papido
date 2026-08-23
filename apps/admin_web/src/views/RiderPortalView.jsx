@@ -129,6 +129,7 @@ export function RiderPortalView() {
   const [upiId, setUpiId] = useState(user?.profile?.upi_id || '');
   const [kycStatus, setKycStatus] = useState(user?.profile?.verification_status || user?.profile?.kyc_status || 'PENDING');
   const [savingKyc, setSavingKyc] = useState(false);
+  const [pendingPenaltiesToVerify, setPendingPenaltiesToVerify] = useState([]);
 
   // Sync profile details when user context loads or updates
   useEffect(() => {
@@ -276,6 +277,33 @@ export function RiderPortalView() {
     }
   };
 
+  const fetchPendingPenalties = async () => {
+    if (!token) return;
+    try {
+      const res = await apiRequest('/rider/penalties/pending', 'GET', null, token);
+      setPendingPenaltiesToVerify(res?.data || []);
+    } catch (err) {
+      console.warn('Failed to fetch pending penalties:', err);
+    }
+  };
+
+  const handleConfirmPenalty = async (penaltyId, isConfirmed) => {
+    try {
+      await apiRequest(`/rider/penalties/${penaltyId}/confirm`, 'POST', {
+        isConfirmed
+      }, token);
+      if (isConfirmed) {
+        alert('₹15 Payment receipt confirmed! Passenger has been unlocked.');
+      } else {
+        alert('Payment marked as not received. Passenger remains blocked.');
+      }
+      fetchPendingPenalties();
+      fetchEarnings(true);
+    } catch (err) {
+      alert(err.message || 'Failed to update payment confirmation.');
+    }
+  };
+
   const fetchAvailableRequests = async () => {
     if (!isOnline || activeRide) return;
     try {
@@ -363,8 +391,10 @@ export function RiderPortalView() {
   // Refresh earnings and trip history periodically for top bar without flickering
   useEffect(() => {
     if (!token) return;
+    fetchPendingPenalties();
     const earningsInterval = setInterval(() => {
       fetchEarnings(true);
+      fetchPendingPenalties();
     }, 5000);
     return () => clearInterval(earningsInterval);
   }, [token]);
@@ -373,6 +403,7 @@ export function RiderPortalView() {
     if (currentTab === 'earnings') {
       fetchEarnings(false);
     }
+    fetchPendingPenalties();
   }, [currentTab]);
 
   // Sync online status changes to socket
@@ -596,6 +627,23 @@ export function RiderPortalView() {
           controller_earning: split.controller
         }));
       }
+    });
+
+    socket.on('penalty:payment_claimed', (data) => {
+      console.log('Realtime penalty payment claimed by passenger:', data);
+      fetchPendingPenalties();
+      if (soundEnabled) {
+        alertManager.triggerRideAlert({
+          title: '₹15 Payment Verification',
+          body: `Passenger ${data?.customerName || ''} claims ₹15 paid to your UPI`,
+          repeat: false
+        });
+      }
+    });
+
+    socket.on('penalty:status_update', (data) => {
+      console.log('Realtime penalty status update:', data);
+      fetchPendingPenalties();
     });
 
     return () => {
@@ -1098,6 +1146,103 @@ export function RiderPortalView() {
 
       {/* Main Driver Body */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        {/* Driver ₹15 Compensation Payment Verification Alerts */}
+        {pendingPenaltiesToVerify && pendingPenaltiesToVerify.length > 0 && (
+          <div style={{
+            background: 'linear-gradient(135deg, #451A03, #78350F)',
+            borderBottom: '2px solid #F59E0B',
+            color: '#FFFFFF',
+            padding: '14px 20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
+          }}>
+            {pendingPenaltiesToVerify.map(p => (
+              <div key={`pen-ver-${p.id}`} style={{
+                background: 'rgba(0,0,0,0.35)',
+                border: '1px solid #D97706',
+                borderRadius: '12px',
+                padding: '14px 16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '12px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{
+                    background: '#F59E0B',
+                    color: '#451A03',
+                    borderRadius: '50%',
+                    width: '40px',
+                    height: '40px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    <DollarSign size={22} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: 800, color: '#FEF3C7' }}>
+                      ₹15 Cancellation Compensation Verification Needed
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#FDE68A', marginTop: '2px' }}>
+                      Passenger <strong>{p.customer_name || 'Passenger'}</strong> {p.customer_phone ? `(${p.customer_phone})` : ''} claims to have paid ₹15 to your UPI for cancelled Ride <strong>#{p.ride_code || ''}</strong>.
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#FCD34D', marginTop: '2px', fontWeight: 600 }}>
+                      Did you receive ₹15 in your UPI/Bank app?
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleConfirmPenalty(p.id, true)}
+                    className="btn btn-primary btn-sm"
+                    style={{
+                      background: 'linear-gradient(135deg, #10B981, #059669)',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      fontWeight: 800,
+                      fontSize: '13px',
+                      padding: '9px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      borderRadius: '8px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <CheckCircle2 size={16} /> Confirm ₹15 Received
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleConfirmPenalty(p.id, false)}
+                    className="btn btn-secondary btn-sm"
+                    style={{
+                      background: 'rgba(239, 68, 68, 0.2)',
+                      border: '1px solid #EF4444',
+                      color: '#FCA5A5',
+                      fontWeight: 700,
+                      fontSize: '13px',
+                      padding: '9px 14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      borderRadius: '8px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <XCircle size={16} /> Not Received
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Passenger Cancellation Alert Banner */}
         {tripCancelledNotice && (
           <div style={{

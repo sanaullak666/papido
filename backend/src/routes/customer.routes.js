@@ -13,6 +13,7 @@ router.post('/rides', CustomerController.requestRide);
 router.post('/outside-rides', CustomerController.requestRide);
 router.get('/outside-rides', CustomerController.getMyRides);
 router.get('/pending-penalty', CustomerController.getPendingPenalty);
+router.post('/penalties/:id/claim-paid', CustomerController.claimPenaltyPaid);
 router.post('/penalties/:id/settle', CustomerController.settlePenalty);
 router.get('/rides/active', CustomerController.getActiveRide);
 router.get('/rides/history', CustomerController.getMyRides);

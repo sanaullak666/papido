@@ -745,6 +745,71 @@ const RideService = {
   },
 
   /**
+   * Customer claims they have paid ₹15 to Driver's UPI
+   */
+  async claimPenaltyPaid(penaltyId, customerId, paymentReference = null) {
+    const PenaltyModel = require('../models/penalty.model');
+    const penalty = await PenaltyModel.findById(penaltyId);
+    if (!penalty) throw new Error('Penalty record not found.');
+    if (penalty.customer_id !== customerId) throw new Error('Unauthorized.');
+
+    const updated = await PenaltyModel.claimPaid(penaltyId, paymentReference || `CLAIMED_AT_${Date.now()}`);
+
+    // Notify Rider in real-time
+    if (socketManager) {
+      socketManager.emitPenaltyPaymentClaimed(updated);
+      socketManager.emitPenaltyStatusUpdate(updated);
+    }
+
+    await NotificationModel.create({
+      userId: penalty.rider_id,
+      title: '₹15 Payment Verification Needed',
+      message: `Passenger ${penalty.customer_name || 'Customer'} marked ₹15 compensation as paid to your UPI for Ride #${penalty.ride_code || ''}. Please confirm receipt.`,
+      type: 'PENALTY_CONFIRMATION_REQUESTED',
+      data: { penaltyId, rideId: penalty.ride_id, amount: 15.00 }
+    });
+
+    return updated;
+  },
+
+  /**
+   * Driver confirms or rejects ₹15 compensation payment receipt
+   */
+  async confirmPenaltyPayment(penaltyId, riderId, isConfirmed, notes = null) {
+    const PenaltyModel = require('../models/penalty.model');
+    const penalty = await PenaltyModel.findById(penaltyId);
+    if (!penalty) throw new Error('Penalty record not found.');
+    if (penalty.rider_id !== riderId) throw new Error('Unauthorized driver.');
+
+    const updated = await PenaltyModel.confirmByRider(penaltyId, Boolean(isConfirmed), notes);
+
+    // Notify Customer and broadcast status update
+    if (socketManager) {
+      socketManager.emitPenaltyStatusUpdate(updated);
+    }
+
+    if (isConfirmed) {
+      await NotificationModel.create({
+        userId: penalty.customer_id,
+        title: 'Payment Confirmed by Driver',
+        message: `Driver ${penalty.rider_name || 'Driver'} confirmed receipt of your ₹15 compensation for Ride #${penalty.ride_code}. Booking unlocked!`,
+        type: 'PENALTY_CONFIRMED',
+        data: { penaltyId, status: 'PAID' }
+      });
+    } else {
+      await NotificationModel.create({
+        userId: penalty.customer_id,
+        title: 'Payment Not Received by Driver',
+        message: `Driver indicated ₹15 was not received for Ride #${penalty.ride_code}. Please verify your UPI transaction.`,
+        type: 'PENALTY_REJECTED',
+        data: { penaltyId, status: 'UNPAID' }
+      });
+    }
+
+    return updated;
+  },
+
+  /**
    * Admin Waive or Mark Paid Penalty
    */
   async updatePenaltyStatus(penaltyId, status, adminId, notes = null) {
@@ -759,6 +824,10 @@ const RideService = {
       updated = await PenaltyModel.waivePenalty(penaltyId, adminId, notes || 'Waived by Admin');
     } else {
       throw new Error(`Invalid status: ${status}`);
+    }
+
+    if (socketManager) {
+      socketManager.emitPenaltyStatusUpdate(updated);
     }
 
     return updated;
