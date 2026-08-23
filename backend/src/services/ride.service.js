@@ -622,24 +622,35 @@ const RideService = {
     }
 
     let penalty = null;
+    const isCustomerRole = String(cancelledByRole || '').toUpperCase() === 'CUSTOMER' || String(cancelledByUserId) === String(ride.customer_id);
+    const isStatusReached = String(ride.status || '').toUpperCase() === 'RIDER_REACHED';
+    const effectiveRiderId = ride.rider_id || ride.assigned_rider_id;
+
     // If Customer cancels AFTER the driver has already REACHED pickup location:
     // Apply ₹15 driver compensation fee directed to driver's UPI
-    if (cancelledByRole === ROLES.CUSTOMER && ride.status === RIDE_STATUS.RIDER_REACHED && ride.rider_id) {
+    if (isCustomerRole && isStatusReached && effectiveRiderId) {
       try {
         const PenaltyModel = require('../models/penalty.model');
         const UserModel = require('../models/user.model');
         const RiderModel = require('../models/rider.model');
         
-        const riderUser = await UserModel.findById(ride.rider_id);
-        const riderProfile = await RiderModel.getProfile(ride.rider_id);
+        let riderUser = null;
+        try {
+          riderUser = await UserModel.findById(effectiveRiderId);
+        } catch (_) {}
+
+        let riderProfile = null;
+        try {
+          riderProfile = await RiderModel.getProfile(effectiveRiderId);
+        } catch (_) {}
         
-        const riderUpi = (riderProfile?.upi_id || '').trim() || `${riderUser?.phone || 'driver'}@upi`;
-        const riderName = riderUser?.name || 'Driver';
+        const riderUpi = (riderProfile?.upi_id || '').trim() || (riderUser?.phone ? `${riderUser.phone}@upi` : 'driver@upi');
+        const riderName = riderUser?.name || 'Campus Driver';
         
-        penalty = await PenaltyModel.create({
+        const createdPenalty = await PenaltyModel.create({
           rideId: ride.id,
           customerId: ride.customer_id,
-          riderId: ride.rider_id,
+          riderId: effectiveRiderId,
           amount: 15.00,
           riderUpiId: riderUpi,
           riderName: riderName,
@@ -647,16 +658,30 @@ const RideService = {
         });
 
         const upiPayUrl = `upi://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&tn=Papido_Driver_Comp_${ride.ride_code}&cu=INR`;
-        penalty.upiPayUrl = upiPayUrl;
+        
+        penalty = {
+          ...(createdPenalty || {}),
+          id: createdPenalty?.id || Date.now(),
+          ride_id: ride.id,
+          ride_code: ride.ride_code,
+          amount: 15.00,
+          rider_name: riderName,
+          rider_upi: riderUpi,
+          rider_upi_id: riderUpi,
+          rider_phone: riderUser?.phone || '',
+          upiPayUrl
+        };
 
         // Special notification for Driver
-        await NotificationModel.create({
-          userId: ride.rider_id,
-          title: 'Trip Cancelled — ₹15 Compensation Applied',
-          message: `Passenger cancelled trip ${ride.ride_code} after you reached pickup point. ₹15 compensation has been charged to passenger and directed to your UPI (${riderUpi}).`,
-          type: 'RIDER_COMPENSATION_PENALTY',
-          data: { rideId, penaltyId: penalty.id, amount: 15.00, riderUpi }
-        });
+        try {
+          await NotificationModel.create({
+            userId: effectiveRiderId,
+            title: 'Trip Cancelled — ₹15 Compensation Applied',
+            message: `Passenger cancelled trip ${ride.ride_code} after you reached pickup point. ₹15 compensation has been charged to passenger and directed to your UPI (${riderUpi}).`,
+            type: 'RIDER_COMPENSATION_PENALTY',
+            data: { rideId, penaltyId: penalty.id, amount: 15.00, riderUpi }
+          });
+        } catch (_) {}
       } catch (penErr) {
         console.warn('Failed to record cancellation penalty:', penErr);
       }

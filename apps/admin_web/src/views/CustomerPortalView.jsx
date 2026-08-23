@@ -1028,16 +1028,41 @@ export function CustomerPortalView() {
 
   const executeCancelRide = async (reasonText) => {
     if (!activeRide) return;
+    const currentActiveRide = { ...activeRide };
+    const wasReached = currentActiveRide.status === 'RIDER_REACHED';
+    setShowCancelWarningModal(false);
+
     try {
-      const res = await apiRequest(`/customer/rides/${activeRide.id}/cancel`, 'POST', {
+      const res = await apiRequest(`/customer/rides/${currentActiveRide.id}/cancel`, 'POST', {
         reason: reasonText
       }, token);
+
       setActiveRide(null);
-      setShowCancelWarningModal(false);
       
-      const penaltyData = res.data?.penalty;
-      if (penaltyData) {
-        setPendingPenalty(penaltyData);
+      let penaltyData = res.data?.penalty;
+      if (!penaltyData && wasReached) {
+        try {
+          const penRes = await apiRequest('/customer/pending-penalty', 'GET', null, token);
+          if (penRes?.data) {
+            penaltyData = penRes.data;
+          }
+        } catch (_) {}
+      }
+
+      if (penaltyData || wasReached) {
+        const fallbackUpi = penaltyData?.rider_upi || penaltyData?.rider_upi_id || (currentActiveRide.rider_phone ? `${currentActiveRide.rider_phone}@upi` : 'driver@upi');
+        const fallbackName = penaltyData?.rider_name || currentActiveRide.rider_name || 'Driver';
+        const fallbackObj = penaltyData || {
+          id: currentActiveRide.id,
+          ride_id: currentActiveRide.id,
+          ride_code: currentActiveRide.ride_code,
+          amount: 15.00,
+          rider_name: fallbackName,
+          rider_upi: fallbackUpi,
+          rider_phone: currentActiveRide.rider_phone || '',
+          upiPayUrl: `upi://pay?pa=${encodeURIComponent(fallbackUpi)}&pn=${encodeURIComponent(fallbackName)}&am=15.00&tn=Papido_Driver_Compensation_${currentActiveRide.ride_code || 'Trip'}&cu=INR`
+        };
+        setPendingPenalty(fallbackObj);
         setShowPenaltyModal(true);
       } else {
         setStatusMessage('Ride cancelled.');
