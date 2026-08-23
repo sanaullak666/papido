@@ -1450,8 +1450,8 @@ export function RiderPortalView() {
                   )}
                 </div>
 
-                {/* Driver Waiting Timer & Control Action Card (Available for all active rides) */}
-                {['ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED'].includes(activeRide.status) && (
+                {/* Driver Waiting Timer & Control Action Card (Only available AFTER trip has STARTED) */}
+                {activeRide.status === 'STARTED' && (
                   <div style={{
                     background: activeRide.is_waiting ? 'rgba(234, 88, 12, 0.12)' : '#F8F3EC',
                     border: activeRide.is_waiting ? '2px solid #EA580C' : '1.5px dashed #E8DCCB',

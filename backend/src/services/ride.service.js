@@ -416,9 +416,8 @@ const RideService = {
   async toggleWaiting(rideId, riderId, isWaiting, manualWaitingMinutes = null) {
     const ride = await RideModel.findById(rideId);
     if (!ride) throw new Error('Ride not found.');
-    if (ride.rider_id !== riderId) throw new Error('Unauthorized rider.');
-    if (![RIDE_STATUS.ACCEPTED, RIDE_STATUS.RIDER_ARRIVING, RIDE_STATUS.RIDER_REACHED, RIDE_STATUS.STARTED].includes(ride.status)) {
-      throw new Error(`Cannot set waiting mode for ride with status ${ride.status}.`);
+    if (ride.status !== RIDE_STATUS.STARTED) {
+      throw new Error(`Waiting timer can only be started after the trip is STARTED with OTP verification (Current status: ${ride.status}).`);
     }
 
     let updatedRide;

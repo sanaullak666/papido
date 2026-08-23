@@ -1518,7 +1518,7 @@ export function CustomerPortalView() {
                       </div>
                       <div style={{ fontSize: '11px', color: '#796D61', lineHeight: '1.45' }}>
                         • <strong>Waiting Charges:</strong> First 9 minutes are free. ₹10 is automatically added for every 10 full minutes of waiting (e.g. 10 mins = +₹10, 20 mins = +₹20).<br />
-                        • <strong>On Waiting:</strong> Rider can activate the live waiting timer on arrival or during intermediate stops.
+                        • <strong>On Waiting:</strong> Rider can activate the live waiting timer after trip start (e.g. at intermediate stops or customer request).
                       </div>
                     </div>
                   </div>
