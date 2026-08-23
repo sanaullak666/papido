@@ -31,7 +31,11 @@ import {
   X,
   Plus,
   CreditCard,
-  AlertTriangle
+  AlertTriangle,
+  QrCode,
+  Copy,
+  Check,
+  Smartphone
 } from 'lucide-react';
 
 const DEFAULT_GROUPED_CAMPUS_STOPS = [
@@ -288,6 +292,9 @@ export function CustomerPortalView() {
   const [showPenaltyModal, setShowPenaltyModal] = useState(false);
   const [settlingPenalty, setSettlingPenalty] = useState(false);
   const [showCancelWarningModal, setShowCancelWarningModal] = useState(false);
+  const [copiedUpi, setCopiedUpi] = useState(false);
+  const [penaltyUtr, setPenaltyUtr] = useState('');
+  const [penaltyPayMode, setPenaltyPayMode] = useState('QR'); // 'QR' | 'APPS' | 'UPI_ID'
 
   // Ride Rating State
   const [ratingVal, setRatingVal] = useState(5);
@@ -1045,12 +1052,16 @@ export function CustomerPortalView() {
     if (!pendingPenalty) return;
     setSettlingPenalty(true);
     try {
+      const refCode = (penaltyUtr || '').trim() || `UPI-APP-CONFIRMED-${Date.now()}`;
       await apiRequest(`/customer/penalties/${pendingPenalty.id}/settle`, 'POST', {
-        paymentReference: `UPI-APP-CONFIRMED-${Date.now()}`
+        paymentReference: refCode
       }, token);
-      alert('Compensation fee settled successfully! Booking unlocked.');
+      alert('₹15 Driver compensation settled successfully! Your booking access is now unlocked.');
       setPendingPenalty(null);
       setShowPenaltyModal(false);
+      setPenaltyUtr('');
+      setStatusMessage('Payment received. You can now book your next ride!');
+      setCurrentTab('book');
       fetchActiveRide();
     } catch (err) {
       alert(err.message || 'Failed to confirm settlement.');
@@ -1361,6 +1372,53 @@ export function CustomerPortalView() {
               {/* If NO Active Ride: Show Booking Engine */}
               {!activeRide && (
                 <>
+                  {/* Persistent Unpaid Driver Compensation Fee Notice */}
+                  {pendingPenalty && (
+                    <div style={{
+                      background: '#FEF2F2',
+                      border: '1.5px solid #FCA5A5',
+                      borderRadius: '12px',
+                      padding: '14px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '12px',
+                      marginBottom: '16px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{
+                          background: '#FEE2E2',
+                          color: '#DC2626',
+                          borderRadius: '50%',
+                          width: '36px',
+                          height: '36px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
+                        }}>
+                          <AlertTriangle size={18} />
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '13px', fontWeight: 800, color: '#991B1B' }}>
+                            Unpaid ₹15 Driver Compensation (Ride #{pendingPenalty.ride_code || 'Cancelled'})
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#B91C1C', marginTop: '2px' }}>
+                            Settle directly to driver ({pendingPenalty.rider_name || 'Driver'}) via UPI to unlock new ride requests.
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowPenaltyModal(true)}
+                        className="btn btn-danger btn-sm"
+                        style={{ padding: '8px 16px', fontSize: '12px', fontWeight: 800, whiteSpace: 'nowrap', flexShrink: 0 }}
+                      >
+                        Pay ₹15 Now
+                      </button>
+                    </div>
+                  )}
+
                   <div>
                     <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '4px' }}>Book a Campus Ride</h2>
                     <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Affordable & instant rides across Pondicherry University</p>
@@ -2908,134 +2966,355 @@ export function CustomerPortalView() {
         </div>
       )}
 
-      {/* MODAL 2: OUTSTANDING DRIVER COMPENSATION PENALTY MODAL */}
-      {showPenaltyModal && pendingPenalty && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.7)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 99999,
-          padding: '16px'
-        }}>
-          <div style={{
-            background: '#FFFFFF',
-            borderRadius: '20px',
-            width: '100%',
-            maxWidth: '520px',
-            padding: '24px',
-            boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
-            border: '2px solid #F97316',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{
-                  background: '#FFEDD5',
-                  color: '#EA580C',
-                  borderRadius: '50%',
-                  width: '42px',
-                  height: '42px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}>
-                  <CreditCard size={22} />
-                </div>
-                <div>
-                  <h3 style={{ fontSize: '17px', fontWeight: 800, margin: 0, color: '#1C1917' }}>
-                    Outstanding Driver Compensation
-                  </h3>
-                  <p style={{ fontSize: '12px', color: '#796D61', margin: '2px 0 0 0' }}>
-                    Settle ₹15 fee directly to driver via UPI to unlock bookings
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowPenaltyModal(false)}
-                style={{ background: '#F3ECE2', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#796D61' }}
-              >
-                <X size={16} />
-              </button>
-            </div>
+      {/* MODAL 2: OUTSTANDING DRIVER COMPENSATION PENALTY PAYMENT MODAL */}
+      {showPenaltyModal && pendingPenalty && (() => {
+        const riderUpi = pendingPenalty.rider_upi || pendingPenalty.rider_upi_id || `${pendingPenalty.rider_phone || 'driver'}@upi`;
+        const riderName = pendingPenalty.rider_name || pendingPenalty.rider_name_full || 'Driver';
+        const upiUri = pendingPenalty.upiPayUrl || `upi://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&tn=Papido_Driver_Compensation_${pendingPenalty.ride_code || 'Trip'}&cu=INR`;
+        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(upiUri)}`;
 
+        const handleCopyUpi = () => {
+          if (navigator.clipboard) {
+            navigator.clipboard.writeText(riderUpi);
+            setCopiedUpi(true);
+            setTimeout(() => setCopiedUpi(false), 2500);
+          }
+        };
+
+        return (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.75)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999,
+            padding: '16px'
+          }}>
             <div style={{
-              background: '#FFF7ED',
-              border: '1.5px dashed #F97316',
-              borderRadius: '14px',
-              padding: '16px',
+              background: '#FFFFFF',
+              borderRadius: '20px',
+              width: '100%',
+              maxWidth: '500px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              padding: '24px',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
+              border: '2px solid #F97316',
               display: 'flex',
               flexDirection: 'column',
-              gap: '8px'
+              gap: '16px'
             }}>
+              {/* Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '13px', color: '#796D61', fontWeight: 600 }}>Amount Due to Driver:</span>
-                <span style={{ fontSize: '26px', fontWeight: 900, color: '#EA580C' }}>₹15.00</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{
+                    background: '#FFEDD5',
+                    color: '#EA580C',
+                    borderRadius: '50%',
+                    width: '42px',
+                    height: '42px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    <CreditCard size={22} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '17px', fontWeight: 800, margin: 0, color: '#1C1917' }}>
+                      Driver Compensation Fee
+                    </h3>
+                    <p style={{ fontSize: '12px', color: '#796D61', margin: '2px 0 0 0' }}>
+                      Pay ₹15 directly to driver to unlock your account
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPenaltyModal(false)}
+                  style={{ background: '#F3ECE2', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#796D61' }}
+                >
+                  <X size={16} />
+                </button>
               </div>
-              <div style={{ fontSize: '12px', color: '#271E16', borderTop: '1px solid #FED7AA', paddingTop: '8px', marginTop: '4px' }}>
-                <div><strong>Beneficiary Driver:</strong> {pendingPenalty.rider_name || pendingPenalty.rider_name_full || 'Driver'}</div>
-                {pendingPenalty.rider_phone && <div><strong>Driver Phone:</strong> {pendingPenalty.rider_phone}</div>}
-                <div><strong>Driver UPI ID:</strong> <span style={{ color: '#047857', fontWeight: 800 }}>{pendingPenalty.rider_upi || pendingPenalty.rider_upi_id || 'driver@upi'}</span></div>
+
+              {/* Amount & Beneficiary Banner */}
+              <div style={{
+                background: '#FFF7ED',
+                border: '1.5px dashed #F97316',
+                borderRadius: '14px',
+                padding: '14px 16px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#796D61', fontWeight: 700, textTransform: 'uppercase' }}>Beneficiary Driver</div>
+                  <div style={{ fontSize: '15px', fontWeight: 800, color: '#271E16' }}>{riderName}</div>
+                  {pendingPenalty.rider_phone && (
+                    <div style={{ fontSize: '11px', color: '#796D61' }}>Phone: {pendingPenalty.rider_phone}</div>
+                  )}
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '11px', color: '#796D61', fontWeight: 700, textTransform: 'uppercase' }}>Amount Due</div>
+                  <div style={{ fontSize: '24px', fontWeight: 900, color: '#EA580C' }}>₹15.00</div>
+                </div>
               </div>
-            </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {/* Direct 1-Click UPI Payment Link */}
-              <a
-                href={pendingPenalty.upiPayUrl || `upi://pay?pa=${encodeURIComponent(pendingPenalty.rider_upi || pendingPenalty.rider_upi_id || '')}&pn=${encodeURIComponent(pendingPenalty.rider_name || 'Driver')}&am=15.00&tn=Papido_Compensation&cu=INR`}
-                className="btn btn-primary"
-                style={{
-                  padding: '12px',
-                  fontWeight: 800,
-                  fontSize: '14px',
-                  textAlign: 'center',
-                  textDecoration: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  background: 'linear-gradient(135deg, #10B981, #059669)',
-                  color: '#FFFFFF'
-                }}
-              >
-                <ExternalLink size={16} /> Pay ₹15 via UPI App (GPay / PhonePe / Paytm)
-              </a>
+              {/* Payment Mode Selector Tabs */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', background: '#F3ECE2', padding: '4px', borderRadius: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setPenaltyPayMode('QR')}
+                  style={{
+                    padding: '8px 4px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    background: penaltyPayMode === 'QR' ? '#FFFFFF' : 'transparent',
+                    color: penaltyPayMode === 'QR' ? '#EA580C' : '#796D61',
+                    boxShadow: penaltyPayMode === 'QR' ? '0 2px 4px rgba(0,0,0,0.08)' : 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  <QrCode size={14} /> Scan QR
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPenaltyPayMode('APPS')}
+                  style={{
+                    padding: '8px 4px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    background: penaltyPayMode === 'APPS' ? '#FFFFFF' : 'transparent',
+                    color: penaltyPayMode === 'APPS' ? '#EA580C' : '#796D61',
+                    boxShadow: penaltyPayMode === 'APPS' ? '0 2px 4px rgba(0,0,0,0.08)' : 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  <Smartphone size={14} /> UPI Apps
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPenaltyPayMode('UPI_ID')}
+                  style={{
+                    padding: '8px 4px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    background: penaltyPayMode === 'UPI_ID' ? '#FFFFFF' : 'transparent',
+                    color: penaltyPayMode === 'UPI_ID' ? '#EA580C' : '#796D61',
+                    boxShadow: penaltyPayMode === 'UPI_ID' ? '0 2px 4px rgba(0,0,0,0.08)' : 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  <CreditCard size={14} /> UPI ID
+                </button>
+              </div>
 
-              {/* Confirm Paid Button */}
-              <button
-                type="button"
-                onClick={handleSettlePenalty}
-                disabled={settlingPenalty}
-                className="btn btn-secondary"
-                style={{
-                  padding: '12px',
-                  fontWeight: 800,
-                  fontSize: '13px',
-                  background: '#F3ECE2',
-                  border: '1.5px solid #E8DCCB',
-                  color: '#1C1917',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px'
-                }}
-              >
-                <CheckCircle2 size={16} color="#059669" />
-                {settlingPenalty ? 'Confirming...' : 'I Have Paid ₹15 to Driver (Unlock Booking)'}
-              </button>
+              {/* TAB 1: DYNAMIC SCANNABLE QR CODE */}
+              {penaltyPayMode === 'QR' && (
+                <div style={{ textAlign: 'center', padding: '10px 0' }}>
+                  <div style={{ display: 'inline-block', padding: '10px', background: '#FFFFFF', borderRadius: '16px', border: '1.5px solid #E8DCCB', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}>
+                    <img
+                      src={qrCodeUrl}
+                      alt="Scan to Pay ₹15 via UPI"
+                      style={{ width: '170px', height: '170px', display: 'block', borderRadius: '8px' }}
+                    />
+                  </div>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#271E16', marginTop: '10px' }}>
+                    Scan with ANY UPI App (GPay / PhonePe / Paytm / Cred)
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#796D61', marginTop: '2px' }}>
+                    Amount (₹15) and driver details are pre-filled automatically
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: 1-CLICK UPI APPS LAUNCH */}
+              {penaltyPayMode === 'APPS' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '6px 0' }}>
+                  <a
+                    href={upiUri}
+                    className="btn btn-primary"
+                    style={{
+                      padding: '12px',
+                      fontWeight: 800,
+                      fontSize: '13px',
+                      textAlign: 'center',
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      background: 'linear-gradient(135deg, #10B981, #059669)',
+                      color: '#FFFFFF'
+                    }}
+                  >
+                    <ExternalLink size={16} /> Pay ₹15 with Any Installed UPI App
+                  </a>
+                  <a
+                    href={`gpay://upi/pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&tn=Papido_Comp&cu=INR`}
+                    className="btn btn-secondary"
+                    style={{
+                      padding: '10px',
+                      fontWeight: 700,
+                      fontSize: '13px',
+                      textAlign: 'center',
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      background: '#F3ECE2',
+                      border: '1px solid #E8DCCB',
+                      color: '#271E16'
+                    }}
+                  >
+                    <Smartphone size={15} color="#2563EB" /> Google Pay
+                  </a>
+                  <a
+                    href={`phonepe://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&tn=Papido_Comp&cu=INR`}
+                    className="btn btn-secondary"
+                    style={{
+                      padding: '10px',
+                      fontWeight: 700,
+                      fontSize: '13px',
+                      textAlign: 'center',
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      background: '#F3ECE2',
+                      border: '1px solid #E8DCCB',
+                      color: '#271E16'
+                    }}
+                  >
+                    <Smartphone size={15} color="#7C3AED" /> PhonePe
+                  </a>
+                </div>
+              )}
+
+              {/* TAB 3: COPY UPI ID */}
+              {penaltyPayMode === 'UPI_ID' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '6px 0' }}>
+                  <div style={{ background: '#F8F3EC', padding: '14px', borderRadius: '12px', border: '1px solid #E8DCCB' }}>
+                    <div style={{ fontSize: '11px', color: '#796D61', fontWeight: 600, marginBottom: '4px' }}>Driver UPI VPA Address:</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: '15px', color: '#047857' }}>
+                        {riderUpi}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleCopyUpi}
+                        className="btn btn-secondary btn-sm"
+                        style={{
+                          padding: '6px 12px',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          background: copiedUpi ? '#D1FAE5' : '#FFFFFF',
+                          color: copiedUpi ? '#065F46' : '#271E16',
+                          border: '1px solid #E8DCCB'
+                        }}
+                      >
+                        {copiedUpi ? <Check size={14} color="#059669" /> : <Copy size={14} />}
+                        {copiedUpi ? 'Copied!' : 'Copy UPI'}
+                      </button>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#796D61' }}>
+                    Open your payment app, paste the UPI ID above, enter amount <strong>₹15.00</strong>, and complete transfer.
+                  </div>
+                </div>
+              )}
+
+              {/* UTR / Reference ID Field */}
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontSize: '12px', color: '#271E16', fontWeight: 700 }}>
+                  UPI Reference / UTR Number (Optional)
+                </label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="e.g. 425189304123 (12-digit UTR)"
+                  value={penaltyUtr}
+                  onChange={(e) => setPenaltyUtr(e.target.value)}
+                  style={{ background: '#F8F3EC', border: '1.5px solid #E8DCCB', fontSize: '13px', padding: '10px 12px' }}
+                />
+              </div>
+
+              {/* Confirm Paid & Unlock Button */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={handleSettlePenalty}
+                  disabled={settlingPenalty}
+                  className="btn btn-primary"
+                  style={{
+                    padding: '13px',
+                    fontWeight: 800,
+                    fontSize: '14px',
+                    background: 'linear-gradient(135deg, #F97316, #EA580C)',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '12px',
+                    boxShadow: '0 4px 14px rgba(234, 88, 12, 0.4)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <CheckCircle2 size={18} />
+                  {settlingPenalty ? 'Verifying Settlement...' : 'I Have Paid ₹15 (Unlock & Proceed)'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPenaltyModal(false)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#796D61',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    padding: '6px'
+                  }}
+                >
+                  Pay Later (Trip stays cancelled &amp; booking locked)
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
