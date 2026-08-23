@@ -69,17 +69,43 @@ const CustomerController = {
         return error(res, 'Complete pickup and destination details are required.', 400);
       }
 
-      if (pickupAddress.trim().toLowerCase() === destinationAddress.trim().toLowerCase()) {
+      let finalPickup = pickupAddress.trim();
+      let finalDest = destinationAddress.trim();
+      let pLat = parseFloat(pickupLatitude) || 12.0240;
+      let pLng = parseFloat(pickupLongitude) || 79.8530;
+      let dLat = parseFloat(destinationLatitude) || 11.9350;
+      let dLng = parseFloat(destinationLongitude) || 79.8300;
+
+      const MapService = require('../services/map.service');
+
+      if (finalPickup.includes('http://') || finalPickup.includes('https://') || finalPickup.includes('maps.app.goo.gl') || finalPickup.includes('google.com/maps') || finalPickup.includes('goo.gl/maps')) {
+        const resolved = await MapService.resolveMapLink(finalPickup);
+        if (resolved && resolved.name) {
+          finalPickup = resolved.name;
+          if (resolved.latitude && resolved.longitude) {
+            pLat = resolved.latitude;
+            pLng = resolved.longitude;
+          }
+        }
+      }
+
+      if (finalDest.includes('http://') || finalDest.includes('https://') || finalDest.includes('maps.app.goo.gl') || finalDest.includes('google.com/maps') || finalDest.includes('goo.gl/maps')) {
+        const resolved = await MapService.resolveMapLink(finalDest);
+        if (resolved && resolved.name) {
+          finalDest = resolved.name;
+          if (resolved.latitude && resolved.longitude) {
+            dLat = resolved.latitude;
+            dLng = resolved.longitude;
+          }
+        }
+      }
+
+      if (finalPickup.toLowerCase() === finalDest.toLowerCase()) {
         return error(res, 'Pickup and drop-off cannot be the same location. Please choose a different destination.', 400);
       }
 
-      const pLat = parseFloat(pickupLatitude) || 12.0240;
-      const pLng = parseFloat(pickupLongitude) || 79.8530;
-      const dLat = parseFloat(destinationLatitude) || 11.9350;
-      const dLng = parseFloat(destinationLongitude) || 79.8300;
-
-      const pLower = pickupAddress.trim().toLowerCase();
-      const dLower = destinationAddress.trim().toLowerCase();
+      const pLower = finalPickup.toLowerCase();
+      const dLower = finalDest.toLowerCase();
 
       // Outside Trip Detection
       const isExplicitOutside = isOutside === true || isOutside === 'true' || isOutside === 1;
@@ -87,7 +113,7 @@ const CustomerController = {
                                 pLower.startsWith('📍 other') || dLower.startsWith('📍 other') ||
                                 pLower.includes('outside') || dLower.includes('outside');
 
-      const routeFare = await FareModel.findRouteFare(pickupAddress, destinationAddress);
+      const routeFare = await FareModel.findRouteFare(finalPickup, finalDest);
       const outsideTrip = isExplicitOutside || (isKeywordsOutside && !routeFare);
 
       const UserModel = require('../models/user.model');
@@ -98,10 +124,10 @@ const CustomerController = {
       const ride = await RideService.requestRide({
         customerId: req.user.id,
         vehicleType: vehicleType || 'BIKE',
-        pickupAddress,
+        pickupAddress: finalPickup,
         pickupLatitude: pLat,
         pickupLongitude: pLng,
-        destinationAddress,
+        destinationAddress: finalDest,
         destinationLatitude: dLat,
         destinationLongitude: dLng,
         paymentMethod: paymentMethod || 'CASH',

@@ -27,6 +27,7 @@ import {
   CheckCircle2,
   ExternalLink,
   Tag,
+  RefreshCw,
   X
 } from 'lucide-react';
 
@@ -286,6 +287,60 @@ export function CustomerPortalView() {
   const [outsideDoubleRide, setOutsideDoubleRide] = useState(false);
   const [outsideTripsList, setOutsideTripsList] = useState([]);
   const [submittingOutside, setSubmittingOutside] = useState(false);
+
+  // Map Link Auto-Resolution State
+  const [resolvingPickup, setResolvingPickup] = useState(false);
+  const [resolvingDest, setResolvingDest] = useState(false);
+  const [resolvedPickupBadge, setResolvedPickupBadge] = useState('');
+  const [resolvedDestBadge, setResolvedDestBadge] = useState('');
+
+  const handleResolveMapInput = async (rawValue, fieldType) => {
+    if (!rawValue) return;
+    const trimmed = rawValue.trim();
+    const isUrl = trimmed.includes('http://') || trimmed.includes('https://') || trimmed.includes('maps.app.goo.gl') || trimmed.includes('google.com/maps') || trimmed.includes('goo.gl/maps') || /^-?\d+\.\d+\s*,\s*-?\d+\.\d+$/.test(trimmed);
+    if (!isUrl) return;
+
+    if (fieldType === 'pickup') {
+      setResolvingPickup(true);
+      setResolvedPickupBadge('');
+    } else {
+      setResolvingDest(true);
+      setResolvedDestBadge('');
+    }
+
+    try {
+      const res = await apiRequest('/fares/resolve-link', 'POST', { url: trimmed });
+      if (res.data && res.data.name) {
+        const placeName = res.data.name;
+        const coords = { lat: parseFloat(res.data.latitude) || 11.9350, lng: parseFloat(res.data.longitude) || 79.8300 };
+
+        if (fieldType === 'pickup') {
+          setOutsidePickup(placeName);
+          setOutsidePickupCoords(coords);
+          setResolvedPickupBadge(placeName);
+        } else {
+          setOutsideDest(placeName);
+          setOutsideDestCoords(coords);
+          setResolvedDestBadge(placeName);
+        }
+
+        // Center map to resolved coordinates
+        if (leafletOutsideMapRef.current && window.L && coords.lat && coords.lng) {
+          try {
+            leafletOutsideMapRef.current.setView([coords.lat, coords.lng], 14);
+          } catch (_) {}
+        }
+      }
+    } catch (err) {
+      console.warn('Map link resolution failed:', err);
+    } finally {
+      if (fieldType === 'pickup') {
+        setResolvingPickup(false);
+      } else {
+        setResolvingDest(false);
+      }
+    }
+  };
 
   // History & Profile
   const [pastRides, setPastRides] = useState([]);
@@ -1589,18 +1644,49 @@ export function CustomerPortalView() {
                       <ExternalLink size={11} /> Open Google Maps
                     </a>
                   </div>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="Type pickup place OR paste Google Maps link (https://maps.app.goo.gl/...)"
-                    value={outsidePickup}
-                    onChange={(e) => setOutsidePickup(e.target.value)}
-                    required
-                    style={{ background: '#F8F3EC', border: '1.5px solid #E8DCCB', fontSize: '13px' }}
-                  />
-                  {outsidePickup && (outsidePickup.includes('maps.app.goo.gl') || outsidePickup.includes('google.com/maps') || outsidePickup.includes('goo.gl/maps')) && (
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Type pickup place OR paste Google Maps link (https://maps.app.goo.gl/...)"
+                      value={outsidePickup}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setOutsidePickup(val);
+                        if (val.includes('maps.app.goo.gl') || val.includes('google.com/maps') || val.includes('goo.gl/maps')) {
+                          handleResolveMapInput(val, 'pickup');
+                        }
+                      }}
+                      onPaste={(e) => {
+                        const pasted = e.clipboardData?.getData('text');
+                        if (pasted && (pasted.includes('maps.app.goo.gl') || pasted.includes('google.com/maps') || pasted.includes('goo.gl/maps') || pasted.includes('http') || /^-?\d+\.\d+/.test(pasted.trim()))) {
+                          setTimeout(() => handleResolveMapInput(pasted, 'pickup'), 50);
+                        }
+                      }}
+                      onBlur={() => {
+                        if (outsidePickup && (outsidePickup.includes('maps.app.goo.gl') || outsidePickup.includes('google.com/maps') || outsidePickup.includes('http'))) {
+                          handleResolveMapInput(outsidePickup, 'pickup');
+                        }
+                      }}
+                      required
+                      style={{ background: '#F8F3EC', border: resolvingPickup ? '1.5px solid #F97316' : '1.5px solid #E8DCCB', fontSize: '13px', width: '100%' }}
+                    />
+                    {resolvingPickup && (
+                      <div style={{ position: 'absolute', right: '12px', top: '12px', color: '#F97316', display: 'flex', alignItems: 'center' }}>
+                        <RefreshCw size={14} className="animate-spin" />
+                      </div>
+                    )}
+                  </div>
+
+                  {resolvingPickup && (
+                    <div style={{ fontSize: '11px', color: '#EA580C', fontWeight: 700, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <RefreshCw size={12} className="animate-spin" /> Fetching location name from Google Maps link...
+                    </div>
+                  )}
+
+                  {!resolvingPickup && resolvedPickupBadge && (
                     <div style={{ fontSize: '11px', color: '#059669', fontWeight: 700, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <CheckCircle2 size={12} color="#059669" /> Google Maps Pin Link Detected
+                      <CheckCircle2 size={12} color="#059669" /> Location Identified: <strong>{resolvedPickupBadge}</strong>
                     </div>
                   )}
                 </div>
@@ -1620,18 +1706,49 @@ export function CustomerPortalView() {
                       <ExternalLink size={11} /> Open Google Maps
                     </a>
                   </div>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="Type destination OR paste Google Maps link (https://maps.app.goo.gl/...)"
-                    value={outsideDest}
-                    onChange={(e) => setOutsideDest(e.target.value)}
-                    required
-                    style={{ background: '#F8F3EC', border: '1.5px solid #E8DCCB', fontSize: '13px' }}
-                  />
-                  {outsideDest && (outsideDest.includes('maps.app.goo.gl') || outsideDest.includes('google.com/maps') || outsideDest.includes('goo.gl/maps')) && (
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Type destination OR paste Google Maps link (https://maps.app.goo.gl/...)"
+                      value={outsideDest}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setOutsideDest(val);
+                        if (val.includes('maps.app.goo.gl') || val.includes('google.com/maps') || val.includes('goo.gl/maps')) {
+                          handleResolveMapInput(val, 'dest');
+                        }
+                      }}
+                      onPaste={(e) => {
+                        const pasted = e.clipboardData?.getData('text');
+                        if (pasted && (pasted.includes('maps.app.goo.gl') || pasted.includes('google.com/maps') || pasted.includes('goo.gl/maps') || pasted.includes('http') || /^-?\d+\.\d+/.test(pasted.trim()))) {
+                          setTimeout(() => handleResolveMapInput(pasted, 'dest'), 50);
+                        }
+                      }}
+                      onBlur={() => {
+                        if (outsideDest && (outsideDest.includes('maps.app.goo.gl') || outsideDest.includes('google.com/maps') || outsideDest.includes('http'))) {
+                          handleResolveMapInput(outsideDest, 'dest');
+                        }
+                      }}
+                      required
+                      style={{ background: '#F8F3EC', border: resolvingDest ? '1.5px solid #F97316' : '1.5px solid #E8DCCB', fontSize: '13px', width: '100%' }}
+                    />
+                    {resolvingDest && (
+                      <div style={{ position: 'absolute', right: '12px', top: '12px', color: '#F97316', display: 'flex', alignItems: 'center' }}>
+                        <RefreshCw size={14} className="animate-spin" />
+                      </div>
+                    )}
+                  </div>
+
+                  {resolvingDest && (
+                    <div style={{ fontSize: '11px', color: '#EA580C', fontWeight: 700, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <RefreshCw size={12} className="animate-spin" /> Fetching location name from Google Maps link...
+                    </div>
+                  )}
+
+                  {!resolvingDest && resolvedDestBadge && (
                     <div style={{ fontSize: '11px', color: '#059669', fontWeight: 700, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <CheckCircle2 size={12} color="#059669" /> Google Maps Pin Link Detected
+                      <CheckCircle2 size={12} color="#059669" /> Location Identified: <strong>{resolvedDestBadge}</strong>
                     </div>
                   )}
                 </div>

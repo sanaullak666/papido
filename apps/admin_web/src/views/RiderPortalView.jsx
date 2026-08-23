@@ -804,7 +804,10 @@ export function RiderPortalView() {
     }
   };
 
-  const getMapLink = (address) => {
+  const getMapLink = (address, lat = null, lng = null) => {
+    if (lat && lng) {
+      return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+    }
     if (!address) return '#';
     if (address.startsWith('http://') || address.startsWith('https://')) {
       return address;
@@ -1192,7 +1195,7 @@ export function RiderPortalView() {
                               <span style={{ color: '#059669' }}>●</span> <strong>Pickup:</strong> {req.pickup_address}
                             </div>
                             <a
-                              href={getMapLink(req.pickup_address)}
+                              href={getMapLink(req.pickup_address, req.pickup_latitude, req.pickup_longitude)}
                               target="_blank"
                               rel="noopener noreferrer"
                               style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '2px 8px', borderRadius: '6px', background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#047857', fontSize: '11px', fontWeight: 700, textDecoration: 'none', flexShrink: 0 }}
@@ -1207,7 +1210,7 @@ export function RiderPortalView() {
                               <span style={{ color: '#EA580C' }}>●</span> <strong>Drop:</strong> {req.destination_address}
                             </div>
                             <a
-                              href={getMapLink(req.destination_address)}
+                              href={getMapLink(req.destination_address, req.destination_latitude, req.destination_longitude)}
                               target="_blank"
                               rel="noopener noreferrer"
                               style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '2px 8px', borderRadius: '6px', background: '#FFF7ED', border: '1px solid #FDBA74', color: '#EA580C', fontSize: '11px', fontWeight: 700, textDecoration: 'none', flexShrink: 0 }}
@@ -1365,7 +1368,7 @@ export function RiderPortalView() {
                       <span style={{ color: '#10B981' }}>●</span> <strong>Pickup:</strong> {activeRide.pickup_address}
                     </div>
                     <a
-                      href={getMapLink(activeRide.pickup_address)}
+                      href={getMapLink(activeRide.pickup_address, activeRide.pickup_latitude, activeRide.pickup_longitude)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="btn btn-secondary btn-sm"
@@ -1380,7 +1383,7 @@ export function RiderPortalView() {
                       <span style={{ color: '#EA580C' }}>●</span> <strong>Drop:</strong> {activeRide.destination_address}
                     </div>
                     <a
-                      href={getMapLink(activeRide.destination_address)}
+                      href={getMapLink(activeRide.destination_address, activeRide.destination_latitude, activeRide.destination_longitude)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="btn btn-secondary btn-sm"

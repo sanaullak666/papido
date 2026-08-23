@@ -185,6 +185,147 @@ const MapService = {
       latitude: lat,
       longitude: lng
     };
+  },
+
+  /**
+   * Resolves raw Google Maps / Apple Maps / share links into clean place names & GPS coordinates
+   */
+  async resolveMapLink(rawUrl) {
+    if (!rawUrl || typeof rawUrl !== 'string') return null;
+    let url = rawUrl.trim();
+
+    // 1. Direct comma-separated coordinates e.g. "11.9333, 79.8333"
+    const directCoordsMatch = url.match(/^(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)$/);
+    if (directCoordsMatch) {
+      const lat = parseFloat(directCoordsMatch[1]);
+      const lng = parseFloat(directCoordsMatch[2]);
+      const geocoded = await this.reverseGeocode(lat, lng);
+      return {
+        success: true,
+        name: geocoded.name || `Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
+        address: geocoded.address,
+        latitude: lat,
+        longitude: lng,
+        originalUrl: rawUrl
+      };
+    }
+
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      if (url.includes('maps.app.goo.gl') || url.includes('google.com/maps') || url.includes('goo.gl/maps')) {
+        url = `https://${url}`;
+      } else {
+        return null;
+      }
+    }
+
+    let finalUrl = url;
+    let htmlContent = '';
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        redirect: 'follow',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept-Language': 'en-US,en;q=0.9'
+        }
+      });
+      finalUrl = response.url || url;
+      htmlContent = await response.text().catch(() => '');
+    } catch (e) {
+      console.warn('[MapService] Redirect resolution notice:', e.message);
+    }
+
+    let extractedLat = null;
+    let extractedLng = null;
+    let extractedName = null;
+
+    // A. Check for coordinates in final URL
+    const atMatch = finalUrl.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (atMatch) {
+      extractedLat = parseFloat(atMatch[1]);
+      extractedLng = parseFloat(atMatch[2]);
+    }
+
+    if (!extractedLat) {
+      const protoMatch = finalUrl.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+      if (protoMatch) {
+        extractedLat = parseFloat(protoMatch[1]);
+        extractedLng = parseFloat(protoMatch[2]);
+      }
+    }
+
+    if (!extractedLat) {
+      const qCoordMatch = finalUrl.match(/[?&](?:q|query|ll|saddr|daddr|destination|center)=(-?\d+\.\d+)[,+](-?\d+\.\d+)/i);
+      if (qCoordMatch) {
+        extractedLat = parseFloat(qCoordMatch[1]);
+        extractedLng = parseFloat(qCoordMatch[2]);
+      }
+    }
+
+    // B. Check for place name in URL path
+    const placeMatch = finalUrl.match(/\/place\/([^/@?]+)/i);
+    if (placeMatch && placeMatch[1]) {
+      try {
+        const decoded = decodeURIComponent(placeMatch[1].replace(/\+/g, ' ')).trim();
+        if (decoded && !/^-?\d+\.\d+,-?\d+\.\d+$/.test(decoded)) {
+          extractedName = decoded;
+        }
+      } catch (_) {}
+    }
+
+    // C. Check HTML Title / OpenGraph meta if name is still missing
+    if (!extractedName && htmlContent) {
+      const ogTitleMatch = htmlContent.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i) ||
+                           htmlContent.match(/<meta\s+content=["']([^"']+)["']\s+property=["']og:title["']/i);
+      if (ogTitleMatch && ogTitleMatch[1]) {
+        extractedName = ogTitleMatch[1].replace(/ - Google Maps$/, '').replace(/ · Google Maps$/, '').trim();
+      }
+
+      if (!extractedName) {
+        const titleMatch = htmlContent.match(/<title>([^<]+)<\/title>/i);
+        if (titleMatch && titleMatch[1]) {
+          const rawTitle = titleMatch[1].replace(/ - Google Maps$/, '').replace(/ · Google Maps$/, '').trim();
+          if (rawTitle && rawTitle !== 'Google Maps') {
+            extractedName = rawTitle;
+          }
+        }
+      }
+
+      if (!extractedLat) {
+        const metaCoords = htmlContent.match(/itemprop=["']latitude["']\s+content=["'](-?\d+\.\d+)["'][\s\S]*?itemprop=["']longitude["']\s+content=["'](-?\d+\.\d+)["']/i) ||
+                           htmlContent.match(/content=["'](-?\d+\.\d+)["']\s+itemprop=["']latitude["'][\s\S]*?content=["'](-?\d+\.\d+)["']\s+itemprop=["']longitude["']/i) ||
+                           htmlContent.match(/center=(-?\d+\.\d+)%2C(-?\d+\.\d+)/i) ||
+                           htmlContent.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+        if (metaCoords) {
+          extractedLat = parseFloat(metaCoords[1]);
+          extractedLng = parseFloat(metaCoords[2]);
+        }
+      }
+    }
+
+    // D. If we have coordinates, reverse geocode to get a clean location name
+    let resolvedAddress = extractedName;
+    if (extractedLat && extractedLng) {
+      const geo = await this.reverseGeocode(extractedLat, extractedLng);
+      if (!extractedName || extractedName.toLowerCase() === 'google maps' || extractedName.toLowerCase().startsWith('location (')) {
+        extractedName = geo.name;
+      }
+      resolvedAddress = geo.address || extractedName;
+    }
+
+    if (!extractedName) {
+      extractedName = 'Selected Destination';
+    }
+
+    return {
+      success: true,
+      name: extractedName,
+      address: resolvedAddress || extractedName,
+      latitude: extractedLat || 11.9350,
+      longitude: extractedLng || 79.8300,
+      originalUrl: rawUrl
+    };
   }
 };
 

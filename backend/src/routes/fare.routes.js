@@ -9,5 +9,7 @@ router.get('/grouped-stops', FareController.getGroupedStops);
 router.post('/estimate', FareController.estimateRideFare);
 router.get('/places', FareController.searchPlaces);
 router.get('/reverse', FareController.reverseGeocode);
+router.get('/resolve-link', FareController.resolveMapLink);
+router.post('/resolve-link', FareController.resolveMapLink);
 
 module.exports = router;

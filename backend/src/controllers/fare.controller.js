@@ -188,6 +188,22 @@ const FareController = {
     } catch (err) {
       next(err);
     }
+  },
+
+  async resolveMapLink(req, res, next) {
+    try {
+      const url = req.query.url || req.body.url;
+      if (!url) {
+        return error(res, 'Map link URL is required.', 400);
+      }
+      const resolved = await MapService.resolveMapLink(url);
+      if (!resolved) {
+        return error(res, 'Could not resolve map link.', 400);
+      }
+      return success(res, 'Location resolved successfully.', resolved);
+    } catch (err) {
+      next(err);
+    }
   }
 };
 
