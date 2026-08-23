@@ -271,14 +271,14 @@ const RiderModel = {
     const numMonth = parseInt(month, 10) || (new Date().getMonth() + 1);
 
     if (periodType === 'MONTHLY') {
-      rideDateClause = ' AND YEAR(requested_at) = ? AND MONTH(requested_at) = ?';
+      rideDateClause = ' AND YEAR(r.requested_at) = ? AND MONTH(r.requested_at) = ?';
       rideParams.push(numYear, numMonth);
-      ratingDateClause = ' AND YEAR(created_at) = ? AND MONTH(created_at) = ?';
+      ratingDateClause = ' AND YEAR(rt.created_at) = ? AND MONTH(rt.created_at) = ?';
       ratingParams.push(numYear, numMonth);
     } else if (periodType === 'YEARLY') {
-      rideDateClause = ' AND YEAR(requested_at) = ?';
+      rideDateClause = ' AND YEAR(r.requested_at) = ?';
       rideParams.push(numYear);
-      ratingDateClause = ' AND YEAR(created_at) = ?';
+      ratingDateClause = ' AND YEAR(rt.created_at) = ?';
       ratingParams.push(numYear);
     }
 
@@ -311,6 +311,7 @@ const RiderModel = {
         COALESCE(rp.is_core_member, u.is_core_member, 0) as is_core_member,
         COALESCE(rp.rating, 5.00) as profile_rating,
         COALESCE(rp.total_ratings_count, 0) as profile_ratings_count,
+        COALESCE(rp.total_rides, 0) as profile_total_rides,
         COALESCE(ride_stats.completed_rides, 0) as completed_rides,
         COALESCE(ride_stats.cancelled_rides, 0) as cancelled_rides,
         COALESCE(ride_stats.total_rides, 0) as total_rides,
@@ -321,23 +322,24 @@ const RiderModel = {
       LEFT JOIN rider_profiles rp ON u.id = rp.user_id
       LEFT JOIN (
         SELECT 
-          rider_id,
-          COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) as completed_rides,
-          COUNT(CASE WHEN status = 'CANCELLED' THEN 1 END) as cancelled_rides,
-          COUNT(id) as total_rides,
-          SUM(CASE WHEN status = 'COMPLETED' THEN COALESCE(rider_earning, final_fare, total_fare, 0) ELSE 0 END) as total_earnings
-        FROM rides
-        WHERE rider_id IS NOT NULL ${rideDateClause}
-        GROUP BY rider_id
+          COALESCE(r.rider_id, r.assigned_rider_id) as rider_id,
+          COUNT(CASE WHEN r.status = 'COMPLETED' THEN 1 END) as completed_rides,
+          COUNT(CASE WHEN r.status = 'CANCELLED' THEN 1 END) as cancelled_rides,
+          COUNT(r.id) as total_rides,
+          SUM(CASE WHEN r.status = 'COMPLETED' THEN COALESCE(re.rider_earning, r.final_fare, r.estimated_fare, 0) ELSE 0 END) as total_earnings
+        FROM rides r
+        LEFT JOIN rider_earnings re ON r.id = re.ride_id
+        WHERE (r.rider_id IS NOT NULL OR r.assigned_rider_id IS NOT NULL) ${rideDateClause}
+        GROUP BY COALESCE(r.rider_id, r.assigned_rider_id)
       ) ride_stats ON u.id = ride_stats.rider_id
       LEFT JOIN (
         SELECT 
-          rider_id,
-          ROUND(AVG(rating), 2) as avg_period_rating,
-          COUNT(id) as period_rating_count
-        FROM ratings
-        WHERE rider_id IS NOT NULL AND (rated_by_role = 'CUSTOMER' OR rated_by_role IS NULL) ${ratingDateClause}
-        GROUP BY rider_id
+          rt.rider_id,
+          ROUND(AVG(rt.rating), 2) as avg_period_rating,
+          COUNT(rt.id) as period_rating_count
+        FROM ratings rt
+        WHERE rt.rider_id IS NOT NULL AND (rt.rated_by_role = 'CUSTOMER' OR rt.rated_by_role IS NULL) ${ratingDateClause}
+        GROUP BY rt.rider_id
       ) rating_stats ON u.id = rating_stats.rider_id
       WHERE u.role = 'RIDER'
     `;
@@ -353,8 +355,14 @@ const RiderModel = {
     const rows = await db.query(sql, mainParams);
 
     const enriched = rows.map(r => {
-      const completed = Number(r.completed_rides) || 0;
-      const cancelled = Number(r.cancelled_rides) || 0;
+      let completed = Number(r.completed_rides) || 0;
+      let cancelled = Number(r.cancelled_rides) || 0;
+
+      // When all-time is selected and ride_stats is 0, fallback to profile total_rides
+      if (periodType === 'ALL_TIME' && completed === 0 && Number(r.profile_total_rides) > 0) {
+        completed = Number(r.profile_total_rides);
+      }
+
       const totalTaken = completed + cancelled;
       const completionRate = totalTaken > 0 ? Number(((completed / totalTaken) * 100).toFixed(1)) : 100.0;
       const cancellationRate = totalTaken > 0 ? Number(((cancelled / totalTaken) * 100).toFixed(1)) : 0.0;
