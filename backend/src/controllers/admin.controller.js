@@ -506,6 +506,37 @@ const AdminController = {
     } catch (err) {
       next(err);
     }
+  },
+
+  /**
+   * Monthly & Yearly Rider Performance Leaderboard with Quality & Low-Rating Flagging
+   */
+  async getRiderLeaderboard(req, res, next) {
+    try {
+      const {
+        periodType = 'MONTHLY',
+        year = new Date().getFullYear(),
+        month = new Date().getMonth() + 1,
+        search = '',
+        filter = 'ALL',
+        limit = 100,
+        offset = 0
+      } = req.query;
+
+      const result = await RiderModel.getPeriodicLeaderboard({
+        periodType,
+        year,
+        month,
+        search,
+        filter,
+        limit: parseInt(limit, 10) || 100,
+        offset: parseInt(offset, 10) || 0
+      });
+
+      return success(res, 'Rider performance leaderboard fetched successfully.', result);
+    } catch (err) {
+      next(err);
+    }
   }
 };
 
