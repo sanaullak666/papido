@@ -126,6 +126,7 @@ export function RiderPortalView() {
   const [vehicleModel, setVehicleModel] = useState(user?.profile?.vehicle_model || '');
   const [vehicleNumber, setVehicleNumber] = useState(user?.profile?.vehicle_number || '');
   const [licenseNumber, setLicenseNumber] = useState(user?.profile?.license_number || '');
+  const [upiId, setUpiId] = useState(user?.profile?.upi_id || '');
   const [kycStatus, setKycStatus] = useState(user?.profile?.verification_status || user?.profile?.kyc_status || 'PENDING');
   const [savingKyc, setSavingKyc] = useState(false);
 
@@ -138,6 +139,7 @@ export function RiderPortalView() {
       if (user.profile.vehicle_model) setVehicleModel(user.profile.vehicle_model);
       if (user.profile.vehicle_number) setVehicleNumber(user.profile.vehicle_number);
       if (user.profile.license_number) setLicenseNumber(user.profile.license_number);
+      if (user.profile.upi_id) setUpiId(user.profile.upi_id);
       if (vStatus !== 'APPROVED') {
         setIsOnline(false);
       }
@@ -816,9 +818,10 @@ export function RiderPortalView() {
         vehicleType,
         vehicleModel,
         vehicleNumber,
-        licenseNumber
+        licenseNumber,
+        upiId
       }, token);
-      alert('Vehicle and driver details updated!');
+      alert('Vehicle, UPI and driver details updated!');
     } catch (err) {
       alert(err.message || 'Failed to save vehicle details.');
     } finally {
@@ -1903,6 +1906,20 @@ export function RiderPortalView() {
                     onChange={(e) => setLicenseNumber(e.target.value)}
                     required
                   />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Driver UPI ID (For Direct Cancellation Compensation & Online Payments)</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g. 9876543210@paytm / driver@okaxis"
+                    value={upiId}
+                    onChange={(e) => setUpiId(e.target.value)}
+                  />
+                  <small style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '3px', display: 'block' }}>
+                    If a passenger cancels after you reach their pickup spot, their ₹15 compensation fee will be directed to this UPI ID.
+                  </small>
                 </div>
 
                 <button type="submit" disabled={savingKyc} className="btn btn-primary" style={{ width: '100%', padding: '12px', fontWeight: 700 }}>

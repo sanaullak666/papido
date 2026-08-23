@@ -29,7 +29,9 @@ import {
   Tag,
   RefreshCw,
   X,
-  Plus
+  Plus,
+  CreditCard,
+  AlertTriangle
 } from 'lucide-react';
 
 const DEFAULT_GROUPED_CAMPUS_STOPS = [
@@ -280,6 +282,12 @@ export function CustomerPortalView() {
   const [rideLoading, setRideLoading] = useState(true);
   const [driverLocation, setDriverLocation] = useState(null);
   const [statusMessage, setStatusMessage] = useState(null);
+
+  // Cancellation Penalty & Driver Compensation State
+  const [pendingPenalty, setPendingPenalty] = useState(null);
+  const [showPenaltyModal, setShowPenaltyModal] = useState(false);
+  const [settlingPenalty, setSettlingPenalty] = useState(false);
+  const [showCancelWarningModal, setShowCancelWarningModal] = useState(false);
 
   // Ride Rating State
   const [ratingVal, setRatingVal] = useState(5);
@@ -928,8 +936,29 @@ export function CustomerPortalView() {
     };
   }, [token]);
 
+  // 5b. Fetch Pending Driver Compensation Penalty (if any)
+  const fetchPendingPenalty = async () => {
+    if (!token) return;
+    try {
+      const res = await apiRequest('/customer/pending-penalty', 'GET', null, token);
+      if (res && res.data) {
+        setPendingPenalty(res.data);
+      } else {
+        setPendingPenalty(null);
+      }
+    } catch (_) {}
+  };
+
+  useEffect(() => {
+    fetchPendingPenalty();
+  }, [token, currentTab]);
+
   // 6. Handle Request Ride
   const handleRequestRide = async () => {
+    if (pendingPenalty) {
+      setShowPenaltyModal(true);
+      return;
+    }
     if (!pickupCoords || !destCoords) {
       alert('Please select valid pickup and destination locations.');
       return;
@@ -967,25 +996,66 @@ export function CustomerPortalView() {
       setActiveRide(res.data);
       setStatusMessage('Searching for available campus riders...');
     } catch (err) {
-      alert(err.message || 'Failed to request ride.');
+      if (err.hasPendingPenalty || err.penalty) {
+        setPendingPenalty(err.penalty);
+        setShowPenaltyModal(true);
+      } else {
+        alert(err.message || 'Failed to request ride.');
+      }
     } finally {
       setBookingLoading(false);
     }
   };
 
-  // 7. Handle Cancel Ride
-  const handleCancelRide = async () => {
+  // 7. Handle Cancel Ride (Warns if driver has already reached pickup)
+  const handleCancelRide = () => {
     if (!activeRide) return;
-    if (!window.confirm('Are you sure you want to cancel this ride request?')) return;
+    if (activeRide.status === 'RIDER_REACHED') {
+      setShowCancelWarningModal(true);
+    } else {
+      if (window.confirm('Are you sure you want to cancel this ride request?')) {
+        executeCancelRide('Cancelled by passenger');
+      }
+    }
+  };
 
+  const executeCancelRide = async (reasonText) => {
+    if (!activeRide) return;
     try {
-      await apiRequest(`/customer/rides/${activeRide.id}/cancel`, 'POST', {
-        reason: 'Cancelled by passenger'
+      const res = await apiRequest(`/customer/rides/${activeRide.id}/cancel`, 'POST', {
+        reason: reasonText
       }, token);
       setActiveRide(null);
-      setStatusMessage('Ride cancelled.');
+      setShowCancelWarningModal(false);
+      
+      const penaltyData = res.data?.penalty;
+      if (penaltyData) {
+        setPendingPenalty(penaltyData);
+        setShowPenaltyModal(true);
+      } else {
+        setStatusMessage('Ride cancelled.');
+      }
     } catch (err) {
       alert(err.message || 'Failed to cancel ride.');
+    }
+  };
+
+  // 7b. Settle ₹15 Cancellation Fee to Driver
+  const handleSettlePenalty = async () => {
+    if (!pendingPenalty) return;
+    setSettlingPenalty(true);
+    try {
+      await apiRequest(`/customer/penalties/${pendingPenalty.id}/settle`, 'POST', {
+        paymentReference: `UPI-APP-CONFIRMED-${Date.now()}`
+      }, token);
+      alert('Compensation fee settled successfully! Booking unlocked.');
+      setPendingPenalty(null);
+      setShowPenaltyModal(false);
+      fetchActiveRide();
+    } catch (err) {
+      alert(err.message || 'Failed to confirm settlement.');
+    } finally {
+      setSettlingPenalty(false);
     }
   };
 
@@ -2748,6 +2818,220 @@ export function CustomerPortalView() {
                   <span>Set as {mapPickerTarget === 'pickup' ? 'Pickup' : 'Destination'}</span>
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 1: PRE-CANCELLATION WARNING MODAL (When driver has already reached) */}
+      {showCancelWarningModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.65)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 99999,
+          padding: '16px'
+        }}>
+          <div style={{
+            background: '#FFFFFF',
+            borderRadius: '16px',
+            width: '100%',
+            maxWidth: '480px',
+            padding: '24px',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
+            border: '2px solid #EF4444',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                background: '#FEE2E2',
+                color: '#DC2626',
+                borderRadius: '50%',
+                width: '44px',
+                height: '44px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <AlertTriangle size={24} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '17px', fontWeight: 800, margin: 0, color: '#1C1917' }}>
+                  Driver Has Reached Your Location
+                </h3>
+                <p style={{ fontSize: '12px', color: '#796D61', margin: '2px 0 0 0' }}>
+                  Confirmation required before cancelling
+                </p>
+              </div>
+            </div>
+
+            <div style={{
+              background: '#FFF7ED',
+              border: '1.5px solid #FDBA74',
+              borderRadius: '12px',
+              padding: '14px',
+              fontSize: '13px',
+              color: '#9A3412',
+              lineHeight: '1.5'
+            }}>
+              Your driver has already arrived at the pickup spot. Cancelling this ride now will apply a <strong>₹15 cancellation compensation charge</strong> payable directly to the driver's UPI account to compensate for fuel and waiting time.
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '4px' }}>
+              <button
+                type="button"
+                onClick={() => setShowCancelWarningModal(false)}
+                className="btn btn-secondary"
+                style={{ padding: '12px', fontWeight: 700, fontSize: '13px', background: '#F3ECE2', border: '1px solid #E8DCCB', color: '#271E16' }}
+              >
+                Keep Ride
+              </button>
+              <button
+                type="button"
+                onClick={() => executeCancelRide('Cancelled by passenger after arrival')}
+                className="btn btn-danger"
+                style={{ padding: '12px', fontWeight: 800, fontSize: '13px', background: '#DC2626', color: '#FFFFFF' }}
+              >
+                Yes, Cancel (Pay ₹15)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: OUTSTANDING DRIVER COMPENSATION PENALTY MODAL */}
+      {showPenaltyModal && pendingPenalty && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 99999,
+          padding: '16px'
+        }}>
+          <div style={{
+            background: '#FFFFFF',
+            borderRadius: '20px',
+            width: '100%',
+            maxWidth: '520px',
+            padding: '24px',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
+            border: '2px solid #F97316',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  background: '#FFEDD5',
+                  color: '#EA580C',
+                  borderRadius: '50%',
+                  width: '42px',
+                  height: '42px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <CreditCard size={22} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '17px', fontWeight: 800, margin: 0, color: '#1C1917' }}>
+                    Outstanding Driver Compensation
+                  </h3>
+                  <p style={{ fontSize: '12px', color: '#796D61', margin: '2px 0 0 0' }}>
+                    Settle ₹15 fee directly to driver via UPI to unlock bookings
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPenaltyModal(false)}
+                style={{ background: '#F3ECE2', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#796D61' }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div style={{
+              background: '#FFF7ED',
+              border: '1.5px dashed #F97316',
+              borderRadius: '14px',
+              padding: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '13px', color: '#796D61', fontWeight: 600 }}>Amount Due to Driver:</span>
+                <span style={{ fontSize: '26px', fontWeight: 900, color: '#EA580C' }}>₹15.00</span>
+              </div>
+              <div style={{ fontSize: '12px', color: '#271E16', borderTop: '1px solid #FED7AA', paddingTop: '8px', marginTop: '4px' }}>
+                <div><strong>Beneficiary Driver:</strong> {pendingPenalty.rider_name || pendingPenalty.rider_name_full || 'Driver'}</div>
+                {pendingPenalty.rider_phone && <div><strong>Driver Phone:</strong> {pendingPenalty.rider_phone}</div>}
+                <div><strong>Driver UPI ID:</strong> <span style={{ color: '#047857', fontWeight: 800 }}>{pendingPenalty.rider_upi || pendingPenalty.rider_upi_id || 'driver@upi'}</span></div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {/* Direct 1-Click UPI Payment Link */}
+              <a
+                href={pendingPenalty.upiPayUrl || `upi://pay?pa=${encodeURIComponent(pendingPenalty.rider_upi || pendingPenalty.rider_upi_id || '')}&pn=${encodeURIComponent(pendingPenalty.rider_name || 'Driver')}&am=15.00&tn=Papido_Compensation&cu=INR`}
+                className="btn btn-primary"
+                style={{
+                  padding: '12px',
+                  fontWeight: 800,
+                  fontSize: '14px',
+                  textAlign: 'center',
+                  textDecoration: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  background: 'linear-gradient(135deg, #10B981, #059669)',
+                  color: '#FFFFFF'
+                }}
+              >
+                <ExternalLink size={16} /> Pay ₹15 via UPI App (GPay / PhonePe / Paytm)
+              </a>
+
+              {/* Confirm Paid Button */}
+              <button
+                type="button"
+                onClick={handleSettlePenalty}
+                disabled={settlingPenalty}
+                className="btn btn-secondary"
+                style={{
+                  padding: '12px',
+                  fontWeight: 800,
+                  fontSize: '13px',
+                  background: '#F3ECE2',
+                  border: '1.5px solid #E8DCCB',
+                  color: '#1C1917',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+              >
+                <CheckCircle2 size={16} color="#059669" />
+                {settlingPenalty ? 'Confirming...' : 'I Have Paid ₹15 to Driver (Unlock Booking)'}
+              </button>
             </div>
           </div>
         </div>

@@ -18,11 +18,18 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  FileText
+  FileText,
+  CreditCard,
+  AlertTriangle,
+  ShieldAlert
 } from 'lucide-react';
 
 export function RidesView() {
+  const [activeTab, setActiveTab] = useState('rides'); // 'rides' | 'penalties'
   const [rides, setRides] = useState([]);
+  const [penalties, setPenalties] = useState([]);
+  const [penaltiesLoading, setPenaltiesLoading] = useState(false);
+  const [penaltyStatusFilter, setPenaltyStatusFilter] = useState('ALL');
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
@@ -31,6 +38,7 @@ export function RidesView() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(100);
   const [selectedRide, setSelectedRide] = useState(null);
+  const [updatingPenaltyId, setUpdatingPenaltyId] = useState(null);
 
   const fetchRides = async (isBackground = false) => {
     try {
@@ -52,11 +60,53 @@ export function RidesView() {
     }
   };
 
+  const fetchPenalties = async () => {
+    setPenaltiesLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (penaltyStatusFilter && penaltyStatusFilter !== 'ALL') {
+        params.append('status', penaltyStatusFilter);
+      }
+      const res = await apiRequest(`/admin/penalties?${params.toString()}`);
+      setPenalties(res.data || []);
+    } catch (err) {
+      console.error('Failed to fetch cancellation penalties', err);
+    } finally {
+      setPenaltiesLoading(false);
+    }
+  };
+
+  const handleUpdatePenaltyStatus = async (penaltyId, newStatus) => {
+    if (!window.confirm(`Are you sure you want to mark this ₹15 penalty as ${newStatus}?`)) return;
+    setUpdatingPenaltyId(penaltyId);
+    try {
+      await apiRequest(`/admin/penalties/${penaltyId}/status`, 'PATCH', {
+        status: newStatus,
+        notes: `Admin marked as ${newStatus}`
+      });
+      fetchPenalties();
+      fetchRides(true);
+      if (selectedRide) {
+        setSelectedRide(prev => prev ? { ...prev, penalty_status: newStatus } : null);
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to update penalty status.');
+    } finally {
+      setUpdatingPenaltyId(null);
+    }
+  };
+
   useEffect(() => {
     fetchRides(false);
     const interval = setInterval(() => fetchRides(true), 6000);
     return () => clearInterval(interval);
   }, [page, limit, statusFilter, vehicleFilter, search]);
+
+  useEffect(() => {
+    if (activeTab === 'penalties') {
+      fetchPenalties();
+    }
+  }, [activeTab, penaltyStatusFilter]);
 
   const totalPages = Math.ceil(total / limit) || 1;
 
@@ -76,6 +126,166 @@ export function RidesView() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* Top Section Navigation Tabs */}
+      <div style={{ display: 'flex', gap: '10px', borderBottom: '1px solid var(--border)', paddingBottom: '12px', flexWrap: 'wrap' }}>
+        <button
+          type="button"
+          onClick={() => setActiveTab('rides')}
+          className={`btn ${activeTab === 'rides' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}
+        >
+          <Navigation size={16} /> All Ride Operations &amp; Booking History ({total})
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('penalties')}
+          className={`btn ${activeTab === 'penalties' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}
+        >
+          <CreditCard size={16} /> Driver Cancellation Penalties (₹15 Fees)
+        </button>
+      </div>
+
+      {/* ======================================================== */}
+      {/* TAB 2: CANCELLATION PENALTIES (₹15 DRIVER COMPENSATIONS) */}
+      {/* ======================================================== */}
+      {activeTab === 'penalties' && (
+        <div className="panel">
+          <div className="panel-header" style={{ flexWrap: 'wrap', gap: '14px' }}>
+            <div>
+              <h2 className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CreditCard size={20} color="var(--primary)" />
+                Driver Cancellation Compensation Ledger ({penalties.length})
+              </h2>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                Track ₹15 compensation fees charged to passengers who cancel after driver reached pickup spot
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <select
+                className="form-select"
+                style={{ fontSize: '13px' }}
+                value={penaltyStatusFilter}
+                onChange={(e) => setPenaltyStatusFilter(e.target.value)}
+              >
+                <option value="ALL">All Penalties</option>
+                <option value="UNPAID">UNPAID (Passenger Blocked)</option>
+                <option value="PAID">PAID (Settled to Driver)</option>
+                <option value="WAIVED">WAIVED (Admin Overridden)</option>
+              </select>
+
+              <button className="btn btn-secondary btn-sm" onClick={fetchPenalties} title="Refresh penalties">
+                <RefreshCw size={14} className={penaltiesLoading ? 'animate-spin' : ''} />
+              </button>
+            </div>
+          </div>
+
+          <div className="table-container">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Ride Code</th>
+                  <th>Cancelled Date</th>
+                  <th>Passenger (Customer)</th>
+                  <th>Beneficiary Driver</th>
+                  <th>Driver UPI ID</th>
+                  <th>Fee Amount</th>
+                  <th>Status</th>
+                  <th>Admin Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {penaltiesLoading ? (
+                  <tr>
+                    <td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+                      Loading cancellation penalties...
+                    </td>
+                  </tr>
+                ) : penalties.length === 0 ? (
+                  <tr>
+                    <td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+                      No cancellation penalties found matching filter.
+                    </td>
+                  </tr>
+                ) : (
+                  penalties.map((p) => (
+                    <tr key={p.id}>
+                      <td>
+                        <strong style={{ color: 'var(--primary)', fontFamily: 'monospace', fontSize: '13px' }}>
+                          {p.ride_code || `RIDE-${p.ride_id}`}
+                        </strong>
+                      </td>
+                      <td>
+                        <div style={{ fontSize: '12px' }}>{formatDate(p.created_at)}</div>
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 600 }}>{p.customer_name || 'Passenger'}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Phone: {p.customer_phone || '-'}</div>
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 600 }}>{p.rider_name || p.full_rider_name || 'Driver'}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Phone: {p.rider_phone || '-'}</div>
+                      </td>
+                      <td>
+                        <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#047857', background: '#D1FAE5', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>
+                          {p.rider_upi_id || `${p.rider_phone || 'driver'}@upi`}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ fontSize: '15px', fontWeight: 900, color: '#EA580C' }}>
+                          ₹{parseFloat(p.amount || 15).toFixed(2)}
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`badge ${
+                          p.status === 'PAID' ? 'badge-success' :
+                          p.status === 'UNPAID' ? 'badge-danger' : 'badge-secondary'
+                        }`} style={{ fontSize: '11px', fontWeight: 800 }}>
+                          {p.status === 'UNPAID' ? 'UNPAID (Blocked)' : p.status}
+                        </span>
+                      </td>
+                      <td>
+                        {p.status === 'UNPAID' ? (
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button
+                              type="button"
+                              className="btn btn-success btn-sm"
+                              disabled={updatingPenaltyId === p.id}
+                              onClick={() => handleUpdatePenaltyStatus(p.id, 'PAID')}
+                              style={{ fontSize: '11px', padding: '4px 8px', fontWeight: 700 }}
+                            >
+                              Mark Paid
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              disabled={updatingPenaltyId === p.id}
+                              onClick={() => handleUpdatePenaltyStatus(p.id, 'WAIVED')}
+                              style={{ fontSize: '11px', padding: '4px 8px' }}
+                            >
+                              Waive
+                            </button>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                            {p.status === 'PAID' ? `Settled: ${formatDate(p.paid_at)}` : 'Overridden by admin'}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* TAB 1: ALL RIDE OPERATIONS & BOOKING HISTORY */}
+      {/* ======================================================== */}
+      {activeTab === 'rides' && (
       <div className="panel">
         <div className="panel-header" style={{ flexWrap: 'wrap', gap: '14px' }}>
           <div>
@@ -302,6 +512,16 @@ export function RidesView() {
                       }`} style={{ fontSize: '11px' }}>
                         {r.status === 'PENDING_ADMIN_QUOTE' ? 'Awaiting Quote' : r.status}
                       </span>
+                      {r.status === 'CANCELLED' && r.penalty_id && (
+                        <div style={{ marginTop: '4px' }}>
+                          <span className={`badge ${
+                            r.penalty_status === 'PAID' ? 'badge-success' :
+                            r.penalty_status === 'UNPAID' ? 'badge-danger' : 'badge-secondary'
+                          }`} style={{ fontSize: '10px', display: 'inline-block' }}>
+                            ₹15 Fee: {r.penalty_status}
+                          </span>
+                        </div>
+                      )}
                     </td>
                     <td>
                       <button
@@ -360,6 +580,7 @@ export function RidesView() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Ride Details Modal */}
       {selectedRide && (
@@ -496,6 +717,53 @@ export function RidesView() {
               {selectedRide.status === 'CANCELLED' && (
                 <div style={{ background: 'rgba(244, 63, 94, 0.1)', border: '1px solid rgba(244, 63, 94, 0.3)', padding: '12px', borderRadius: '8px', color: '#FB7185', fontSize: '13px' }}>
                   <strong>Cancellation Reason:</strong> {selectedRide.cancellation_reason || 'Not specified'} (By: {selectedRide.cancelled_by_role || 'User'})
+                </div>
+              )}
+
+              {/* Cancellation Penalty & Driver UPI Settlement Card */}
+              {selectedRide.penalty_id && (
+                <div style={{
+                  background: selectedRide.penalty_status === 'UNPAID' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                  border: selectedRide.penalty_status === 'UNPAID' ? '1.5px solid rgba(239, 68, 68, 0.35)' : '1.5px solid rgba(16, 185, 129, 0.35)',
+                  borderRadius: '10px',
+                  padding: '14px 16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontWeight: 800, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', color: selectedRide.penalty_status === 'UNPAID' ? '#EF4444' : '#10B981' }}>
+                      <CreditCard size={16} /> ₹15 Driver Cancellation Compensation
+                    </div>
+                    <span className={`badge ${selectedRide.penalty_status === 'PAID' ? 'badge-success' : selectedRide.penalty_status === 'UNPAID' ? 'badge-danger' : 'badge-secondary'}`} style={{ fontSize: '11px', fontWeight: 800 }}>
+                      {selectedRide.penalty_status === 'UNPAID' ? 'UNPAID (Customer Blocked)' : selectedRide.penalty_status}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-main)', lineHeight: '1.5' }}>
+                    <div><strong>Driver Beneficiary:</strong> {selectedRide.rider_name || 'Driver'}</div>
+                    <div><strong>Driver UPI ID:</strong> <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#047857' }}>{selectedRide.penalty_rider_upi || selectedRide.rider_upi_id || `${selectedRide.rider_phone || 'driver'}@upi`}</span></div>
+                    <div><strong>Passenger Booking Status:</strong> {selectedRide.penalty_status === 'UNPAID' ? 'Blocked from requesting new rides until settled' : 'Booking access active'}</div>
+                  </div>
+                  {selectedRide.penalty_status === 'UNPAID' && (
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleUpdatePenaltyStatus(selectedRide.penalty_id, 'PAID')}
+                        className="btn btn-success btn-sm"
+                        style={{ fontSize: '11px', fontWeight: 700 }}
+                      >
+                        Mark as Paid (Unblock Customer)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleUpdatePenaltyStatus(selectedRide.penalty_id, 'WAIVED')}
+                        className="btn btn-secondary btn-sm"
+                        style={{ fontSize: '11px' }}
+                      >
+                        Waive Penalty
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

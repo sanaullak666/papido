@@ -161,6 +161,46 @@ const CustomerController = {
 
       return success(res, responseMessage, ride, 201);
     } catch (err) {
+      if (err.code === 'UNPAID_CANCELLATION_PENALTY') {
+        return res.status(403).json({
+          success: false,
+          hasPendingPenalty: true,
+          penalty: err.penalty,
+          message: err.message
+        });
+      }
+      return error(res, err.message, 400);
+    }
+  },
+
+  async getPendingPenalty(req, res, next) {
+    try {
+      const PenaltyModel = require('../models/penalty.model');
+      const penalty = await PenaltyModel.getPendingPenaltyForCustomer(req.user.id);
+      if (penalty) {
+        const riderUpi = penalty.rider_upi_id || penalty.profile_upi_id || `${penalty.rider_phone}@upi`;
+        const riderName = penalty.rider_name || penalty.rider_name_full || 'Driver';
+        const upiPayUrl = `upi://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&tn=Papido_Driver_Comp_${penalty.ride_code || 'Fee'}&cu=INR`;
+        return success(res, 'Pending cancellation penalty found.', {
+          ...penalty,
+          riderUpi,
+          riderName,
+          upiPayUrl
+        });
+      }
+      return success(res, 'No pending penalty.', null);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async settlePenalty(req, res, next) {
+    try {
+      const penaltyId = req.params.id;
+      const { paymentReference } = req.body;
+      const result = await RideService.settlePenalty(penaltyId, req.user.id, paymentReference);
+      return success(res, 'Cancellation compensation settled successfully! You can now book rides.', result);
+    } catch (err) {
       return error(res, err.message, 400);
     }
   },

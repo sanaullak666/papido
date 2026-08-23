@@ -537,6 +537,33 @@ const AdminController = {
     } catch (err) {
       next(err);
     }
+  },
+
+  /**
+   * Cancellation Penalties Oversight & Management
+   */
+  async listPenalties(req, res, next) {
+    try {
+      const PenaltyModel = require('../models/penalty.model');
+      const { status, limit = 50, page = 1 } = req.query;
+      const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+      const penalties = await PenaltyModel.listAll({ status, limit, offset });
+      return success(res, 'Cancellation penalties fetched successfully.', penalties);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async updatePenaltyStatus(req, res, next) {
+    try {
+      const penaltyId = req.params.id;
+      const { status, notes } = req.body;
+      const RideService = require('../services/ride.service');
+      const updated = await RideService.updatePenaltyStatus(penaltyId, status, req.user.id, notes);
+      return success(res, `Penalty status updated to ${status}.`, updated);
+    } catch (err) {
+      return error(res, err.message, 400);
+    }
   }
 };
 

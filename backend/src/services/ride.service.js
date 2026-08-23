@@ -56,6 +56,24 @@ const RideService = {
       throw new Error(`You already have an active ride (${existingActive.ride_code}) in progress.`);
     }
 
+    // Check if customer has any unpaid cancellation penalty
+    const PenaltyModel = require('../models/penalty.model');
+    const pendingPenalty = await PenaltyModel.getPendingPenaltyForCustomer(customerId);
+    if (pendingPenalty) {
+      const riderUpi = pendingPenalty.rider_upi_id || pendingPenalty.profile_upi_id || `${pendingPenalty.rider_phone}@upi`;
+      const riderName = pendingPenalty.rider_name || pendingPenalty.rider_name_full || 'Driver';
+      const upiPayUrl = `upi://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&tn=Papido_Driver_Comp_${pendingPenalty.ride_code || 'Fee'}&cu=INR`;
+      const err = new Error(`You have an unpaid ₹15 driver compensation fee for cancelled Ride #${pendingPenalty.ride_code || ''} to driver ${riderName}. Please settle via UPI to unlock new bookings.`);
+      err.penalty = {
+        ...pendingPenalty,
+        riderUpi,
+        riderName,
+        upiPayUrl
+      };
+      err.code = 'UNPAID_CANCELLATION_PENALTY';
+      throw err;
+    }
+
     const isOutsideRide = Boolean(isOutside);
 
     // If outside ride, it will go to admin for custom quoting & dispatch
@@ -603,6 +621,47 @@ const RideService = {
       return reopenedRide;
     }
 
+    let penalty = null;
+    // If Customer cancels AFTER the driver has already REACHED pickup location:
+    // Apply ₹15 driver compensation fee directed to driver's UPI
+    if (cancelledByRole === ROLES.CUSTOMER && ride.status === RIDE_STATUS.RIDER_REACHED && ride.rider_id) {
+      try {
+        const PenaltyModel = require('../models/penalty.model');
+        const UserModel = require('../models/user.model');
+        const RiderModel = require('../models/rider.model');
+        
+        const riderUser = await UserModel.findById(ride.rider_id);
+        const riderProfile = await RiderModel.getProfile(ride.rider_id);
+        
+        const riderUpi = (riderProfile?.upi_id || '').trim() || `${riderUser?.phone || 'driver'}@upi`;
+        const riderName = riderUser?.name || 'Driver';
+        
+        penalty = await PenaltyModel.create({
+          rideId: ride.id,
+          customerId: ride.customer_id,
+          riderId: ride.rider_id,
+          amount: 15.00,
+          riderUpiId: riderUpi,
+          riderName: riderName,
+          notes: `Customer cancelled after driver arrived at pickup location. Reason: ${cancellationReason || 'Direct cancellation'}`
+        });
+
+        const upiPayUrl = `upi://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&tn=Papido_Driver_Comp_${ride.ride_code}&cu=INR`;
+        penalty.upiPayUrl = upiPayUrl;
+
+        // Special notification for Driver
+        await NotificationModel.create({
+          userId: ride.rider_id,
+          title: 'Trip Cancelled — ₹15 Compensation Applied',
+          message: `Passenger cancelled trip ${ride.ride_code} after you reached pickup point. ₹15 compensation has been charged to passenger and directed to your UPI (${riderUpi}).`,
+          type: 'RIDER_COMPENSATION_PENALTY',
+          data: { rideId, penaltyId: penalty.id, amount: 15.00, riderUpi }
+        });
+      } catch (penErr) {
+        console.warn('Failed to record cancellation penalty:', penErr);
+      }
+    }
+
     const updatedRide = await RideModel.updateStatus(rideId, RIDE_STATUS.CANCELLED, {
       cancellationReason,
       cancelledByRole
@@ -614,25 +673,70 @@ const RideService = {
       await NotificationModel.create({
         userId: targetUserId,
         title: 'Ride Cancelled',
-        message: `Ride ${ride.ride_code} was cancelled by ${cancelledByRole.toLowerCase()}. Reason: ${cancellationReason}`,
+        message: penalty
+          ? `Ride ${ride.ride_code} was cancelled after arrival. A ₹15 driver compensation fee applies.`
+          : `Ride ${ride.ride_code} was cancelled by ${cancelledByRole.toLowerCase()}. Reason: ${cancellationReason}`,
         type: 'RIDE_CANCELLED',
-        data: { rideId, reason: cancellationReason }
+        data: { rideId, reason: cancellationReason, penalty }
       });
     }
 
     if (socketManager) {
-      socketManager.emitRideStatusUpdate(updatedRide, RIDE_STATUS.CANCELLED);
+      socketManager.emitRideStatusUpdate({ ...updatedRide, penalty }, RIDE_STATUS.CANCELLED);
     }
 
     await AuditModel.log({
       userId: cancelledByUserId,
-      action: 'RIDE_CANCELLED',
+      action: penalty ? 'RIDE_CANCELLED_WITH_COMPENSATION_PENALTY' : 'RIDE_CANCELLED',
       entityType: 'RIDE',
       entityId: rideId,
-      details: { cancelledByRole, cancellationReason }
+      details: { cancelledByRole, cancellationReason, penalty }
     });
 
-    return updatedRide;
+    return { ...updatedRide, penalty };
+  },
+
+  /**
+   * Settle pending cancellation penalty by customer
+   */
+  async settlePenalty(penaltyId, customerId, paymentReference = null) {
+    const PenaltyModel = require('../models/penalty.model');
+    const penalty = await PenaltyModel.findById(penaltyId);
+    if (!penalty) throw new Error('Penalty record not found.');
+    if (penalty.customer_id !== customerId) throw new Error('Unauthorized.');
+
+    const updated = await PenaltyModel.markAsPaid(penaltyId, paymentReference || `UPI-TXN-${Date.now()}`);
+    
+    // Notify customer
+    await NotificationModel.create({
+      userId: customerId,
+      title: 'Compensation Settled',
+      message: `Your ₹15 cancellation fee for Ride #${penalty.ride_code} has been settled. You can now book rides!`,
+      type: 'PENALTY_SETTLED',
+      data: { penaltyId }
+    });
+
+    return updated;
+  },
+
+  /**
+   * Admin Waive or Mark Paid Penalty
+   */
+  async updatePenaltyStatus(penaltyId, status, adminId, notes = null) {
+    const PenaltyModel = require('../models/penalty.model');
+    const penalty = await PenaltyModel.findById(penaltyId);
+    if (!penalty) throw new Error('Penalty record not found.');
+
+    let updated;
+    if (status === 'PAID') {
+      updated = await PenaltyModel.markAsPaid(penaltyId, `ADMIN-VERIFIED-${Date.now()}`);
+    } else if (status === 'WAIVED') {
+      updated = await PenaltyModel.waivePenalty(penaltyId, adminId, notes || 'Waived by Admin');
+    } else {
+      throw new Error(`Invalid status: ${status}`);
+    }
+
+    return updated;
   },
 
   /**

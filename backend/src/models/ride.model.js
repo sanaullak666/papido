@@ -309,13 +309,15 @@ const RideModel = {
       SELECT r.*, 
              c.name as customer_name, c.phone as customer_phone,
              rd.name as rider_name, rd.phone as rider_phone,
-             rp.vehicle_number, rp.vehicle_model,
-             rt.rating as rating, rt.review as review
+             rp.vehicle_number, rp.vehicle_model, rp.upi_id as rider_upi_id,
+             rt.rating as rating, rt.review as review,
+             cp.id as penalty_id, cp.amount as penalty_amount, cp.status as penalty_status, cp.rider_upi_id as penalty_rider_upi
       FROM rides r
       LEFT JOIN users c ON r.customer_id = c.id
       LEFT JOIN users rd ON r.rider_id = rd.id
       LEFT JOIN rider_profiles rp ON rd.id = rp.user_id
       LEFT JOIN ratings rt ON r.id = rt.ride_id
+      LEFT JOIN cancellation_penalties cp ON r.id = cp.ride_id
       WHERE 1=1
     `;
     const params = [];

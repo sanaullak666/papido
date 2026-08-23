@@ -357,6 +357,29 @@ async function bootstrapMysqlSchema(targetPool) {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
 
+    await targetPool.query(`
+      CREATE TABLE IF NOT EXISTS cancellation_penalties (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        ride_id INT NOT NULL,
+        customer_id INT NOT NULL,
+        rider_id INT NOT NULL,
+        amount DECIMAL(10, 2) NOT NULL DEFAULT 15.00,
+        rider_upi_id VARCHAR(100) DEFAULT '',
+        rider_name VARCHAR(100) DEFAULT '',
+        status VARCHAR(30) NOT NULL DEFAULT 'UNPAID',
+        payment_reference VARCHAR(150) DEFAULT NULL,
+        notes TEXT DEFAULT NULL,
+        waived_by INT DEFAULT NULL,
+        paid_at DATETIME DEFAULT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_cp_customer_status (customer_id, status),
+        INDEX idx_cp_rider_id (rider_id),
+        INDEX idx_cp_ride_id (ride_id),
+        INDEX idx_cp_status (status)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
     // Check if master admin exists
     const [rows] = await targetPool.query('SELECT COUNT(*) as count FROM users');
     if (rows[0].count === 0) {
@@ -454,6 +477,9 @@ async function bootstrapMysqlSchema(targetPool) {
     } catch (_) {}
     try {
       await targetPool.query('ALTER TABLE rides ADD COLUMN waiting_started_at DATETIME DEFAULT NULL AFTER is_waiting;');
+    } catch (_) {}
+    try {
+      await targetPool.query('ALTER TABLE rider_profiles ADD COLUMN upi_id VARCHAR(100) DEFAULT NULL AFTER license_number;');
     } catch (_) {}
   } catch (err) {
     console.warn('[Database Warning] MySQL bootstrap notice:', err.message);

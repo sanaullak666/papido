@@ -32,6 +32,8 @@ router.get('/active-riders', AdminController.listActiveRiders);
 router.post('/outside-rides/:id/dispatch', AdminController.dispatchOutsideRide);
 router.get('/core-members', AdminController.listCoreMembers);
 router.patch('/users/:id/core-status', AdminController.toggleCoreMemberStatus);
+router.get('/penalties', AdminController.listPenalties);
+router.patch('/penalties/:id/status', AdminController.updatePenaltyStatus);
 router.delete('/riders/:id', AdminController.deleteRider);
 router.delete('/users/:id', AdminController.deleteUser);
 
