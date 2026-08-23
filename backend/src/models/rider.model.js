@@ -254,7 +254,7 @@ const RiderModel = {
   },
 
   async getPeriodicLeaderboard({
-    periodType = 'MONTHLY', // 'MONTHLY' | 'YEARLY' | 'ALL_TIME'
+    periodType = 'ALL_TIME', // 'MONTHLY' | 'YEARLY' | 'ALL_TIME'
     year = new Date().getFullYear(),
     month = new Date().getMonth() + 1,
     search = '',
@@ -282,14 +282,19 @@ const RiderModel = {
       ratingParams.push(numYear);
     }
 
-    const availableDatesRaw = await db.query(`
-      SELECT DISTINCT 
-        YEAR(requested_at) as year,
-        MONTH(requested_at) as month
-      FROM rides
-      WHERE requested_at IS NOT NULL
-      ORDER BY year DESC, month DESC
-    `);
+    let availableDatesRaw = [];
+    try {
+      availableDatesRaw = await db.query(`
+        SELECT DISTINCT 
+          YEAR(requested_at) as year,
+          MONTH(requested_at) as month
+        FROM rides
+        WHERE requested_at IS NOT NULL
+        ORDER BY year DESC, month DESC
+      `);
+    } catch (e) {
+      console.warn('Could not fetch available ride dates:', e.message);
+    }
 
     let sql = `
       SELECT 
@@ -317,7 +322,7 @@ const RiderModel = {
         COALESCE(ride_stats.total_rides, 0) as total_rides,
         COALESCE(ride_stats.total_earnings, 0) as total_earnings,
         COALESCE(rating_stats.avg_period_rating, rp.rating, 5.00) as avg_rating,
-        COALESCE(rating_stats.period_rating_count, 0) as period_ratings_count
+        COALESCE(rating_stats.period_rating_count, rp.total_ratings_count, 0) as period_ratings_count
       FROM users u
       LEFT JOIN rider_profiles rp ON u.id = rp.user_id
       LEFT JOIN (
@@ -338,7 +343,7 @@ const RiderModel = {
           ROUND(AVG(rt.rating), 2) as avg_period_rating,
           COUNT(rt.id) as period_rating_count
         FROM ratings rt
-        WHERE rt.rider_id IS NOT NULL AND (rt.rated_by_role = 'CUSTOMER' OR rt.rated_by_role IS NULL) ${ratingDateClause}
+        WHERE rt.rider_id IS NOT NULL ${ratingDateClause}
         GROUP BY rt.rider_id
       ) rating_stats ON u.id = rating_stats.rider_id
       WHERE u.role = 'RIDER'
@@ -421,7 +426,7 @@ const RiderModel = {
     if (filter === 'FLAGGED') {
       filtered = ranked.filter(r => r.is_flagged);
     } else if (filter === 'TOP_PERFORMERS') {
-      filtered = ranked.filter(r => r.completed_rides > 0 && r.avg_rating >= 4.5);
+      filtered = ranked.filter(r => r.avg_rating >= 4.5 && (r.completed_rides > 0 || r.rating_count > 0 || ranked.every(x => x.completed_rides === 0)));
     } else if (filter === 'ONLINE') {
       filtered = ranked.filter(r => r.is_online === 1);
     } else if (filter === 'SUSPENDED') {
