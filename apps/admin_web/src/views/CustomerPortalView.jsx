@@ -940,11 +940,15 @@ export function CustomerPortalView() {
 
     socket.on('penalty:status_update', (data) => {
       console.log('Realtime penalty status update:', data);
+      const isForMe = !data?.customerId || String(data.customerId) === String(user?.id) || (pendingPenalty && String(pendingPenalty.id) === String(data.penaltyId || data.id));
+      if (!isForMe) return;
+
       if (data.status === 'PAID') {
         setPendingPenalty(null);
         setShowPenaltyModal(false);
         setStatusMessage('Driver confirmed receipt of ₹15! Booking unlocked.');
-        alert('Driver has confirmed receipt of ₹15 compensation. Your account is now unlocked!');
+        fetchActiveRide(true);
+        fetchPendingPenalty();
       } else if (data.status === 'UNPAID') {
         setPendingPenalty(prev => prev ? { ...prev, status: 'UNPAID' } : null);
         alert('Driver indicated ₹15 was not received. Please scan the QR code or verify your UPI payment.');
@@ -954,7 +958,7 @@ export function CustomerPortalView() {
     return () => {
       socket.disconnect();
     };
-  }, [token]);
+  }, [token, user?.id]);
 
   // 5b. Fetch Pending Driver Compensation Penalty (if any)
   const fetchPendingPenalty = async () => {
@@ -964,7 +968,13 @@ export function CustomerPortalView() {
       if (res && res.data) {
         setPendingPenalty(res.data);
       } else {
-        setPendingPenalty(null);
+        setPendingPenalty(prev => {
+          if (prev && prev.status === 'PENDING_DRIVER_CONFIRMATION') {
+            setShowPenaltyModal(false);
+            setStatusMessage('Driver confirmed receipt of ₹15! Booking unlocked.');
+          }
+          return null;
+        });
       }
     } catch (_) {}
   };
@@ -972,6 +982,17 @@ export function CustomerPortalView() {
   useEffect(() => {
     fetchPendingPenalty();
   }, [token, currentTab]);
+
+  // Live Auto-Poll Listener when waiting for Driver Confirmation (guarantees automatic update without manual refresh)
+  useEffect(() => {
+    if (!token || !pendingPenalty) return;
+    if (pendingPenalty.status === 'PENDING_DRIVER_CONFIRMATION') {
+      const interval = setInterval(() => {
+        fetchPendingPenalty();
+      }, 1500);
+      return () => clearInterval(interval);
+    }
+  }, [token, pendingPenalty?.status]);
 
   // 6. Handle Request Ride
   const handleRequestRide = async () => {

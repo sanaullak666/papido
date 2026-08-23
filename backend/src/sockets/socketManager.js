@@ -429,12 +429,15 @@ class SocketManager {
 
     if (penalty.customer_id) {
       this.io.to(`user_${penalty.customer_id}`).emit('penalty:status_update', payload);
+      this.io.to(`customer_${penalty.customer_id}`).emit('penalty:status_update', payload);
     }
     if (penalty.rider_id) {
       this.io.to(`user_${penalty.rider_id}`).emit('penalty:status_update', payload);
       this.io.to(`rider_${penalty.rider_id}`).emit('penalty:status_update', payload);
     }
+    this.io.to('role_CUSTOMER').emit('penalty:status_update', payload);
     this.io.to('role_ADMIN').emit('admin:penalty_status_update', payload);
+    this.io.emit('penalty:status_update', payload);
   }
 }
 
