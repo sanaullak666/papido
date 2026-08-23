@@ -1517,7 +1517,7 @@ export function CustomerPortalView() {
                         Waiting & Multi-Stop Rules Policy
                       </div>
                       <div style={{ fontSize: '11px', color: '#796D61', lineHeight: '1.45' }}>
-                        • <strong>Waiting Charges:</strong> ₹10 per 10 minutes (₹1/min) automatically added if rider is requested to wait (e.g. 10 mins = +₹10, 20 mins = +₹20).<br />
+                        • <strong>Waiting Charges:</strong> First 9 minutes are free. ₹10 is automatically added for every 10 full minutes of waiting (e.g. 10 mins = +₹10, 20 mins = +₹20).<br />
                         • <strong>On Waiting:</strong> Rider can activate the live waiting timer on arrival or during intermediate stops.
                       </div>
                     </div>

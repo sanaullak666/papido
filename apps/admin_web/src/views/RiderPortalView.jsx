@@ -1481,7 +1481,7 @@ export function RiderPortalView() {
                             {activeRide.is_waiting ? 'DRIVER ON WAITING MODE' : 'Trip Waiting Controls'}
                           </div>
                           <div style={{ fontSize: '11px', color: '#796D61' }}>
-                            Policy: ₹10 per 10 minutes (₹1/min) added to passenger fare
+                            Policy: 0–9 mins free, ₹10 added for every 10 full minutes of waiting
                           </div>
                         </div>
                       </div>
