@@ -626,12 +626,12 @@ export function CustomerPortalView() {
     const bounds = [];
 
     // Pickup Marker (Green)
-    if (pickupCoords) {
+    if (pickupCoords && pickupCoords.lat && pickupCoords.lng) {
       const pickupIcon = window.L.divIcon({
         className: 'custom-map-pin',
-        html: `<div style="background: #10B981; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">P</div>`,
-        iconSize: [30, 30],
-        iconAnchor: [15, 15]
+        html: `<div style="background: #10B981; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">P</div>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
       });
       const m = window.L.marker([pickupCoords.lat, pickupCoords.lng], { icon: pickupIcon })
         .addTo(map)
@@ -641,12 +641,12 @@ export function CustomerPortalView() {
     }
 
     // Destination Marker (Amber)
-    if (destCoords) {
+    if (destCoords && destCoords.lat && destCoords.lng) {
       const destIcon = window.L.divIcon({
         className: 'custom-map-pin',
-        html: `<div style="background: #F59E0B; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: black; font-weight: bold; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">D</div>`,
-        iconSize: [30, 30],
-        iconAnchor: [15, 15]
+        html: `<div style="background: #F59E0B; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: black; font-weight: bold; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">D</div>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16]
       });
       const m = window.L.marker([destCoords.lat, destCoords.lng], { icon: destIcon })
         .addTo(map)
@@ -655,23 +655,38 @@ export function CustomerPortalView() {
       bounds.push([destCoords.lat, destCoords.lng]);
     }
 
-    // Driver Marker (Cyan Bike)
-    if (driverLocation) {
+    // Driver Marker (Cyan Bike with heading rotation)
+    if (driverLocation && driverLocation.lat && driverLocation.lng) {
+      const heading = driverLocation.heading || 0;
       const driverIcon = window.L.divIcon({
         className: 'custom-map-pin',
-        html: `<div style="background: #06B6D4; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; border: 3px solid white; box-shadow: 0 4px 12px rgba(6,182,212,0.6);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg></div>`,
-        iconSize: [34, 34],
-        iconAnchor: [17, 17]
+        html: `<div style="background: #06B6D4; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; border: 3px solid white; box-shadow: 0 4px 14px rgba(6,182,212,0.7); transform: rotate(${heading}deg); transition: transform 0.4s ease;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg></div>`,
+        iconSize: [36, 36],
+        iconAnchor: [18, 18]
       });
+      const driverLabel = activeRide?.rider_name ? `<b>${activeRide.rider_name}</b> (Driver)` : '<b>Your Driver</b>';
       const m = window.L.marker([driverLocation.lat, driverLocation.lng], { icon: driverIcon })
         .addTo(map)
-        .bindPopup('<b>Driver Location</b>');
+        .bindPopup(`${driverLabel}<br/><span style="font-size:11px;color:#06B6D4;font-weight:700;">🟢 Live Location Active</span>`);
       markersRef.current.push(m);
       bounds.push([driverLocation.lat, driverLocation.lng]);
-    }
 
-    // Polyline Route
-    if (pickupCoords && destCoords) {
+      // Route from Driver to destination if trip started, or Driver to pickup if arriving
+      if (activeRide?.status === 'STARTED' && destCoords && destCoords.lat && destCoords.lng) {
+        const line = window.L.polyline(
+          [[driverLocation.lat, driverLocation.lng], [destCoords.lat, destCoords.lng]],
+          { color: '#F59E0B', weight: 4, opacity: 0.85, dashArray: '6, 6' }
+        ).addTo(map);
+        markersRef.current.push(line);
+      } else if (pickupCoords && pickupCoords.lat && pickupCoords.lng) {
+        const line = window.L.polyline(
+          [[driverLocation.lat, driverLocation.lng], [pickupCoords.lat, pickupCoords.lng]],
+          { color: '#06B6D4', weight: 4, opacity: 0.85, dashArray: '6, 6' }
+        ).addTo(map);
+        markersRef.current.push(line);
+      }
+    } else if (pickupCoords && destCoords && pickupCoords.lat && destCoords.lat) {
+      // Polyline Route between Pickup and Destination
       const line = window.L.polyline(
         [[pickupCoords.lat, pickupCoords.lng], [destCoords.lat, destCoords.lng]],
         { color: '#F59E0B', weight: 4, opacity: 0.8, dashArray: '8, 8' }
@@ -680,9 +695,9 @@ export function CustomerPortalView() {
     }
 
     if (bounds.length > 0) {
-      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
+      map.fitBounds(bounds, { padding: [45, 45], maxZoom: 16 });
     }
-  }, [pickupCoords, destCoords, pickupAddress, destAddress, driverLocation]);
+  }, [pickupCoords, destCoords, pickupAddress, destAddress, driverLocation, activeRide?.status]);
 
   // 2b. Initialize Outside Map
   useEffect(() => {
@@ -836,6 +851,63 @@ export function CustomerPortalView() {
     }
   };
 
+  // Sync active ride coordinates to map states
+  useEffect(() => {
+    if (activeRide) {
+      if (activeRide.pickup_latitude && activeRide.pickup_longitude) {
+        setPickupCoords({
+          lat: Number(activeRide.pickup_latitude),
+          lng: Number(activeRide.pickup_longitude)
+        });
+      }
+      if (activeRide.destination_latitude && activeRide.destination_longitude) {
+        setDestCoords({
+          lat: Number(activeRide.destination_latitude),
+          lng: Number(activeRide.destination_longitude)
+        });
+      }
+      if (activeRide.rider_latitude && activeRide.rider_longitude && !driverLocation) {
+        setDriverLocation({
+          lat: Number(activeRide.rider_latitude),
+          lng: Number(activeRide.rider_longitude),
+          heading: 0,
+          speed: 0
+        });
+      }
+    }
+  }, [activeRide?.id]);
+
+  // Join Active Ride Room for live GPS tracking stream
+  useEffect(() => {
+    if (socketRef.current && activeRide?.id) {
+      socketRef.current.emit('join_ride', activeRide.id);
+    }
+  }, [activeRide?.id]);
+
+  // Calculate live distance & ETA between driver and pickup/dropoff
+  const getLiveDriverEta = () => {
+    if (!driverLocation || !driverLocation.lat || !driverLocation.lng) return null;
+    const target = (activeRide?.status === 'STARTED') ? destCoords : pickupCoords;
+    if (!target || !target.lat || !target.lng) return null;
+
+    const R = 6371; // Earth radius in km
+    const dLat = (target.lat - driverLocation.lat) * (Math.PI / 180);
+    const dLon = (target.lng - driverLocation.lng) * (Math.PI / 180);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(driverLocation.lat * (Math.PI / 180)) * Math.cos(target.lat * (Math.PI / 180)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distKm = R * c;
+
+    const meters = Math.round(distKm * 1000);
+    const estMins = Math.max(1, Math.round((distKm / 20) * 60)); // ~20km/h average campus bike speed
+    return {
+      distanceStr: meters < 1000 ? `${meters} m` : `${distKm.toFixed(1)} km`,
+      etaStr: `~${estMins} min${estMins > 1 ? 's' : ''}`
+    };
+  };
+
   useEffect(() => {
     if (!token) return;
     fetchActiveRide(false);
@@ -932,11 +1004,18 @@ export function CustomerPortalView() {
       }
     });
 
-    socket.on('rider:location_update', (loc) => {
-      if (loc && loc.latitude && loc.longitude) {
-        setDriverLocation({ lat: loc.latitude, lng: loc.longitude });
+    const handleLocationPing = (loc) => {
+      if (loc && (loc.latitude || loc.lat) && (loc.longitude || loc.lng)) {
+        const lat = Number(loc.latitude || loc.lat);
+        const lng = Number(loc.longitude || loc.lng);
+        const heading = Number(loc.heading || 0);
+        const speed = Number(loc.speed || 0);
+        setDriverLocation({ lat, lng, heading, speed });
       }
-    });
+    };
+
+    socket.on('ride:location_track', handleLocationPing);
+    socket.on('rider:location_update', handleLocationPing);
 
     socket.on('penalty:status_update', (data) => {
       console.log('Realtime penalty status update:', data);
@@ -956,6 +1035,8 @@ export function CustomerPortalView() {
     });
 
     return () => {
+      socket.off('ride:location_track', handleLocationPing);
+      socket.off('rider:location_update', handleLocationPing);
       socket.disconnect();
     };
   }, [token, user?.id]);
@@ -2044,6 +2125,45 @@ export function CustomerPortalView() {
                           </a>
                         )}
                       </div>
+
+                      {/* Live GPS Tracking Badge & ETA */}
+                      {driverLocation && (
+                        <div style={{
+                          background: 'rgba(6, 182, 212, 0.08)',
+                          border: '1px solid rgba(6, 182, 212, 0.3)',
+                          borderRadius: '10px',
+                          padding: '10px 12px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '8px'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{
+                              width: '8px',
+                              height: '8px',
+                              borderRadius: '50%',
+                              background: '#06B6D4',
+                              boxShadow: '0 0 8px #06B6D4'
+                            }} />
+                            <div style={{ fontSize: '12px', color: 'var(--text-primary)' }}>
+                              <strong>Live GPS:</strong> {getLiveDriverEta() ? `${getLiveDriverEta().distanceStr} (${getLiveDriverEta().etaStr})` : 'Connected'}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (leafletMapRef.current && driverLocation.lat && driverLocation.lng) {
+                                leafletMapRef.current.setView([driverLocation.lat, driverLocation.lng], 16);
+                              }
+                            }}
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '3px 8px', fontSize: '11px', fontWeight: 700 }}
+                          >
+                            <Navigation size={12} style={{ marginRight: '4px' }} /> Focus Driver
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
 

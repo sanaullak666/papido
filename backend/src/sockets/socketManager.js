@@ -128,15 +128,15 @@ class SocketManager {
           const { latitude, longitude, rideId } = data;
 
           if (riderId && latitude && longitude) {
-            // Update database
+            // Update database with latest coordinates
             await RiderModel.updateLocation(riderId, latitude, longitude);
 
             const payload = {
               riderId,
-              latitude,
-              longitude,
-              heading: data.heading || 0,
-              speed: data.speed || 0,
+              latitude: Number(latitude),
+              longitude: Number(longitude),
+              heading: Number(data.heading || 0),
+              speed: Number(data.speed || 0),
               timestamp: new Date().toISOString()
             };
 
@@ -146,6 +146,15 @@ class SocketManager {
             // Broadcast to Ride room if rider is on an active ride
             if (rideId) {
               this.io.to(`ride_${rideId}`).emit(SOCKET_EVENTS.RIDE_LOCATION_TRACK, payload);
+              this.io.to(`ride_${rideId}`).emit('rider:location_update', payload);
+
+              try {
+                const activeRideData = await RideModel.findById(rideId);
+                if (activeRideData && activeRideData.customer_id) {
+                  this.io.to(`user_${activeRideData.customer_id}`).emit(SOCKET_EVENTS.RIDE_LOCATION_TRACK, payload);
+                  this.io.to(`user_${activeRideData.customer_id}`).emit('rider:location_update', payload);
+                }
+              } catch (_) {}
             }
           }
         } catch (err) {

@@ -748,6 +748,7 @@ h1, h2, h3, h4, h5, h6 {
 .custom-map-pin {
   background: transparent !important;
   border: none !important;
+  transition: transform 0.4s ease, opacity 0.3s ease;
 }
 
 /* Pulsing Radar Animation */

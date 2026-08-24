@@ -162,6 +162,11 @@ export function RiderPortalView() {
   const [passSuccess, setPassSuccess] = useState(null);
   const [passUpdating, setPassUpdating] = useState(false);
 
+  // Live GPS Tracking & Driver Location State
+  const [driverLocation, setDriverLocation] = useState({ lat: 12.0240, lng: 79.8530, heading: 0, speed: 0 });
+  const [gpsActive, setGpsActive] = useState(false);
+  const [gpsError, setGpsError] = useState(null);
+
   // Leaflet Map Ref
   const mapRef = useRef(null);
   const leafletMapRef = useRef(null);
@@ -213,7 +218,7 @@ export function RiderPortalView() {
     }
   };
 
-  // 1. Initialize Leaflet Map
+  // 1. Initialize Leaflet Map (Centered on Pondicherry University)
   useEffect(() => {
     if (mapRef.current && !leafletMapRef.current && window.L) {
       const map = window.L.map(mapRef.current).setView([12.0228, 79.8509], 15);
@@ -223,6 +228,71 @@ export function RiderPortalView() {
       leafletMapRef.current = map;
     }
   }, [mapRef]);
+
+  // Live GPS Tracking Effect (HTML5 Geolocation watchPosition - 100% Free)
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setGpsError('Geolocation is not supported by this browser.');
+      return;
+    }
+
+    let watchId = null;
+
+    if (isOnline || activeRide) {
+      setGpsActive(true);
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const { latitude, longitude, heading, speed } = position.coords;
+          const newLoc = {
+            lat: Number(latitude),
+            lng: Number(longitude),
+            heading: Number(heading || 0),
+            speed: Number(speed || 0)
+          };
+          setDriverLocation(newLoc);
+          setGpsError(null);
+
+          // Emit live location ping via Socket.IO
+          if (socketRef.current) {
+            socketRef.current.emit('rider:location_update', {
+              rideId: activeRide?.id,
+              riderId: user?.id,
+              latitude: Number(latitude),
+              longitude: Number(longitude),
+              heading: Number(heading || 0),
+              speed: Number(speed || 0)
+            });
+          }
+        },
+        (err) => {
+          console.warn('GPS watchPosition notice:', err.message);
+          if (err.code === 1) {
+            setGpsError('Location permission denied. Please allow GPS.');
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 1000,
+          timeout: 10000
+        }
+      );
+    } else {
+      setGpsActive(false);
+    }
+
+    return () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+    };
+  }, [isOnline, activeRide?.id, user?.id]);
+
+  // Join Active Ride Room for Direct Tracking
+  useEffect(() => {
+    if (socketRef.current && activeRide?.id) {
+      socketRef.current.emit('join_ride', activeRide.id);
+    }
+  }, [activeRide?.id]);
 
   // 2. Fetch Active Trip & Earnings
   const fetchActiveRide = async () => {
@@ -651,7 +721,7 @@ export function RiderPortalView() {
     };
   }, [token, isOnline, declinedRideIds, activeRide, user]);
 
-  // 5. Update Map when active trip changes
+  // 5. Update Map when active trip changes or driver moves
   useEffect(() => {
     if (!leafletMapRef.current || !window.L) return;
     const map = leafletMapRef.current;
@@ -661,24 +731,28 @@ export function RiderPortalView() {
 
     const bounds = [];
 
-    // Driver location marker
+    const curLat = driverLocation?.lat || 12.0240;
+    const curLng = driverLocation?.lng || 79.8530;
+    const curHeading = driverLocation?.heading || 0;
+
+    // Driver location marker with orientation
     const driverIcon = window.L.divIcon({
       className: 'custom-map-pin',
-      html: `<div style="background: #06B6D4; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; border: 3px solid white; box-shadow: 0 4px 12px rgba(6,182,212,0.6);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg></div>`,
-      iconSize: [34, 34],
-      iconAnchor: [17, 17]
+      html: `<div style="background: #06B6D4; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; border: 3px solid white; box-shadow: 0 4px 14px rgba(6,182,212,0.7); transform: rotate(${curHeading}deg); transition: transform 0.4s ease;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg></div>`,
+      iconSize: [36, 36],
+      iconAnchor: [18, 18]
     });
-    const driverMarker = window.L.marker([12.0240, 79.8530], { icon: driverIcon }).addTo(map).bindPopup('<b>You (Driver)</b>');
+    const driverMarker = window.L.marker([curLat, curLng], { icon: driverIcon }).addTo(map).bindPopup('<b>You (Driver) - Live GPS</b>');
     markersRef.current.push(driverMarker);
-    bounds.push([12.0240, 79.8530]);
+    bounds.push([curLat, curLng]);
 
     if (activeRide) {
       if (activeRide.pickup_latitude && activeRide.pickup_longitude) {
         const pickupIcon = window.L.divIcon({
           className: 'custom-map-pin',
-          html: `<div style="background: #10B981; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">P</div>`,
-          iconSize: [30, 30],
-          iconAnchor: [15, 15]
+          html: `<div style="background: #10B981; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">P</div>`,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16]
         });
         const pMarker = window.L.marker([activeRide.pickup_latitude, activeRide.pickup_longitude], { icon: pickupIcon })
           .addTo(map)
@@ -690,9 +764,9 @@ export function RiderPortalView() {
       if (activeRide.destination_latitude && activeRide.destination_longitude) {
         const destIcon = window.L.divIcon({
           className: 'custom-map-pin',
-          html: `<div style="background: #F59E0B; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: black; font-weight: bold; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">D</div>`,
-          iconSize: [30, 30],
-          iconAnchor: [15, 15]
+          html: `<div style="background: #F59E0B; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: black; font-weight: bold; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">D</div>`,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16]
         });
         const dMarker = window.L.marker([activeRide.destination_latitude, activeRide.destination_longitude], { icon: destIcon })
           .addTo(map)
@@ -700,12 +774,27 @@ export function RiderPortalView() {
         markersRef.current.push(dMarker);
         bounds.push([activeRide.destination_latitude, activeRide.destination_longitude]);
       }
+
+      // Polyline route from Driver to Pickup (if arriving) or to Dropoff (if started)
+      if (activeRide.status === 'STARTED' && activeRide.destination_latitude && activeRide.destination_longitude) {
+        const routeLine = window.L.polyline(
+          [[curLat, curLng], [activeRide.destination_latitude, activeRide.destination_longitude]],
+          { color: '#F59E0B', weight: 4, opacity: 0.85, dashArray: '6, 6' }
+        ).addTo(map);
+        markersRef.current.push(routeLine);
+      } else if (activeRide.pickup_latitude && activeRide.pickup_longitude) {
+        const routeLine = window.L.polyline(
+          [[curLat, curLng], [activeRide.pickup_latitude, activeRide.pickup_longitude]],
+          { color: '#06B6D4', weight: 4, opacity: 0.85, dashArray: '6, 6' }
+        ).addTo(map);
+        markersRef.current.push(routeLine);
+      }
     }
 
     if (bounds.length > 0) {
-      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
+      map.fitBounds(bounds, { padding: [45, 45], maxZoom: 16 });
     }
-  }, [activeRide]);
+  }, [activeRide, driverLocation]);
 
   // 6. Handle Accept Ride
   const handleAcceptRequest = async (rideId) => {
