@@ -596,13 +596,6 @@ h1, h2, h3, h4, h5, h6 {
   gap: 20px;
 }
 
-.portal-map-pane {
-  position: relative;
-  height: 100%;
-  width: 100%;
-  background: #0F172A;
-}
-
 /* Horizontal Scrollable Tabs */
 .nav-scrollable-tabs {
   display: flex;
@@ -705,12 +698,6 @@ h1, h2, h3, h4, h5, h6 {
     overflow-y: visible;
   }
 
-  .portal-map-pane {
-    height: 220px;
-    min-height: 220px;
-    flex-shrink: 0;
-  }
-
   /* Responsive Auth Card */
   .auth-card-container {
     padding: 24px 16px !important;
@@ -737,10 +724,6 @@ h1, h2, h3, h4, h5, h6 {
 @media (max-width: 480px) {
   .top-bar-actions span {
     display: none;
-  }
-  .portal-map-pane {
-    height: 190px;
-    min-height: 190px;
   }
 }
 
@@ -860,9 +843,6 @@ h1, h2, h3, h4, h5, h6 {
   color: #1C1917 !important;
 }
 
-.theme-orange-beige .portal-map-pane {
-  background: #EFE6D9 !important;
-}
 
 .theme-orange-beige .btn-primary {
   background: linear-gradient(135deg, #F97316, #EA580C) !important;

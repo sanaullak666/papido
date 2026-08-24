@@ -1469,9 +1469,8 @@ export function CustomerPortalView() {
         {/* TAB 1: BOOK RIDE & LIVE TRIP TRACKING */}
         {/* ============================================================ */}
         {currentTab === 'book' && (
-          <div className="portal-split-layout">
-            {/* Left Booking / Active Trip Panel */}
-            <div className="portal-content-pane">
+          <div className="content-body" style={{ maxWidth: '680px', margin: '0 auto', width: '100%', padding: '24px 16px' }}>
+            <div style={{ background: '#FFFFFF', border: '1.5px solid #E8DCCB', borderRadius: '16px', padding: '24px', boxShadow: '0 10px 30px rgba(234, 88, 12, 0.08)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {/* If NO Active Ride: Show Booking Engine */}
               {!activeRide && (
                 <>
@@ -2289,9 +2288,6 @@ export function CustomerPortalView() {
                 )
               )}
             </div>
-
-            {/* Right Interactive Leaflet Campus Map */}
-            <div className="portal-map-pane" ref={mapRef} />
           </div>
         )}
 

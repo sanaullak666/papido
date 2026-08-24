@@ -1278,9 +1278,8 @@ export function RiderPortalView() {
         {/* TAB 1: RADAR & INCOMING RIDE REQUESTS */}
         {/* ============================================================ */}
         {currentTab === 'radar' && (
-          <div className="portal-split-layout">
-            {/* Left Radar Panel */}
-            <div className="portal-content-pane">
+          <div className="content-body" style={{ maxWidth: '680px', margin: '0 auto', width: '100%', padding: '24px 16px' }}>
+            <div style={{ background: '#FFFFFF', border: '1.5px solid #E8DCCB', borderRadius: '16px', padding: '24px', boxShadow: '0 10px 30px rgba(234, 88, 12, 0.08)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {/* KYC Status Notice Banner */}
               {kycStatus !== 'APPROVED' && (
                 <div style={{
@@ -1526,9 +1525,6 @@ export function RiderPortalView() {
                 </div>
               )}
             </div>
-
-            {/* Right Leaflet Map */}
-            <div className="portal-map-pane" ref={mapRef} />
           </div>
         )}
 
