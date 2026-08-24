@@ -218,7 +218,10 @@ const CustomerController = {
 
   async getActiveRide(req, res, next) {
     try {
-      const activeRide = await RideModel.getActiveRideForCustomer(req.user.id);
+      let activeRide = await RideModel.getActiveRideForCustomer(req.user.id);
+      if (!activeRide) {
+        activeRide = await RideModel.getLatestCompletedUnratedRideForCustomer(req.user.id);
+      }
       return success(res, 'Active ride status retrieved.', activeRide);
     } catch (err) {
       next(err);

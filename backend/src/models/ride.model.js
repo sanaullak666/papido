@@ -180,12 +180,32 @@ const RideModel = {
       JOIN users c ON r.customer_id = c.id
       LEFT JOIN users rd ON r.rider_id = rd.id
       LEFT JOIN rider_profiles rp ON rd.id = rp.user_id
+      WHERE r.customer_id = ? 
+        AND r.status IN ('PENDING_ADMIN_QUOTE', 'REQUESTED', 'ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED')
+      ORDER BY r.id DESC LIMIT 1
+    `;
+    return db.queryOne(sql, [customerId]);
+  },
+
+  async getLatestCompletedUnratedRideForCustomer(customerId) {
+    const sql = `
+      SELECT r.*, 
+             COALESCE(r.final_fare, r.estimated_fare) as total_fare,
+             c.name as customer_name, c.gender as customer_gender,
+             rd.name as rider_name, rd.gender as rider_gender, rd.phone as rider_phone, rd.profile_image as rider_avatar,
+             COALESCE(rp.is_core_member, rd.is_core_member, 0) as rider_is_core,
+             rp.vehicle_type as rider_vehicle_type, rp.vehicle_number, rp.vehicle_number as rider_vehicle_number,
+             rp.vehicle_model, rp.vehicle_model as rider_vehicle_model, rp.rating as rider_rating,
+             rp.current_latitude as rider_current_lat, rp.current_longitude as rider_current_lng
+      FROM rides r
+      JOIN users c ON r.customer_id = c.id
+      LEFT JOIN users rd ON r.rider_id = rd.id
+      LEFT JOIN rider_profiles rp ON rd.id = rp.user_id
       LEFT JOIN ratings rt ON r.id = rt.ride_id
       WHERE r.customer_id = ? 
-        AND (
-          r.status IN ('PENDING_ADMIN_QUOTE', 'REQUESTED', 'ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED')
-          OR (r.status = 'COMPLETED' AND rt.id IS NULL AND r.updated_at >= NOW() - INTERVAL 15 MINUTE)
-        )
+        AND r.status = 'COMPLETED'
+        AND rt.id IS NULL
+        AND r.updated_at >= NOW() - INTERVAL 15 MINUTE
       ORDER BY r.id DESC LIMIT 1
     `;
     return db.queryOne(sql, [customerId]);

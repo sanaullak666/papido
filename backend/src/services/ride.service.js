@@ -50,9 +50,9 @@ const RideService = {
     isDoubleRide = false,
     isOutside = false
   }) {
-    // Check if customer already has an active ride
+    // Check if customer already has an active ride in progress
     const existingActive = await RideModel.getActiveRideForCustomer(customerId);
-    if (existingActive) {
+    if (existingActive && ['PENDING_ADMIN_QUOTE', 'REQUESTED', 'ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED'].includes(existingActive.status)) {
       throw new Error(`You already have an active ride (${existingActive.ride_code}) in progress.`);
     }
 
