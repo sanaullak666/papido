@@ -180,8 +180,12 @@ const RideModel = {
       JOIN users c ON r.customer_id = c.id
       LEFT JOIN users rd ON r.rider_id = rd.id
       LEFT JOIN rider_profiles rp ON rd.id = rp.user_id
+      LEFT JOIN ratings rt ON r.id = rt.ride_id
       WHERE r.customer_id = ? 
-        AND r.status IN ('PENDING_ADMIN_QUOTE', 'REQUESTED', 'ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED')
+        AND (
+          r.status IN ('PENDING_ADMIN_QUOTE', 'REQUESTED', 'ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED')
+          OR (r.status = 'COMPLETED' AND rt.id IS NULL AND r.updated_at >= NOW() - INTERVAL 15 MINUTE)
+        )
       ORDER BY r.id DESC LIMIT 1
     `;
     return db.queryOne(sql, [customerId]);

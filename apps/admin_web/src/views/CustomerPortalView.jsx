@@ -812,8 +812,8 @@ export function CustomerPortalView() {
       if (!isBackground) setRideLoading(true);
       const res = await apiRequest('/customer/rides/active', 'GET', null, token);
       const ride = res.data || null;
-      setActiveRide(ride);
       if (ride) {
+        setActiveRide(ride);
         if (ride.status === 'PENDING_ADMIN_QUOTE') {
           setStatusMessage('Submitted to Dispatch — Admin is setting the fare & assigning a rider.');
         } else if (ride.status === 'REQUESTED') {
@@ -827,8 +827,14 @@ export function CustomerPortalView() {
         } else if (ride.status === 'STARTED') {
           setStatusMessage('Trip started! On the way to destination.');
         } else if (ride.status === 'COMPLETED') {
-          setStatusMessage('Thank you for booking with Papido! Trip completed successfully.');
+          setStatusMessage('Thank you for riding with Papido! Trip completed successfully.');
         }
+      } else {
+        // Do not erase activeRide if it is currently waiting for customer feedback
+        setActiveRide(prev => {
+          if (prev && prev.status === 'COMPLETED') return prev;
+          return null;
+        });
       }
     } catch (err) {
       console.warn('Failed to fetch active ride:', err);
@@ -864,30 +870,49 @@ export function CustomerPortalView() {
     socket.on('ride:status_change', (data) => {
       console.log('Realtime ride status change:', data);
       const rideObj = data?.ride || data;
-      if (rideObj) {
-        const fare = rideObj.total_fare || rideObj.estimated_fare || rideObj.final_fare || 20;
+      const newStatus = data.status || rideObj?.status;
+      if (rideObj || newStatus) {
+        const fare = rideObj?.total_fare || rideObj?.estimated_fare || rideObj?.final_fare || 20;
         setActiveRide(prev => ({
           ...(prev || {}),
-          ...rideObj,
-          status: data.status || rideObj.status,
+          ...(rideObj || {}),
+          status: newStatus || prev?.status,
           total_fare: fare,
           estimated_fare: fare,
           final_fare: fare
         }));
       }
-      fetchActiveRide();
 
-      if (data.status === 'ACCEPTED') {
+      if (newStatus === 'ACCEPTED') {
         setStatusMessage('A campus rider has accepted your trip!');
-      } else if (data.status === 'RIDER_ARRIVING') {
+      } else if (newStatus === 'RIDER_ARRIVING') {
         setStatusMessage('Rider is on the way to your pickup location.');
-      } else if (data.status === 'RIDER_REACHED') {
+      } else if (newStatus === 'RIDER_REACHED') {
         setStatusMessage('Rider has arrived! Share your 4-digit Ride OTP to start.');
-      } else if (data.status === 'STARTED') {
+      } else if (newStatus === 'STARTED') {
         setStatusMessage('Trip started! On the way to destination.');
-      } else if (data.status === 'COMPLETED') {
-        setStatusMessage('Thank you for booking with Papido! Trip completed successfully.');
+      } else if (newStatus === 'COMPLETED') {
+        setStatusMessage('Thank you for riding with Papido! Trip completed successfully.');
       }
+
+      if (newStatus !== 'COMPLETED') {
+        fetchActiveRide();
+      }
+    });
+
+    socket.on('ride:completed', (data) => {
+      console.log('Realtime ride completed event received:', data);
+      const rideObj = data?.ride || data;
+      const fare = rideObj?.total_fare || rideObj?.estimated_fare || rideObj?.final_fare || 20;
+      setActiveRide(prev => ({
+        ...(prev || {}),
+        ...(rideObj || {}),
+        status: 'COMPLETED',
+        total_fare: fare,
+        estimated_fare: fare,
+        final_fare: fare
+      }));
+      setStatusMessage('Thank you for riding with Papido! Trip completed successfully.');
     });
 
     socket.on('ride:accepted', (data) => {
