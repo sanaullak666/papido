@@ -681,9 +681,24 @@ export function CustomerPortalView() {
         iconAnchor: [18, 18]
       });
       const driverLabel = activeRide?.rider_name ? `<b>${activeRide.rider_name}</b> (Driver)` : '<b>Your Driver</b>';
+      const gmapsUrl = `https://www.google.com/maps?q=${driverLocation.lat},${driverLocation.lng}`;
+      const accuracyStr = driverLocation.accuracy ? ` • ±${Math.round(driverLocation.accuracy)}m` : '';
+      const popupHtml = `
+        <div style="min-width: 175px; padding: 4px 2px; font-family: inherit;">
+          <div style="font-size: 13px; font-weight: 800; color: #1C1917; margin-bottom: 2px;">${driverLabel}</div>
+          <div style="font-size: 11px; color: #06B6D4; font-weight: 700; display: flex; align-items: center; gap: 4px; margin-bottom: 8px;">
+            <span>🟢 Live GPS${accuracyStr}</span>
+          </div>
+          <a href="${gmapsUrl}" target="_blank" rel="noopener noreferrer" 
+             style="display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 7px 10px; background: linear-gradient(135deg, #F97316, #EA580C); color: #FFFFFF; font-size: 11px; font-weight: 800; text-decoration: none; border-radius: 6px; box-shadow: 0 2px 8px rgba(234, 88, 12, 0.35);">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+            Open in Google Maps
+          </a>
+        </div>
+      `;
       const m = window.L.marker([driverLocation.lat, driverLocation.lng], { icon: driverIcon })
         .addTo(map)
-        .bindPopup(`${driverLabel}<br/><span style="font-size:11px;color:#06B6D4;font-weight:700;">🟢 Live Location Active</span>`);
+        .bindPopup(popupHtml);
       markersRef.current.push(m);
       bounds.push([driverLocation.lat, driverLocation.lng]);
 
@@ -2188,18 +2203,29 @@ export function CustomerPortalView() {
                               <strong>Live GPS:</strong> {getLiveDriverEta() ? `${getLiveDriverEta().distanceStr} (${getLiveDriverEta().etaStr})` : 'Connected'}
                             </div>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (leafletMapRef.current && driverLocation.lat && driverLocation.lng) {
-                                leafletMapRef.current.setView([driverLocation.lat, driverLocation.lng], 16);
-                              }
-                            }}
-                            className="btn btn-secondary btn-sm"
-                            style={{ padding: '3px 8px', fontSize: '11px', fontWeight: 700 }}
-                          >
-                            <Navigation size={12} style={{ marginRight: '4px' }} /> Focus Driver
-                          </button>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <a
+                              href={`https://www.google.com/maps?q=${driverLocation.lat},${driverLocation.lng}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn btn-secondary btn-sm"
+                              style={{ padding: '3px 8px', fontSize: '11px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px', textDecoration: 'none', background: '#FFF7ED', borderColor: '#FDBA74', color: '#EA580C' }}
+                            >
+                              <ExternalLink size={12} /> Google Maps
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (leafletMapRef.current && driverLocation.lat && driverLocation.lng) {
+                                  leafletMapRef.current.setView([driverLocation.lat, driverLocation.lng], 16);
+                                }
+                              }}
+                              className="btn btn-secondary btn-sm"
+                              style={{ padding: '3px 8px', fontSize: '11px', fontWeight: 700 }}
+                            >
+                              <Navigation size={12} style={{ marginRight: '4px' }} /> Focus
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>

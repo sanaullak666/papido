@@ -267,12 +267,13 @@ export function RiderPortalView() {
       watchId = navigator.geolocation.watchPosition(
         (position) => {
           if (simulatingDrive) return; // Don't overwrite simulated coordinates during simulation
-          const { latitude, longitude, heading, speed } = position.coords;
+          const { latitude, longitude, heading, speed, accuracy } = position.coords;
           const newLoc = {
             lat: Number(latitude),
             lng: Number(longitude),
             heading: Number(heading || 0),
-            speed: Number(speed || 0)
+            speed: Number(speed || 0),
+            accuracy: Number(accuracy || 5)
           };
           setDriverLocation(newLoc);
           setGpsError(null);
@@ -285,20 +286,21 @@ export function RiderPortalView() {
               latitude: Number(latitude),
               longitude: Number(longitude),
               heading: Number(heading || 0),
-              speed: Number(speed || 0)
+              speed: Number(speed || 0),
+              accuracy: Number(accuracy || 5)
             });
           }
         },
         (err) => {
           console.warn('GPS watchPosition notice:', err.message);
           if (err.code === 1) {
-            setGpsError('Location permission denied. Please allow GPS.');
+            setGpsError('Location permission denied. Please allow High Accuracy GPS.');
           }
         },
         {
           enableHighAccuracy: true,
-          maximumAge: 1000,
-          timeout: 10000
+          maximumAge: 0, // Force fresh satellite fix, do not use stale cache
+          timeout: 15000
         }
       );
     } else {
@@ -841,7 +843,20 @@ export function RiderPortalView() {
       iconSize: [36, 36],
       iconAnchor: [18, 18]
     });
-    const driverMarker = window.L.marker([curLat, curLng], { icon: driverIcon }).addTo(map).bindPopup('<b>You (Driver) - Live GPS</b>');
+    const gmapsDriverUrl = `https://www.google.com/maps?q=${curLat},${curLng}`;
+    const driverMarker = window.L.marker([curLat, curLng], { icon: driverIcon })
+      .addTo(map)
+      .bindPopup(`
+        <div style="min-width: 165px; padding: 4px 2px; font-family: inherit;">
+          <div style="font-size: 13px; font-weight: 800; color: #1C1917; margin-bottom: 2px;"><b>You (Driver)</b></div>
+          <div style="font-size: 11px; color: #06B6D4; font-weight: 700; margin-bottom: 8px;">🟢 Live GPS Tracking Active</div>
+          <a href="${gmapsDriverUrl}" target="_blank" rel="noopener noreferrer" 
+             style="display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 7px 10px; background: linear-gradient(135deg, #F97316, #EA580C); color: #FFFFFF; font-size: 11px; font-weight: 800; text-decoration: none; border-radius: 6px; box-shadow: 0 2px 8px rgba(234, 88, 12, 0.35);">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+            Open in Google Maps
+          </a>
+        </div>
+      `);
     markersRef.current.push(driverMarker);
     bounds.push([curLat, curLng]);
 
