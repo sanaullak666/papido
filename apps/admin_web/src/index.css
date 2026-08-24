@@ -599,10 +599,8 @@ h1, h2, h3, h4, h5, h6 {
 .portal-map-pane {
   position: relative;
   height: 100%;
-  min-height: 450px;
   width: 100%;
-  background: #F1F5F9;
-  z-index: 1;
+  background: #0F172A;
 }
 
 /* Horizontal Scrollable Tabs */
@@ -750,7 +748,6 @@ h1, h2, h3, h4, h5, h6 {
 .custom-map-pin {
   background: transparent !important;
   border: none !important;
-  transition: transform 0.4s ease, opacity 0.3s ease;
 }
 
 /* Pulsing Radar Animation */

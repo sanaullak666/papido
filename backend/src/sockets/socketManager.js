@@ -128,42 +128,24 @@ class SocketManager {
           const { latitude, longitude, rideId } = data;
 
           if (riderId && latitude && longitude) {
-            // Update database with latest coordinates
+            // Update database
             await RiderModel.updateLocation(riderId, latitude, longitude);
 
             const payload = {
               riderId,
-              latitude: Number(latitude),
-              longitude: Number(longitude),
-              heading: Number(data.heading || 0),
-              speed: Number(data.speed || 0),
+              latitude,
+              longitude,
+              heading: data.heading || 0,
+              speed: data.speed || 0,
               timestamp: new Date().toISOString()
             };
 
             // Broadcast to Admin
             this.io.to('role_ADMIN').emit('admin:rider_location', payload);
 
-            // Broadcast to Ride room & Passenger if rider is on an active ride
-            let activeRideObj = null;
+            // Broadcast to Ride room if rider is on an active ride
             if (rideId) {
               this.io.to(`ride_${rideId}`).emit(SOCKET_EVENTS.RIDE_LOCATION_TRACK, payload);
-              this.io.to(`ride_${rideId}`).emit('rider:location_update', payload);
-              try {
-                activeRideObj = await RideModel.findById(rideId);
-              } catch (_) {}
-            } else {
-              try {
-                activeRideObj = await RideModel.getActiveRideForRider(riderId);
-                if (activeRideObj && activeRideObj.id) {
-                  this.io.to(`ride_${activeRideObj.id}`).emit(SOCKET_EVENTS.RIDE_LOCATION_TRACK, payload);
-                  this.io.to(`ride_${activeRideObj.id}`).emit('rider:location_update', payload);
-                }
-              } catch (_) {}
-            }
-
-            if (activeRideObj && activeRideObj.customer_id) {
-              this.io.to(`user_${activeRideObj.customer_id}`).emit(SOCKET_EVENTS.RIDE_LOCATION_TRACK, payload);
-              this.io.to(`user_${activeRideObj.customer_id}`).emit('rider:location_update', payload);
             }
           }
         } catch (err) {
