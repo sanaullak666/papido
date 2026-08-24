@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest, getSocketUrl } from '../api';
 import { io } from 'socket.io-client';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import {
   Bike,
   Navigation,
@@ -220,14 +222,34 @@ export function RiderPortalView() {
 
   // 1. Initialize Leaflet Map (Centered on Pondicherry University)
   useEffect(() => {
-    if (mapRef.current && !leafletMapRef.current && window.L) {
-      const map = window.L.map(mapRef.current).setView([12.0228, 79.8509], 15);
-      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap'
+    if (!mapRef.current) return;
+    const Leaflet = L || window.L;
+    if (!Leaflet) return;
+
+    if (!leafletMapRef.current) {
+      if (mapRef.current._leaflet_id) {
+        mapRef.current._leaflet_id = null;
+      }
+      const map = Leaflet.map(mapRef.current, {
+        zoomControl: true,
+        attributionControl: true
+      }).setView([12.0228, 79.8509], 15);
+
+      Leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap',
+        maxZoom: 19
       }).addTo(map);
+
       leafletMapRef.current = map;
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 250);
+    } else {
+      setTimeout(() => {
+        leafletMapRef.current?.invalidateSize();
+      }, 150);
     }
-  }, [mapRef]);
+  }, [mapRef, currentTab]);
 
   // Live GPS Tracking Effect (HTML5 Geolocation watchPosition - 100% Free)
   useEffect(() => {

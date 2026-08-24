@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest, getSocketUrl } from '../api';
 import { io } from 'socket.io-client';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import {
   MapPin,
   Navigation,
@@ -569,10 +571,21 @@ export function CustomerPortalView() {
   // 1. Initialize Leaflet Map (Campus Booking)
   useEffect(() => {
     if (!mapRef.current) return;
-    if (!leafletMapRef.current && window.L) {
-      const map = window.L.map(mapRef.current).setView([12.0240, 79.8530], 15);
-      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
+    const Leaflet = L || window.L;
+    if (!Leaflet) return;
+
+    if (!leafletMapRef.current) {
+      if (mapRef.current._leaflet_id) {
+        mapRef.current._leaflet_id = null;
+      }
+      const map = Leaflet.map(mapRef.current, {
+        zoomControl: true,
+        attributionControl: true
+      }).setView([12.0240, 79.8530], 15);
+
+      Leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 19
       }).addTo(map);
 
       // Interactive Map Click to Pin Pickup or Drop-off Anywhere
@@ -607,12 +620,15 @@ export function CustomerPortalView() {
       });
 
       leafletMapRef.current = map;
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 250);
     } else {
       setTimeout(() => {
         leafletMapRef.current?.invalidateSize();
-      }, 100);
+      }, 150);
     }
-  }, [mapRef]);
+  }, [mapRef, currentTab]);
 
   // 2. Update Map Markers & Polyline
   useEffect(() => {
@@ -702,12 +718,22 @@ export function CustomerPortalView() {
   // 2b. Initialize Outside Map
   useEffect(() => {
     if (currentTab !== 'outside') return;
-    if (!outsideMapRef.current || !window.L) return;
+    if (!outsideMapRef.current) return;
+    const Leaflet = L || window.L;
+    if (!Leaflet) return;
 
     if (!leafletOutsideMapRef.current) {
-      const map = window.L.map(outsideMapRef.current).setView([11.9750, 79.8250], 12);
-      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
+      if (outsideMapRef.current._leaflet_id) {
+        outsideMapRef.current._leaflet_id = null;
+      }
+      const map = Leaflet.map(outsideMapRef.current, {
+        zoomControl: true,
+        attributionControl: true
+      }).setView([11.9750, 79.8250], 12);
+
+      Leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 19
       }).addTo(map);
 
       // Interactive Map Click Handler to pick outside destination
@@ -731,10 +757,13 @@ export function CustomerPortalView() {
       });
 
       leafletOutsideMapRef.current = map;
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 250);
     } else {
       setTimeout(() => {
         leafletOutsideMapRef.current?.invalidateSize();
-      }, 100);
+      }, 150);
     }
   }, [currentTab, outsideMapRef]);
 
