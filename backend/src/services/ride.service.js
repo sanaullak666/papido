@@ -839,12 +839,13 @@ const RideService = {
   async submitRating({ rideId, customerId, rating, review }) {
     const ride = await RideModel.findById(rideId);
     if (!ride) throw new Error('Ride not found.');
-    if (ride.customer_id !== customerId) throw new Error('Unauthorized.');
+    if (String(ride.customer_id) !== String(customerId)) throw new Error('Unauthorized.');
     if (ride.status !== RIDE_STATUS.COMPLETED) {
       throw new Error('Can only rate completed rides.');
     }
 
-    const numRating = Math.min(5, Math.max(1, parseFloat(rating)));
+    const numRating = Math.min(5, Math.max(1, parseFloat(rating) || 5));
+    const targetRiderId = ride.rider_id || ride.assigned_rider_id;
 
     const db = require('../config/database');
     const existing = await db.queryOne('SELECT id FROM ratings WHERE ride_id = ?', [rideId]);
@@ -852,13 +853,17 @@ const RideService = {
       await db.query('UPDATE ratings SET rating = ?, review = ? WHERE ride_id = ?', [numRating, review || null, rideId]);
     } else {
       await db.query(
-        'INSERT INTO ratings (ride_id, customer_id, rider_id, rating, review, rated_by_role) VALUES (?, ?, ?, ?, ?, ?)',
-        [rideId, customerId, ride.rider_id, numRating, review || null, 'CUSTOMER']
+        'INSERT INTO ratings (ride_id, customer_id, rider_id, rating, review) VALUES (?, ?, ?, ?, ?)',
+        [rideId, customerId, targetRiderId || customerId, numRating, review || null]
       );
     }
 
-    if (ride.rider_id) {
-      await RiderModel.updateRating(ride.rider_id, numRating);
+    if (targetRiderId) {
+      try {
+        await RiderModel.updateRating(targetRiderId, numRating);
+      } catch (rateErr) {
+        console.warn('Could not update rider profile rating:', rateErr.message);
+      }
     }
 
     return { rideId, rating: numRating, review };
