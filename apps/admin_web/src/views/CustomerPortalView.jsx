@@ -1907,373 +1907,378 @@ export function CustomerPortalView() {
                 </>
               )}
 
-              {/* If Active Ride Exists: Show Live Status & Tracker */}
+              {/* If Active Ride Exists: Show Live Status & Tracker OR Thank You & Feedback Form */}
               {activeRide && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <div>
-                    <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '4px' }}>Live Trip Status</h2>
-                    <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                      Ride ID #{activeRide.id} • {activeRide.pickup_address} → {activeRide.destination_address}
-                    </p>
-                  </div>
-
-                  {/* Status Banner */}
+                activeRide.status === 'COMPLETED' ? (
+                  /* ======================================================= */
+                  /* THANK YOU & DRIVER FEEDBACK SCREEN ON COMPLETION */
+                  /* ======================================================= */
                   <div style={{
-                    padding: '14px',
-                    borderRadius: '12px',
-                    background: activeRide.status === 'COMPLETED' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                    border: activeRide.status === 'COMPLETED' ? '1px solid #10B981' : '1px solid var(--primary)',
-                    textAlign: 'center'
+                    background: '#FFFFFF',
+                    border: '2px solid #10B981',
+                    borderRadius: '16px',
+                    padding: '28px 20px',
+                    textAlign: 'center',
+                    boxShadow: '0 8px 30px rgba(16, 185, 129, 0.12)',
+                    animation: 'fadeIn 0.3s ease-in-out'
                   }}>
-                    <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '1px', color: activeRide.status === 'COMPLETED' ? '#10B981' : 'var(--primary)', marginBottom: '4px' }}>
-                      STATUS: {activeRide.status}
-                    </div>
-                    <div style={{ fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                      {activeRide.status === 'PENDING_ADMIN_QUOTE' && <><Clock size={18} /> Submitted to Dispatch — Admin is setting the fare & assigning a rider.</>}
-                      {activeRide.status === 'REQUESTED' && <><Search size={18} /> Searching for nearby riders...</>}
-                      {activeRide.status === 'ACCEPTED' && <><CheckCircle size={18} /> Rider accepted your trip!</>}
-                      {activeRide.status === 'RIDER_ARRIVING' && <><Bike size={18} /> Rider is arriving at your pickup spot.</>}
-                      {activeRide.status === 'RIDER_REACHED' && <><MapPin size={18} /> Rider has reached pickup point!</>}
-                      {activeRide.status === 'STARTED' && <><Navigation size={18} /> Trip in progress to destination...</>}
-                      {activeRide.status === 'COMPLETED' && <><CheckCircle2 size={18} /> Trip Completed! Payment settled.</>}
-                    </div>
-                  </div>
-
-                  {/* Live Driver On Waiting Alert Banner */}
-                  {Boolean(activeRide.is_waiting) && (
                     <div style={{
-                      background: 'rgba(234, 88, 12, 0.12)',
-                      border: '1.5px solid #EA580C',
-                      borderRadius: '12px',
-                      padding: '12px 16px',
+                      width: '56px',
+                      height: '56px',
+                      background: 'rgba(16, 185, 129, 0.15)',
+                      borderRadius: '50%',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'space-between'
+                      justifyContent: 'center',
+                      margin: '0 auto 12px',
+                      color: '#059669'
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{
-                          background: '#EA580C',
-                          color: '#FFFFFF',
-                          borderRadius: '50%',
-                          width: '28px',
-                          height: '28px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0
-                        }}>
-                          <Clock size={15} />
-                        </div>
-                        <div>
-                          <div style={{ fontWeight: 800, fontSize: '13px', color: '#EA580C' }}>
-                            Driver is Currently On Waiting
-                          </div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                            Waiting Duration: <strong>{activeRide.waiting_minutes || 0} mins</strong> (+₹{activeRide.waiting_fare || 0} charge added)
-                          </div>
-                        </div>
-                      </div>
-                      <span className="badge badge-warning" style={{ fontWeight: 800, fontSize: '10px' }}>
-                        ON WAITING
-                      </span>
+                      <CheckCircle2 size={32} />
                     </div>
-                  )}
 
-                  {/* Customer Fare Card */}
-                  <div style={{
-                    background: 'var(--bg-sidebar)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '12px',
-                    padding: '14px 18px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}>
-                    <div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>FARE TO PAY DRIVER:</div>
-                      <div style={{ fontSize: '24px', fontWeight: 900, color: 'var(--primary)' }}>
-                        ₹{activeRide.total_fare || activeRide.final_fare || activeRide.estimated_fare || 20}
-                      </div>
-                      {Boolean(activeRide.waiting_fare > 0) && (
-                        <div style={{ fontSize: '11px', color: '#EA580C', fontWeight: 700, marginTop: '2px' }}>
-                          Includes ₹{activeRide.waiting_fare} waiting charge ({activeRide.waiting_minutes || 0} mins)
-                        </div>
-                      )}
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <span className="badge badge-warning" style={{ fontSize: '11px' }}>
-                        {activeRide.payment_method || 'CASH'} ON DROP
-                      </span>
-                      {activeRide.is_double_ride ? (
-                        <div style={{ fontSize: '11px', color: 'var(--primary)', marginTop: '4px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <Users size={12} /> Double Ride
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
+                    <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1C1917', marginBottom: '6px' }}>
+                      Thank you for riding with Papido!
+                    </h3>
+                    <p style={{ fontSize: '13px', color: '#44403C', lineHeight: '1.5', marginBottom: '16px' }}>
+                      We hope you had a pleasant campus journey. Please contact us again or book anytime for your next ride.
+                    </p>
 
-                  {/* 4-Digit Ride OTP Highlight (Crucial for passenger when rider reaches) */}
-                  {['ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED'].includes(activeRide.status) && (activeRide.otp || activeRide.otp_code) && (
+                    {/* Driver & Fare Summary Box */}
                     <div style={{
-                      background: 'var(--bg-sidebar)',
-                      border: '2px dashed var(--primary)',
+                      background: '#F8F3EC',
+                      border: '1px solid #E8DCCB',
                       borderRadius: '12px',
-                      padding: '16px',
+                      padding: '14px 16px',
+                      textAlign: 'left',
+                      marginBottom: '16px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '11px', color: '#796D61', fontWeight: 700, textTransform: 'uppercase' }}>
+                          Trip #{activeRide.id || activeRide.ride_code}
+                        </div>
+                        <div style={{ fontSize: '15px', fontWeight: 800, color: '#1C1917' }}>
+                          Driver: {activeRide.rider_name || 'Campus Rider'}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#796D61' }}>
+                          {activeRide.pickup_address} → {activeRide.destination_address}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '11px', color: '#796D61', fontWeight: 700 }}>
+                          Fare Paid
+                        </div>
+                        <div style={{ fontSize: '20px', fontWeight: 900, color: '#EA580C' }}>
+                          ₹{activeRide.final_fare || activeRide.total_fare || activeRide.estimated_fare || 20}
+                        </div>
+                      </div>
+                    </div>
+
+                    {!ratingSubmitted ? (
+                      <div>
+                        <div style={{ fontSize: '13px', fontWeight: 700, color: '#1C1917', marginBottom: '8px' }}>
+                          Rate your ride experience:
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '6px' }}>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              size={30}
+                              onClick={() => setRatingVal(star)}
+                              style={{
+                                cursor: 'pointer',
+                                fill: star <= ratingVal ? '#F59E0B' : 'none',
+                                color: '#F59E0B',
+                                transition: 'transform 0.15s ease'
+                              }}
+                            />
+                          ))}
+                        </div>
+                        <div style={{ fontSize: '12px', fontWeight: 700, color: '#D97706', marginBottom: '14px' }}>
+                          {ratingVal === 5 && '5 Stars - Excellent'}
+                          {ratingVal === 4 && '4 Stars - Very Good'}
+                          {ratingVal === 3 && '3 Stars - Good'}
+                          {ratingVal === 2 && '2 Stars - Fair'}
+                          {ratingVal === 1 && '1 Star - Poor'}
+                        </div>
+
+                        <input
+                          type="text"
+                          placeholder="Write brief feedback about your driver (optional)..."
+                          className="form-input"
+                          style={{ width: '100%', marginBottom: '14px', background: '#F8F3EC', border: '1.5px solid #E8DCCB' }}
+                          value={ratingReview}
+                          onChange={(e) => setRatingReview(e.target.value)}
+                        />
+
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveRide(null);
+                              setRatingSubmitted(false);
+                              setRatingReview('');
+                            }}
+                            className="btn btn-secondary"
+                            style={{ flex: 1, padding: '12px', fontWeight: 700 }}
+                          >
+                            Skip
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSubmitRating}
+                            disabled={submittingRating}
+                            className="btn btn-primary"
+                            style={{ flex: 1, padding: '12px', fontWeight: 800 }}
+                          >
+                            {submittingRating ? 'Submitting...' : 'Submit Feedback'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ padding: '14px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '10px', color: '#059669', fontWeight: 800, fontSize: '13px' }}>
+                        Thank you! Your feedback has been recorded for this rider.
+                      </div>
+                    )}
+
+                    {/* Contact Us / Support Help */}
+                    <div style={{
+                      marginTop: '18px',
+                      paddingTop: '12px',
+                      borderTop: '1px solid #E8DCCB',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontSize: '12px',
+                      color: '#796D61'
+                    }}>
+                      <span>Questions or lost items?</span>
+                      <a
+                        href="tel:9876543210"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          fontWeight: 700,
+                          color: '#EA580C',
+                          textDecoration: 'none'
+                        }}
+                      >
+                        <Phone size={12} /> Contact Dispatch
+                      </a>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveRide(null);
+                        setRatingSubmitted(false);
+                        setRatingReview('');
+                      }}
+                      className="btn btn-secondary"
+                      style={{ width: '100%', marginTop: '12px', padding: '11px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                    >
+                      <Bike size={16} /> Book Another Campus Ride
+                    </button>
+                  </div>
+                ) : (
+                  /* ======================================================= */
+                  /* IN-PROGRESS ACTIVE TRIP STATUS & TRACKER */
+                  /* ======================================================= */
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div>
+                      <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '4px' }}>Live Trip Status</h2>
+                      <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                        Ride ID #{activeRide.id} • {activeRide.pickup_address} → {activeRide.destination_address}
+                      </p>
+                    </div>
+
+                    {/* Status Banner */}
+                    <div style={{
+                      padding: '14px',
+                      borderRadius: '12px',
+                      background: 'rgba(245, 158, 11, 0.15)',
+                      border: '1px solid var(--primary)',
                       textAlign: 'center'
                     }}>
-                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                        Share this 4-digit Ride OTP with your driver:
+                      <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '1px', color: 'var(--primary)', marginBottom: '4px' }}>
+                        STATUS: {activeRide.status}
                       </div>
-                      <div style={{ fontSize: '32px', fontWeight: 900, letterSpacing: '8px', color: 'var(--primary)' }}>
-                        {activeRide.otp || activeRide.otp_code}
+                      <div style={{ fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                        {activeRide.status === 'PENDING_ADMIN_QUOTE' && <><Clock size={18} /> Submitted to Dispatch — Admin is setting the fare & assigning a rider.</>}
+                        {activeRide.status === 'REQUESTED' && <><Search size={18} /> Searching for nearby riders...</>}
+                        {activeRide.status === 'ACCEPTED' && <><CheckCircle size={18} /> Rider accepted your trip!</>}
+                        {activeRide.status === 'RIDER_ARRIVING' && <><Bike size={18} /> Rider is arriving at your pickup spot.</>}
+                        {activeRide.status === 'RIDER_REACHED' && <><MapPin size={18} /> Rider has reached pickup point!</>}
+                        {activeRide.status === 'STARTED' && <><Navigation size={18} /> Trip in progress to destination...</>}
                       </div>
                     </div>
-                  )}
 
-                  {/* Assigned Driver Card (If accepted) */}
-                  {activeRide.rider_name && (
-                    <div style={{
-                      background: 'var(--bg-input)',
-                      border: '1px solid var(--border)',
-                      borderRadius: '12px',
-                      padding: '16px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '12px'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {/* Live Driver On Waiting Alert Banner */}
+                    {Boolean(activeRide.is_waiting) && (
+                      <div style={{
+                        background: 'rgba(234, 88, 12, 0.12)',
+                        border: '1.5px solid #EA580C',
+                        borderRadius: '12px',
+                        padding: '12px 16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                           <div style={{
-                            width: '44px',
-                            height: '44px',
-                            background: '#06B6D4',
+                            background: '#EA580C',
+                            color: '#FFFFFF',
                             borderRadius: '50%',
+                            width: '28px',
+                            height: '28px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            fontWeight: 800
+                            flexShrink: 0
                           }}>
-                            <Bike size={22} color="#FFFFFF" />
+                            <Clock size={15} />
                           </div>
                           <div>
-                            <div style={{ fontWeight: 800, fontSize: '15px' }}>{activeRide.rider_name}</div>
-                            {!(activeRide.rider_is_core || activeRide.is_core_member) && (
-                              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                                {activeRide.rider_vehicle_model || activeRide.vehicle_model || 'Honda Activa 6G'} • {activeRide.rider_vehicle_number || activeRide.vehicle_number || 'PY 01 AB 1234'}
-                              </div>
-                            )}
+                            <div style={{ fontWeight: 800, fontSize: '13px', color: '#EA580C' }}>
+                              Driver is Currently On Waiting
+                            </div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                              Waiting Duration: <strong>{activeRide.waiting_minutes || 0} mins</strong> (+₹{activeRide.waiting_fare || 0} charge added)
+                            </div>
                           </div>
                         </div>
-                        {activeRide.rider_phone && (
-                          <a
-                            href={`tel:${activeRide.rider_phone}`}
-                            className="btn btn-secondary btn-sm"
-                            style={{ display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
-                          >
-                            <Phone size={14} /> Call
-                          </a>
+                        <span className="badge badge-warning" style={{ fontWeight: 800, fontSize: '10px' }}>
+                          ON WAITING
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Customer Fare Card */}
+                    <div style={{
+                      background: 'var(--bg-sidebar)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '12px',
+                      padding: '14px 18px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>FARE TO PAY DRIVER:</div>
+                        <div style={{ fontSize: '24px', fontWeight: 900, color: 'var(--primary)' }}>
+                          ₹{activeRide.total_fare || activeRide.final_fare || activeRide.estimated_fare || 20}
+                        </div>
+                        {Boolean(activeRide.waiting_fare > 0) && (
+                          <div style={{ fontSize: '11px', color: '#EA580C', fontWeight: 700, marginTop: '2px' }}>
+                            Includes ₹{activeRide.waiting_fare} waiting charge ({activeRide.waiting_minutes || 0} mins)
+                          </div>
                         )}
                       </div>
-                    </div>
-                  )}
-
-                  {/* Trip Route Details Card */}
-                  <div style={{ background: 'var(--bg-input)', padding: '14px', borderRadius: '12px', fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <div><strong>Pickup:</strong> {activeRide.pickup_address}</div>
-                    {activeRide.via_address && (
-                      <div style={{ color: '#EA580C' }}><strong>Via Stop:</strong> {activeRide.via_address}</div>
-                    )}
-                    <div><strong>Drop:</strong> {activeRide.destination_address}</div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: '8px', marginTop: '4px' }}>
-                      <span>Fare: <strong>₹{activeRide.final_fare || activeRide.total_fare || activeRide.estimated_fare || 20}</strong></span>
-                      <span>Payment: <strong>{activeRide.payment_method || 'CASH'}</strong></span>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  {['REQUESTED', 'ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED'].includes(activeRide.status) && (
-                    <button
-                      onClick={handleCancelRide}
-                      className="btn btn-danger"
-                      style={{ width: '100%', padding: '12px', fontWeight: 700 }}
-                    >
-                      Cancel Trip
-                    </button>
-                  )}
-
-                  {/* Thank you for booking with Papido Greeting Card on Completion */}
-                  {activeRide.status === 'COMPLETED' && (
-                    <div style={{
-                      background: '#FFFFFF',
-                      border: '2px solid #10B981',
-                      borderRadius: '16px',
-                      padding: '24px 20px',
-                      textAlign: 'center',
-                      boxShadow: '0 8px 30px rgba(16, 185, 129, 0.12)'
-                    }}>
-                      <div style={{
-                        width: '52px',
-                        height: '52px',
-                        background: 'rgba(16, 185, 129, 0.15)',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        margin: '0 auto 12px',
-                        color: '#059669'
-                      }}>
-                        <CheckCircle2 size={30} />
+                      <div style={{ textAlign: 'right' }}>
+                        <span className="badge badge-warning" style={{ fontSize: '11px' }}>
+                          {activeRide.payment_method || 'CASH'} ON DROP
+                        </span>
+                        {activeRide.is_double_ride ? (
+                          <div style={{ fontSize: '11px', color: 'var(--primary)', marginTop: '4px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <Users size={12} /> Double Ride
+                          </div>
+                        ) : null}
                       </div>
+                    </div>
 
-                      <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1C1917', marginBottom: '6px' }}>
-                        Thank you for riding with Papido!
-                      </h3>
-                      <p style={{ fontSize: '13px', color: '#44403C', lineHeight: '1.5', marginBottom: '14px' }}>
-                        We hope you had a pleasant campus journey. Please contact us again or book anytime for your next ride.
-                      </p>
-
-                      {/* Driver & Fare Summary Box */}
+                    {/* 4-Digit Ride OTP Highlight (Crucial for passenger when rider reaches) */}
+                    {['ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED'].includes(activeRide.status) && (activeRide.otp || activeRide.otp_code) && (
                       <div style={{
-                        background: '#F8F3EC',
-                        border: '1px solid #E8DCCB',
+                        background: 'var(--bg-sidebar)',
+                        border: '2px dashed var(--primary)',
                         borderRadius: '12px',
-                        padding: '12px 14px',
-                        textAlign: 'left',
-                        marginBottom: '16px',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
+                        padding: '16px',
+                        textAlign: 'center'
                       }}>
-                        <div>
-                          <div style={{ fontSize: '11px', color: '#796D61', fontWeight: 700, textTransform: 'uppercase' }}>
-                            Completed Ride
-                          </div>
-                          <div style={{ fontSize: '14px', fontWeight: 800, color: '#1C1917' }}>
-                            Driver: {activeRide.rider_name || 'Campus Rider'}
-                          </div>
-                          <div style={{ fontSize: '11px', color: '#796D61' }}>
-                            {activeRide.rider_vehicle_model || activeRide.vehicle_model || 'Campus Bike'} • {activeRide.rider_vehicle_number || activeRide.vehicle_number || 'Campus'}
-                          </div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                          Share this 4-digit Ride OTP with your driver:
                         </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: '11px', color: '#796D61', fontWeight: 700 }}>
-                            Fare Paid
-                          </div>
-                          <div style={{ fontSize: '18px', fontWeight: 900, color: '#EA580C' }}>
-                            ₹{activeRide.final_fare || activeRide.total_fare || activeRide.estimated_fare || 20}
-                          </div>
+                        <div style={{ fontSize: '32px', fontWeight: 900, letterSpacing: '8px', color: 'var(--primary)' }}>
+                          {activeRide.otp || activeRide.otp_code}
                         </div>
                       </div>
+                    )}
 
-                      {!ratingSubmitted ? (
-                        <div>
-                          <div style={{ fontSize: '13px', fontWeight: 700, color: '#1C1917', marginBottom: '8px' }}>
-                            Rate your ride experience:
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '6px' }}>
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <Star
-                                key={star}
-                                size={28}
-                                onClick={() => setRatingVal(star)}
-                                style={{
-                                  cursor: 'pointer',
-                                  fill: star <= ratingVal ? '#F59E0B' : 'none',
-                                  color: '#F59E0B',
-                                  transition: 'transform 0.15s ease'
-                                }}
-                              />
-                            ))}
-                          </div>
-                          <div style={{ fontSize: '12px', fontWeight: 700, color: '#D97706', marginBottom: '12px' }}>
-                            {ratingVal === 5 && '5 Stars - Excellent'}
-                            {ratingVal === 4 && '4 Stars - Very Good'}
-                            {ratingVal === 3 && '3 Stars - Good'}
-                            {ratingVal === 2 && '2 Stars - Fair'}
-                            {ratingVal === 1 && '1 Star - Poor'}
-                          </div>
-
-                          <input
-                            type="text"
-                            placeholder="Write brief feedback about your driver (optional)..."
-                            className="form-input"
-                            style={{ width: '100%', marginBottom: '12px', background: '#F8F3EC', border: '1.5px solid #E8DCCB' }}
-                            value={ratingReview}
-                            onChange={(e) => setRatingReview(e.target.value)}
-                          />
-
-                          <div style={{ display: 'flex', gap: '10px' }}>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setActiveRide(null);
-                                setRatingSubmitted(false);
-                                setRatingReview('');
-                              }}
-                              className="btn btn-secondary"
-                              style={{ flex: 1, padding: '11px', fontWeight: 700 }}
-                            >
-                              Skip
-                            </button>
-                            <button
-                              type="button"
-                              onClick={handleSubmitRating}
-                              disabled={submittingRating}
-                              className="btn btn-primary"
-                              style={{ flex: 1, padding: '11px', fontWeight: 800 }}
-                            >
-                              {submittingRating ? 'Submitting...' : 'Submit Feedback'}
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div style={{ padding: '14px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '10px', color: '#059669', fontWeight: 800, fontSize: '13px' }}>
-                          Thank you! Your feedback has been recorded for this rider.
-                        </div>
-                      )}
-
-                      {/* Contact Us / Support Help */}
+                    {/* Assigned Driver Card (If accepted) */}
+                    {activeRide.rider_name && (
                       <div style={{
-                        marginTop: '16px',
-                        paddingTop: '12px',
-                        borderTop: '1px solid #E8DCCB',
+                        background: 'var(--bg-input)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '12px',
+                        padding: '16px',
                         display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        fontSize: '12px',
-                        color: '#796D61'
+                        flexDirection: 'column',
+                        gap: '12px'
                       }}>
-                        <span>Questions or lost items?</span>
-                        <a
-                          href="tel:9876543210"
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            fontWeight: 700,
-                            color: '#EA580C',
-                            textDecoration: 'none'
-                          }}
-                        >
-                          <Phone size={12} /> Contact Dispatch
-                        </a>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{
+                              width: '44px',
+                              height: '44px',
+                              background: '#06B6D4',
+                              borderRadius: '50%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontWeight: 800
+                            }}>
+                              <Bike size={22} color="#FFFFFF" />
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: 800, fontSize: '15px' }}>{activeRide.rider_name}</div>
+                              {!(activeRide.rider_is_core || activeRide.is_core_member) && (
+                                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                                  {activeRide.rider_vehicle_model || activeRide.vehicle_model || 'Honda Activa 6G'} • {activeRide.rider_vehicle_number || activeRide.vehicle_number || 'PY 01 AB 1234'}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          {activeRide.rider_phone && (
+                            <a
+                              href={`tel:${activeRide.rider_phone}`}
+                              className="btn btn-secondary btn-sm"
+                              style={{ display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
+                            >
+                              <Phone size={14} /> Call
+                            </a>
+                          )}
+                        </div>
                       </div>
+                    )}
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveRide(null);
-                          setRatingSubmitted(false);
-                          setRatingReview('');
-                        }}
-                        className="btn btn-secondary"
-                        style={{ width: '100%', marginTop: '12px', padding: '11px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                      >
-                        <Bike size={16} /> Book Another Campus Ride
-                      </button>
+                    {/* Trip Route Details Card */}
+                    <div style={{ background: 'var(--bg-input)', padding: '14px', borderRadius: '12px', fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div><strong>Pickup:</strong> {activeRide.pickup_address}</div>
+                      {activeRide.via_address && (
+                        <div style={{ color: '#EA580C' }}><strong>Via Stop:</strong> {activeRide.via_address}</div>
+                      )}
+                      <div><strong>Drop:</strong> {activeRide.destination_address}</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: '8px', marginTop: '4px' }}>
+                        <span>Fare: <strong>₹{activeRide.final_fare || activeRide.total_fare || activeRide.estimated_fare || 20}</strong></span>
+                        <span>Payment: <strong>{activeRide.payment_method || 'CASH'}</strong></span>
+                      </div>
                     </div>
-                  )}
-                </div>
+
+                    {/* Action Buttons */}
+                    {['REQUESTED', 'ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED'].includes(activeRide.status) && (
+                      <button
+                        onClick={handleCancelRide}
+                        className="btn btn-danger"
+                        style={{ width: '100%', padding: '12px', fontWeight: 700 }}
+                      >
+                        Cancel Trip
+                      </button>
+                    )}
+                  </div>
+                )
               )}
             </div>
 

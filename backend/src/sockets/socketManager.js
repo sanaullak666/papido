@@ -314,6 +314,12 @@ class SocketManager {
       this.io.emit('ride:cancelled', payload);
     }
 
+    // Notify Ride Room & Active Listeners
+    if (ride.id) {
+      this.io.to(`ride_${ride.id}`).emit('ride:status_change', payload);
+      this.io.to(`ride_${ride.id}`).emit(`ride:${status.toLowerCase()}`, payload);
+    }
+
     // Notify customer
     if (ride.customer_id) {
       this.io.to(`user_${ride.customer_id}`).emit('ride:status_change', payload);
@@ -322,13 +328,13 @@ class SocketManager {
       // Web Push for Passenger updates when backgrounded
       if (status === 'ACCEPTED') {
         PushService.sendPushToUser(ride.customer_id, {
-          title: '🏍️ Rider Assigned!',
+          title: 'Rider Assigned!',
           body: 'Your driver accepted the booking and is on the way.',
           url: '/customer'
         });
       } else if (status === 'COMPLETED') {
         PushService.sendPushToUser(ride.customer_id, {
-          title: '✅ Trip Completed (₹' + totalFare + ')',
+          title: 'Trip Completed (₹' + totalFare + ')',
           body: 'Thank you for riding with Papido!',
           url: '/customer'
         });
