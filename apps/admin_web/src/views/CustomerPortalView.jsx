@@ -813,6 +813,10 @@ export function CustomerPortalView() {
       const res = await apiRequest('/customer/rides/active', 'GET', null, token);
       const ride = res.data || null;
       if (ride) {
+        if (ride.status === 'COMPLETED' && sessionStorage.getItem(`skipped_feedback_${ride.id}`)) {
+          setActiveRide(null);
+          return;
+        }
         setActiveRide(ride);
         if (ride.status === 'PENDING_ADMIN_QUOTE') {
           setStatusMessage('Submitted to Dispatch — Admin is setting the fare & assigning a rider.');
@@ -895,9 +899,7 @@ export function CustomerPortalView() {
         setStatusMessage('Thank you for riding with Papido! Trip completed successfully.');
       }
 
-      if (newStatus !== 'COMPLETED') {
-        fetchActiveRide();
-      }
+      fetchActiveRide(true);
     });
 
     socket.on('ride:completed', (data) => {
@@ -913,6 +915,7 @@ export function CustomerPortalView() {
         final_fare: fare
       }));
       setStatusMessage('Thank you for riding with Papido! Trip completed successfully.');
+      fetchActiveRide(true);
     });
 
     socket.on('ride:accepted', (data) => {
@@ -1154,6 +1157,16 @@ export function CustomerPortalView() {
   };
 
   // 8. Handle Submit Rating
+  // 8. Handle Submit Rating & Skip Rating
+  const handleSkipRating = () => {
+    if (activeRide?.id) {
+      sessionStorage.setItem(`skipped_feedback_${activeRide.id}`, 'true');
+    }
+    setActiveRide(null);
+    setRatingSubmitted(false);
+    setRatingReview('');
+  };
+
   const handleSubmitRating = async () => {
     if (!activeRide) return;
     setSubmittingRating(true);
@@ -1162,6 +1175,9 @@ export function CustomerPortalView() {
         rating: ratingVal,
         review: ratingReview
       }, token);
+      if (activeRide.id) {
+        sessionStorage.setItem(`skipped_feedback_${activeRide.id}`, 'true');
+      }
       setRatingSubmitted(true);
       fetchRideHistory();
       setTimeout(() => {
@@ -2016,11 +2032,7 @@ export function CustomerPortalView() {
                         <div style={{ display: 'flex', gap: '10px' }}>
                           <button
                             type="button"
-                            onClick={() => {
-                              setActiveRide(null);
-                              setRatingSubmitted(false);
-                              setRatingReview('');
-                            }}
+                            onClick={handleSkipRating}
                             className="btn btn-secondary"
                             style={{ flex: 1, padding: '12px', fontWeight: 700 }}
                           >
@@ -2072,11 +2084,7 @@ export function CustomerPortalView() {
 
                     <button
                       type="button"
-                      onClick={() => {
-                        setActiveRide(null);
-                        setRatingSubmitted(false);
-                        setRatingReview('');
-                      }}
+                      onClick={handleSkipRating}
                       className="btn btn-secondary"
                       style={{ width: '100%', marginTop: '12px', padding: '11px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                     >

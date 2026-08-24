@@ -205,7 +205,7 @@ const RideModel = {
       WHERE r.customer_id = ? 
         AND r.status = 'COMPLETED'
         AND rt.id IS NULL
-        AND r.updated_at >= NOW() - INTERVAL 15 MINUTE
+        AND (r.completed_at >= NOW() - INTERVAL 30 MINUTE OR r.completed_at IS NULL)
       ORDER BY r.id DESC LIMIT 1
     `;
     return db.queryOne(sql, [customerId]);
