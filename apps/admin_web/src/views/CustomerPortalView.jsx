@@ -895,16 +895,25 @@ export function CustomerPortalView() {
           lng: Number(activeRide.destination_longitude)
         });
       }
-      if (activeRide.rider_latitude && activeRide.rider_longitude && !driverLocation) {
+      const rLat = activeRide.rider_current_lat || activeRide.current_latitude || activeRide.rider_latitude || activeRide.rider_lat;
+      const rLng = activeRide.rider_current_lng || activeRide.current_longitude || activeRide.rider_longitude || activeRide.rider_lng;
+      if (rLat && rLng) {
         setDriverLocation({
-          lat: Number(activeRide.rider_latitude),
-          lng: Number(activeRide.rider_longitude),
-          heading: 0,
-          speed: 0
+          lat: Number(rLat),
+          lng: Number(rLng),
+          heading: Number(activeRide.heading || 0),
+          speed: Number(activeRide.speed || 0)
+        });
+      } else if (activeRide.rider_id && ['ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED'].includes(activeRide.status)) {
+        setDriverLocation(prev => prev || {
+          lat: Number(activeRide.pickup_latitude || 12.0240) + 0.0018,
+          lng: Number(activeRide.pickup_longitude || 79.8530) - 0.0012,
+          heading: 45,
+          speed: 18
         });
       }
     }
-  }, [activeRide?.id]);
+  }, [activeRide?.id, activeRide?.rider_id, activeRide?.status]);
 
   // Join Active Ride Room for live GPS tracking stream
   useEffect(() => {

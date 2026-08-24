@@ -143,18 +143,27 @@ class SocketManager {
             // Broadcast to Admin
             this.io.to('role_ADMIN').emit('admin:rider_location', payload);
 
-            // Broadcast to Ride room if rider is on an active ride
+            // Broadcast to Ride room & Passenger if rider is on an active ride
+            let activeRideObj = null;
             if (rideId) {
               this.io.to(`ride_${rideId}`).emit(SOCKET_EVENTS.RIDE_LOCATION_TRACK, payload);
               this.io.to(`ride_${rideId}`).emit('rider:location_update', payload);
-
               try {
-                const activeRideData = await RideModel.findById(rideId);
-                if (activeRideData && activeRideData.customer_id) {
-                  this.io.to(`user_${activeRideData.customer_id}`).emit(SOCKET_EVENTS.RIDE_LOCATION_TRACK, payload);
-                  this.io.to(`user_${activeRideData.customer_id}`).emit('rider:location_update', payload);
+                activeRideObj = await RideModel.findById(rideId);
+              } catch (_) {}
+            } else {
+              try {
+                activeRideObj = await RideModel.getActiveRideForRider(riderId);
+                if (activeRideObj && activeRideObj.id) {
+                  this.io.to(`ride_${activeRideObj.id}`).emit(SOCKET_EVENTS.RIDE_LOCATION_TRACK, payload);
+                  this.io.to(`ride_${activeRideObj.id}`).emit('rider:location_update', payload);
                 }
               } catch (_) {}
+            }
+
+            if (activeRideObj && activeRideObj.customer_id) {
+              this.io.to(`user_${activeRideObj.customer_id}`).emit(SOCKET_EVENTS.RIDE_LOCATION_TRACK, payload);
+              this.io.to(`user_${activeRideObj.customer_id}`).emit('rider:location_update', payload);
             }
           }
         } catch (err) {

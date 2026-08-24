@@ -11,6 +11,8 @@ const RideModel = {
              rp.vehicle_type as rider_vehicle_type, rp.vehicle_number, rp.vehicle_number as rider_vehicle_number,
              rp.vehicle_model, rp.vehicle_model as rider_vehicle_model, rp.rating as rider_rating,
              rp.current_latitude as rider_current_lat, rp.current_longitude as rider_current_lng,
+             rp.current_latitude as rider_latitude, rp.current_longitude as rider_longitude,
+             rp.current_latitude as current_latitude, rp.current_longitude as current_longitude,
              rt.rating as user_rating, rt.review as user_review
       FROM rides r
       JOIN users c ON r.customer_id = c.id
@@ -175,7 +177,9 @@ const RideModel = {
              COALESCE(rp.is_core_member, rd.is_core_member, 0) as rider_is_core,
              rp.vehicle_type as rider_vehicle_type, rp.vehicle_number, rp.vehicle_number as rider_vehicle_number,
              rp.vehicle_model, rp.vehicle_model as rider_vehicle_model, rp.rating as rider_rating,
-             rp.current_latitude as rider_current_lat, rp.current_longitude as rider_current_lng
+             rp.current_latitude as rider_current_lat, rp.current_longitude as rider_current_lng,
+             rp.current_latitude as rider_latitude, rp.current_longitude as rider_longitude,
+             rp.current_latitude as current_latitude, rp.current_longitude as current_longitude
       FROM rides r
       JOIN users c ON r.customer_id = c.id
       LEFT JOIN users rd ON r.rider_id = rd.id

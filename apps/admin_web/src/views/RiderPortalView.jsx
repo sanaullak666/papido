@@ -168,6 +168,8 @@ export function RiderPortalView() {
   const [driverLocation, setDriverLocation] = useState({ lat: 12.0240, lng: 79.8530, heading: 0, speed: 0 });
   const [gpsActive, setGpsActive] = useState(false);
   const [gpsError, setGpsError] = useState(null);
+  const [simulatingDrive, setSimulatingDrive] = useState(false);
+  const simIntervalRef = useRef(null);
 
   // Leaflet Map Ref
   const mapRef = useRef(null);
@@ -264,6 +266,7 @@ export function RiderPortalView() {
       setGpsActive(true);
       watchId = navigator.geolocation.watchPosition(
         (position) => {
+          if (simulatingDrive) return; // Don't overwrite simulated coordinates during simulation
           const { latitude, longitude, heading, speed } = position.coords;
           const newLoc = {
             lat: Number(latitude),
@@ -307,7 +310,81 @@ export function RiderPortalView() {
         navigator.geolocation.clearWatch(watchId);
       }
     };
-  }, [isOnline, activeRide?.id, user?.id]);
+  }, [isOnline, activeRide?.id, user?.id, simulatingDrive]);
+
+  // Continuous Periodic Socket Ping (Every 2.5s) to guarantee passenger receives live status
+  useEffect(() => {
+    if (!socketRef.current || (!isOnline && !activeRide)) return;
+
+    const pingInterval = setInterval(() => {
+      if (driverLocation && driverLocation.lat && driverLocation.lng) {
+        socketRef.current.emit('rider:location_update', {
+          rideId: activeRide?.id,
+          riderId: user?.id,
+          latitude: driverLocation.lat,
+          longitude: driverLocation.lng,
+          heading: driverLocation.heading || 0,
+          speed: driverLocation.speed || 0
+        });
+      }
+    }, 2500);
+
+    return () => clearInterval(pingInterval);
+  }, [isOnline, activeRide?.id, user?.id, driverLocation]);
+
+  // Helper: Simulate Smooth Bike Movement Along University Paths
+  const handleToggleSimulateDrive = () => {
+    if (simulatingDrive) {
+      if (simIntervalRef.current) clearInterval(simIntervalRef.current);
+      setSimulatingDrive(false);
+      return;
+    }
+
+    const startLat = driverLocation?.lat || 12.0228;
+    const startLng = driverLocation?.lng || 79.8509;
+    const targetLat = Number(activeRide?.status === 'STARTED' ? activeRide?.destination_latitude : activeRide?.pickup_latitude) || (startLat + 0.006);
+    const targetLng = Number(activeRide?.status === 'STARTED' ? activeRide?.destination_longitude : activeRide?.pickup_longitude) || (startLng + 0.004);
+
+    const totalSteps = 20;
+    let step = 0;
+    setSimulatingDrive(true);
+
+    simIntervalRef.current = setInterval(() => {
+      step++;
+      const fraction = Math.min(1, step / totalSteps);
+      const curve = Math.sin(fraction * Math.PI) * 0.0012;
+      const curLat = Number((startLat + (targetLat - startLat) * fraction + curve).toFixed(6));
+      const curLng = Number((startLng + (targetLng - startLng) * fraction + (curve * 0.4)).toFixed(6));
+
+      const dLat = targetLat - startLat;
+      const dLng = targetLng - startLng;
+      const headingDeg = Math.round((Math.atan2(dLng, dLat) * 180 / Math.PI + 360) % 360);
+
+      const locPayload = {
+        lat: curLat,
+        lng: curLng,
+        heading: headingDeg,
+        speed: 22
+      };
+      setDriverLocation(locPayload);
+
+      if (socketRef.current) {
+        socketRef.current.emit('rider:location_update', {
+          rideId: activeRide?.id,
+          riderId: user?.id,
+          latitude: curLat,
+          longitude: curLng,
+          heading: headingDeg,
+          speed: 22
+        });
+      }
+
+      if (fraction >= 1) {
+        clearInterval(simIntervalRef.current);
+        setSimulatingDrive(false);
+      }
+    }, 1200);
+  };
 
   // Join Active Ride Room for Direct Tracking
   useEffect(() => {
@@ -1834,6 +1911,52 @@ export function RiderPortalView() {
                       <ExternalLink size={12} /> Navigate Drop
                     </a>
                   </div>
+                </div>
+
+                {/* Live GPS Broadcast Status & Simulation Controls */}
+                <div style={{
+                  background: 'rgba(6, 182, 212, 0.08)',
+                  border: '1.5px solid rgba(6, 182, 212, 0.35)',
+                  borderRadius: '12px',
+                  padding: '12px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '10px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{
+                      width: '10px',
+                      height: '10px',
+                      borderRadius: '50%',
+                      background: simulatingDrive ? '#10B981' : '#06B6D4',
+                      boxShadow: simulatingDrive ? '0 0 10px #10B981' : '0 0 10px #06B6D4'
+                    }} />
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                        {simulatingDrive ? 'Simulating Live Campus Drive...' : 'Live GPS Active & Broadcasting'}
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        {driverLocation.lat.toFixed(4)}, {driverLocation.lng.toFixed(4)} ({driverLocation.speed || 0} km/h)
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleToggleSimulateDrive}
+                    className="btn btn-secondary btn-sm"
+                    style={{
+                      padding: '6px 12px',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      background: simulatingDrive ? '#FEE2E2' : '#E0F2FE',
+                      borderColor: simulatingDrive ? '#FCA5A5' : '#7DD3FC',
+                      color: simulatingDrive ? '#DC2626' : '#0284C7'
+                    }}
+                  >
+                    {simulatingDrive ? '⏹ Stop Drive' : '▶️ Test Drive Simulation'}
+                  </button>
                 </div>
 
                 {/* Error Banner */}
