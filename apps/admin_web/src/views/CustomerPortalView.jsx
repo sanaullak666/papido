@@ -300,6 +300,7 @@ export function CustomerPortalView() {
   const [ratingVal, setRatingVal] = useState(5);
   const [ratingReview, setRatingReview] = useState('');
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
+  const [submittingRating, setSubmittingRating] = useState(false);
 
   // Outside Trips
   const [outsidePickup, setOutsidePickup] = useState(CAMPUS_HOTSPOTS[0].name);
@@ -1130,19 +1131,23 @@ export function CustomerPortalView() {
   // 8. Handle Submit Rating
   const handleSubmitRating = async () => {
     if (!activeRide) return;
+    setSubmittingRating(true);
     try {
       await apiRequest(`/customer/rides/${activeRide.id}/rating`, 'POST', {
         rating: ratingVal,
         review: ratingReview
       }, token);
       setRatingSubmitted(true);
+      fetchRideHistory();
       setTimeout(() => {
         setActiveRide(null);
         setRatingSubmitted(false);
         setRatingReview('');
-      }, 2000);
+      }, 2200);
     } catch (err) {
       alert(err.message || 'Failed to submit rating.');
+    } finally {
+      setSubmittingRating(false);
     }
   };
 
@@ -2095,41 +2100,84 @@ export function CustomerPortalView() {
                         <CheckCircle2 size={30} />
                       </div>
 
-                      <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1C1917', marginBottom: '4px' }}>
-                        Thank you for booking with Papido!
+                      <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1C1917', marginBottom: '6px' }}>
+                        Thank you for riding with Papido!
                       </h3>
-                      <p style={{ fontSize: '12px', color: '#796D61', marginBottom: '16px' }}>
-                        We hope you had a pleasant campus journey. Your feedback helps us keep campus mobility safe and swift.
+                      <p style={{ fontSize: '13px', color: '#44403C', lineHeight: '1.5', marginBottom: '14px' }}>
+                        We hope you had a pleasant campus journey. Please contact us again or book anytime for your next ride.
                       </p>
+
+                      {/* Driver & Fare Summary Box */}
+                      <div style={{
+                        background: '#F8F3EC',
+                        border: '1px solid #E8DCCB',
+                        borderRadius: '12px',
+                        padding: '12px 14px',
+                        textAlign: 'left',
+                        marginBottom: '16px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}>
+                        <div>
+                          <div style={{ fontSize: '11px', color: '#796D61', fontWeight: 700, textTransform: 'uppercase' }}>
+                            Completed Ride
+                          </div>
+                          <div style={{ fontSize: '14px', fontWeight: 800, color: '#1C1917' }}>
+                            Driver: {activeRide.rider_name || 'Campus Rider'}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#796D61' }}>
+                            {activeRide.rider_vehicle_model || activeRide.vehicle_model || 'Campus Bike'} • {activeRide.rider_vehicle_number || activeRide.vehicle_number || 'Campus'}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '11px', color: '#796D61', fontWeight: 700 }}>
+                            Fare Paid
+                          </div>
+                          <div style={{ fontSize: '18px', fontWeight: 900, color: '#EA580C' }}>
+                            ₹{activeRide.final_fare || activeRide.total_fare || activeRide.estimated_fare || 20}
+                          </div>
+                        </div>
+                      </div>
 
                       {!ratingSubmitted ? (
                         <div>
-                          <div style={{ fontSize: '12px', fontWeight: 700, color: '#1C1917', marginBottom: '8px' }}>
+                          <div style={{ fontSize: '13px', fontWeight: 700, color: '#1C1917', marginBottom: '8px' }}>
                             Rate your ride experience:
                           </div>
-                          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '12px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '6px' }}>
                             {[1, 2, 3, 4, 5].map((star) => (
                               <Star
                                 key={star}
-                                size={26}
+                                size={28}
                                 onClick={() => setRatingVal(star)}
                                 style={{
                                   cursor: 'pointer',
                                   fill: star <= ratingVal ? '#F59E0B' : 'none',
-                                  color: '#F59E0B'
+                                  color: '#F59E0B',
+                                  transition: 'transform 0.15s ease'
                                 }}
                               />
                             ))}
                           </div>
+                          <div style={{ fontSize: '12px', fontWeight: 700, color: '#D97706', marginBottom: '12px' }}>
+                            {ratingVal === 5 && '5 Stars - Excellent'}
+                            {ratingVal === 4 && '4 Stars - Very Good'}
+                            {ratingVal === 3 && '3 Stars - Good'}
+                            {ratingVal === 2 && '2 Stars - Fair'}
+                            {ratingVal === 1 && '1 Star - Poor'}
+                          </div>
+
                           <input
                             type="text"
-                            placeholder="Write brief feedback (optional)..."
+                            placeholder="Write brief feedback about your driver (optional)..."
                             className="form-input"
-                            style={{ width: '100%', marginBottom: '10px', background: '#F8F3EC', border: '1.5px solid #E8DCCB' }}
+                            style={{ width: '100%', marginBottom: '12px', background: '#F8F3EC', border: '1.5px solid #E8DCCB' }}
                             value={ratingReview}
                             onChange={(e) => setRatingReview(e.target.value)}
                           />
-                          <div style={{ display: 'flex', gap: '8px' }}>
+
+                          <div style={{ display: 'flex', gap: '10px' }}>
                             <button
                               type="button"
                               onClick={() => {
@@ -2138,25 +2186,53 @@ export function CustomerPortalView() {
                                 setRatingReview('');
                               }}
                               className="btn btn-secondary"
-                              style={{ flex: 1, padding: '10px', fontWeight: 700 }}
+                              style={{ flex: 1, padding: '11px', fontWeight: 700 }}
                             >
                               Skip
                             </button>
                             <button
                               type="button"
                               onClick={handleSubmitRating}
+                              disabled={submittingRating}
                               className="btn btn-primary"
-                              style={{ flex: 1, padding: '10px', fontWeight: 800 }}
+                              style={{ flex: 1, padding: '11px', fontWeight: 800 }}
                             >
-                              Submit Rating
+                              {submittingRating ? 'Submitting...' : 'Submit Feedback'}
                             </button>
                           </div>
                         </div>
                       ) : (
-                        <div style={{ padding: '12px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '10px', color: '#059669', fontWeight: 700, fontSize: '13px' }}>
-                          Thank you for your rating and feedback!
+                        <div style={{ padding: '14px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '10px', color: '#059669', fontWeight: 800, fontSize: '13px' }}>
+                          Thank you! Your feedback has been recorded for this rider.
                         </div>
                       )}
+
+                      {/* Contact Us / Support Help */}
+                      <div style={{
+                        marginTop: '16px',
+                        paddingTop: '12px',
+                        borderTop: '1px solid #E8DCCB',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        fontSize: '12px',
+                        color: '#796D61'
+                      }}>
+                        <span>Questions or lost items?</span>
+                        <a
+                          href="tel:9876543210"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontWeight: 700,
+                            color: '#EA580C',
+                            textDecoration: 'none'
+                          }}
+                        >
+                          <Phone size={12} /> Contact Dispatch
+                        </a>
+                      </div>
 
                       <button
                         type="button"
@@ -2166,7 +2242,7 @@ export function CustomerPortalView() {
                           setRatingReview('');
                         }}
                         className="btn btn-secondary"
-                        style={{ width: '100%', marginTop: '12px', padding: '10px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                        style={{ width: '100%', marginTop: '12px', padding: '11px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                       >
                         <Bike size={16} /> Book Another Campus Ride
                       </button>
