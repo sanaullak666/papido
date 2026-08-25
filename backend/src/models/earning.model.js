@@ -49,7 +49,7 @@ const EarningModel = {
         COUNT(DISTINCT r.id) as today_completed_rides
       FROM rides r
       LEFT JOIN rider_earnings re ON r.id = re.ride_id
-      WHERE r.rider_id = ? AND r.status = 'COMPLETED'
+      WHERE (r.rider_id = ? OR re.rider_id = ?) AND (r.status = 'COMPLETED' OR r.payment_status = 'PAID' OR r.status IS NULL)
         AND (DATE(COALESCE(r.completed_at, re.created_at, r.created_at)) = CURRENT_DATE() 
              OR DATE(COALESCE(r.completed_at, re.created_at, r.created_at)) = ? 
              OR COALESCE(r.completed_at, re.created_at) >= CURDATE())
@@ -76,7 +76,7 @@ const EarningModel = {
         COUNT(DISTINCT r.id) as weekly_completed_rides
       FROM rides r
       LEFT JOIN rider_earnings re ON r.id = re.ride_id
-      WHERE r.rider_id = ? AND r.status = 'COMPLETED'
+      WHERE (r.rider_id = ? OR re.rider_id = ?) AND (r.status = 'COMPLETED' OR r.payment_status = 'PAID' OR r.status IS NULL)
         AND COALESCE(r.completed_at, re.created_at, r.created_at) >= DATE_SUB(NOW(), INTERVAL 7 DAY)
     `;
 
@@ -101,7 +101,7 @@ const EarningModel = {
         COUNT(DISTINCT r.id) as monthly_completed_rides
       FROM rides r
       LEFT JOIN rider_earnings re ON r.id = re.ride_id
-      WHERE r.rider_id = ? AND r.status = 'COMPLETED'
+      WHERE (r.rider_id = ? OR re.rider_id = ?) AND (r.status = 'COMPLETED' OR r.payment_status = 'PAID' OR r.status IS NULL)
         AND COALESCE(r.completed_at, re.created_at, r.created_at) >= DATE_SUB(NOW(), INTERVAL 30 DAY)
     `;
 
@@ -126,14 +126,14 @@ const EarningModel = {
         COUNT(DISTINCT r.id) as lifetime_completed_rides
       FROM rides r
       LEFT JOIN rider_earnings re ON r.id = re.ride_id
-      WHERE r.rider_id = ? AND r.status = 'COMPLETED'
+      WHERE (r.rider_id = ? OR re.rider_id = ?) AND (r.status = 'COMPLETED' OR r.payment_status = 'PAID' OR r.status IS NULL)
     `;
 
     const [today, weekly, monthly, lifetime] = await Promise.all([
-      db.queryOne(todaySql, [riderId, todayStr]).catch(() => ({})),
-      db.queryOne(weeklySql, [riderId]).catch(() => ({})),
-      db.queryOne(monthlySql, [riderId]).catch(() => ({})),
-      db.queryOne(lifetimeSql, [riderId]).catch(() => ({}))
+      db.queryOne(todaySql, [riderId, riderId, todayStr]).catch(() => ({})),
+      db.queryOne(weeklySql, [riderId, riderId]).catch(() => ({})),
+      db.queryOne(monthlySql, [riderId, riderId]).catch(() => ({})),
+      db.queryOne(lifetimeSql, [riderId, riderId]).catch(() => ({}))
     ]);
 
     return {

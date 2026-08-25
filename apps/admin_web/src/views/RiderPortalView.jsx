@@ -246,11 +246,47 @@ export function RiderPortalView() {
     }
   };
 
-  // Derived Earnings Values
-  const todayNetEarning = earnings?.netDriverEarning ?? earnings?.summary?.today?.earnings ?? earnings?.todayTotal ?? 0;
-  const todayTripsCount = earnings?.todayTrips ?? earnings?.summary?.today?.rides ?? 0;
-  const lifetimeTripsCount = earnings?.lifetimeTrips ?? earnings?.summary?.lifetime?.rides ?? todayTripsCount;
-  const platformFee = earnings?.todayPlatformFee ?? earnings?.companyCommission ?? earnings?.summary?.today?.platformFee ?? (todayTripsCount * 4);
+  // Client-side fallback aggregation from loaded rides
+  const completedRidesList = (riderRides || []).filter(r => 
+    !r.status || r.status === 'COMPLETED' || r.status === 'PAID'
+  );
+  
+  const todayDateStr = getTodayDateString();
+  const todayRidesList = completedRidesList.filter(r => {
+    const dStr = String(r.completed_at || r.created_at || r.requested_at || '').slice(0, 10);
+    return dStr === todayDateStr;
+  });
+
+  const clientTodayTrips = todayRidesList.length;
+  const clientLifetimeTrips = completedRidesList.length;
+
+  const clientTodayNet = todayRidesList.reduce((sum, r) => {
+    const fare = Number(r.total_fare || r.final_fare || r.estimated_fare || 20);
+    const split = calcDriverSplit(fare);
+    return sum + (r.rider_earning !== undefined ? Number(r.rider_earning) : split.rider);
+  }, 0);
+
+  const clientTodayPlatformFee = todayRidesList.reduce((sum, r) => {
+    const fare = Number(r.total_fare || r.final_fare || r.estimated_fare || 20);
+    const split = calcDriverSplit(fare);
+    return sum + split.platformFee;
+  }, 0);
+
+  // Derived Earnings Values (merges API summary with fallback calculations)
+  const todayNetEarning = Number(
+    earnings?.netDriverEarning ?? earnings?.summary?.today?.earnings ?? earnings?.todayTotal ?? clientTodayNet ?? 0
+  );
+  const todayTripsCount = Number(
+    earnings?.todayTrips ?? earnings?.summary?.today?.rides ?? clientTodayTrips ?? 0
+  );
+  const lifetimeTripsCount = Math.max(
+    Number(earnings?.lifetimeTrips ?? earnings?.summary?.lifetime?.rides ?? 0),
+    clientLifetimeTrips,
+    todayTripsCount
+  );
+  const platformFee = Number(
+    earnings?.todayPlatformFee ?? earnings?.companyCommission ?? earnings?.summary?.today?.platformFee ?? (todayTripsCount > 0 ? todayTripsCount * 4 : clientTodayPlatformFee) ?? 0
+  );
 
   const fetchShiftSettlement = async (targetDate) => {
     try {
@@ -377,7 +413,7 @@ export function RiderPortalView() {
       if (!isBackground) setLoadingEarnings(true);
       const [earningsRes, ridesRes] = await Promise.all([
         apiRequest('/rider/earnings', 'GET', null, token),
-        apiRequest('/rider/rides?limit=10', 'GET', null, token)
+        apiRequest('/rider/rides?limit=50', 'GET', null, token)
       ]);
       if (earningsRes.data) {
         setEarnings(earningsRes.data);
