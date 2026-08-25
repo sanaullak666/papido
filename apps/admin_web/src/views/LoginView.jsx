@@ -19,7 +19,7 @@ export function LoginView({ onGoToAdminPortal }) {
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPhone, setRegPhone] = useState('');
-  const [regGender, setRegGender] = useState('FEMALE');
+  const [regGender, setRegGender] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regVehicleType, setRegVehicleType] = useState('BIKE'); // 'BIKE' or 'SCOOTER'
   const [regVehicleModel, setRegVehicleModel] = useState('');
@@ -110,6 +110,8 @@ export function LoginView({ onGoToAdminPortal }) {
       const val = (value || '').trim();
       if (!val) err = 'PHONE NUMBER IS REQUIRED.';
       else if (!/^[6-9]\d{9}$/.test(val)) err = 'PLEASE ENTER A VALID 10-DIGIT MOBILE NUMBER (STARTING WITH 6, 7, 8, OR 9).';
+    } else if (field === 'gender') {
+      if (!value) err = 'PLEASE SELECT YOUR GENDER (MALE OR FEMALE).';
     } else if (field === 'password') {
       if (!value) err = 'PASSWORD IS REQUIRED.';
       else if (value.length < 6) err = 'PASSWORD MUST BE AT LEAST 6 CHARACTERS LONG.';
@@ -134,11 +136,12 @@ export function LoginView({ onGoToAdminPortal }) {
       name: validateRegField('name', regName),
       email: validateRegField('email', regEmail),
       phone: validateRegField('phone', regPhone),
+      gender: validateRegField('gender', regGender),
       password: validateRegField('password', regPassword),
       vehicleModel: regRole === 'RIDER' ? validateRegField('vehicleModel', regVehicleModel) : ''
     };
 
-    setRegTouched({ name: true, email: true, phone: true, password: true, vehicleModel: true });
+    setRegTouched({ name: true, email: true, phone: true, gender: true, password: true, vehicleModel: true });
     setRegFieldErrors(errors);
 
     const firstError = Object.values(errors).find(Boolean);
@@ -635,15 +638,26 @@ export function LoginView({ onGoToAdminPortal }) {
             </div>
 
             <div className="form-group">
-              <label className="form-label" style={{ color: '#271E16', fontWeight: 700 }}>GENDER <span style={{ color: '#EA580C' }}>*</span></label>
+              <label className="form-label" style={{ color: '#271E16', fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>GENDER <span style={{ color: '#EA580C' }}>*</span></span>
+                {regGender && (
+                  <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <Check size={12} /> {regGender} SELECTED
+                  </span>
+                )}
+              </label>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <button
                   type="button"
-                  onClick={() => setRegGender('MALE')}
+                  onClick={() => {
+                    setRegGender('MALE');
+                    setRegTouched(prev => ({ ...prev, gender: true }));
+                    setRegFieldErrors(prev => ({ ...prev, gender: '' }));
+                  }}
                   style={{
                     padding: '10px 4px',
                     borderRadius: '8px',
-                    border: regGender === 'MALE' ? '2px solid #F97316' : '1.5px solid #E8DCCB',
+                    border: regGender === 'MALE' ? '2px solid #F97316' : (regTouched.gender && regFieldErrors.gender ? '1.5px solid #EF4444' : '1.5px solid #E8DCCB'),
                     background: regGender === 'MALE' ? '#FFFFFF' : '#F8F3EC',
                     color: regGender === 'MALE' ? '#EA580C' : '#796D61',
                     boxShadow: regGender === 'MALE' ? '0 2px 8px rgba(249, 115, 22, 0.2)' : 'none',
@@ -660,11 +674,15 @@ export function LoginView({ onGoToAdminPortal }) {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setRegGender('FEMALE')}
+                  onClick={() => {
+                    setRegGender('FEMALE');
+                    setRegTouched(prev => ({ ...prev, gender: true }));
+                    setRegFieldErrors(prev => ({ ...prev, gender: '' }));
+                  }}
                   style={{
                     padding: '10px 4px',
                     borderRadius: '8px',
-                    border: regGender === 'FEMALE' ? '2px solid #EC4899' : '1.5px solid #E8DCCB',
+                    border: regGender === 'FEMALE' ? '2px solid #EC4899' : (regTouched.gender && regFieldErrors.gender ? '1.5px solid #EF4444' : '1.5px solid #E8DCCB'),
                     background: regGender === 'FEMALE' ? '#FFFFFF' : '#F8F3EC',
                     color: regGender === 'FEMALE' ? '#BE185D' : '#796D61',
                     boxShadow: regGender === 'FEMALE' ? '0 2px 8px rgba(236, 72, 153, 0.2)' : 'none',
@@ -680,6 +698,11 @@ export function LoginView({ onGoToAdminPortal }) {
                   <ShieldCheck size={16} /> FEMALE
                 </button>
               </div>
+              {regTouched.gender && regFieldErrors.gender && (
+                <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 700, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <AlertCircle size={12} /> {regFieldErrors.gender}
+                </div>
+              )}
             </div>
 
             {/* Rider Specific Mandatory Verification Details */}
