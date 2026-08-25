@@ -255,11 +255,16 @@ export function RiderPortalView() {
     }
     try {
       setSubmittingShiftSettlement(true);
+      const targetDate = shiftSettlement?.date || new Date().toISOString().slice(0, 10);
       const res = await apiRequest('/rider/shift-settlement/submit', 'POST', {
-        date: shiftSettlement?.date,
+        date: targetDate,
         utrReference: shiftUtrInput.trim()
       }, token);
-      setShiftSettlement(res.data);
+      if (res?.data) {
+        setShiftSettlement(res.data);
+      } else {
+        await fetchShiftSettlement();
+      }
       setShiftSuccessMsg('Shift settlement submitted to Admin for verification. Once approved, tomorrow\'s rides will be unlocked.');
       setTimeout(() => setShiftSuccessMsg(''), 6000);
     } catch (err) {

@@ -499,7 +499,7 @@ const EarningModel = {
   },
 
   async submitRiderShiftSettlement({ riderId, date, utrReference }) {
-    const targetDate = date || new Date().toISOString().slice(0, 10);
+    const targetDate = (date && String(date).trim()) || new Date().toISOString().slice(0, 10);
     const dailyData = await this.getDailySettlements({ date: targetDate, riderId });
     const riderData = (dailyData.riders && dailyData.riders[0]) || {
       totalTrips: 0,
@@ -509,6 +509,33 @@ const EarningModel = {
       totalDeductionDue: 0,
       riderNetEarnings: 0
     };
+
+    // Safeguard table creation
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS daily_shift_settlements (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        rider_id INT NOT NULL,
+        date DATE NOT NULL,
+        total_trips INT DEFAULT 0,
+        gross_fare DECIMAL(10, 2) DEFAULT 0.00,
+        company_due DECIMAL(10, 2) DEFAULT 0.00,
+        controller_due DECIMAL(10, 2) DEFAULT 0.00,
+        total_commission_due DECIMAL(10, 2) DEFAULT 0.00,
+        rider_net_earnings DECIMAL(10, 2) DEFAULT 0.00,
+        status VARCHAR(30) NOT NULL DEFAULT 'UNSETTLED',
+        utr_reference VARCHAR(150) DEFAULT NULL,
+        rejection_reason VARCHAR(255) DEFAULT NULL,
+        submitted_at DATETIME DEFAULT NULL,
+        approved_at DATETIME DEFAULT NULL,
+        approved_by INT DEFAULT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_dss_rider_date (rider_id, date),
+        INDEX idx_dss_rider (rider_id),
+        INDEX idx_dss_date (date),
+        INDEX idx_dss_status (status)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `).catch(() => {});
 
     await db.query(`
       INSERT INTO daily_shift_settlements (

@@ -52,10 +52,12 @@ async function initializeDatabase() {
       try {
         await testPool.query('SELECT 1 FROM users LIMIT 1');
         await ensureFlashFreeRidesSchema(testPool);
+        await ensureSettlementsSchema(testPool);
       } catch (_) {
         await bootstrapMysqlSchema(testPool);
         await ensureDatabaseIndexes(testPool);
         await ensureFlashFreeRidesSchema(testPool);
+        await ensureSettlementsSchema(testPool);
       }
 
       return { engine: 'mysql', pool };
@@ -603,6 +605,74 @@ async function ensureFlashFreeRidesSchema(targetPool) {
     } catch (_) {}
   } catch (err) {
     console.warn('[Database] Flash free rides schema notice:', err.message);
+  }
+}
+
+/**
+ * Ensures daily shift settlements, duty controllers, and system settings tables exist in TiDB / MySQL
+ */
+async function ensureSettlementsSchema(targetPool) {
+  try {
+    await targetPool.query(`
+      CREATE TABLE IF NOT EXISTS system_settings (
+        \`key\` VARCHAR(100) PRIMARY KEY,
+        \`value\` TEXT NOT NULL,
+        description VARCHAR(255) DEFAULT NULL,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    try {
+      await targetPool.query(`
+        INSERT IGNORE INTO system_settings (\`key\`, \`value\`, description) VALUES
+          ('ADMIN_SETTLEMENT_UPI_ID', 'papido.admin@okaxis', 'Default Admin UPI ID for driver shift commission collection'),
+          ('ADMIN_SETTLEMENT_NAME', 'Papido Campus Operations', 'Default Receiver Name for Admin UPI'),
+          ('ADMIN_SETTLEMENT_AUTO_LOCK', 'true', 'Whether unsettled shift dues auto-lock driver online status')
+      `);
+    } catch (_) {}
+
+    await targetPool.query(`
+      CREATE TABLE IF NOT EXISTS daily_duty_controllers (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        date DATE NOT NULL UNIQUE,
+        core_member_id INT NOT NULL,
+        payout_status VARCHAR(30) DEFAULT 'PENDING',
+        notes VARCHAR(255) DEFAULT NULL,
+        assigned_by INT DEFAULT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_ddc_date (date),
+        INDEX idx_ddc_core (core_member_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    await targetPool.query(`
+      CREATE TABLE IF NOT EXISTS daily_shift_settlements (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        rider_id INT NOT NULL,
+        date DATE NOT NULL,
+        total_trips INT DEFAULT 0,
+        gross_fare DECIMAL(10, 2) DEFAULT 0.00,
+        company_due DECIMAL(10, 2) DEFAULT 0.00,
+        controller_due DECIMAL(10, 2) DEFAULT 0.00,
+        total_commission_due DECIMAL(10, 2) DEFAULT 0.00,
+        rider_net_earnings DECIMAL(10, 2) DEFAULT 0.00,
+        status VARCHAR(30) NOT NULL DEFAULT 'UNSETTLED',
+        utr_reference VARCHAR(150) DEFAULT NULL,
+        rejection_reason VARCHAR(255) DEFAULT NULL,
+        submitted_at DATETIME DEFAULT NULL,
+        approved_at DATETIME DEFAULT NULL,
+        approved_by INT DEFAULT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_dss_rider_date (rider_id, date),
+        INDEX idx_dss_rider (rider_id),
+        INDEX idx_dss_date (date),
+        INDEX idx_dss_status (status)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+  } catch (err) {
+    console.warn('[Database] Settlements schema bootstrap notice:', err.message);
   }
 }
 
