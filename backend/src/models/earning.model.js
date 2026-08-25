@@ -479,13 +479,65 @@ const EarningModel = {
   },
 
   async getRiderShiftSettlement(riderId, date = null) {
-    const targetDate = date || new Date().toISOString().slice(0, 10);
-    const [settings, dailyData, shiftRecord, lockCheck] = await Promise.all([
+    const targetDate = (date && String(date).trim()) || new Date().toISOString().slice(0, 10);
+    const [settings, dailyData, shiftRecord, lockCheck, rawRecentShifts] = await Promise.all([
       this.getAdminSettlementSettings(),
       this.getDailySettlements({ date: targetDate, riderId }),
       db.queryOne('SELECT * FROM daily_shift_settlements WHERE rider_id = ? AND date = ?', [riderId, targetDate]).catch(() => null),
-      this.isRiderShiftLocked(riderId)
+      this.isRiderShiftLocked(riderId),
+      db.query(`
+        SELECT 
+          shift_date,
+          COUNT(ride_id) as total_trips,
+          SUM(fare) as gross_fare,
+          SUM(company_due + controller_due) as total_commission_due,
+          SUM(rider_net) as rider_net_earnings,
+          MAX(status) as status,
+          MAX(utr_reference) as utr_reference,
+          MAX(rejection_reason) as rejection_reason,
+          MAX(submitted_at) as submitted_at,
+          MAX(approved_at) as approved_at
+        FROM (
+          SELECT 
+            COALESCE(DATE(r.completed_at), DATE(re.created_at)) as shift_date,
+            r.id as ride_id,
+            COALESCE(r.final_fare, r.total_fare, re.amount, 0) as fare,
+            COALESCE(re.company_earning, 0) as company_due,
+            COALESCE(re.controller_earning, 0) as controller_due,
+            COALESCE(re.rider_earning, 0) as rider_net,
+            dss.status,
+            dss.utr_reference,
+            dss.rejection_reason,
+            dss.submitted_at,
+            dss.approved_at
+          FROM rides r
+          JOIN rider_earnings re ON r.id = re.ride_id
+          LEFT JOIN daily_shift_settlements dss ON (dss.rider_id = r.rider_id AND dss.date = COALESCE(DATE(r.completed_at), DATE(re.created_at)))
+          WHERE r.rider_id = ? AND r.status = 'COMPLETED'
+        ) sub
+        GROUP BY shift_date
+        ORDER BY shift_date DESC
+        LIMIT 14
+      `, [riderId]).catch(() => [])
     ]);
+
+    const recentShifts = (rawRecentShifts || []).map(s => {
+      const sDate = String(s.shift_date).slice(0, 10);
+      const isSettled = s.status === 'SETTLED';
+      const effectiveSt = s.status || (isSettled ? 'SETTLED' : 'UNSETTLED');
+      return {
+        date: sDate,
+        totalTrips: parseInt(s.total_trips || 0, 10),
+        grossFare: Number(parseFloat(s.gross_fare || 0).toFixed(2)),
+        totalCommissionDue: Number(parseFloat(s.total_commission_due || 0).toFixed(2)),
+        riderNetEarnings: Number(parseFloat(s.rider_net_earnings || 0).toFixed(2)),
+        status: effectiveSt,
+        utrReference: s.utr_reference || null,
+        rejectionReason: s.rejection_reason || null,
+        submittedAt: s.submitted_at || null,
+        approvedAt: s.approved_at || null
+      };
+    });
 
     const riderData = (dailyData.riders && dailyData.riders[0]) || {
       totalTrips: 0,
@@ -523,7 +575,8 @@ const EarningModel = {
         qrCodeUrl
       },
       isLocked: lockCheck.isLocked,
-      lockDetails: lockCheck
+      lockDetails: lockCheck,
+      recentShifts
     };
   },
 

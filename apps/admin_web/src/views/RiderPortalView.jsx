@@ -36,13 +36,33 @@ import {
   Smartphone,
   Send,
   Copy,
-  Check
+  Check,
+  Calendar,
+  RefreshCw
 } from 'lucide-react';
 import { alertManager } from '../utils/alertManager';
+
+const getTodayDateString = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getYesterdayDateString = () => {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 const getRiderTabFromPath = (path) => {
   const clean = (path || window.location.pathname || '').toLowerCase().replace(/\/+$/, '');
   if (clean.endsWith('/active') || clean.endsWith('/trip')) return 'active';
+  if (clean.endsWith('/settlement') || clean.endsWith('/settlements')) return 'settlements';
   if (clean.endsWith('/earnings')) return 'earnings';
   if (clean.endsWith('/kyc') || clean.endsWith('/vehicle')) return 'kyc';
   if (clean.endsWith('/profile')) return 'profile';
@@ -91,6 +111,7 @@ export function RiderPortalView() {
         radar: '/driver/radar',
         active: '/driver/active',
         earnings: '/driver/earnings',
+        settlements: '/driver/settlements',
         kyc: '/driver/kyc',
         profile: '/driver/profile'
       };
@@ -108,6 +129,7 @@ export function RiderPortalView() {
         radar: '/driver/radar',
         active: '/driver/active',
         earnings: '/driver/earnings',
+        settlements: '/driver/settlements',
         kyc: '/driver/kyc',
         profile: '/driver/profile'
       };
@@ -147,6 +169,7 @@ export function RiderPortalView() {
   const [riderRides, setRiderRides] = useState([]);
 
   // Daily Shift Commission Settlement State
+  const [selectedSettlementDate, setSelectedSettlementDate] = useState(getTodayDateString);
   const [shiftSettlement, setShiftSettlement] = useState(null);
   const [loadingShiftSettlement, setLoadingShiftSettlement] = useState(false);
   const [submittingShiftSettlement, setSubmittingShiftSettlement] = useState(false);
@@ -228,14 +251,17 @@ export function RiderPortalView() {
   const todayTripsCount = earnings?.todayTrips ?? earnings?.summary?.today?.rides ?? (riderRides ? riderRides.length : 0);
   const platformCommission = earnings?.companyCommission ?? earnings?.summary?.today?.companyDeduction ?? 0;
 
-  const fetchShiftSettlement = async () => {
+  const fetchShiftSettlement = async (targetDate) => {
     try {
       setLoadingShiftSettlement(true);
-      const res = await apiRequest('/rider/shift-settlement', 'GET', null, token);
+      const queryDate = targetDate || selectedSettlementDate || getTodayDateString();
+      const res = await apiRequest(`/rider/shift-settlement?date=${queryDate}`, 'GET', null, token);
       if (res?.data) {
         setShiftSettlement(res.data);
         if (res.data.utrReference) {
           setShiftUtrInput(res.data.utrReference);
+        } else {
+          setShiftUtrInput('');
         }
         if (res.data.isLocked && isOnline) {
           setIsOnline(false);
@@ -255,7 +281,7 @@ export function RiderPortalView() {
     }
     try {
       setSubmittingShiftSettlement(true);
-      const targetDate = shiftSettlement?.date || new Date().toISOString().slice(0, 10);
+      const targetDate = shiftSettlement?.date || selectedSettlementDate || getTodayDateString();
       const res = await apiRequest('/rider/shift-settlement/submit', 'POST', {
         date: targetDate,
         utrReference: shiftUtrInput.trim()
@@ -263,9 +289,9 @@ export function RiderPortalView() {
       if (res?.data) {
         setShiftSettlement(res.data);
       } else {
-        await fetchShiftSettlement();
+        await fetchShiftSettlement(targetDate);
       }
-      setShiftSuccessMsg('Shift settlement submitted to Admin for verification. Once approved, tomorrow\'s rides will be unlocked.');
+      setShiftSuccessMsg(`Shift settlement for ${targetDate} submitted to Admin for verification. Once approved, tomorrow's rides will be unlocked.`);
       setTimeout(() => setShiftSuccessMsg(''), 6000);
     } catch (err) {
       alert(err.message || 'Failed to submit shift settlement.');
@@ -281,8 +307,8 @@ export function RiderPortalView() {
     }
 
     if (!isOnline && shiftSettlement?.isLocked) {
-      alert(`Cannot go online. Your driver account is locked due to an unsettled platform commission of ₹${Number(shiftSettlement.lockDetails?.unpaidAmount || 0).toFixed(2)} from your shift on ${shiftSettlement.lockDetails?.pastDate}. Please settle via Admin UPI in the Earnings tab to unlock your account.`);
-      setCurrentTab('earnings');
+      alert(`Cannot go online. Your driver account is locked due to an unsettled platform commission of ₹${Number(shiftSettlement.lockDetails?.unpaidAmount || 0).toFixed(2)} from your shift on ${shiftSettlement.lockDetails?.pastDate}. Please settle via Admin UPI in the Daily Settlements tab to unlock your account.`);
+      setCurrentTab('settlements');
       return;
     }
 
@@ -808,8 +834,11 @@ export function RiderPortalView() {
   const handleAcceptRequest = async (rideId) => {
     alertManager.stopRingtone();
     if (shiftSettlement?.isLocked) {
-      alert(`Cannot accept ride. Your driver account is locked due to an unsettled platform commission of ₹${Number(shiftSettlement.lockDetails?.unpaidAmount || 0).toFixed(2)} from your shift on ${shiftSettlement.lockDetails?.pastDate}. Please settle via Admin UPI in the Earnings tab to unlock your account.`);
-      setCurrentTab('earnings');
+      alert(`Cannot accept ride. Your driver account is locked due to an unsettled platform commission of ₹${Number(shiftSettlement.lockDetails?.unpaidAmount || 0).toFixed(2)} from your shift on ${shiftSettlement.lockDetails?.pastDate}. Please settle via Admin UPI in the Daily Settlements tab to unlock your account.`);
+      if (shiftSettlement.lockDetails?.pastDate) {
+        setSelectedSettlementDate(shiftSettlement.lockDetails.pastDate);
+      }
+      setCurrentTab('settlements');
       return;
     }
     setAcceptingRideId(rideId);
@@ -1186,6 +1215,28 @@ export function RiderPortalView() {
             <DollarSign size={16} /> Shift Earnings
           </a>
           <a
+            href="/driver/settlements"
+            onClick={(e) => {
+              e.preventDefault();
+              handleTabChange('settlements');
+            }}
+            style={{
+              padding: '6px 14px',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: currentTab === 'settlements' ? 'linear-gradient(135deg, #F97316, #EA580C)' : 'transparent',
+              color: currentTab === 'settlements' ? '#FFFFFF' : '#D6C7B2',
+              textDecoration: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            <CreditCard size={16} /> Daily Settlements {shiftSettlement?.isLocked && <span style={{ background: '#EF4444', color: '#FFFFFF', padding: '1px 6px', borderRadius: '10px', fontSize: '10px', fontWeight: 900 }}>DUE</span>}
+          </a>
+          <a
             href="/driver/kyc"
             onClick={(e) => {
               e.preventDefault();
@@ -1289,7 +1340,12 @@ export function RiderPortalView() {
             </div>
             <button
               type="button"
-              onClick={() => setCurrentTab('earnings')}
+              onClick={() => {
+                if (shiftSettlement.lockDetails?.pastDate) {
+                  setSelectedSettlementDate(shiftSettlement.lockDetails.pastDate);
+                }
+                setCurrentTab('settlements');
+              }}
               className="btn btn-primary btn-sm"
               style={{ fontWeight: 800, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
@@ -1536,11 +1592,16 @@ export function RiderPortalView() {
                     Driver Account Locked for Rides
                   </div>
                   <div style={{ fontSize: '13px', color: 'var(--text-secondary)', maxWidth: '440px', lineHeight: 1.5 }}>
-                    You have an unpaid platform commission of <strong>₹{Number(shiftSettlement.lockDetails?.unpaidAmount || 0).toFixed(2)}</strong> from your shift on <strong>{shiftSettlement.lockDetails?.pastDate}</strong>. Settle via Admin UPI in the Earnings tab to unlock.
+                    You have an unpaid platform commission of <strong>₹{Number(shiftSettlement.lockDetails?.unpaidAmount || 0).toFixed(2)}</strong> from your shift on <strong>{shiftSettlement.lockDetails?.pastDate}</strong>. Settle via Admin UPI in the Daily Settlements tab to unlock.
                   </div>
                   <button
                     type="button"
-                    onClick={() => setCurrentTab('earnings')}
+                    onClick={() => {
+                      if (shiftSettlement.lockDetails?.pastDate) {
+                        setSelectedSettlementDate(shiftSettlement.lockDetails.pastDate);
+                      }
+                      setCurrentTab('settlements');
+                    }}
                     className="btn btn-primary"
                     style={{ fontWeight: 800, marginTop: '4px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                   >
@@ -2037,11 +2098,11 @@ export function RiderPortalView() {
         )}
 
         {/* ============================================================ */}
-        {/* TAB 3: EARNINGS & LEDGER */}
+        {/* TAB 3: EARNINGS & TRIP RECEIPTS */}
         {/* ============================================================ */}
         {currentTab === 'earnings' && (
           <div className="content-body" style={{ maxWidth: '900px', margin: '0 auto', width: '100%' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '20px' }}>Driver Earnings & Settlement Ledger</h2>
+            <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '20px' }}>Driver Shift Earnings &amp; Trip Ledger</h2>
 
             {/* Metrics Row */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
@@ -2061,45 +2122,178 @@ export function RiderPortalView() {
               </div>
             </div>
 
-            {/* Daily Shift Commission Settlement & Clearance Card */}
+            {/* Completed Rides Table */}
+            <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '16px', overflow: 'hidden' }}>
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', fontWeight: 800 }}>
+                Trip Settlements &amp; Receipts
+              </div>
+              {loadingEarnings ? (
+                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading earnings ledger...</div>
+              ) : riderRides.length === 0 ? (
+                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>No completed rides in this shift yet.</div>
+              ) : (
+                <div className="table-container" style={{ border: 'none' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                    <thead>
+                      <tr style={{ background: 'var(--bg-sidebar)', textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
+                        <th style={{ padding: '12px 16px' }}>Ride ID</th>
+                        <th style={{ padding: '12px 16px' }}>Route</th>
+                        <th style={{ padding: '12px 16px' }}>Gross Fare</th>
+                        <th style={{ padding: '12px 16px' }}>Your Net</th>
+                        <th style={{ padding: '12px 16px' }}>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {riderRides.map((r) => (
+                        <tr key={r.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                          <td style={{ padding: '12px 16px', fontWeight: 700 }}>#{r.id}</td>
+                          <td style={{ padding: '12px 16px' }}>
+                            <div>{r.pickup_address} → {r.destination_address}</div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                              {formatRideDateTime(r.requested_at || r.created_at || r.accepted_at || r.completed_at)}
+                            </div>
+                          </td>
+                          <td style={{ padding: '12px 16px' }}>₹{r.total_fare || r.final_fare || r.estimated_fare || 20}</td>
+                          <td style={{ padding: '12px 16px', fontWeight: 800, color: 'var(--primary)' }}>
+                            ₹{r.rider_earning || calcDriverSplit(r.total_fare || r.final_fare || r.estimated_fare || 20).rider}
+                          </td>
+                          <td style={{ padding: '12px 16px' }}>
+                            <span className={`badge ${r.status === 'COMPLETED' ? 'badge-success' : 'badge-warning'}`}>
+                              {r.status || 'COMPLETED'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================ */}
+        {/* TAB 4: DAY-WISE PLATFORM COMMISSION SETTLEMENT */}
+        {/* ============================================================ */}
+        {currentTab === 'settlements' && (
+          <div className="content-body" style={{ maxWidth: '900px', margin: '0 auto', width: '100%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 4px 0' }}>Day-Wise Commission Settlement</h2>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  Settle daily platform commission shift-by-shift to clear your account for upcoming rides.
+                </div>
+              </div>
+
+              {/* Date Selector Filter Bar */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const todayStr = getTodayDateString();
+                    setSelectedSettlementDate(todayStr);
+                    fetchShiftSettlement(todayStr);
+                  }}
+                  className={`btn btn-sm ${selectedSettlementDate === getTodayDateString() ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: '12px', fontWeight: 700, padding: '6px 12px' }}
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const yestStr = getYesterdayDateString();
+                    setSelectedSettlementDate(yestStr);
+                    fetchShiftSettlement(yestStr);
+                  }}
+                  className={`btn btn-sm ${selectedSettlementDate === getYesterdayDateString() ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: '12px', fontWeight: 700, padding: '6px 12px' }}
+                >
+                  Yesterday
+                </button>
+                <div style={{ display: 'inline-flex', alignItems: 'center', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '8px', padding: '4px 10px', gap: '6px' }}>
+                  <Calendar size={14} color="var(--text-muted)" />
+                  <input
+                    type="date"
+                    value={selectedSettlementDate}
+                    onChange={(e) => {
+                      const newDate = e.target.value;
+                      setSelectedSettlementDate(newDate);
+                      fetchShiftSettlement(newDate);
+                    }}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--text-primary)',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      outline: 'none',
+                      cursor: 'pointer'
+                    }}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => fetchShiftSettlement(selectedSettlementDate)}
+                  disabled={loadingShiftSettlement}
+                  className="btn btn-secondary btn-sm"
+                  title="Refresh Settlement Data"
+                  style={{ padding: '7px 10px' }}
+                >
+                  <RefreshCw size={13} className={loadingShiftSettlement ? 'animate-spin' : ''} />
+                </button>
+              </div>
+            </div>
+
+            {/* Selected Day Shift Settlement Card */}
             <div style={{
               background: 'var(--bg-card)',
               border: (shiftSettlement?.isLocked || shiftSettlement?.status === 'REJECTED') ? '2px solid #EF4444' : '1.5px solid var(--border)',
               borderRadius: '16px',
-              padding: '20px',
+              padding: '24px',
               marginBottom: '24px',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
+              boxShadow: '0 6px 24px rgba(0,0,0,0.06)',
               display: 'flex',
               flexDirection: 'column',
-              gap: '16px'
+              gap: '18px'
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
                 <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}>
-                    <CreditCard size={18} color="var(--primary)" />
-                    End Shift &amp; Platform Commission Settlement
-                  </h3>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                    Settle today's platform commission ({shiftSettlement?.totalTrips || todayTripsCount} trips) to unlock tomorrow's shifts.
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                      Shift Commission: {shiftSettlement?.date || selectedSettlementDate}
+                    </h3>
+                    {selectedSettlementDate === getTodayDateString() && (
+                      <span style={{ fontSize: '11px', background: 'rgba(249, 115, 22, 0.15)', color: 'var(--primary)', padding: '2px 8px', borderRadius: '4px', fontWeight: 800 }}>
+                        TODAY'S SHIFT
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    Trips Completed on this date: <strong>{shiftSettlement?.totalTrips || 0}</strong>
                   </div>
                 </div>
 
                 <div>
                   {shiftSettlement?.status === 'SETTLED' ? (
-                    <span className="badge badge-success" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', padding: '4px 10px' }}>
-                      <CheckCircle2 size={13} /> Shift Cleared &amp; Approved
+                    <span className="badge badge-success" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', padding: '5px 12px' }}>
+                      <CheckCircle2 size={14} /> Approved &amp; Cleared
                     </span>
                   ) : shiftSettlement?.status === 'PENDING_APPROVAL' ? (
-                    <span className="badge badge-warning" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', padding: '4px 10px' }}>
-                      <Clock size={13} /> Awaiting Admin Approval
+                    <span className="badge badge-warning" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', padding: '5px 12px' }}>
+                      <Clock size={14} /> Verification In Progress
                     </span>
                   ) : shiftSettlement?.status === 'REJECTED' ? (
-                    <span className="badge badge-danger" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', padding: '4px 10px' }}>
-                      <AlertTriangle size={13} /> Settlement Rejected (Locked)
+                    <span className="badge badge-danger" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', padding: '5px 12px' }}>
+                      <AlertTriangle size={14} /> Settlement Rejected (Locked)
+                    </span>
+                  ) : Number(shiftSettlement?.totalCommissionDue || 0) === 0 ? (
+                    <span className="badge badge-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', padding: '5px 12px' }}>
+                      <Check size={14} /> No Due (₹0)
                     </span>
                   ) : (
-                    <span className="badge badge-danger" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', padding: '4px 10px' }}>
-                      <Clock size={13} /> Commission Unsettled
+                    <span className="badge badge-danger" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', padding: '5px 12px' }}>
+                      <Clock size={14} /> Due Pending (Unsettled)
                     </span>
                   )}
                 </div>
@@ -2135,7 +2329,7 @@ export function RiderPortalView() {
                   gap: '8px'
                 }}>
                   <AlertTriangle size={16} />
-                  <span><strong>Rejection Reason:</strong> {shiftSettlement.rejectionReason}. Please re-transfer or verify UTR.</span>
+                  <span><strong>Rejection Reason:</strong> {shiftSettlement.rejectionReason}. Please re-transfer or verify UTR reference.</span>
                 </div>
               )}
 
@@ -2144,30 +2338,30 @@ export function RiderPortalView() {
                 background: 'var(--bg-sidebar)',
                 border: '1px solid var(--border)',
                 borderRadius: '12px',
-                padding: '14px 18px',
+                padding: '16px 20px',
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                gap: '14px',
+                gap: '16px',
                 alignItems: 'center'
               }}>
                 <div>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>GROSS COLLECTED:</div>
-                  <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>
                     ₹{Number(shiftSettlement?.grossFare ?? 0).toFixed(2)}
                   </div>
                 </div>
 
                 <div>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>YOUR NET TAKE-HOME:</div>
-                  <div style={{ fontSize: '18px', fontWeight: 800, color: '#10B981' }}>
-                    ₹{Number(shiftSettlement?.riderNetEarnings ?? todayNetEarning).toFixed(2)}
+                  <div style={{ fontSize: '20px', fontWeight: 800, color: '#10B981' }}>
+                    ₹{Number(shiftSettlement?.riderNetEarnings ?? 0).toFixed(2)}
                   </div>
                 </div>
 
-                <div style={{ borderLeft: '2px dashed var(--border)', paddingLeft: '14px' }}>
+                <div style={{ borderLeft: '2px dashed var(--border)', paddingLeft: '16px' }}>
                   <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 800 }}>COMMISSION DUE TO PAPIDO:</div>
-                  <div style={{ fontSize: '24px', fontWeight: 900, color: '#EF4444' }}>
-                    ₹{Number(shiftSettlement?.totalCommissionDue ?? platformCommission).toFixed(2)}
+                  <div style={{ fontSize: '26px', fontWeight: 900, color: '#EF4444' }}>
+                    ₹{Number(shiftSettlement?.totalCommissionDue ?? 0).toFixed(2)}
                   </div>
                   <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
                     Standard: ₹4/ride (₹2 Co + ₹2 Ctrl) | Long: 10% + ₹2
@@ -2179,24 +2373,39 @@ export function RiderPortalView() {
                 <div style={{
                   background: 'rgba(16, 185, 129, 0.1)',
                   border: '1px solid rgba(16, 185, 129, 0.3)',
-                  borderRadius: '10px',
-                  padding: '12px 16px',
+                  borderRadius: '12px',
+                  padding: '16px',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '10px',
+                  gap: '12px',
                   color: '#10B981'
                 }}>
-                  <CheckCircle2 size={18} />
-                  <div style={{ fontSize: '13px', fontWeight: 700 }}>
-                    Shift commission has been approved and verified by Admin. You are fully cleared to drive tomorrow!
+                  <CheckCircle2 size={22} style={{ flexShrink: 0 }} />
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '14px' }}>Shift Commission Cleared &amp; Approved</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                      Admin has verified UTR <strong>{shiftSettlement.utrReference || 'N/A'}</strong>. Your driver account is fully unlocked for rides.
+                    </div>
                   </div>
+                </div>
+              ) : Number(shiftSettlement?.totalCommissionDue || 0) === 0 ? (
+                <div style={{
+                  background: 'var(--bg-sidebar)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  textAlign: 'center',
+                  color: 'var(--text-muted)',
+                  fontSize: '13px'
+                }}>
+                  No completed rides or commission dues on {shiftSettlement?.date || selectedSettlementDate}.
                 </div>
               ) : (
                 <>
                   {/* Admin Payment Options */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
                     <a
-                      href={shiftSettlement?.adminUpi?.upiPayUrl || `upi://pay?pa=${encodeURIComponent(shiftSettlement?.adminUpi?.upiId || 'papido.admin@okaxis')}&pn=${encodeURIComponent(shiftSettlement?.adminUpi?.receiverName || 'Papido Admin')}&am=${Number(shiftSettlement?.totalCommissionDue || 0).toFixed(2)}&tn=Papido_Shift_Settlement&cu=INR`}
+                      href={shiftSettlement?.adminUpi?.upiPayUrl || `upi://pay?pa=${encodeURIComponent(shiftSettlement?.adminUpi?.upiId || 'papido.admin@okaxis')}&pn=${encodeURIComponent(shiftSettlement?.adminUpi?.receiverName || 'Papido Admin')}&am=${Number(shiftSettlement?.totalCommissionDue || 0).toFixed(2)}&tn=Papido_Shift_${shiftSettlement?.date || selectedSettlementDate}&cu=INR`}
                       style={{
                         background: 'linear-gradient(135deg, #0F9D58, #0B8043)',
                         color: '#FFFFFF',
@@ -2212,11 +2421,11 @@ export function RiderPortalView() {
                         gap: '6px'
                       }}
                     >
-                      <Smartphone size={15} /> Pay via Google Pay
+                      <Smartphone size={15} /> 1-Tap Google Pay (₹{Number(shiftSettlement?.totalCommissionDue || 0).toFixed(2)})
                     </a>
 
                     <a
-                      href={shiftSettlement?.adminUpi?.upiPayUrl || `upi://pay?pa=${encodeURIComponent(shiftSettlement?.adminUpi?.upiId || 'papido.admin@okaxis')}&pn=${encodeURIComponent(shiftSettlement?.adminUpi?.receiverName || 'Papido Admin')}&am=${Number(shiftSettlement?.totalCommissionDue || 0).toFixed(2)}&tn=Papido_Shift_Settlement&cu=INR`}
+                      href={shiftSettlement?.adminUpi?.upiPayUrl || `upi://pay?pa=${encodeURIComponent(shiftSettlement?.adminUpi?.upiId || 'papido.admin@okaxis')}&pn=${encodeURIComponent(shiftSettlement?.adminUpi?.receiverName || 'Papido Admin')}&am=${Number(shiftSettlement?.totalCommissionDue || 0).toFixed(2)}&tn=Papido_Shift_${shiftSettlement?.date || selectedSettlementDate}&cu=INR`}
                       style={{
                         background: 'linear-gradient(135deg, #5F259F, #4A1D7A)',
                         color: '#FFFFFF',
@@ -2232,7 +2441,7 @@ export function RiderPortalView() {
                         gap: '6px'
                       }}
                     >
-                      <Zap size={15} /> Pay via PhonePe / Any UPI
+                      <Zap size={15} /> 1-Tap PhonePe / Any UPI
                     </a>
                   </div>
 
@@ -2303,17 +2512,17 @@ export function RiderPortalView() {
                           />
                         </div>
                         <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px' }}>
-                          Scan using GPay, PhonePe, Paytm, or BHIM to pay ₹{Number(shiftSettlement?.totalCommissionDue || 0).toFixed(2)}
+                          Scan to pay exact ₹{Number(shiftSettlement?.totalCommissionDue || 0).toFixed(2)} for {shiftSettlement?.date || selectedSettlementDate}
                         </div>
                       </div>
                     )}
                   </div>
 
                   {/* UTR Submission Form */}
-                  <form onSubmit={handleSubmitShiftSettlement} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '6px' }}>
+                  <form onSubmit={handleSubmitShiftSettlement} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '4px' }}>
                     <div>
                       <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '6px', color: 'var(--text-secondary)' }}>
-                        UPI Transaction Reference / UTR Number (12 Digits) *
+                        UPI Transaction Reference / UTR Number (12 Digits) for {shiftSettlement?.date || selectedSettlementDate} *
                       </label>
                       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                         <input
@@ -2332,11 +2541,11 @@ export function RiderPortalView() {
                           style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 20px', fontWeight: 800 }}
                         >
                           <Send size={14} />
-                          <span>{submittingShiftSettlement ? 'Submitting...' : 'Submit Shift Settlement to Admin'}</span>
+                          <span>{submittingShiftSettlement ? 'Submitting...' : `Submit Settlement for ${shiftSettlement?.date || selectedSettlementDate}`}</span>
                         </button>
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                        Admin verifies this UTR and clears your account for tomorrow's driving shift.
+                        Admin verifies this payment and clears your shift so you can accept rides tomorrow.
                       </div>
                     </div>
                   </form>
@@ -2344,48 +2553,84 @@ export function RiderPortalView() {
               )}
             </div>
 
-            {/* Completed Rides Table */}
+            {/* Multi-Day Settlement History Ledger Table */}
             <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '16px', overflow: 'hidden' }}>
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', fontWeight: 800 }}>
-                Trip Settlements & Receipts
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontWeight: 800, fontSize: '15px' }}>Past 14 Days Shift Settlements Ledger</span>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Click any day to view or settle</span>
               </div>
-              {loadingEarnings ? (
-                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading earnings ledger...</div>
-              ) : riderRides.length === 0 ? (
-                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>No completed rides in this shift yet.</div>
+
+              {loadingShiftSettlement && !shiftSettlement?.recentShifts ? (
+                <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading shift history...</div>
+              ) : !shiftSettlement?.recentShifts || shiftSettlement.recentShifts.length === 0 ? (
+                <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>No completed shifts found in the past 14 days.</div>
               ) : (
                 <div className="table-container" style={{ border: 'none' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                     <thead>
                       <tr style={{ background: 'var(--bg-sidebar)', textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
-                        <th style={{ padding: '12px 16px' }}>Ride ID</th>
-                        <th style={{ padding: '12px 16px' }}>Route</th>
-                        <th style={{ padding: '12px 16px' }}>Gross Fare</th>
+                        <th style={{ padding: '12px 16px' }}>Shift Date</th>
+                        <th style={{ padding: '12px 16px' }}>Trips</th>
+                        <th style={{ padding: '12px 16px' }}>Gross Volume</th>
+                        <th style={{ padding: '12px 16px' }}>Commission Due</th>
                         <th style={{ padding: '12px 16px' }}>Your Net</th>
                         <th style={{ padding: '12px 16px' }}>Status</th>
+                        <th style={{ padding: '12px 16px' }}>Submitted UTR</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'right' }}>Action</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {riderRides.map((r) => (
-                        <tr key={r.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                          <td style={{ padding: '12px 16px', fontWeight: 700 }}>#{r.id}</td>
-                          <td style={{ padding: '12px 16px' }}>
-                            <div>{r.pickup_address} → {r.destination_address}</div>
-                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                              {formatRideDateTime(r.requested_at || r.created_at || r.accepted_at || r.completed_at)}
-                            </div>
-                          </td>
-                          <td style={{ padding: '12px 16px' }}>₹{r.total_fare || r.final_fare || r.estimated_fare || 20}</td>
-                          <td style={{ padding: '12px 16px', fontWeight: 800, color: 'var(--primary)' }}>
-                            ₹{r.rider_earning || calcDriverSplit(r.total_fare || r.final_fare || r.estimated_fare || 20).rider}
-                          </td>
-                          <td style={{ padding: '12px 16px' }}>
-                            <span className={`badge ${r.status === 'COMPLETED' ? 'badge-success' : 'badge-warning'}`}>
-                              {r.status || 'COMPLETED'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+                      {shiftSettlement.recentShifts.map((s) => {
+                        const isSelected = selectedSettlementDate === s.date;
+                        return (
+                          <tr key={s.date} style={{ borderBottom: '1px solid var(--border-light)', background: isSelected ? 'rgba(249, 115, 22, 0.08)' : 'transparent' }}>
+                            <td style={{ padding: '12px 16px', fontWeight: 800 }}>
+                              {s.date}
+                              {s.date === getTodayDateString() && (
+                                <span style={{ marginLeft: '6px', fontSize: '10px', background: 'rgba(249, 115, 22, 0.2)', color: 'var(--primary)', padding: '1px 5px', borderRadius: '3px' }}>
+                                  TODAY
+                                </span>
+                              )}
+                            </td>
+                            <td style={{ padding: '12px 16px' }}>{s.totalTrips}</td>
+                            <td style={{ padding: '12px 16px' }}>₹{s.grossFare.toFixed(2)}</td>
+                            <td style={{ padding: '12px 16px', fontWeight: 800, color: s.totalCommissionDue > 0 ? '#EF4444' : 'var(--text-muted)' }}>
+                              ₹{s.totalCommissionDue.toFixed(2)}
+                            </td>
+                            <td style={{ padding: '12px 16px', fontWeight: 700, color: '#10B981' }}>
+                              ₹{s.riderNetEarnings.toFixed(2)}
+                            </td>
+                            <td style={{ padding: '12px 16px' }}>
+                              {s.status === 'SETTLED' ? (
+                                <span className="badge badge-success" style={{ fontSize: '11px' }}>SETTLED</span>
+                              ) : s.status === 'PENDING_APPROVAL' ? (
+                                <span className="badge badge-warning" style={{ fontSize: '11px' }}>VERIFYING</span>
+                              ) : s.status === 'REJECTED' ? (
+                                <span className="badge badge-danger" style={{ fontSize: '11px' }}>REJECTED</span>
+                              ) : (
+                                <span className="badge badge-danger" style={{ fontSize: '11px' }}>DUE</span>
+                              )}
+                            </td>
+                            <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontSize: '12px' }}>
+                              {s.utrReference || '-'}
+                            </td>
+                            <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedSettlementDate(s.date);
+                                  fetchShiftSettlement(s.date);
+                                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }}
+                                className={`btn btn-sm ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
+                                style={{ fontSize: '11px', padding: '4px 10px', fontWeight: 700 }}
+                              >
+                                {isSelected ? 'Viewing' : 'Select Day'}
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
