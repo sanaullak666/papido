@@ -474,16 +474,53 @@ const AdminController = {
 
   async updateDailySettlementStatus(req, res, next) {
     try {
-      const { riderId, date, status } = req.body;
+      const { riderId, date, status, reason } = req.body;
       if (!riderId) {
         return error(res, 'riderId is required.', 400);
       }
       const data = await EarningModel.updateDailySettlementStatus({
         riderId: parseInt(riderId, 10),
         date,
-        status: status === 'SETTLED' ? 'SETTLED' : 'UNSETTLED'
+        status: status || 'SETTLED',
+        approvedBy: req.user?.id || null,
+        reason: reason || null
       });
+
+      const socketManager = req.app.get('socketManager');
+      if (socketManager) {
+        socketManager.io.to(`user_${riderId}`).emit('rider:shift_settlement_updated', {
+          riderId: parseInt(riderId, 10),
+          date,
+          status,
+          reason,
+          updatedAt: new Date().toISOString()
+        });
+      }
+
       return success(res, `Settlement status updated to ${status}.`, data);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async getAdminSettlementSettings(req, res, next) {
+    try {
+      const data = await EarningModel.getAdminSettlementSettings();
+      return success(res, 'Admin settlement settings fetched.', data);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async saveAdminSettlementSettings(req, res, next) {
+    try {
+      const { upiId, adminName, autoLockEnabled } = req.body;
+      const data = await EarningModel.saveAdminSettlementSettings({
+        upiId,
+        adminName,
+        autoLockEnabled
+      });
+      return success(res, 'Admin settlement settings saved successfully.', data);
     } catch (err) {
       next(err);
     }

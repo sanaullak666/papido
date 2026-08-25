@@ -24,6 +24,8 @@ router.post('/rides/:id/cancel', RiderController.cancelRide);
 router.get('/earnings', RiderController.getEarnings);
 router.get('/penalties/pending', RiderController.getPendingPenaltyVerifications);
 router.post('/penalties/:id/confirm', RiderController.confirmPenaltyPayment);
+router.get('/shift-settlement', RiderController.getShiftSettlement);
+router.post('/shift-settlement/submit', RiderController.submitShiftSettlement);
 router.get('/rides/history', RiderController.getMyRides);
 router.get('/rides', RiderController.getMyRides);
 

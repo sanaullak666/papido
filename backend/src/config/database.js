@@ -386,6 +386,32 @@ async function bootstrapMysqlSchema(targetPool) {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
 
+    await targetPool.query(`
+      CREATE TABLE IF NOT EXISTS daily_shift_settlements (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        rider_id INT NOT NULL,
+        date DATE NOT NULL,
+        total_trips INT DEFAULT 0,
+        gross_fare DECIMAL(10, 2) DEFAULT 0.00,
+        company_due DECIMAL(10, 2) DEFAULT 0.00,
+        controller_due DECIMAL(10, 2) DEFAULT 0.00,
+        total_commission_due DECIMAL(10, 2) DEFAULT 0.00,
+        rider_net_earnings DECIMAL(10, 2) DEFAULT 0.00,
+        status VARCHAR(30) NOT NULL DEFAULT 'UNSETTLED',
+        utr_reference VARCHAR(150) DEFAULT NULL,
+        rejection_reason VARCHAR(255) DEFAULT NULL,
+        submitted_at DATETIME DEFAULT NULL,
+        approved_at DATETIME DEFAULT NULL,
+        approved_by INT DEFAULT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_dss_rider_date (rider_id, date),
+        INDEX idx_dss_rider (rider_id),
+        INDEX idx_dss_date (date),
+        INDEX idx_dss_status (status)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
     // Check if master admin exists
     const [rows] = await targetPool.query('SELECT COUNT(*) as count FROM users');
     if (rows[0].count === 0) {

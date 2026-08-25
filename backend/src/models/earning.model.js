@@ -202,8 +202,8 @@ const EarningModel = {
 
     sql += ' ORDER BY re.id DESC';
 
-    // Execute queries in parallel for instant data response
-    const [rows, dutyController, availableCoreMembers] = await Promise.all([
+    // Parallel queries
+    const [rows, dutyController, availableCoreMembers, shiftSubmissions, adminSettings] = await Promise.all([
       db.query(sql, params),
       db.queryOne(`
         SELECT ddc.*, u.name as controller_name, u.email as controller_email, u.phone as controller_phone, u.profile_image as controller_profile_image
@@ -217,8 +217,15 @@ const EarningModel = {
         LEFT JOIN rider_profiles rp ON u.id = rp.user_id
         WHERE u.is_core_member = 1 OR rp.is_core_member = 1
         ORDER BY u.name ASC
-      `).catch(() => [])
+      `).catch(() => []),
+      db.query(`SELECT * FROM daily_shift_settlements WHERE date = ?`, [targetDate]).catch(() => []),
+      this.getAdminSettlementSettings()
     ]);
+
+    const shiftMap = new Map();
+    for (const s of shiftSubmissions) {
+      shiftMap.set(s.rider_id, s);
+    }
 
     // Group rides by rider
     const riderMap = new Map();
@@ -252,6 +259,7 @@ const EarningModel = {
       totalRiderNet += riderNet;
 
       if (!riderMap.has(row.rider_id)) {
+        const sData = shiftMap.get(row.rider_id);
         riderMap.set(row.rider_id, {
           riderId: row.rider_id,
           riderName: row.rider_name,
@@ -268,6 +276,11 @@ const EarningModel = {
           riderNetEarnings: 0,
           settledTrips: 0,
           allSettled: true,
+          shiftStatus: sData?.status || 'UNSETTLED',
+          utrReference: sData?.utr_reference || null,
+          rejectionReason: sData?.rejection_reason || null,
+          submittedAt: sData?.submitted_at || null,
+          approvedAt: sData?.approved_at || null,
           rides: []
         });
       }
@@ -306,18 +319,24 @@ const EarningModel = {
       });
     }
 
-    const ridersList = Array.from(riderMap.values()).map(r => ({
-      ...r,
-      grossFare: Number(r.grossFare.toFixed(2)),
-      companyDue: Number(r.companyDue.toFixed(2)),
-      controllerDue: Number(r.controllerDue.toFixed(2)),
-      totalDeductionDue: Number(r.totalDeductionDue.toFixed(2)),
-      riderNetEarnings: Number(r.riderNetEarnings.toFixed(2)),
-      settlementStatus: r.totalTrips > 0 && r.settledTrips === r.totalTrips ? 'SETTLED' : (r.settledTrips > 0 ? 'PARTIALLY_SETTLED' : 'UNSETTLED')
-    }));
+    const ridersList = Array.from(riderMap.values()).map(r => {
+      const sData = shiftMap.get(r.riderId);
+      const computedStatus = sData?.status || (r.totalTrips > 0 && r.settledTrips === r.totalTrips ? 'SETTLED' : (r.settledTrips > 0 ? 'PARTIALLY_SETTLED' : 'UNSETTLED'));
+      return {
+        ...r,
+        grossFare: Number(r.grossFare.toFixed(2)),
+        companyDue: Number(r.companyDue.toFixed(2)),
+        controllerDue: Number(r.controllerDue.toFixed(2)),
+        totalDeductionDue: Number(r.totalDeductionDue.toFixed(2)),
+        riderNetEarnings: Number(r.riderNetEarnings.toFixed(2)),
+        settlementStatus: computedStatus,
+        shiftStatus: computedStatus
+      };
+    });
 
     return {
       date: targetDate,
+      adminSettings,
       summary: {
         totalRides: rows.length,
         totalActiveRiders: ridersList.length,
@@ -345,27 +364,243 @@ const EarningModel = {
     };
   },
 
-  async updateDailySettlementStatus({ riderId, date, status }) {
-    const targetStatus = status === 'SETTLED' ? 'SETTLED' : 'UNSETTLED';
+  async getAdminSettlementSettings() {
+    try {
+      const rows = await db.query(`
+        SELECT \`key\`, \`value\` FROM system_settings 
+        WHERE \`key\` IN ('ADMIN_SETTLEMENT_UPI_ID', 'ADMIN_SETTLEMENT_NAME', 'ADMIN_SETTLEMENT_AUTO_LOCK')
+      `);
+      const map = {};
+      for (const r of rows) map[r.key] = r.value;
+      return {
+        adminUpiId: map['ADMIN_SETTLEMENT_UPI_ID'] || 'papido.admin@okaxis',
+        adminName: map['ADMIN_SETTLEMENT_NAME'] || 'Papido Campus Operations',
+        autoLockEnabled: map['ADMIN_SETTLEMENT_AUTO_LOCK'] !== 'false'
+      };
+    } catch (_) {
+      return {
+        adminUpiId: 'papido.admin@okaxis',
+        adminName: 'Papido Campus Operations',
+        autoLockEnabled: true
+      };
+    }
+  },
+
+  async saveAdminSettlementSettings({ upiId, adminName, autoLockEnabled }) {
+    const queries = [];
+    if (upiId !== undefined) {
+      queries.push(db.query(`
+        INSERT INTO system_settings (\`key\`, \`value\`, description)
+        VALUES ('ADMIN_SETTLEMENT_UPI_ID', ?, 'Admin settlement receiver UPI ID')
+        ON DUPLICATE KEY UPDATE \`value\` = VALUES(\`value\`)
+      `, [upiId.trim()]));
+    }
+    if (adminName !== undefined) {
+      queries.push(db.query(`
+        INSERT INTO system_settings (\`key\`, \`value\`, description)
+        VALUES ('ADMIN_SETTLEMENT_NAME', ?, 'Admin settlement receiver name')
+        ON DUPLICATE KEY UPDATE \`value\` = VALUES(\`value\`)
+      `, [adminName.trim()]));
+    }
+    if (autoLockEnabled !== undefined) {
+      queries.push(db.query(`
+        INSERT INTO system_settings (\`key\`, \`value\`, description)
+        VALUES ('ADMIN_SETTLEMENT_AUTO_LOCK', ?, 'Lock drivers with past unsettled commission shifts')
+        ON DUPLICATE KEY UPDATE \`value\` = VALUES(\`value\`)
+      `, [String(autoLockEnabled)]));
+    }
+    await Promise.all(queries);
+    return this.getAdminSettlementSettings();
+  },
+
+  async isRiderShiftLocked(riderId) {
+    const today = new Date().toISOString().slice(0, 10);
+    // Find any past dates where driver completed rides and settlement is not SETTLED
+    const sql = `
+      SELECT 
+        DATE(r.completed_at) as shift_date,
+        COUNT(r.id) as trips_count,
+        SUM(re.company_earning + re.controller_earning) as total_due,
+        dss.status as shift_status,
+        dss.rejection_reason
+      FROM rides r
+      JOIN rider_earnings re ON r.id = re.ride_id
+      LEFT JOIN daily_shift_settlements dss ON (dss.rider_id = r.rider_id AND dss.date = DATE(r.completed_at))
+      WHERE r.rider_id = ?
+        AND r.status = 'COMPLETED'
+        AND DATE(r.completed_at) < ?
+        AND (re.settlement_status != 'SETTLED' OR re.settlement_status IS NULL)
+        AND (dss.status != 'SETTLED' OR dss.status IS NULL)
+      GROUP BY DATE(r.completed_at), dss.status, dss.rejection_reason
+      ORDER BY DATE(r.completed_at) ASC
+      LIMIT 1
+    `;
+    const row = await db.queryOne(sql, [riderId, today]).catch(() => null);
+    if (row && parseFloat(row.total_due || 0) > 0) {
+      return {
+        isLocked: true,
+        pastDate: String(row.shift_date).slice(0, 10),
+        tripsCount: row.trips_count,
+        unpaidAmount: parseFloat(row.total_due || 0),
+        status: row.shift_status || 'UNSETTLED',
+        rejectionReason: row.rejection_reason || null
+      };
+    }
+    return { isLocked: false, unpaidAmount: 0 };
+  },
+
+  async getRiderShiftSettlement(riderId, date = null) {
+    const targetDate = date || new Date().toISOString().slice(0, 10);
+    const [settings, dailyData, shiftRecord, lockCheck] = await Promise.all([
+      this.getAdminSettlementSettings(),
+      this.getDailySettlements({ date: targetDate, riderId }),
+      db.queryOne('SELECT * FROM daily_shift_settlements WHERE rider_id = ? AND date = ?', [riderId, targetDate]).catch(() => null),
+      this.isRiderShiftLocked(riderId)
+    ]);
+
+    const riderData = (dailyData.riders && dailyData.riders[0]) || {
+      totalTrips: 0,
+      grossFare: 0,
+      companyDue: 0,
+      controllerDue: 0,
+      totalDeductionDue: 0,
+      riderNetEarnings: 0,
+      settlementStatus: 'UNSETTLED',
+      rides: []
+    };
+
+    const effectiveStatus = shiftRecord?.status || riderData.settlementStatus || 'UNSETTLED';
+
+    const upiPayUrl = `upi://pay?pa=${encodeURIComponent(settings.adminUpiId)}&pn=${encodeURIComponent(settings.adminName)}&am=${riderData.totalDeductionDue.toFixed(2)}&tn=Papido_Shift_Settlement_${targetDate}&cu=INR`;
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data=${encodeURIComponent(upiPayUrl)}`;
+
+    return {
+      date: targetDate,
+      totalTrips: riderData.totalTrips,
+      grossFare: riderData.grossFare,
+      riderNetEarnings: riderData.riderNetEarnings,
+      companyDue: riderData.companyDue,
+      controllerDue: riderData.controllerDue,
+      totalCommissionDue: riderData.totalDeductionDue,
+      status: effectiveStatus,
+      utrReference: shiftRecord?.utr_reference || null,
+      rejectionReason: shiftRecord?.rejection_reason || null,
+      submittedAt: shiftRecord?.submitted_at || null,
+      approvedAt: shiftRecord?.approved_at || null,
+      adminUpi: {
+        upiId: settings.adminUpiId,
+        receiverName: settings.adminName,
+        upiPayUrl,
+        qrCodeUrl
+      },
+      isLocked: lockCheck.isLocked,
+      lockDetails: lockCheck
+    };
+  },
+
+  async submitRiderShiftSettlement({ riderId, date, utrReference }) {
+    const targetDate = date || new Date().toISOString().slice(0, 10);
+    const dailyData = await this.getDailySettlements({ date: targetDate, riderId });
+    const riderData = (dailyData.riders && dailyData.riders[0]) || {
+      totalTrips: 0,
+      grossFare: 0,
+      companyDue: 0,
+      controllerDue: 0,
+      totalDeductionDue: 0,
+      riderNetEarnings: 0
+    };
+
+    await db.query(`
+      INSERT INTO daily_shift_settlements (
+        rider_id, date, total_trips, gross_fare, company_due, controller_due,
+        total_commission_due, rider_net_earnings, status, utr_reference, submitted_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'PENDING_APPROVAL', ?, CURRENT_TIMESTAMP)
+      ON DUPLICATE KEY UPDATE
+        total_trips = VALUES(total_trips),
+        gross_fare = VALUES(gross_fare),
+        company_due = VALUES(company_due),
+        controller_due = VALUES(controller_due),
+        total_commission_due = VALUES(total_commission_due),
+        rider_net_earnings = VALUES(rider_net_earnings),
+        status = 'PENDING_APPROVAL',
+        utr_reference = VALUES(utr_reference),
+        rejection_reason = NULL,
+        submitted_at = CURRENT_TIMESTAMP,
+        updated_at = CURRENT_TIMESTAMP
+    `, [
+      riderId,
+      targetDate,
+      riderData.totalTrips,
+      riderData.grossFare,
+      riderData.companyDue,
+      riderData.controllerDue,
+      riderData.totalDeductionDue,
+      riderData.riderNetEarnings,
+      utrReference.trim()
+    ]);
+
+    return this.getRiderShiftSettlement(riderId, targetDate);
+  },
+
+  async approveRiderShiftSettlement({ riderId, date, approvedBy }) {
     const targetDate = date || new Date().toISOString().slice(0, 10);
     
-    if (targetStatus === 'SETTLED') {
-      await db.query(
-        `UPDATE rider_earnings 
-         SET settlement_status = 'SETTLED', settled_at = CURRENT_TIMESTAMP 
-         WHERE rider_id = ? AND (DATE(created_at) = ? OR DATE(created_at) = DATE(?))`,
-        [riderId, targetDate, targetDate]
-      );
+    // Update daily_shift_settlements
+    await db.query(`
+      UPDATE daily_shift_settlements
+      SET status = 'SETTLED', approved_at = CURRENT_TIMESTAMP, approved_by = ?, rejection_reason = NULL
+      WHERE rider_id = ? AND date = ?
+    `, [approvedBy || null, riderId, targetDate]);
+
+    // Update rider_earnings
+    await db.query(`
+      UPDATE rider_earnings
+      SET settlement_status = 'SETTLED', settled_at = CURRENT_TIMESTAMP
+      WHERE rider_id = ? AND (DATE(created_at) = ? OR DATE(created_at) = DATE(?))
+    `, [riderId, targetDate, targetDate]);
+
+    return this.getDailySettlements({ date: targetDate, riderId });
+  },
+
+  async rejectRiderShiftSettlement({ riderId, date, reason, rejectedBy }) {
+    const targetDate = date || new Date().toISOString().slice(0, 10);
+    
+    await db.query(`
+      UPDATE daily_shift_settlements
+      SET status = 'REJECTED', rejection_reason = ?, approved_at = NULL, approved_by = ?
+      WHERE rider_id = ? AND date = ?
+    `, [reason || 'Payment verification failed', rejectedBy || null, riderId, targetDate]);
+
+    await db.query(`
+      UPDATE rider_earnings
+      SET settlement_status = 'UNSETTLED', settled_at = NULL
+      WHERE rider_id = ? AND (DATE(created_at) = ? OR DATE(created_at) = DATE(?))
+    `, [riderId, targetDate, targetDate]);
+
+    return this.getDailySettlements({ date: targetDate, riderId });
+  },
+
+  async updateDailySettlementStatus({ riderId, date, status, approvedBy = null, reason = null }) {
+    if (status === 'SETTLED') {
+      return this.approveRiderShiftSettlement({ riderId, date, approvedBy });
+    } else if (status === 'REJECTED') {
+      return this.rejectRiderShiftSettlement({ riderId, date, reason, rejectedBy: approvedBy });
     } else {
+      const targetDate = date || new Date().toISOString().slice(0, 10);
       await db.query(
         `UPDATE rider_earnings 
          SET settlement_status = 'UNSETTLED', settled_at = NULL 
          WHERE rider_id = ? AND (DATE(created_at) = ? OR DATE(created_at) = DATE(?))`,
         [riderId, targetDate, targetDate]
       );
+      await db.query(
+        `UPDATE daily_shift_settlements 
+         SET status = 'UNSETTLED', approved_at = NULL, approved_by = NULL 
+         WHERE rider_id = ? AND date = ?`,
+        [riderId, targetDate]
+      );
+      return this.getDailySettlements({ date: targetDate, riderId });
     }
-
-    return this.getDailySettlements({ date: targetDate, riderId });
   },
 
   async saveDailyDutyController({ date, coreMemberId, payoutStatus = 'PENDING', notes = null, assignedBy = null }) {

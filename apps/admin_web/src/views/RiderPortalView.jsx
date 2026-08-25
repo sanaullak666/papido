@@ -30,7 +30,13 @@ import {
   CheckCircle2,
   ExternalLink,
   MapPin,
-  X
+  X,
+  QrCode,
+  CreditCard,
+  Smartphone,
+  Send,
+  Copy,
+  Check
 } from 'lucide-react';
 import { alertManager } from '../utils/alertManager';
 
@@ -140,6 +146,15 @@ export function RiderPortalView() {
   const [loadingEarnings, setLoadingEarnings] = useState(false);
   const [riderRides, setRiderRides] = useState([]);
 
+  // Daily Shift Commission Settlement State
+  const [shiftSettlement, setShiftSettlement] = useState(null);
+  const [loadingShiftSettlement, setLoadingShiftSettlement] = useState(false);
+  const [submittingShiftSettlement, setSubmittingShiftSettlement] = useState(false);
+  const [shiftUtrInput, setShiftUtrInput] = useState('');
+  const [copiedAdminUpi, setCopiedAdminUpi] = useState(false);
+  const [showAdminQr, setShowAdminQr] = useState(false);
+  const [shiftSuccessMsg, setShiftSuccessMsg] = useState('');
+
   // KYC & Vehicle
   const [vehicleType, setVehicleType] = useState(user?.profile?.vehicle_type || 'BIKE');
   const [vehicleModel, setVehicleModel] = useState(user?.profile?.vehicle_model || '');
@@ -191,8 +206,8 @@ export function RiderPortalView() {
   const prevKnownRideIdsRef = useRef(new Set());
 
   // Dynamic Company & Rider Fare Split Policy
-  // < 80 Rs => Company ₹4, Controller ₹0, Rider remainder
-  // >= 80 Rs => Company 10%, Controller ₹2, Rider remainder
+  // < 80 Rs => Company ₹4 (₹2 Company + ₹2 Controller), Rider remainder
+  // >= 80 Rs => Company 10% (Company), Controller ₹2, Rider remainder
   const calcDriverSplit = (rawFare) => {
     const f = parseFloat(rawFare) || 0;
     if (f < 80) {
@@ -213,11 +228,59 @@ export function RiderPortalView() {
   const todayTripsCount = earnings?.todayTrips ?? earnings?.summary?.today?.rides ?? (riderRides ? riderRides.length : 0);
   const platformCommission = earnings?.companyCommission ?? earnings?.summary?.today?.companyDeduction ?? 0;
 
+  const fetchShiftSettlement = async () => {
+    try {
+      setLoadingShiftSettlement(true);
+      const res = await apiRequest('/rider/shift-settlement', 'GET', null, token);
+      if (res?.data) {
+        setShiftSettlement(res.data);
+        if (res.data.utrReference) {
+          setShiftUtrInput(res.data.utrReference);
+        }
+        if (res.data.isLocked && isOnline) {
+          setIsOnline(false);
+        }
+      }
+    } catch (_) {}
+    finally {
+      setLoadingShiftSettlement(false);
+    }
+  };
+
+  const handleSubmitShiftSettlement = async (e) => {
+    if (e) e.preventDefault();
+    if (!shiftUtrInput || !shiftUtrInput.trim()) {
+      alert('Please enter your 12-digit UPI transaction reference (UTR) number.');
+      return;
+    }
+    try {
+      setSubmittingShiftSettlement(true);
+      const res = await apiRequest('/rider/shift-settlement/submit', 'POST', {
+        date: shiftSettlement?.date,
+        utrReference: shiftUtrInput.trim()
+      }, token);
+      setShiftSettlement(res.data);
+      setShiftSuccessMsg('Shift settlement submitted to Admin for verification. Once approved, tomorrow\'s rides will be unlocked.');
+      setTimeout(() => setShiftSuccessMsg(''), 6000);
+    } catch (err) {
+      alert(err.message || 'Failed to submit shift settlement.');
+    } finally {
+      setSubmittingShiftSettlement(false);
+    }
+  };
+
   const handleToggleOnline = async () => {
     if (!isOnline && kycStatus !== 'APPROVED') {
       alert(`Cannot go online. Your driver account is ${kycStatus}. Admin approval of your Campus ID, Driving Licence, and RC is required before you can accept rides.`);
       return;
     }
+
+    if (!isOnline && shiftSettlement?.isLocked) {
+      alert(`Cannot go online. Your driver account is locked due to an unsettled platform commission of ₹${Number(shiftSettlement.lockDetails?.unpaidAmount || 0).toFixed(2)} from your shift on ${shiftSettlement.lockDetails?.pastDate}. Please settle via Admin UPI in the Earnings tab to unlock your account.`);
+      setCurrentTab('earnings');
+      return;
+    }
+
     const nextStatus = !isOnline;
     setIsOnline(nextStatus);
     if (socketRef.current) {
@@ -402,6 +465,7 @@ export function RiderPortalView() {
     fetchActiveRide();
     fetchEarnings();
     fetchAvailableRequests();
+    fetchShiftSettlement();
     if (token) {
       alertManager.subscribeToPushNotifications(token);
     }
@@ -421,6 +485,7 @@ export function RiderPortalView() {
   useEffect(() => {
     if (currentTab === 'earnings') {
       fetchEarnings(false);
+      fetchShiftSettlement();
     }
     fetchPendingPenalties();
   }, [currentTab]);
@@ -663,6 +728,11 @@ export function RiderPortalView() {
     socket.on('penalty:status_update', (data) => {
       console.log('Realtime penalty status update:', data);
       fetchPendingPenalties();
+    });
+
+    socket.on('rider:shift_settlement_updated', () => {
+      fetchShiftSettlement();
+      fetchEarnings(false);
     });
 
     return () => {
@@ -1167,6 +1237,54 @@ export function RiderPortalView() {
 
       {/* Main Driver Body */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        {/* Overdue Shift Commission Lock Alert Banner */}
+        {shiftSettlement?.isLocked && (
+          <div style={{
+            background: 'linear-gradient(135deg, #450A0A, #7F1D1D)',
+            borderBottom: '2px solid #EF4444',
+            color: '#FFFFFF',
+            padding: '14px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px',
+            boxShadow: '0 4px 15px rgba(220, 38, 38, 0.3)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                background: '#EF4444',
+                color: '#FFFFFF',
+                borderRadius: '50%',
+                width: '40px',
+                height: '40px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <Lock size={20} />
+              </div>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: '15px', color: '#FCA5A5' }}>
+                  Account Locked: Unsettled Shift Commission Due
+                </div>
+                <div style={{ fontSize: '12px', color: '#FEE2E2', marginTop: '2px' }}>
+                  You have an unpaid platform commission of <strong>₹{Number(shiftSettlement.lockDetails?.unpaidAmount || 0).toFixed(2)}</strong> from your shift on <strong>{shiftSettlement.lockDetails?.pastDate}</strong>. Settle via Admin UPI to unlock.
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setCurrentTab('earnings')}
+              className="btn btn-primary btn-sm"
+              style={{ fontWeight: 800, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <CreditCard size={14} /> Settle Commission Now
+            </button>
+          </div>
+        )}
+
         {/* Driver ₹15 Compensation Payment Verification Alerts */}
         {pendingPenaltiesToVerify && pendingPenaltiesToVerify.length > 0 && (
           <div style={{
@@ -1886,6 +2004,289 @@ export function RiderPortalView() {
                 <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>PLATFORM COMMISSION</div>
                 <div style={{ fontSize: '26px', fontWeight: 900, color: '#06B6D4' }}>₹{platformCommission}</div>
               </div>
+            </div>
+
+            {/* Daily Shift Commission Settlement & Clearance Card */}
+            <div style={{
+              background: 'var(--bg-card)',
+              border: (shiftSettlement?.isLocked || shiftSettlement?.status === 'REJECTED') ? '2px solid #EF4444' : '1.5px solid var(--border)',
+              borderRadius: '16px',
+              padding: '20px',
+              marginBottom: '24px',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}>
+                    <CreditCard size={18} color="var(--primary)" />
+                    End Shift &amp; Platform Commission Settlement
+                  </h3>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    Settle today's platform commission ({shiftSettlement?.totalTrips || todayTripsCount} trips) to unlock tomorrow's shifts.
+                  </div>
+                </div>
+
+                <div>
+                  {shiftSettlement?.status === 'SETTLED' ? (
+                    <span className="badge badge-success" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', padding: '4px 10px' }}>
+                      <CheckCircle2 size={13} /> Shift Cleared &amp; Approved
+                    </span>
+                  ) : shiftSettlement?.status === 'PENDING_APPROVAL' ? (
+                    <span className="badge badge-warning" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', padding: '4px 10px' }}>
+                      <Clock size={13} /> Awaiting Admin Approval
+                    </span>
+                  ) : shiftSettlement?.status === 'REJECTED' ? (
+                    <span className="badge badge-danger" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', padding: '4px 10px' }}>
+                      <AlertTriangle size={13} /> Settlement Rejected (Locked)
+                    </span>
+                  ) : (
+                    <span className="badge badge-danger" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', padding: '4px 10px' }}>
+                      <Clock size={13} /> Commission Unsettled
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {shiftSuccessMsg && (
+                <div style={{
+                  padding: '12px 16px',
+                  background: 'rgba(16, 185, 129, 0.15)',
+                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                  borderRadius: '10px',
+                  color: '#34D399',
+                  fontSize: '13px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <CheckCircle2 size={16} />
+                  <span>{shiftSuccessMsg}</span>
+                </div>
+              )}
+
+              {shiftSettlement?.status === 'REJECTED' && shiftSettlement?.rejectionReason && (
+                <div style={{
+                  padding: '12px 16px',
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  border: '1px solid rgba(239, 68, 68, 0.4)',
+                  borderRadius: '10px',
+                  color: '#F87171',
+                  fontSize: '13px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <AlertTriangle size={16} />
+                  <span><strong>Rejection Reason:</strong> {shiftSettlement.rejectionReason}. Please re-transfer or verify UTR.</span>
+                </div>
+              )}
+
+              {/* Commission Dues Breakdown Box */}
+              <div style={{
+                background: 'var(--bg-sidebar)',
+                border: '1px solid var(--border)',
+                borderRadius: '12px',
+                padding: '14px 18px',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                gap: '14px',
+                alignItems: 'center'
+              }}>
+                <div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>GROSS COLLECTED:</div>
+                  <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    ₹{Number(shiftSettlement?.grossFare ?? 0).toFixed(2)}
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>YOUR NET TAKE-HOME:</div>
+                  <div style={{ fontSize: '18px', fontWeight: 800, color: '#10B981' }}>
+                    ₹{Number(shiftSettlement?.riderNetEarnings ?? todayNetEarning).toFixed(2)}
+                  </div>
+                </div>
+
+                <div style={{ borderLeft: '2px dashed var(--border)', paddingLeft: '14px' }}>
+                  <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 800 }}>COMMISSION DUE TO PAPIDO:</div>
+                  <div style={{ fontSize: '24px', fontWeight: 900, color: '#EF4444' }}>
+                    ₹{Number(shiftSettlement?.totalCommissionDue ?? platformCommission).toFixed(2)}
+                  </div>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    Standard: ₹4/ride (₹2 Co + ₹2 Ctrl) | Long: 10% + ₹2
+                  </div>
+                </div>
+              </div>
+
+              {shiftSettlement?.status === 'SETTLED' ? (
+                <div style={{
+                  background: 'rgba(16, 185, 129, 0.1)',
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  borderRadius: '10px',
+                  padding: '12px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  color: '#10B981'
+                }}>
+                  <CheckCircle2 size={18} />
+                  <div style={{ fontSize: '13px', fontWeight: 700 }}>
+                    Shift commission has been approved and verified by Admin. You are fully cleared to drive tomorrow!
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Admin Payment Options */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
+                    <a
+                      href={shiftSettlement?.adminUpi?.upiPayUrl || `upi://pay?pa=${encodeURIComponent(shiftSettlement?.adminUpi?.upiId || 'papido.admin@okaxis')}&pn=${encodeURIComponent(shiftSettlement?.adminUpi?.receiverName || 'Papido Admin')}&am=${Number(shiftSettlement?.totalCommissionDue || 0).toFixed(2)}&tn=Papido_Shift_Settlement&cu=INR`}
+                      style={{
+                        background: 'linear-gradient(135deg, #0F9D58, #0B8043)',
+                        color: '#FFFFFF',
+                        padding: '12px 16px',
+                        borderRadius: '10px',
+                        fontWeight: 800,
+                        fontSize: '13px',
+                        textAlign: 'center',
+                        textDecoration: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <Smartphone size={15} /> Pay via Google Pay
+                    </a>
+
+                    <a
+                      href={shiftSettlement?.adminUpi?.upiPayUrl || `upi://pay?pa=${encodeURIComponent(shiftSettlement?.adminUpi?.upiId || 'papido.admin@okaxis')}&pn=${encodeURIComponent(shiftSettlement?.adminUpi?.receiverName || 'Papido Admin')}&am=${Number(shiftSettlement?.totalCommissionDue || 0).toFixed(2)}&tn=Papido_Shift_Settlement&cu=INR`}
+                      style={{
+                        background: 'linear-gradient(135deg, #5F259F, #4A1D7A)',
+                        color: '#FFFFFF',
+                        padding: '12px 16px',
+                        borderRadius: '10px',
+                        fontWeight: 800,
+                        fontSize: '13px',
+                        textAlign: 'center',
+                        textDecoration: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <Zap size={15} /> Pay via PhonePe / Any UPI
+                    </a>
+                  </div>
+
+                  {/* Admin UPI Copy Box */}
+                  <div style={{
+                    background: 'var(--bg-input)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '10px',
+                    padding: '10px 14px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: '8px'
+                  }}>
+                    <div>
+                      <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>
+                        Admin Settlement UPI ID ({shiftSettlement?.adminUpi?.receiverName || 'Papido Operations'})
+                      </div>
+                      <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
+                        {shiftSettlement?.adminUpi?.upiId || 'papido.admin@okaxis'}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const targetUpi = shiftSettlement?.adminUpi?.upiId || 'papido.admin@okaxis';
+                        navigator.clipboard?.writeText(targetUpi);
+                        setCopiedAdminUpi(true);
+                        setTimeout(() => setCopiedAdminUpi(false), 2500);
+                      }}
+                      className="btn btn-secondary btn-sm"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 700 }}
+                    >
+                      {copiedAdminUpi ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
+                      <span>{copiedAdminUpi ? 'Copied' : 'Copy UPI'}</span>
+                    </button>
+                  </div>
+
+                  {/* QR Code Toggle */}
+                  <div style={{ textAlign: 'center' }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminQr(!showAdminQr)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--primary)',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      <QrCode size={14} />
+                      <span>{showAdminQr ? 'Hide Admin Settlement QR Code' : 'Show Admin Settlement QR Code'}</span>
+                    </button>
+
+                    {showAdminQr && (
+                      <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '12px', border: '1px solid var(--border)', display: 'inline-block' }}>
+                          <img
+                            src={shiftSettlement?.adminUpi?.qrCodeUrl || `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(shiftSettlement?.adminUpi?.upiPayUrl || 'upi://pay?pa=papido.admin@okaxis')}`}
+                            alt="Admin Settlement QR"
+                            style={{ width: '180px', height: '180px', display: 'block' }}
+                          />
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px' }}>
+                          Scan using GPay, PhonePe, Paytm, or BHIM to pay ₹{Number(shiftSettlement?.totalCommissionDue || 0).toFixed(2)}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* UTR Submission Form */}
+                  <form onSubmit={handleSubmitShiftSettlement} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '6px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                        UPI Transaction Reference / UTR Number (12 Digits) *
+                      </label>
+                      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                        <input
+                          type="text"
+                          className="form-input"
+                          placeholder="e.g. 428192849102"
+                          value={shiftUtrInput}
+                          onChange={(e) => setShiftUtrInput(e.target.value)}
+                          style={{ flex: 1, minWidth: '220px', fontSize: '13px', fontFamily: 'monospace' }}
+                          required
+                        />
+                        <button
+                          type="submit"
+                          disabled={submittingShiftSettlement || !shiftUtrInput.trim()}
+                          className="btn btn-primary"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 20px', fontWeight: 800 }}
+                        >
+                          <Send size={14} />
+                          <span>{submittingShiftSettlement ? 'Submitting...' : 'Submit Shift Settlement to Admin'}</span>
+                        </button>
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                        Admin verifies this UTR and clears your account for tomorrow's driving shift.
+                      </div>
+                    </div>
+                  </form>
+                </>
+              )}
             </div>
 
             {/* Completed Rides Table */}

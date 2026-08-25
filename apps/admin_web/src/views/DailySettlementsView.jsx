@@ -53,6 +53,15 @@ export function DailySettlementsView() {
   const [copiedRiderId, setCopiedRiderId] = useState(null);
   const [updatingRiderId, setUpdatingRiderId] = useState(null);
 
+  // Admin Platform Settlement UPI Settings State
+  const [adminUpiId, setAdminUpiId] = useState('papido.admin@okaxis');
+  const [adminName, setAdminName] = useState('Papido Campus Operations');
+  const [autoLockEnabled, setAutoLockEnabled] = useState(true);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [settingsSuccessMsg, setSettingsSuccessMsg] = useState('');
+  const [rejectionModalRider, setRejectionModalRider] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+
   // Duty Controller State (Core Member Shift)
   const [selectedCoreMemberId, setSelectedCoreMemberId] = useState('');
   const [controllerPayoutStatus, setControllerPayoutStatus] = useState('PENDING');
@@ -69,6 +78,12 @@ export function DailySettlementsView() {
 
       const res = await apiRequest(`/admin/daily-settlements?${params.toString()}`);
       setSettlementData(res.data);
+
+      if (res.data?.adminSettings) {
+        setAdminUpiId(res.data.adminSettings.adminUpiId || 'papido.admin@okaxis');
+        setAdminName(res.data.adminSettings.adminName || 'Papido Campus Operations');
+        setAutoLockEnabled(res.data.adminSettings.autoLockEnabled !== false);
+      }
 
       if (res.data?.dutyController) {
         setSelectedCoreMemberId(String(res.data.dutyController.coreMemberId));
@@ -89,6 +104,65 @@ export function DailySettlementsView() {
   useEffect(() => {
     fetchSettlements();
   }, [selectedDate, search]);
+
+  const handleSaveAdminSettings = async (e) => {
+    if (e) e.preventDefault();
+    if (!adminUpiId.trim()) {
+      alert('Please enter a valid Admin UPI ID.');
+      return;
+    }
+    try {
+      setIsSavingSettings(true);
+      setSettingsSuccessMsg('');
+      await apiRequest('/admin/daily-settlements/settings', 'POST', {
+        upiId: adminUpiId.trim(),
+        adminName: adminName.trim(),
+        autoLockEnabled
+      });
+      setSettingsSuccessMsg('Admin settlement UPI details & lock settings saved successfully.');
+      setTimeout(() => setSettingsSuccessMsg(''), 4000);
+    } catch (err) {
+      alert(`Failed to save settings: ${err.message}`);
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
+
+  const handleApproveSettlement = async (rider) => {
+    try {
+      setUpdatingRiderId(rider.riderId);
+      await apiRequest('/admin/daily-settlements/status', 'PATCH', {
+        riderId: rider.riderId,
+        date: selectedDate,
+        status: 'SETTLED'
+      });
+      fetchSettlements();
+    } catch (err) {
+      alert(`Failed to approve settlement: ${err.message}`);
+    } finally {
+      setUpdatingRiderId(null);
+    }
+  };
+
+  const handleRejectSettlement = async () => {
+    if (!rejectionModalRider) return;
+    try {
+      setUpdatingRiderId(rejectionModalRider.riderId);
+      await apiRequest('/admin/daily-settlements/status', 'PATCH', {
+        riderId: rejectionModalRider.riderId,
+        date: selectedDate,
+        status: 'REJECTED',
+        reason: rejectionReason.trim() || 'Payment verification failed'
+      });
+      setRejectionModalRider(null);
+      setRejectionReason('');
+      fetchSettlements();
+    } catch (err) {
+      alert(`Failed to reject settlement: ${err.message}`);
+    } finally {
+      setUpdatingRiderId(null);
+    }
+  };
 
   const handleSaveDutyController = async (e) => {
     if (e) e.preventDefault();
@@ -411,6 +485,98 @@ export function DailySettlementsView() {
         </div>
       </div>
 
+      {/* Admin Platform Settlement UPI & Shift Auto-Lock Settings Panel */}
+      <div className="panel" style={{ border: '1px solid rgba(245, 158, 11, 0.35)', background: 'var(--bg-card)' }}>
+        <div className="panel-header" style={{ flexWrap: 'wrap', gap: '10px' }}>
+          <div>
+            <h3 className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)' }}>
+              <CreditCard size={18} color="var(--primary)" />
+              Admin Settlement UPI &amp; Next-Day Driver Lock Settings
+            </h3>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+              Drivers scan this UPI QR to pay their daily platform commission. Drivers with unsettled shifts are locked next day.
+            </p>
+          </div>
+        </div>
+
+        {settingsSuccessMsg && (
+          <div style={{
+            padding: '10px 16px',
+            background: 'rgba(16, 185, 129, 0.15)',
+            border: '1px solid rgba(16, 185, 129, 0.4)',
+            borderRadius: '8px',
+            color: '#34D399',
+            fontSize: '13px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            marginBottom: '16px'
+          }}>
+            <CheckCircle2 size={16} />
+            <span>{settingsSuccessMsg}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSaveAdminSettings} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', alignItems: 'flex-end' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' }}>
+              Admin Settlement UPI ID *
+            </label>
+            <input
+              type="text"
+              className="form-input"
+              placeholder="e.g. papido.admin@okaxis"
+              style={{ width: '100%', fontSize: '13px', fontFamily: 'monospace' }}
+              value={adminUpiId}
+              onChange={(e) => setAdminUpiId(e.target.value)}
+              required
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' }}>
+              Receiver / Account Name *
+            </label>
+            <input
+              type="text"
+              className="form-input"
+              placeholder="e.g. Papido Campus Operations"
+              style={{ width: '100%', fontSize: '13px' }}
+              value={adminName}
+              onChange={(e) => setAdminName(e.target.value)}
+              required
+            />
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={autoLockEnabled}
+                onChange={(e) => setAutoLockEnabled(e.target.checked)}
+                style={{ width: '16px', height: '16px' }}
+              />
+              <span>Auto-Lock Drivers with Overdue Shift Dues</span>
+            </label>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+              Locks driver online toggle until previous day commission is approved.
+            </div>
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              className="btn btn-primary btn-sm"
+              disabled={isSavingSettings}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '9px 18px', fontWeight: 700, width: '100%', justifyContent: 'center' }}
+            >
+              <Save size={14} />
+              <span>{isSavingSettings ? 'Saving...' : 'Save Admin UPI Settings'}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
       {/* Duty Controller (Core Member Management for that Day) Panel */}
       <div className="panel" style={{ border: '1px solid rgba(6, 182, 212, 0.35)' }}>
         <div className="panel-header" style={{ flexWrap: 'wrap', gap: '10px' }}>
@@ -661,22 +827,44 @@ export function DailySettlementsView() {
                       </strong>
                     </td>
                     <td>
-                      {r.settlementStatus === 'SETTLED' ? (
+                      {r.shiftStatus === 'SETTLED' ? (
                         <span className="badge badge-success" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          <CheckCircle2 size={12} /> SETTLED
+                          <CheckCircle2 size={12} /> Approved &amp; Unlocked
                         </span>
+                      ) : r.shiftStatus === 'PENDING_APPROVAL' ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <span className="badge badge-warning" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <Clock size={12} /> Verification Pending
+                          </span>
+                          {r.utrReference && (
+                            <div style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 700, fontFamily: 'monospace' }}>
+                              UTR: {r.utrReference}
+                            </div>
+                          )}
+                        </div>
+                      ) : r.shiftStatus === 'REJECTED' ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          <span className="badge badge-danger" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <AlertCircle size={12} /> Rejected (Locked)
+                          </span>
+                          {r.rejectionReason && (
+                            <div style={{ fontSize: '10px', color: '#EF4444' }}>
+                              {r.rejectionReason}
+                            </div>
+                          )}
+                        </div>
                       ) : r.settlementStatus === 'PARTIALLY_SETTLED' ? (
                         <span className="badge badge-warning" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          <Clock size={12} /> PARTIAL
+                          <Clock size={12} /> Partial
                         </span>
                       ) : (
                         <span className="badge badge-danger" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          <Clock size={12} /> DUE
+                          <Clock size={12} /> Due (Unsettled)
                         </span>
                       )}
                     </td>
                     <td>
-                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                         <button
                           type="button"
                           className="btn btn-secondary btn-sm"
@@ -687,22 +875,44 @@ export function DailySettlementsView() {
                           <FileText size={12} /> Trips ({r.totalTrips})
                         </button>
 
-                        <button
-                          type="button"
-                          className={`btn btn-sm ${r.settlementStatus === 'SETTLED' ? 'btn-secondary' : 'btn-success'}`}
-                          onClick={() => handleToggleSettlement(r)}
-                          disabled={updatingRiderId === r.riderId}
-                          title={r.settlementStatus === 'SETTLED' ? 'Mark as Unsettled / Due' : 'Mark as Collected / Settled'}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}
-                        >
-                          {r.settlementStatus === 'SETTLED' ? (
-                            <span>Mark Due</span>
-                          ) : (
-                            <>
-                              <CheckCircle2 size={12} /> Mark Settled
-                            </>
-                          )}
-                        </button>
+                        {r.shiftStatus !== 'SETTLED' ? (
+                          <>
+                            <button
+                              type="button"
+                              className="btn btn-success btn-sm"
+                              onClick={() => handleApproveSettlement(r)}
+                              disabled={updatingRiderId === r.riderId}
+                              title="Approve settlement and unlock driver for tomorrow"
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 700 }}
+                            >
+                              <CheckCircle2 size={12} /> Approve &amp; Unlock
+                            </button>
+
+                            {r.shiftStatus === 'PENDING_APPROVAL' && (
+                              <button
+                                type="button"
+                                className="btn btn-danger btn-sm"
+                                onClick={() => setRejectionModalRider(r)}
+                                disabled={updatingRiderId === r.riderId}
+                                title="Reject settlement payment and keep driver locked"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 700 }}
+                              >
+                                <X size={12} /> Reject
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => handleToggleSettlement(r)}
+                            disabled={updatingRiderId === r.riderId}
+                            title="Re-open / Mark as Unsettled"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}
+                          >
+                            Mark Due
+                          </button>
+                        )}
 
                         <button
                           type="button"
@@ -932,6 +1142,89 @@ export function DailySettlementsView() {
                   Close
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reject Settlement Modal */}
+      {rejectionModalRider && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(5px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 99999,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            borderRadius: '16px',
+            width: '100%',
+            maxWidth: '480px',
+            padding: '24px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#EF4444', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <AlertCircle size={18} /> Reject Shift Settlement
+              </h3>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => { setRejectionModalRider(null); setRejectionReason(''); }}
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+              Rejecting will mark <strong>{rejectionModalRider.riderName}</strong>'s shift as rejected and keep their driving account <strong>locked</strong> until they re-submit a valid payment.
+              {rejectionModalRider.utrReference && (
+                <div style={{ marginTop: '6px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                  Submitted UTR: <strong>{rejectionModalRider.utrReference}</strong>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '6px', color: 'var(--text-secondary)' }}>
+                Rejection Reason (Shown to Driver) *
+              </label>
+              <textarea
+                className="form-input"
+                rows={3}
+                placeholder="e.g. UTR not found in bank account / Amount mismatch"
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                style={{ width: '100%', fontSize: '13px', resize: 'vertical' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => { setRejectionModalRider(null); setRejectionReason(''); }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger"
+                disabled={updatingRiderId === rejectionModalRider.riderId}
+                onClick={handleRejectSettlement}
+                style={{ fontWeight: 700 }}
+              >
+                {updatingRiderId === rejectionModalRider.riderId ? 'Rejecting...' : 'Confirm Rejection & Lock Driver'}
+              </button>
             </div>
           </div>
         </div>

@@ -34,6 +34,18 @@ const RiderController = {
         );
       }
 
+      if (isOnline) {
+        const lockCheck = await EarningModel.isRiderShiftLocked(req.user.id);
+        if (lockCheck.isLocked) {
+          return error(
+            res,
+            `Cannot go online. Your account is locked due to an unsettled platform commission of ₹${lockCheck.unpaidAmount.toFixed(2)} from your shift on ${lockCheck.pastDate}. Settle via Admin UPI to unlock.`,
+            403,
+            { isShiftLocked: true, ...lockCheck }
+          );
+        }
+      }
+
       const profile = await RiderModel.updateOnlineStatus(req.user.id, isOnline);
 
       const socketManager = req.app.get('socketManager');
@@ -279,6 +291,46 @@ const RiderController = {
         ? 'Payment receipt confirmed! ₹15 recorded and passenger unlocked.'
         : 'Payment marked as not received. Passenger remains blocked.';
       return success(res, msg, result);
+    } catch (err) {
+      return error(res, err.message, 400);
+    }
+  },
+
+  async getShiftSettlement(req, res, next) {
+    try {
+      const { date } = req.query;
+      const settlement = await EarningModel.getRiderShiftSettlement(req.user.id, date);
+      return success(res, 'Shift settlement details fetched.', settlement);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async submitShiftSettlement(req, res, next) {
+    try {
+      const { date, utrReference } = req.body;
+      if (!utrReference || !utrReference.trim()) {
+        return error(res, 'Please provide the 12-digit UPI transaction reference (UTR) number.', 400);
+      }
+      const settlement = await EarningModel.submitRiderShiftSettlement({
+        riderId: req.user.id,
+        date,
+        utrReference
+      });
+
+      const socketManager = req.app.get('socketManager');
+      if (socketManager) {
+        socketManager.io.to('role_ADMIN').emit('admin:shift_settlement_submitted', {
+          riderId: req.user.id,
+          riderName: req.user.name,
+          date: settlement.date,
+          amount: settlement.totalCommissionDue,
+          utrReference: utrReference.trim(),
+          submittedAt: new Date().toISOString()
+        });
+      }
+
+      return success(res, 'Shift commission settlement submitted to Admin for verification.', settlement);
     } catch (err) {
       return error(res, err.message, 400);
     }
