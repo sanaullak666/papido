@@ -194,7 +194,7 @@ const AuthController = {
 
   async updateProfile(req, res, next) {
     try {
-      const { name, phone, profileImage, vehicleType, vehicleModel, vehicleNumber, licenseNumber } = req.body;
+      const { name, phone, profileImage, vehicleType, vehicleModel, vehicleNumber, licenseNumber, upiId, upi_id } = req.body;
       const result = await AuthService.updateProfile(req.user.id, {
         name,
         phone,
@@ -202,7 +202,8 @@ const AuthController = {
         vehicleType,
         vehicleModel,
         vehicleNumber,
-        licenseNumber
+        licenseNumber,
+        upiId: upiId !== undefined ? upiId : upi_id
       });
       return success(res, 'Profile updated successfully.', result, 200);
     } catch (err) {

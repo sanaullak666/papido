@@ -216,6 +216,9 @@ export function CustomerPortalView() {
   const [claimingFlash, setClaimingFlash] = useState(false);
   const [flashClaimMsg, setFlashClaimMsg] = useState(null);
 
+  // Driver Trip Payment State
+  const [showTripQr, setShowTripQr] = useState(false);
+
   const getLocationHint = (stopName) => {
     if (!stopName) return null;
     const s = stopName.toLowerCase();
@@ -2104,6 +2107,11 @@ export function CustomerPortalView() {
                         <div style={{ fontSize: '15px', fontWeight: 800, color: '#1C1917' }}>
                           Driver: {activeRide.rider_name || 'Campus Rider'}
                         </div>
+                        {activeRide.rider_upi_id && (
+                          <div style={{ fontSize: '11px', color: '#059669', fontWeight: 700 }}>
+                            Driver UPI: {activeRide.rider_upi_id}
+                          </div>
+                        )}
                         <div style={{ fontSize: '12px', color: '#796D61' }}>
                           {activeRide.pickup_address} → {activeRide.destination_address}
                         </div>
@@ -2509,6 +2517,172 @@ export function CustomerPortalView() {
                           </div>
                         ) : null}
                       </div>
+                    )}
+
+                    {/* Driver Direct UPI / GPay Payment Card */}
+                    {activeRide.rider_name && !activeRide.is_free_ride && !activeRide.is_core_only && parseFloat(activeRide.final_fare || activeRide.total_fare || activeRide.estimated_fare || 20) > 0 && (
+                      (() => {
+                        const driverFare = parseFloat(activeRide.final_fare || activeRide.total_fare || activeRide.estimated_fare || 20).toFixed(2);
+                        const driverUpi = (activeRide.rider_upi_id || '').trim() || (activeRide.rider_phone ? `${activeRide.rider_phone}@upi` : 'driver@upi');
+                        const driverName = activeRide.rider_name || 'Campus Driver';
+                        const upiPayUrl = `upi://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${driverFare}&tn=Papido_Ride_${activeRide.ride_code || activeRide.id}&cu=INR`;
+                        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiPayUrl)}`;
+
+                        return (
+                          <div style={{
+                            background: '#FFFFFF',
+                            border: '1.5px solid #EA580C',
+                            borderRadius: '14px',
+                            padding: '16px',
+                            boxShadow: '0 4px 18px rgba(234, 88, 12, 0.08)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '12px'
+                          }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <div style={{
+                                  width: '32px',
+                                  height: '32px',
+                                  borderRadius: '8px',
+                                  background: '#FFF7ED',
+                                  color: '#EA580C',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  border: '1px solid #FFEDD5'
+                                }}>
+                                  <CreditCard size={18} />
+                                </div>
+                                <div>
+                                  <div style={{ fontWeight: 800, fontSize: '14px', color: '#1C1917' }}>Pay Driver via UPI / GPay</div>
+                                  <div style={{ fontSize: '11px', color: '#796D61' }}>Direct payment to {driverName}'s verified KYC UPI</div>
+                                </div>
+                              </div>
+                              <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: '11px', color: '#796D61', fontWeight: 700 }}>Fare:</div>
+                                <div style={{ fontSize: '18px', fontWeight: 900, color: '#EA580C' }}>₹{driverFare}</div>
+                              </div>
+                            </div>
+
+                            {/* 1-Tap App Buttons */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                              <a
+                                href={upiPayUrl}
+                                style={{
+                                  background: 'linear-gradient(135deg, #0F9D58, #0B8043)',
+                                  color: '#FFFFFF',
+                                  padding: '11px 12px',
+                                  borderRadius: '10px',
+                                  fontWeight: 800,
+                                  fontSize: '13px',
+                                  textAlign: 'center',
+                                  textDecoration: 'none',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '6px',
+                                  boxShadow: '0 2px 8px rgba(15, 157, 88, 0.25)'
+                                }}
+                              >
+                                <Smartphone size={15} /> Pay with GPay
+                              </a>
+
+                              <a
+                                href={upiPayUrl}
+                                style={{
+                                  background: 'linear-gradient(135deg, #5F259F, #4A1D7A)',
+                                  color: '#FFFFFF',
+                                  padding: '11px 12px',
+                                  borderRadius: '10px',
+                                  fontWeight: 800,
+                                  fontSize: '13px',
+                                  textAlign: 'center',
+                                  textDecoration: 'none',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '6px',
+                                  boxShadow: '0 2px 8px rgba(95, 37, 159, 0.25)'
+                                }}
+                              >
+                                <Zap size={15} /> PhonePe / Any UPI
+                              </a>
+                            </div>
+
+                            {/* Driver UPI Copy Box */}
+                            <div style={{
+                              background: '#F8F3EC',
+                              border: '1px solid #E8DCCB',
+                              borderRadius: '10px',
+                              padding: '10px 12px',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center'
+                            }}>
+                              <div>
+                                <div style={{ fontSize: '10px', color: '#796D61', fontWeight: 700, textTransform: 'uppercase' }}>Driver UPI ID (KYC Verified)</div>
+                                <div style={{ fontSize: '13px', fontWeight: 800, color: '#1C1917', fontFamily: 'monospace' }}>{driverUpi}</div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard?.writeText(driverUpi);
+                                  setCopiedUpi(true);
+                                  setTimeout(() => setCopiedUpi(false), 3000);
+                                }}
+                                style={{
+                                  background: copiedUpi ? '#ECFDF5' : '#FFFFFF',
+                                  border: `1px solid ${copiedUpi ? '#A7F3D0' : '#D6C7B2'}`,
+                                  color: copiedUpi ? '#059669' : '#271E16',
+                                  padding: '6px 12px',
+                                  borderRadius: '8px',
+                                  fontSize: '11px',
+                                  fontWeight: 800,
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}
+                              >
+                                {copiedUpi ? <Check size={12} /> : <Copy size={12} />}
+                                {copiedUpi ? 'Copied' : 'Copy'}
+                              </button>
+                            </div>
+
+                            {/* View QR Code Toggle */}
+                            <div style={{ textAlign: 'center' }}>
+                              <button
+                                type="button"
+                                onClick={() => setShowTripQr(!showTripQr)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: '#EA580C',
+                                  fontSize: '12px',
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}
+                              >
+                                <QrCode size={14} /> {showTripQr ? 'Hide Driver Payment QR Code' : 'Show Driver Payment QR Code (Scan to Pay)'}
+                              </button>
+                              {showTripQr && (
+                                <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                  <div style={{ background: '#FFFFFF', padding: '10px', borderRadius: '12px', border: '1px solid #E8DCCB', display: 'inline-block' }}>
+                                    <img src={qrCodeUrl} alt="Driver Payment QR" style={{ width: '160px', height: '160px', display: 'block' }} />
+                                  </div>
+                                  <div style={{ fontSize: '11px', color: '#796D61', marginTop: '6px' }}>
+                                    Scan using Google Pay, PhonePe, Paytm, or BHIM
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()
                     )}
 
                     {/* Trip Route Details Card */}

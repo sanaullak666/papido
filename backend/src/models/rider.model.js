@@ -84,15 +84,18 @@ const RiderModel = {
     return this.findByUserId(userId);
   },
 
-  async updateVehicleDetails(userId, { vehicleModel, vehicleNumber, licenseNumber }) {
+  async updateVehicleDetails(userId, { vehicleType, vehicleModel, vehicleNumber, licenseNumber, upiId, upi_id }) {
+    const finalUpi = upiId !== undefined ? upiId : upi_id;
     await db.query(
       `UPDATE rider_profiles 
-       SET vehicle_model = COALESCE(?, vehicle_model),
+       SET vehicle_type = COALESCE(?, vehicle_type),
+           vehicle_model = COALESCE(?, vehicle_model),
            vehicle_number = COALESCE(?, vehicle_number),
            license_number = COALESCE(?, license_number),
+           upi_id = COALESCE(?, upi_id),
            updated_at = CURRENT_TIMESTAMP 
        WHERE user_id = ?`,
-      [vehicleModel || null, vehicleNumber || null, licenseNumber || null, userId]
+      [vehicleType || null, vehicleModel || null, vehicleNumber || null, licenseNumber || null, finalUpi !== undefined ? finalUpi : null, userId]
     );
     return this.findByUserId(userId);
   },

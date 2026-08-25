@@ -232,7 +232,7 @@ const AuthService = {
     };
   },
 
-  async updateProfile(userId, { name, phone, profileImage, vehicleType, vehicleModel, vehicleNumber, licenseNumber }) {
+  async updateProfile(userId, { name, phone, profileImage, vehicleType, vehicleModel, vehicleNumber, licenseNumber, upiId }) {
     const user = await UserModel.findById(userId);
     if (!user) throw new Error('User not found.');
 
@@ -244,12 +244,13 @@ const AuthService = {
 
     let profile = null;
     if (user.role === ROLES.RIDER) {
-      if (vehicleType || vehicleModel || vehicleNumber || licenseNumber) {
+      if (vehicleType || vehicleModel || vehicleNumber || licenseNumber || upiId !== undefined) {
         profile = await RiderModel.updateVehicleDetails(userId, {
           vehicleType,
           vehicleModel,
           vehicleNumber,
-          licenseNumber
+          licenseNumber,
+          upiId
         });
       } else {
         profile = await RiderModel.findByUserId(userId);
