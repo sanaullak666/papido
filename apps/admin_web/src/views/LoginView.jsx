@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest, uploadFile } from '../api';
-import { Shield, Lock, Mail, ArrowRight, UserPlus, KeyRound, Bike, User, Sparkles, ShieldCheck, Zap, Upload, FileText, CheckCircle2, AlertCircle, Check } from 'lucide-react';
+import { Shield, Lock, Mail, ArrowRight, UserPlus, KeyRound, Bike, User, Sparkles, ShieldCheck, Zap, Upload, FileText, CheckCircle2, AlertCircle, Check, Eye, EyeOff } from 'lucide-react';
 
 export function LoginView({ onGoToAdminPortal }) {
   const { login, register, forgotPassword, resetPassword } = useAuth();
   const [authMode, setAuthMode] = useState('login'); // 'login', 'register', 'forgot'
+
+  // Password Visibility States
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegPassword, setShowRegPassword] = useState(false);
+  const [showForgotNewPass, setShowForgotNewPass] = useState(false);
+  const [showForgotConfirmPass, setShowForgotConfirmPass] = useState(false);
 
   // Login State
   const [email, setEmail] = useState('customer.ananya@papido.com');
@@ -436,14 +442,35 @@ export function LoginView({ onGoToAdminPortal }) {
               <div style={{ position: 'relative' }}>
                 <Lock size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: '#A39587' }} />
                 <input
-                  type="password"
+                  type={showLoginPassword ? 'text' : 'password'}
                   required
                   className="form-input"
-                  style={{ paddingLeft: '38px', width: '100%', background: '#F8F3EC', border: '1.5px solid #E8DCCB', color: '#271E16' }}
+                  style={{ paddingLeft: '38px', paddingRight: '40px', width: '100%', background: '#F8F3EC', border: '1.5px solid #E8DCCB', color: '#271E16' }}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowLoginPassword(!showLoginPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#796D61',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '4px'
+                  }}
+                  title={showLoginPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showLoginPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
             </div>
 
@@ -934,29 +961,53 @@ export function LoginView({ onGoToAdminPortal }) {
                   </span>
                 )}
               </label>
-              <input
-                type="password"
-                required
-                className="form-input"
-                style={{
-                  background: '#F8F3EC',
-                  border: regTouched.password && regFieldErrors.password ? '1.5px solid #EF4444' : (regTouched.password && regPassword && regPassword.length >= 6 ? '1.5px solid #10B981' : '1.5px solid #E8DCCB'),
-                  color: '#271E16'
-                }}
-                placeholder="••••••••"
-                value={regPassword}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setRegPassword(val);
-                  if (regTouched.password) {
-                    setRegFieldErrors(prev => ({ ...prev, password: validateRegField('password', val) }));
-                  }
-                }}
-                onBlur={() => {
-                  setRegTouched(prev => ({ ...prev, password: true }));
-                  setRegFieldErrors(prev => ({ ...prev, password: validateRegField('password', regPassword) }));
-                }}
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showRegPassword ? 'text' : 'password'}
+                  required
+                  className="form-input"
+                  style={{
+                    background: '#F8F3EC',
+                    border: regTouched.password && regFieldErrors.password ? '1.5px solid #EF4444' : (regTouched.password && regPassword && regPassword.length >= 6 ? '1.5px solid #10B981' : '1.5px solid #E8DCCB'),
+                    color: '#271E16',
+                    paddingRight: '40px'
+                  }}
+                  placeholder="••••••••"
+                  value={regPassword}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setRegPassword(val);
+                    if (regTouched.password) {
+                      setRegFieldErrors(prev => ({ ...prev, password: validateRegField('password', val) }));
+                    }
+                  }}
+                  onBlur={() => {
+                    setRegTouched(prev => ({ ...prev, password: true }));
+                    setRegFieldErrors(prev => ({ ...prev, password: validateRegField('password', regPassword) }));
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowRegPassword(!showRegPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#796D61',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '4px'
+                  }}
+                  title={showRegPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showRegPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
               {regTouched.password && regFieldErrors.password && (
                 <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 700, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <AlertCircle size={12} /> {regFieldErrors.password}
@@ -1044,28 +1095,74 @@ export function LoginView({ onGoToAdminPortal }) {
 
                 <div className="form-group">
                   <label className="form-label" style={{ color: '#271E16', fontWeight: 700 }}>New Password (min 6 chars)</label>
-                  <input
-                    type="password"
-                    required
-                    className="form-input"
-                    style={{ background: '#F8F3EC', border: '1.5px solid #E8DCCB', color: '#271E16' }}
-                    placeholder="••••••••"
-                    value={forgotNewPass}
-                    onChange={(e) => setForgotNewPass(e.target.value)}
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showForgotNewPass ? 'text' : 'password'}
+                      required
+                      className="form-input"
+                      style={{ background: '#F8F3EC', border: '1.5px solid #E8DCCB', color: '#271E16', paddingRight: '40px' }}
+                      placeholder="••••••••"
+                      value={forgotNewPass}
+                      onChange={(e) => setForgotNewPass(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotNewPass(!showForgotNewPass)}
+                      style={{
+                        position: 'absolute',
+                        right: '10px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: '#796D61',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '4px'
+                      }}
+                      title={showForgotNewPass ? 'Hide password' : 'Show password'}
+                    >
+                      {showForgotNewPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="form-group">
                   <label className="form-label" style={{ color: '#271E16', fontWeight: 700 }}>Confirm New Password</label>
-                  <input
-                    type="password"
-                    required
-                    className="form-input"
-                    style={{ background: '#F8F3EC', border: '1.5px solid #E8DCCB', color: '#271E16' }}
-                    placeholder="••••••••"
-                    value={forgotConfirmPass}
-                    onChange={(e) => setForgotConfirmPass(e.target.value)}
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showForgotConfirmPass ? 'text' : 'password'}
+                      required
+                      className="form-input"
+                      style={{ background: '#F8F3EC', border: '1.5px solid #E8DCCB', color: '#271E16', paddingRight: '40px' }}
+                      placeholder="••••••••"
+                      value={forgotConfirmPass}
+                      onChange={(e) => setForgotConfirmPass(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotConfirmPass(!showForgotConfirmPass)}
+                      style={{
+                        position: 'absolute',
+                        right: '10px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: '#796D61',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '4px'
+                      }}
+                      title={showForgotConfirmPass ? 'Hide password' : 'Show password'}
+                    >
+                      {showForgotConfirmPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>

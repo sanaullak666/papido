@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { apiRequest } from '../api';
 import { useAuth } from '../context/AuthContext';
-import { User, Mail, Phone, Lock, ArrowRight, CheckCircle, Sparkles, AlertTriangle } from 'lucide-react';
+import { User, Mail, Phone, Lock, ArrowRight, CheckCircle, Sparkles, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 
 export function CoreRegisterView({ onGoToLogin }) {
   const { login } = useAuth();
@@ -13,6 +13,8 @@ export function CoreRegisterView({ onGoToLogin }) {
     password: '',
     confirmPassword: ''
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
@@ -286,14 +288,14 @@ export function CoreRegisterView({ onGoToLogin }) {
               <div style={{ position: 'relative' }}>
                 <Lock size={16} style={{ position: 'absolute', left: '12px', top: '13px', color: '#796D61' }} />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   style={{
                     width: '100%',
-                    padding: '11px 12px 11px 38px',
+                    padding: '11px 38px 11px 38px',
                     background: '#2B2016',
                     border: '1px solid #433323',
                     borderRadius: '10px',
@@ -302,6 +304,27 @@ export function CoreRegisterView({ onGoToLogin }) {
                     outline: 'none'
                   }}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#A8998A',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '4px'
+                  }}
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
             </div>
 
@@ -312,14 +335,14 @@ export function CoreRegisterView({ onGoToLogin }) {
               <div style={{ position: 'relative' }}>
                 <Lock size={16} style={{ position: 'absolute', left: '12px', top: '13px', color: '#796D61' }} />
                 <input
-                  type="password"
+                  type={showConfirmPassword ? 'text' : 'password'}
                   required
                   placeholder="••••••••"
                   value={formData.confirmPassword}
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                   style={{
                     width: '100%',
-                    padding: '11px 12px 11px 38px',
+                    padding: '11px 38px 11px 38px',
                     background: '#2B2016',
                     border: '1px solid #433323',
                     borderRadius: '10px',
@@ -328,6 +351,27 @@ export function CoreRegisterView({ onGoToLogin }) {
                     outline: 'none'
                   }}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#A8998A',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '4px'
+                  }}
+                  title={showConfirmPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
             </div>
           </div>
