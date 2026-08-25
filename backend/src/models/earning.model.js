@@ -77,8 +77,8 @@ const EarningModel = {
       LEFT JOIN rider_earnings re ON r.id = re.ride_id
       WHERE (r.rider_id = ? OR re.rider_id = ?) AND (r.status = 'COMPLETED' OR r.payment_status = 'PAID' OR r.status IS NULL)
         AND (
-          DATE(CONVERT_TZ(COALESCE(r.completed_at, re.created_at, r.created_at), '+00:00', '+05:30')) = ?
-          OR DATE(COALESCE(r.completed_at, re.created_at, r.created_at)) = ?
+          DATE(CONVERT_TZ(COALESCE(r.completed_at, re.created_at, r.requested_at), '+00:00', '+05:30')) = ?
+          OR DATE(COALESCE(r.completed_at, re.created_at, r.requested_at)) = ?
         )
     `;
 
@@ -104,7 +104,7 @@ const EarningModel = {
       FROM rides r
       LEFT JOIN rider_earnings re ON r.id = re.ride_id
       WHERE (r.rider_id = ? OR re.rider_id = ?) AND (r.status = 'COMPLETED' OR r.payment_status = 'PAID' OR r.status IS NULL)
-        AND COALESCE(r.completed_at, re.created_at, r.created_at) >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        AND COALESCE(r.completed_at, re.created_at, r.requested_at) >= DATE_SUB(NOW(), INTERVAL 7 DAY)
     `;
 
     // Monthly earnings (last 30 days)
@@ -129,7 +129,7 @@ const EarningModel = {
       FROM rides r
       LEFT JOIN rider_earnings re ON r.id = re.ride_id
       WHERE (r.rider_id = ? OR re.rider_id = ?) AND (r.status = 'COMPLETED' OR r.payment_status = 'PAID' OR r.status IS NULL)
-        AND COALESCE(r.completed_at, re.created_at, r.created_at) >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        AND COALESCE(r.completed_at, re.created_at, r.requested_at) >= DATE_SUB(NOW(), INTERVAL 30 DAY)
     `;
 
     // Total lifetime (all completed rides from all time)
@@ -291,14 +291,9 @@ const EarningModel = {
       JOIN rides r ON re.ride_id = r.id
       JOIN users u ON re.rider_id = u.id
       LEFT JOIN rider_profiles rp ON u.id = rp.user_id
-      WHERE (
-        DATE(CONVERT_TZ(re.created_at, '+00:00', '+05:30')) = ?
-        OR DATE(CONVERT_TZ(r.completed_at, '+00:00', '+05:30')) = ?
-        OR DATE(re.created_at) = ? 
-        OR DATE(r.completed_at) = ?
-      )
+      WHERE DATE(CONVERT_TZ(COALESCE(r.completed_at, re.created_at, r.requested_at), '+00:00', '+05:30')) = ?
     `;
-    const params = [targetDate, targetDate, targetDate, targetDate];
+    const params = [targetDate];
 
     if (riderId) {
       sql += ' AND re.rider_id = ?';
