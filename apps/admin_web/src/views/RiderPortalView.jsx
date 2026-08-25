@@ -185,6 +185,7 @@ export function RiderPortalView() {
   const [licenseNumber, setLicenseNumber] = useState(user?.profile?.license_number || '');
   const [upiId, setUpiId] = useState(user?.profile?.upi_id || '');
   const [kycStatus, setKycStatus] = useState(user?.profile?.verification_status || user?.profile?.kyc_status || 'PENDING');
+  const [profileTotalRides, setProfileTotalRides] = useState(0);
   const [savingKyc, setSavingKyc] = useState(false);
   const [pendingPenaltiesToVerify, setPendingPenaltiesToVerify] = useState([]);
 
@@ -246,6 +247,22 @@ export function RiderPortalView() {
     }
   };
 
+  // Helper to extract local date string (YYYY-MM-DD) in local time
+  const getRideLocalDay = (ride) => {
+    const raw = ride?.completed_at || ride?.created_at || ride?.requested_at;
+    if (!raw) return '';
+    try {
+      const d = new Date(raw);
+      if (isNaN(d.getTime())) return String(raw).slice(0, 10);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch (_) {
+      return String(raw).slice(0, 10);
+    }
+  };
+
   // Client-side fallback aggregation from loaded rides
   const completedRidesList = (riderRides || []).filter(r => 
     !r.status || r.status === 'COMPLETED' || r.status === 'PAID'
@@ -253,8 +270,8 @@ export function RiderPortalView() {
   
   const todayDateStr = getTodayDateString();
   const todayRidesList = completedRidesList.filter(r => {
-    const dStr = String(r.completed_at || r.created_at || r.requested_at || '').slice(0, 10);
-    return dStr === todayDateStr;
+    const rideDay = getRideLocalDay(r);
+    return rideDay === todayDateStr;
   });
 
   const clientTodayTrips = todayRidesList.length;
@@ -272,20 +289,36 @@ export function RiderPortalView() {
     return sum + split.platformFee;
   }, 0);
 
+  const clientLifetimePlatformFee = completedRidesList.reduce((sum, r) => {
+    const fare = Number(r.total_fare || r.final_fare || r.estimated_fare || 20);
+    const split = calcDriverSplit(fare);
+    return sum + split.platformFee;
+  }, 0);
+
+  const clientLifetimeNet = completedRidesList.reduce((sum, r) => {
+    const fare = Number(r.total_fare || r.final_fare || r.estimated_fare || 20);
+    const split = calcDriverSplit(fare);
+    return sum + (r.rider_earning !== undefined ? Number(r.rider_earning) : split.rider);
+  }, 0);
+
   // Derived Earnings Values (merges API summary with fallback calculations)
   const todayNetEarning = Number(
-    earnings?.netDriverEarning ?? earnings?.summary?.today?.earnings ?? earnings?.todayTotal ?? clientTodayNet ?? 0
+    earnings?.todayTotal || earnings?.netDriverEarning || earnings?.summary?.today?.earnings || clientTodayNet || 0
   );
   const todayTripsCount = Number(
-    earnings?.todayTrips ?? earnings?.summary?.today?.rides ?? clientTodayTrips ?? 0
+    earnings?.todayTrips || earnings?.summary?.today?.rides || clientTodayTrips || 0
   );
   const lifetimeTripsCount = Math.max(
-    Number(earnings?.lifetimeTrips ?? earnings?.summary?.lifetime?.rides ?? 0),
+    Number(earnings?.lifetimeTrips || earnings?.summary?.lifetime?.rides || 0),
     clientLifetimeTrips,
+    profileTotalRides,
     todayTripsCount
   );
-  const platformFee = Number(
-    earnings?.todayPlatformFee ?? earnings?.companyCommission ?? earnings?.summary?.today?.platformFee ?? (todayTripsCount > 0 ? todayTripsCount * 4 : clientTodayPlatformFee) ?? 0
+  const totalPlatformFee = Number(
+    earnings?.totalPlatformFee || earnings?.summary?.lifetime?.platformFee || clientLifetimePlatformFee || (lifetimeTripsCount * 4) || 0
+  );
+  const todayPlatformFee = Number(
+    earnings?.todayPlatformFee || earnings?.companyCommission || earnings?.summary?.today?.platformFee || clientTodayPlatformFee || (todayTripsCount * 4) || 0
   );
 
   const fetchShiftSettlement = async (targetDate) => {
@@ -523,6 +556,9 @@ export function RiderPortalView() {
           if (p.vehicle_model) setVehicleModel(p.vehicle_model);
           if (p.vehicle_number) setVehicleNumber(p.vehicle_number);
           if (p.license_number) setLicenseNumber(p.license_number);
+          if (p.total_rides !== undefined || p.totalRides !== undefined) {
+            setProfileTotalRides(Number(p.total_rides || p.totalRides || 0));
+          }
           if (vStatus !== 'APPROVED') {
             setIsOnline(false);
           } else if (p.is_online !== undefined) {
@@ -2160,7 +2196,7 @@ export function RiderPortalView() {
 
               <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '18px' }}>
                 <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>PLATFORM FEE</div>
-                <div style={{ fontSize: '26px', fontWeight: 900, color: '#06B6D4' }}>₹{Number(platformFee).toFixed(2)}</div>
+                <div style={{ fontSize: '26px', fontWeight: 900, color: '#06B6D4' }}>₹{Number(totalPlatformFee).toFixed(2)}</div>
               </div>
             </div>
 
