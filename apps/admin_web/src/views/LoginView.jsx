@@ -677,7 +677,7 @@ export function LoginView({ onGoToAdminPortal }) {
                     gap: '6px'
                   }}
                 >
-                  <ShieldCheck size={16} /> FEMALE (LADY)
+                  <ShieldCheck size={16} /> FEMALE
                 </button>
               </div>
             </div>

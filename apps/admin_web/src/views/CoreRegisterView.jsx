@@ -246,7 +246,7 @@ export function CoreRegisterView({ onGoToLogin }) {
                 }}
               >
                 <option value="MALE">Male</option>
-                <option value="FEMALE">Female (Lady Driver)</option>
+                <option value="FEMALE">Female</option>
                 <option value="OTHER">Other</option>
               </select>
             </div>
