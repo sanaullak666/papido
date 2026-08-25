@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest, uploadFile } from '../api';
-import { Shield, Lock, Mail, ArrowRight, UserPlus, KeyRound, Bike, User, Sparkles, ShieldCheck, Zap, Upload, FileText, CheckCircle2, AlertCircle, Check, Eye, EyeOff } from 'lucide-react';
+import { Shield, Lock, Mail, Phone, ArrowRight, UserPlus, KeyRound, Bike, User, Sparkles, ShieldCheck, Zap, Upload, FileText, CheckCircle2, AlertCircle, Check, Eye, EyeOff } from 'lucide-react';
 
 export function LoginView({ onGoToAdminPortal }) {
   const { login, register, forgotPassword, resetPassword } = useAuth();
@@ -551,31 +551,40 @@ export function LoginView({ onGoToAdminPortal }) {
                   </span>
                 )}
               </label>
-              <input
-                type="text"
-                required
-                className="form-input"
-                style={{
-                  background: '#F8F3EC',
-                  border: regTouched.name && regFieldErrors.name ? '1.5px solid #EF4444' : (regTouched.name && regName.trim() ? '1.5px solid #10B981' : '1.5px solid #E8DCCB'),
-                  color: '#271E16',
-                  textTransform: 'uppercase',
-                  fontWeight: 600
-                }}
-                placeholder="ANANYA SEN"
-                value={regName}
-                onChange={(e) => {
-                  const upper = e.target.value.toUpperCase();
-                  setRegName(upper);
-                  if (regTouched.name) {
-                    setRegFieldErrors(prev => ({ ...prev, name: validateRegField('name', upper) }));
-                  }
-                }}
-                onBlur={() => {
-                  setRegTouched(prev => ({ ...prev, name: true }));
-                  setRegFieldErrors(prev => ({ ...prev, name: validateRegField('name', regName) }));
-                }}
-              />
+              <div style={{ position: 'relative', width: '100%' }}>
+                <User size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#A39587', pointerEvents: 'none' }} />
+                <input
+                  type="text"
+                  required
+                  className="form-input"
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    paddingLeft: '38px',
+                    paddingRight: '12px',
+                    background: '#F8F3EC',
+                    border: regTouched.name && regFieldErrors.name ? '1.5px solid #EF4444' : (regTouched.name && regName.trim() ? '1.5px solid #10B981' : '1.5px solid #E8DCCB'),
+                    color: '#271E16',
+                    textTransform: 'uppercase',
+                    fontWeight: 600,
+                    height: '42px',
+                    borderRadius: '8px'
+                  }}
+                  placeholder="ANANYA SEN"
+                  value={regName}
+                  onChange={(e) => {
+                    const upper = e.target.value.toUpperCase();
+                    setRegName(upper);
+                    if (regTouched.name) {
+                      setRegFieldErrors(prev => ({ ...prev, name: validateRegField('name', upper) }));
+                    }
+                  }}
+                  onBlur={() => {
+                    setRegTouched(prev => ({ ...prev, name: true }));
+                    setRegFieldErrors(prev => ({ ...prev, name: validateRegField('name', regName) }));
+                  }}
+                />
+              </div>
               {regTouched.name && regFieldErrors.name && (
                 <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 700, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <AlertCircle size={12} /> {regFieldErrors.name}
@@ -592,29 +601,38 @@ export function LoginView({ onGoToAdminPortal }) {
                   </span>
                 )}
               </label>
-              <input
-                type="email"
-                required
-                className="form-input"
-                style={{
-                  background: '#F8F3EC',
-                  border: regTouched.email && regFieldErrors.email ? '1.5px solid #EF4444' : (regTouched.email && regEmail.trim() ? '1.5px solid #10B981' : '1.5px solid #E8DCCB'),
-                  color: '#271E16'
-                }}
-                placeholder="student@pondiuni.ac.in"
-                value={regEmail}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setRegEmail(val);
-                  if (regTouched.email) {
-                    setRegFieldErrors(prev => ({ ...prev, email: validateRegField('email', val) }));
-                  }
-                }}
-                onBlur={() => {
-                  setRegTouched(prev => ({ ...prev, email: true }));
-                  setRegFieldErrors(prev => ({ ...prev, email: validateRegField('email', regEmail) }));
-                }}
-              />
+              <div style={{ position: 'relative', width: '100%' }}>
+                <Mail size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#A39587', pointerEvents: 'none' }} />
+                <input
+                  type="email"
+                  required
+                  className="form-input"
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    paddingLeft: '38px',
+                    paddingRight: '12px',
+                    background: '#F8F3EC',
+                    border: regTouched.email && regFieldErrors.email ? '1.5px solid #EF4444' : (regTouched.email && regEmail.trim() ? '1.5px solid #10B981' : '1.5px solid #E8DCCB'),
+                    color: '#271E16',
+                    height: '42px',
+                    borderRadius: '8px'
+                  }}
+                  placeholder="student@pondiuni.ac.in"
+                  value={regEmail}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setRegEmail(val);
+                    if (regTouched.email) {
+                      setRegFieldErrors(prev => ({ ...prev, email: validateRegField('email', val) }));
+                    }
+                  }}
+                  onBlur={() => {
+                    setRegTouched(prev => ({ ...prev, email: true }));
+                    setRegFieldErrors(prev => ({ ...prev, email: validateRegField('email', regEmail) }));
+                  }}
+                />
+              </div>
               {regTouched.email && regFieldErrors.email && (
                 <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 700, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <AlertCircle size={12} /> {regFieldErrors.email}
@@ -631,32 +649,41 @@ export function LoginView({ onGoToAdminPortal }) {
                   </span>
                 )}
               </label>
-              <input
-                type="tel"
-                required
-                maxLength={10}
-                className="form-input"
-                style={{
-                  background: '#F8F3EC',
-                  border: regTouched.phone && regFieldErrors.phone ? '1.5px solid #EF4444' : (regTouched.phone && regPhone.trim().length === 10 ? '1.5px solid #10B981' : '1.5px solid #E8DCCB'),
-                  color: '#271E16',
-                  letterSpacing: '1px',
-                  fontWeight: 600
-                }}
-                placeholder="9876543210"
-                value={regPhone}
-                onChange={(e) => {
-                  const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
-                  setRegPhone(digits);
-                  if (regTouched.phone) {
-                    setRegFieldErrors(prev => ({ ...prev, phone: validateRegField('phone', digits) }));
-                  }
-                }}
-                onBlur={() => {
-                  setRegTouched(prev => ({ ...prev, phone: true }));
-                  setRegFieldErrors(prev => ({ ...prev, phone: validateRegField('phone', regPhone) }));
-                }}
-              />
+              <div style={{ position: 'relative', width: '100%' }}>
+                <Phone size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#A39587', pointerEvents: 'none' }} />
+                <input
+                  type="tel"
+                  required
+                  maxLength={10}
+                  className="form-input"
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    paddingLeft: '38px',
+                    paddingRight: '12px',
+                    background: '#F8F3EC',
+                    border: regTouched.phone && regFieldErrors.phone ? '1.5px solid #EF4444' : (regTouched.phone && regPhone.trim().length === 10 ? '1.5px solid #10B981' : '1.5px solid #E8DCCB'),
+                    color: '#271E16',
+                    letterSpacing: '1px',
+                    fontWeight: 600,
+                    height: '42px',
+                    borderRadius: '8px'
+                  }}
+                  placeholder="9876543210"
+                  value={regPhone}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    setRegPhone(digits);
+                    if (regTouched.phone) {
+                      setRegFieldErrors(prev => ({ ...prev, phone: validateRegField('phone', digits) }));
+                    }
+                  }}
+                  onBlur={() => {
+                    setRegTouched(prev => ({ ...prev, phone: true }));
+                    setRegFieldErrors(prev => ({ ...prev, phone: validateRegField('phone', regPhone) }));
+                  }}
+                />
+              </div>
               {regTouched.phone && regFieldErrors.phone && (
                 <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 700, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <AlertCircle size={12} /> {regFieldErrors.phone}
@@ -961,16 +988,22 @@ export function LoginView({ onGoToAdminPortal }) {
                   </span>
                 )}
               </label>
-              <div style={{ position: 'relative' }}>
+              <div style={{ position: 'relative', width: '100%' }}>
+                <Lock size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#A39587', pointerEvents: 'none' }} />
                 <input
                   type={showRegPassword ? 'text' : 'password'}
                   required
                   className="form-input"
                   style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    paddingLeft: '38px',
+                    paddingRight: '42px',
+                    height: '42px',
+                    borderRadius: '8px',
                     background: '#F8F3EC',
                     border: regTouched.password && regFieldErrors.password ? '1.5px solid #EF4444' : (regTouched.password && regPassword && regPassword.length >= 6 ? '1.5px solid #10B981' : '1.5px solid #E8DCCB'),
-                    color: '#271E16',
-                    paddingRight: '40px'
+                    color: '#271E16'
                   }}
                   placeholder="••••••••"
                   value={regPassword}
@@ -991,7 +1024,7 @@ export function LoginView({ onGoToAdminPortal }) {
                   onClick={() => setShowRegPassword(!showRegPassword)}
                   style={{
                     position: 'absolute',
-                    right: '10px',
+                    right: '12px',
                     top: '50%',
                     transform: 'translateY(-50%)',
                     background: 'none',
@@ -1001,7 +1034,10 @@ export function LoginView({ onGoToAdminPortal }) {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: '4px'
+                    padding: '0',
+                    width: '24px',
+                    height: '24px',
+                    zIndex: 2
                   }}
                   title={showRegPassword ? 'Hide password' : 'Show password'}
                 >
