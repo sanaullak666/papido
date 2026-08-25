@@ -302,6 +302,11 @@ const RideService = {
       throw new Error('You already have another active ride in progress.');
     }
 
+    // Verify core rider exclusivity if ride is core only
+    if (ride.is_core_only && !rider.is_core_member && rider.role !== 'CORE_MEMBER') {
+      throw new Error('This is an official Papido Flash Free Ride reserved exclusively for Core Team riders.');
+    }
+
     const updatedRide = await RideModel.assignRider(rideId, riderId);
 
     // Notify customer & rider

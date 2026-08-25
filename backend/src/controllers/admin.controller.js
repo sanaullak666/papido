@@ -564,6 +564,104 @@ const AdminController = {
     } catch (err) {
       return error(res, err.message, 400);
     }
+  },
+
+  /**
+   * Flash Free Ride Broadcast & Management
+   */
+  async createFlashFreeRide(req, res, next) {
+    try {
+      const { pickup, destination, durationMinutes = 15 } = req.body;
+      if (!pickup || !destination) {
+        return error(res, 'Both Pickup (Source) and Destination locations are required.', 400);
+      }
+
+      const pClean = pickup.trim().toUpperCase();
+      const dClean = destination.trim().toUpperCase();
+      const dur = Math.max(2, Math.min(120, parseInt(durationMinutes, 10) || 15));
+
+      // Expire any existing OPEN flash rides
+      await db.query(`
+        UPDATE flash_free_rides 
+        SET status = 'EXPIRED' 
+        WHERE status = 'OPEN'
+      `);
+
+      const result = await db.query(`
+        INSERT INTO flash_free_rides (
+          pickup_location, 
+          destination_location, 
+          status, 
+          created_by_admin_id, 
+          expires_at
+        ) VALUES (?, ?, 'OPEN', ?, DATE_ADD(NOW(), INTERVAL ? MINUTE))
+      `, [pClean, dClean, req.user?.id || null, dur]);
+
+      const flashRide = await db.queryOne(`
+        SELECT * FROM flash_free_rides WHERE id = ?
+      `, [result.insertId]);
+
+      // Broadcast via socket to all passenger webs
+      const socketManager = req.app.get('socketManager');
+      if (socketManager) {
+        socketManager.io.emit('flash_free_ride:new', {
+          id: flashRide.id,
+          pickup: flashRide.pickup_location,
+          destination: flashRide.destination_location,
+          expiresAt: flashRide.expires_at,
+          status: 'OPEN'
+        });
+      }
+
+      return success(res, 'Flash Free Ride broadcasted live to all passengers!', flashRide);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async getActiveFlashFreeRide(req, res, next) {
+    try {
+      // Auto-expire past deadline
+      await db.query(`
+        UPDATE flash_free_rides 
+        SET status = 'EXPIRED' 
+        WHERE status = 'OPEN' AND expires_at < NOW()
+      `);
+
+      const flashRide = await db.queryOne(`
+        SELECT f.*, 
+               c.name as winner_name, c.phone as winner_phone,
+               r.ride_code, r.status as ride_status
+        FROM flash_free_rides f
+        LEFT JOIN users c ON f.claimed_by_user_id = c.id
+        LEFT JOIN rides r ON f.ride_id = r.id
+        ORDER BY f.id DESC LIMIT 1
+      `);
+
+      return success(res, 'Latest flash free ride retrieved.', flashRide || null);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async cancelFlashFreeRide(req, res, next) {
+    try {
+      const { id } = req.body;
+      if (id) {
+        await db.query(`UPDATE flash_free_rides SET status = 'CANCELLED' WHERE id = ? AND status = 'OPEN'`, [id]);
+      } else {
+        await db.query(`UPDATE flash_free_rides SET status = 'CANCELLED' WHERE status = 'OPEN'`);
+      }
+
+      const socketManager = req.app.get('socketManager');
+      if (socketManager) {
+        socketManager.io.emit('flash_free_ride:cancelled', { id });
+      }
+
+      return success(res, 'Flash free ride cancelled successfully.');
+    } catch (err) {
+      next(err);
+    }
   }
 };
 

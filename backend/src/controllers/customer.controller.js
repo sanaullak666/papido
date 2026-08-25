@@ -3,6 +3,7 @@ const RideModel = require('../models/ride.model');
 const RideService = require('../services/ride.service');
 const FareService = require('../services/fare.service');
 const FareModel = require('../models/fare.model');
+const db = require('../config/database');
 const { success, error, paginate } = require('../utils/response');
 
 const CustomerController = {
@@ -305,6 +306,131 @@ const CustomerController = {
       return success(res, 'Thank you! Rating submitted successfully.', result);
     } catch (err) {
       return error(res, err.message, 400);
+    }
+  },
+
+  /**
+   * Flash Free Ride: Check active and claim
+   */
+  async getActiveFlashFreeRide(req, res, next) {
+    try {
+      // Auto-expire past deadline
+      await db.query(`
+        UPDATE flash_free_rides 
+        SET status = 'EXPIRED' 
+        WHERE status = 'OPEN' AND expires_at < NOW()
+      `);
+
+      const activeFlash = await db.queryOne(`
+        SELECT id, pickup_location as pickup, destination_location as destination, expires_at, status
+        FROM flash_free_rides
+        WHERE status = 'OPEN' AND expires_at > NOW()
+        ORDER BY id DESC LIMIT 1
+      `);
+
+      return success(res, 'Active flash free ride status.', activeFlash || null);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async claimFlashFreeRide(req, res, next) {
+    try {
+      const { flashId } = req.body;
+      const customerId = req.user.id;
+
+      if (!flashId) {
+        return error(res, 'Flash offer ID is required.', 400);
+      }
+
+      // Check if user already has an active ride
+      const existingActive = await RideModel.getActiveRideForCustomer(customerId);
+      if (existingActive && ['PENDING_ADMIN_QUOTE', 'REQUESTED', 'ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED'].includes(existingActive.status)) {
+        return error(res, `You already have an active ride (${existingActive.ride_code}) in progress. Complete or cancel it first.`, 400);
+      }
+
+      // Atomic claim attempt: strictly 1 winner!
+      const updateResult = await db.query(`
+        UPDATE flash_free_rides
+        SET status = 'CLAIMED', claimed_by_user_id = ?, updated_at = NOW()
+        WHERE id = ? AND status = 'OPEN' AND expires_at > NOW()
+      `, [customerId, flashId]);
+
+      if (!updateResult || updateResult.affectedRows === 0) {
+        return error(res, 'Sorry! This Flash Free Ride was just claimed by another student or has expired.', 409);
+      }
+
+      const flashOffer = await db.queryOne(`SELECT * FROM flash_free_rides WHERE id = ?`, [flashId]);
+      if (!flashOffer) {
+        return error(res, 'Flash offer details could not be found.', 404);
+      }
+
+      // Create ₹0 Ride for Core Members only
+      const rideCode = RideService.generateRideCode();
+      const otp = RideService.generateOTP();
+
+      const newRide = await RideModel.create({
+        rideCode,
+        customerId,
+        vehicleType: 'BIKE',
+        pickupAddress: flashOffer.pickup_location,
+        pickupLatitude: 12.0240,
+        pickupLongitude: 79.8530,
+        viaAddress: null,
+        viaLatitude: null,
+        viaLongitude: null,
+        destinationAddress: flashOffer.destination_location,
+        destinationLatitude: 11.9350,
+        destinationLongitude: 79.8300,
+        estimatedDistance: 1.5,
+        estimatedDuration: 5,
+        estimatedFare: 0.00,
+        otp,
+        paymentMethod: 'FREE_PASS',
+        femaleRiderOnly: false,
+        isDoubleRide: false,
+        isOutside: false
+      });
+
+      // Update ride to be is_free_ride = 1, is_core_only = 1
+      await db.query(`
+        UPDATE rides 
+        SET is_free_ride = 1, is_core_only = 1, final_fare = 0.00, payment_status = 'COMPLETED'
+        WHERE id = ?
+      `, [newRide.id]);
+
+      // Link ride to flash offer
+      await db.query(`UPDATE flash_free_rides SET ride_id = ? WHERE id = ?`, [newRide.id, flashId]);
+
+      const completeRide = await RideModel.findById(newRide.id);
+
+      // Broadcast to socket: offer is claimed
+      const socketManager = req.app.get('socketManager');
+      if (socketManager) {
+        socketManager.io.emit('flash_free_ride:claimed', {
+          id: flashId,
+          claimedBy: req.user.name || 'Passenger',
+          pickup: flashOffer.pickup_location,
+          destination: flashOffer.destination_location
+        });
+
+        // Notify Core Riders of new trip
+        socketManager.io.emit('ride:requested', {
+          rideId: completeRide.id,
+          rideCode: completeRide.ride_code,
+          pickupAddress: completeRide.pickup_address,
+          destinationAddress: completeRide.destination_address,
+          vehicleType: completeRide.vehicle_type,
+          estimatedFare: 0.00,
+          isFreeRide: true,
+          isCoreOnly: true,
+          femaleRiderOnly: false
+        });
+      }
+
+      return success(res, 'Congratulations! You won the Papido Flash Free Ride!', completeRide);
+    } catch (err) {
+      next(err);
     }
   }
 };

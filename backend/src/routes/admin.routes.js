@@ -34,6 +34,9 @@ router.get('/core-members', AdminController.listCoreMembers);
 router.patch('/users/:id/core-status', AdminController.toggleCoreMemberStatus);
 router.get('/penalties', AdminController.listPenalties);
 router.patch('/penalties/:id/status', AdminController.updatePenaltyStatus);
+router.post('/flash-free-ride', AdminController.createFlashFreeRide);
+router.get('/flash-free-ride/active', AdminController.getActiveFlashFreeRide);
+router.post('/flash-free-ride/cancel', AdminController.cancelFlashFreeRide);
 router.delete('/riders/:id', AdminController.deleteRider);
 router.delete('/users/:id', AdminController.deleteUser);
 

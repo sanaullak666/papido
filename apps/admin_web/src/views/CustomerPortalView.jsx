@@ -211,6 +211,11 @@ export function CustomerPortalView() {
   const [isDoubleRide, setIsDoubleRide] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('CASH');
 
+  // Flash Free Ride State
+  const [flashFreeRide, setFlashFreeRide] = useState(null);
+  const [claimingFlash, setClaimingFlash] = useState(false);
+  const [flashClaimMsg, setFlashClaimMsg] = useState(null);
+
   const getLocationHint = (stopName) => {
     if (!stopName) return null;
     const s = stopName.toLowerCase();
@@ -869,11 +874,40 @@ export function CustomerPortalView() {
     }
   };
 
+  const fetchFlashFreeRide = async () => {
+    if (!token) return;
+    try {
+      const res = await apiRequest('/customer/flash-free-ride/active', 'GET', null, token);
+      setFlashFreeRide(res.data || null);
+    } catch (_) {}
+  };
+
+  const handleClaimFlashFreeRide = async () => {
+    if (!flashFreeRide || claimingFlash) return;
+    try {
+      setClaimingFlash(true);
+      setFlashClaimMsg(null);
+      const res = await apiRequest('/customer/flash-free-ride/claim', 'POST', { flashId: flashFreeRide.id }, token);
+      setFlashFreeRide(null);
+      if (res.data) {
+        setActiveRide(res.data);
+        setStatusMessage('🎉 Congratulations! You claimed the Flash Free Ride! Searching for an official Core Rider...');
+      }
+    } catch (err) {
+      setFlashClaimMsg(err.message || 'Sorry, this free ride was just claimed by another student!');
+      fetchFlashFreeRide();
+    } finally {
+      setClaimingFlash(false);
+    }
+  };
+
   useEffect(() => {
     if (!token) return;
     fetchActiveRide(false);
+    fetchFlashFreeRide();
     const pollInterval = setInterval(() => {
       fetchActiveRide(true);
+      fetchFlashFreeRide();
     }, 2500);
     return () => clearInterval(pollInterval);
   }, [token]);
@@ -891,6 +925,19 @@ export function CustomerPortalView() {
       console.log('Customer Socket connected:', socket.id);
       socket.emit('identify', { id: user?.id, role: 'CUSTOMER', name: user?.name });
       fetchActiveRide(true);
+      fetchFlashFreeRide();
+    });
+
+    socket.on('flash_free_ride:new', (data) => {
+      setFlashFreeRide(data);
+    });
+
+    socket.on('flash_free_ride:claimed', () => {
+      setFlashFreeRide(null);
+    });
+
+    socket.on('flash_free_ride:cancelled', () => {
+      setFlashFreeRide(null);
     });
 
     socket.on('ride:status_change', (data) => {
@@ -1540,6 +1587,62 @@ export function CustomerPortalView() {
                       >
                         Pay ₹15 Now
                       </button>
+                    </div>
+                  )}
+
+                  {/* Flash Free Ride Live Banner */}
+                  {flashFreeRide && flashFreeRide.status === 'OPEN' && (
+                    <div style={{
+                      background: 'linear-gradient(135deg, #1C1917, #292524)',
+                      border: '2px solid #F59E0B',
+                      borderRadius: '14px',
+                      padding: '18px 20px',
+                      marginBottom: '16px',
+                      boxShadow: '0 8px 24px rgba(245, 158, 11, 0.25)',
+                      color: '#FFFFFF'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                        <span style={{ background: '#F59E0B', color: '#000000', fontSize: '11px', fontWeight: 900, padding: '3px 8px', borderRadius: '6px', letterSpacing: '0.5px' }}>
+                          ⚡ FLASH FREE RIDE (₹0.00)
+                        </span>
+                        <span style={{ fontSize: '11px', color: '#FCD34D', fontWeight: 700 }}>
+                          FASTEST FINGER FIRST — 1 WINNER
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '15px', fontWeight: 800, color: '#FFFFFF', marginBottom: '4px' }}>
+                        {flashFreeRide.pickup_location || flashFreeRide.pickup} &rarr; {flashFreeRide.destination_location || flashFreeRide.destination}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#D6D3D1', marginBottom: '14px' }}>
+                        Official Papido Core Campus Mobility Ride • 100% Free
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleClaimFlashFreeRide}
+                        disabled={claimingFlash}
+                        style={{
+                          width: '100%',
+                          padding: '12px',
+                          borderRadius: '10px',
+                          border: 'none',
+                          background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+                          color: '#000000',
+                          fontWeight: 900,
+                          fontSize: '14px',
+                          cursor: 'pointer',
+                          boxShadow: '0 4px 14px rgba(245, 158, 11, 0.4)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px'
+                        }}
+                      >
+                        {claimingFlash ? 'CLAIMING FREE RIDE...' : '🔥 CLAIM THIS FREE RIDE NOW (₹0)'}
+                      </button>
+                      {flashClaimMsg && (
+                        <div style={{ marginTop: '8px', fontSize: '12px', color: '#EF4444', fontWeight: 700, textAlign: 'center' }}>
+                          {flashClaimMsg}
+                        </div>
+                      )}
                     </div>
                   )}
 

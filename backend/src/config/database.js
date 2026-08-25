@@ -51,9 +51,11 @@ async function initializeDatabase() {
       // Auto-bootstrap schema in MySQL/TiDB only if tables do not exist (Non-destructive)
       try {
         await testPool.query('SELECT 1 FROM users LIMIT 1');
+        await ensureFlashFreeRidesSchema(testPool);
       } catch (_) {
         await bootstrapMysqlSchema(testPool);
         await ensureDatabaseIndexes(testPool);
+        await ensureFlashFreeRidesSchema(testPool);
       }
 
       return { engine: 'mysql', pool };
@@ -543,6 +545,39 @@ async function ensureDatabaseIndexes(targetPool) {
       } catch (_) {}
     })
   );
+}
+
+/**
+ * Ensures flash_free_rides table and columns exist in TiDB / MySQL
+ */
+async function ensureFlashFreeRidesSchema(targetPool) {
+  try {
+    await targetPool.query(`
+      CREATE TABLE IF NOT EXISTS flash_free_rides (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        pickup_location VARCHAR(255) NOT NULL,
+        destination_location VARCHAR(255) NOT NULL,
+        status VARCHAR(30) NOT NULL DEFAULT 'OPEN',
+        created_by_admin_id INT DEFAULT NULL,
+        claimed_by_user_id INT DEFAULT NULL,
+        ride_id INT DEFAULT NULL,
+        expires_at DATETIME NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_flash_status (status)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
+    // Ensure promotional columns exist on rides
+    try {
+      await targetPool.query('ALTER TABLE rides ADD COLUMN is_free_ride BOOLEAN DEFAULT FALSE');
+    } catch (_) {}
+    try {
+      await targetPool.query('ALTER TABLE rides ADD COLUMN is_core_only BOOLEAN DEFAULT FALSE');
+    } catch (_) {}
+  } catch (err) {
+    console.warn('[Database] Flash free rides schema notice:', err.message);
+  }
 }
 
 /**

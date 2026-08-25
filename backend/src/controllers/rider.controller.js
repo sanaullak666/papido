@@ -102,12 +102,14 @@ const RiderController = {
       ]);
       const riderGender = (user?.gender || req.user.gender || 'OTHER').toUpperCase();
       const riderVehicleType = req.query.vehicleType || profile?.vehicle_type || 'BIKE';
+      const isCoreMember = Boolean(user?.is_core_member || profile?.is_core_member || user?.role === 'CORE_MEMBER');
 
-      // Find open requested rides matching rider's gender and vehicle type
+      // Find open requested rides matching rider's gender and vehicle type (including core-only if rider is core)
       const rides = await RideModel.getAvailableRequestsForRider(
         req.user.id,
         riderGender,
-        riderVehicleType
+        riderVehicleType,
+        isCoreMember
       );
       return success(res, 'Available ride requests nearby.', rides);
     } catch (err) {

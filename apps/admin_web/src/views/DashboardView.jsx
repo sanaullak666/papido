@@ -9,7 +9,12 @@ import {
   XCircle,
   DollarSign,
   TrendingUp,
-  Clock
+  Clock,
+  Zap,
+  Send,
+  Radio,
+  Sparkles,
+  Award
 } from 'lucide-react';
 
 export function DashboardView() {
@@ -17,6 +22,59 @@ export function DashboardView() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Flash Free Ride State
+  const [flashRide, setFlashRide] = useState(null);
+  const [flashPickup, setFlashPickup] = useState('');
+  const [flashDest, setFlashDest] = useState('');
+  const [flashDuration, setFlashDuration] = useState('15');
+  const [flashLoading, setFlashLoading] = useState(false);
+  const [flashMsg, setFlashMsg] = useState(null);
+
+  const loadActiveFlashRide = async () => {
+    try {
+      const res = await apiRequest('/admin/flash-free-ride/active');
+      setFlashRide(res.data || null);
+    } catch (_) {}
+  };
+
+  const handleBroadcastFlash = async (e) => {
+    e.preventDefault();
+    if (!flashPickup.trim() || !flashDest.trim()) {
+      setFlashMsg({ type: 'error', text: 'Please enter both Pickup and Destination locations.' });
+      return;
+    }
+    try {
+      setFlashLoading(true);
+      setFlashMsg(null);
+      const res = await apiRequest('/admin/flash-free-ride', 'POST', {
+        pickup: flashPickup.trim(),
+        destination: flashDest.trim(),
+        durationMinutes: parseInt(flashDuration, 10) || 15
+      });
+      setFlashRide(res.data);
+      setFlashPickup('');
+      setFlashDest('');
+      setFlashMsg({ type: 'success', text: '⚡ Flash Free Ride is now LIVE on all passenger screens!' });
+    } catch (err) {
+      setFlashMsg({ type: 'error', text: err.message || 'Failed to broadcast flash free ride.' });
+    } finally {
+      setFlashLoading(false);
+    }
+  };
+
+  const handleCancelFlash = async () => {
+    try {
+      setFlashLoading(true);
+      await apiRequest('/admin/flash-free-ride/cancel', 'POST', { id: flashRide?.id });
+      setFlashRide(null);
+      setFlashMsg({ type: 'info', text: 'Flash free ride cancelled.' });
+    } catch (err) {
+      setFlashMsg({ type: 'error', text: err.message });
+    } finally {
+      setFlashLoading(false);
+    }
+  };
 
   const loadDashboardData = async () => {
     try {
@@ -33,7 +91,11 @@ export function DashboardView() {
 
   useEffect(() => {
     loadDashboardData();
-    const interval = setInterval(loadDashboardData, 15000);
+    loadActiveFlashRide();
+    const interval = setInterval(() => {
+      loadDashboardData();
+      loadActiveFlashRide();
+    }, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -43,16 +105,23 @@ export function DashboardView() {
 
     const handleRideUpdate = () => {
       loadDashboardData();
+      loadActiveFlashRide();
     };
 
     socket.on('admin:ride_requested', handleRideUpdate);
     socket.on('admin:ride_status_change', handleRideUpdate);
     socket.on('admin:rider_status_changed', handleRideUpdate);
+    socket.on('flash_free_ride:new', (data) => setFlashRide(data));
+    socket.on('flash_free_ride:claimed', () => loadActiveFlashRide());
+    socket.on('flash_free_ride:cancelled', () => setFlashRide(null));
 
     return () => {
       socket.off('admin:ride_requested', handleRideUpdate);
       socket.off('admin:ride_status_change', handleRideUpdate);
       socket.off('admin:rider_status_changed', handleRideUpdate);
+      socket.off('flash_free_ride:new');
+      socket.off('flash_free_ride:claimed');
+      socket.off('flash_free_ride:cancelled');
     };
   }, [socket]);
 
@@ -132,9 +201,139 @@ export function DashboardView() {
             ₹{(metrics.totalCompanyRevenue || 0).toFixed(2)}
           </div>
           <div className="stat-desc">
-            Today: ₹{(metrics.todayCompanyRevenue || 0).toFixed(2)} (Rider Payouts: ₹{(metrics.totalRiderPayouts || 0).toFixed(2)})
+  Today: ₹{(metrics.todayCompanyRevenue || 0).toFixed(2)} (Rider Payouts: ₹{(metrics.totalRiderPayouts || 0).toFixed(2)})
           </div>
         </div>
+      </div>
+
+      {/* Flash Free Ride Drop Manager */}
+      <div className="panel" style={{ border: flashRide?.status === 'OPEN' ? '2px solid #F59E0B' : '1px solid var(--border)', background: 'linear-gradient(180deg, rgba(245, 158, 11, 0.04), var(--bg-card))' }}>
+        <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Zap size={18} style={{ color: '#F59E0B' }} />
+              <h2 className="panel-title" style={{ margin: 0 }}>Flash Free Ride Drop (First-Come, First-Served)</h2>
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+              Broadcast an instant live ₹0 free ride on a specific campus route. First student to tap gets the ride, dispatched exclusively to Core Members.
+            </div>
+          </div>
+          {flashRide?.status === 'OPEN' && (
+            <span className="badge badge-warning" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '6px 12px', fontWeight: 800 }}>
+              <Radio size={14} className="pulse" /> LIVE BROADCAST ACTIVE
+            </span>
+          )}
+        </div>
+
+        {flashMsg && (
+          <div style={{
+            padding: '10px 14px',
+            borderRadius: '8px',
+            marginBottom: '16px',
+            fontSize: '13px',
+            fontWeight: 700,
+            background: flashMsg.type === 'error' ? 'rgba(239, 68, 68, 0.15)' : flashMsg.type === 'success' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(59, 130, 246, 0.15)',
+            color: flashMsg.type === 'error' ? '#F87171' : flashMsg.type === 'success' ? '#34D399' : '#60A5FA',
+            border: `1px solid ${flashMsg.type === 'error' ? '#EF4444' : flashMsg.type === 'success' ? '#10B981' : '#3B82F6'}`
+          }}>
+            {flashMsg.text}
+          </div>
+        )}
+
+        {flashRide?.status === 'OPEN' ? (
+          <div style={{ background: 'var(--bg-sidebar)', padding: '20px', borderRadius: '12px', border: '1px solid #F59E0B' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+              <div>
+                <div style={{ fontSize: '11px', color: '#F59E0B', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  Currently Broadcasting to All Passengers
+                </div>
+                <div style={{ fontSize: '18px', fontWeight: 800, color: '#FFFFFF', marginTop: '4px' }}>
+                  {flashRide.pickup_location || flashRide.pickup} &rarr; {flashRide.destination_location || flashRide.destination}
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  Expires at: {new Date(flashRide.expires_at || flashRide.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} &bull; Eligible Riders: <strong>Core Members Only</strong>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleCancelFlash}
+                disabled={flashLoading}
+                className="btn btn-danger"
+                style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 700 }}
+              >
+                {flashLoading ? 'Cancelling...' : 'Cancel Flash Drop'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div>
+            {flashRide?.status === 'CLAIMED' && (
+              <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10B981', padding: '12px 16px', borderRadius: '10px', marginBottom: '16px', fontSize: '13px', color: '#34D399' }}>
+                <strong>Recent Winner:</strong> {flashRide.winner_name || 'Student'} ({flashRide.winner_phone || 'N/A'}) claimed {flashRide.pickup_location} &rarr; {flashRide.destination_location} (Trip: {flashRide.ride_code || 'Assigned'}).
+              </div>
+            )}
+
+            <form onSubmit={handleBroadcastFlash} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr)) 120px 180px', gap: '12px', alignItems: 'flex-end' }}>
+              <div>
+                <label className="form-label" style={{ fontSize: '12px', fontWeight: 700 }}>Pickup Source *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. GATE 1 / CENTRAL LIBRARY"
+                  value={flashPickup}
+                  onChange={(e) => setFlashPickup(e.target.value.toUpperCase())}
+                  className="form-input"
+                  style={{ textTransform: 'uppercase', width: '100%' }}
+                />
+              </div>
+
+              <div>
+                <label className="form-label" style={{ fontSize: '12px', fontWeight: 700 }}>Destination Drop *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. MADAME CURIE HOSTEL / SJC"
+                  value={flashDest}
+                  onChange={(e) => setFlashDest(e.target.value.toUpperCase())}
+                  className="form-input"
+                  style={{ textTransform: 'uppercase', width: '100%' }}
+                />
+              </div>
+
+              <div>
+                <label className="form-label" style={{ fontSize: '12px', fontWeight: 700 }}>Duration</label>
+                <select
+                  value={flashDuration}
+                  onChange={(e) => setFlashDuration(e.target.value)}
+                  className="form-input"
+                  style={{ width: '100%' }}
+                >
+                  <option value="10">10 Mins</option>
+                  <option value="15">15 Mins</option>
+                  <option value="30">30 Mins</option>
+                  <option value="60">60 Mins</option>
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                disabled={flashLoading}
+                className="btn btn-primary"
+                style={{
+                  height: '42px',
+                  background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+                  color: '#000',
+                  fontWeight: 900,
+                  fontSize: '13px',
+                  border: 'none',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {flashLoading ? 'Broadcasting...' : '⚡ Broadcast Live'}
+              </button>
+            </form>
+          </div>
+        )}
       </div>
 
       {/* Real-time Status Breakdown Banner */}
@@ -143,7 +342,6 @@ export function DashboardView() {
           <h2 className="panel-title">Active Fleet & Live Ride Status</h2>
           <span className="badge badge-info">Auto-Synced</span>
         </div>
-
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px' }}>
           <div style={{ background: 'var(--bg-sidebar)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
             <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Online Drivers</div>

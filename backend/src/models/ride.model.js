@@ -263,7 +263,7 @@ const RideModel = {
     return this.findById(rideId);
   },
 
-  async getAvailableRequestsForRider(riderId, riderGender = 'OTHER', riderVehicleType = 'BIKE') {
+  async getAvailableRequestsForRider(riderId, riderGender = 'OTHER', riderVehicleType = 'BIKE', isCoreMember = false) {
     let sql = `
       SELECT r.*, 
              COALESCE(r.final_fare, r.estimated_fare) as total_fare,
@@ -276,6 +276,11 @@ const RideModel = {
         AND r.id NOT IN (SELECT ride_id FROM ride_declines WHERE rider_id = ?)
     `;
     const params = [riderId, riderId];
+
+    // Core Member Only filter: General riders cannot see flash free / core-only promotional rides
+    if (!isCoreMember) {
+      sql += ' AND (r.is_core_only = 0 OR r.is_core_only IS NULL)';
+    }
 
     if (riderGender !== 'FEMALE') {
       sql += ' AND (r.female_rider_only = 0 OR r.female_rider_only IS NULL)';
