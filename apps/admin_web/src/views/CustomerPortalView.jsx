@@ -1218,12 +1218,19 @@ export function CustomerPortalView() {
       const res = await apiRequest(`/customer/penalties/${targetId}/claim-paid`, 'POST', {
         paymentReference: `CLAIMED_VIA_APP_${Date.now()}`
       }, token);
-      setPendingPenalty(prev => ({
-        ...prev,
-        ...(res.data || {}),
-        status: 'PENDING_DRIVER_CONFIRMATION'
-      }));
-      setStatusMessage('Payment notification sent to driver. Waiting for driver confirmation...');
+
+      if (res.data?.status === 'SETTLED' || res.data?.status === 'PAID' || !res.data?.id) {
+        setPendingPenalty(null);
+        setShowPenaltyModal(false);
+        setStatusMessage('No penalty due! Your account is clear to book rides.');
+      } else {
+        setPendingPenalty(prev => ({
+          ...prev,
+          ...(res.data || {}),
+          status: 'PENDING_DRIVER_CONFIRMATION'
+        }));
+        setStatusMessage('Payment notification sent to driver. Waiting for driver confirmation...');
+      }
     } catch (err) {
       alert(err.message || 'Failed to submit payment confirmation to driver.');
     } finally {
