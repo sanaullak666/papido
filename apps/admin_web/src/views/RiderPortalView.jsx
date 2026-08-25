@@ -2478,12 +2478,16 @@ export function RiderPortalView() {
                 </div>
 
                 <div style={{ borderLeft: '2px dashed var(--border)', paddingLeft: '16px' }}>
-                  <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 800 }}>PLATFORM FEE DUE:</div>
-                  <div style={{ fontSize: '26px', fontWeight: 900, color: '#EF4444' }}>
+                  <div style={{ fontSize: '11px', color: selectedSettlementDate === getTodayDateString() ? '#F59E0B' : '#EF4444', fontWeight: 800 }}>
+                    {selectedSettlementDate === getTodayDateString() ? 'ACCUMULATING PLATFORM FEE:' : 'PLATFORM FEE DUE:'}
+                  </div>
+                  <div style={{ fontSize: '26px', fontWeight: 900, color: selectedSettlementDate === getTodayDateString() ? '#F59E0B' : '#EF4444' }}>
                     ₹{Number(shiftSettlement?.totalCommissionDue ?? 0).toFixed(2)}
                   </div>
                   <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                    Standard: ₹4 / ride (Fare ≤ ₹80) | Long Trips: 10% + ₹2 (Fare &gt; ₹80)
+                    {selectedSettlementDate === getTodayDateString() 
+                      ? 'Accumulates during today\'s shift • Due after 12:00 AM midnight'
+                      : 'Standard: ₹4 / ride (Fare ≤ ₹80) | Long Trips: 10% + ₹2 (Fare > ₹80)'}
                   </div>
                 </div>
               </div>
@@ -2518,6 +2522,27 @@ export function RiderPortalView() {
                   fontSize: '13px'
                 }}>
                   No completed rides or commission dues on {shiftSettlement?.date || selectedSettlementDate}.
+                </div>
+              ) : selectedSettlementDate === getTodayDateString() ? (
+                <div style={{
+                  background: 'rgba(59, 130, 246, 0.08)',
+                  border: '1px solid rgba(59, 130, 246, 0.25)',
+                  borderRadius: '12px',
+                  padding: '18px 20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '14px',
+                  color: '#93C5FD'
+                }}>
+                  <Clock size={24} style={{ color: '#60A5FA', flexShrink: 0 }} />
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '14px', color: '#BFDBFE' }}>
+                      Today's Shift is Currently Active
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#93C5FD', marginTop: '3px', lineHeight: 1.5 }}>
+                      Your rides accumulate throughout today. The final shift settlement amount will be closed and payable <strong>after 12:00 AM midnight</strong>. You can drive freely without any lock today!
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <>
