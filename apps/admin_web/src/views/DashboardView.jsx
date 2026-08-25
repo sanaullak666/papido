@@ -273,64 +273,114 @@ export function DashboardView() {
               </div>
             )}
 
-            <form onSubmit={handleBroadcastFlash} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr)) 120px 180px', gap: '12px', alignItems: 'flex-end' }}>
-              <div>
-                <label className="form-label" style={{ fontSize: '12px', fontWeight: 700 }}>Pickup Source *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. GATE 1 / CENTRAL LIBRARY"
-                  value={flashPickup}
-                  onChange={(e) => setFlashPickup(e.target.value.toUpperCase())}
-                  className="form-input"
-                  style={{ textTransform: 'uppercase', width: '100%' }}
-                />
+            <form onSubmit={handleBroadcastFlash} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+                <div>
+                  <label className="form-label" style={{ fontSize: '12px', fontWeight: 700, color: '#D6C7B2', marginBottom: '6px', display: 'block' }}>
+                    Pickup Source (Where to start) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. GATE 1 / CENTRAL LIBRARY / SJC"
+                    value={flashPickup}
+                    onChange={(e) => setFlashPickup(e.target.value.toUpperCase())}
+                    className="form-input"
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      textTransform: 'uppercase',
+                      height: '44px',
+                      background: 'var(--bg-input, #1E293B)',
+                      border: '1.5px solid var(--border, #23314E)',
+                      color: '#FFF',
+                      borderRadius: '8px',
+                      padding: '0 14px',
+                      fontSize: '13px'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label className="form-label" style={{ fontSize: '12px', fontWeight: 700, color: '#D6C7B2', marginBottom: '6px', display: 'block' }}>
+                    Destination Drop (Where to go) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. MADAME CURIE HOSTEL / SOM BLOCK"
+                    value={flashDest}
+                    onChange={(e) => setFlashDest(e.target.value.toUpperCase())}
+                    className="form-input"
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      textTransform: 'uppercase',
+                      height: '44px',
+                      background: 'var(--bg-input, #1E293B)',
+                      border: '1.5px solid var(--border, #23314E)',
+                      color: '#FFF',
+                      borderRadius: '8px',
+                      padding: '0 14px',
+                      fontSize: '13px'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label className="form-label" style={{ fontSize: '12px', fontWeight: 700, color: '#D6C7B2', marginBottom: '6px', display: 'block' }}>
+                    Offer Expiry Window
+                  </label>
+                  <select
+                    value={flashDuration}
+                    onChange={(e) => setFlashDuration(e.target.value)}
+                    className="form-input"
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      height: '44px',
+                      background: 'var(--bg-input, #1E293B)',
+                      border: '1.5px solid var(--border, #23314E)',
+                      color: '#FFF',
+                      borderRadius: '8px',
+                      padding: '0 12px',
+                      fontSize: '13px'
+                    }}
+                  >
+                    <option value="10">10 Minutes</option>
+                    <option value="15">15 Minutes</option>
+                    <option value="30">30 Minutes</option>
+                    <option value="60">60 Minutes</option>
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <label className="form-label" style={{ fontSize: '12px', fontWeight: 700 }}>Destination Drop *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. MADAME CURIE HOSTEL / SJC"
-                  value={flashDest}
-                  onChange={(e) => setFlashDest(e.target.value.toUpperCase())}
-                  className="form-input"
-                  style={{ textTransform: 'uppercase', width: '100%' }}
-                />
-              </div>
-
-              <div>
-                <label className="form-label" style={{ fontSize: '12px', fontWeight: 700 }}>Duration</label>
-                <select
-                  value={flashDuration}
-                  onChange={(e) => setFlashDuration(e.target.value)}
-                  className="form-input"
-                  style={{ width: '100%' }}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '4px' }}>
+                <button
+                  type="submit"
+                  disabled={flashLoading}
+                  className="btn btn-primary"
+                  style={{
+                    height: '46px',
+                    padding: '0 32px',
+                    background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+                    color: '#000000',
+                    fontWeight: 900,
+                    fontSize: '14px',
+                    border: 'none',
+                    borderRadius: '10px',
+                    boxShadow: '0 4px 18px rgba(245, 158, 11, 0.45)',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    whiteSpace: 'nowrap'
+                  }}
                 >
-                  <option value="10">10 Mins</option>
-                  <option value="15">15 Mins</option>
-                  <option value="30">30 Mins</option>
-                  <option value="60">60 Mins</option>
-                </select>
+                  <Zap size={16} /> {flashLoading ? 'Broadcasting Live...' : '⚡ Broadcast Flash Free Ride Now'}
+                </button>
               </div>
-
-              <button
-                type="submit"
-                disabled={flashLoading}
-                className="btn btn-primary"
-                style={{
-                  height: '42px',
-                  background: 'linear-gradient(135deg, #F59E0B, #D97706)',
-                  color: '#000',
-                  fontWeight: 900,
-                  fontSize: '13px',
-                  border: 'none',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {flashLoading ? 'Broadcasting...' : '⚡ Broadcast Live'}
-              </button>
             </form>
           </div>
         )}
