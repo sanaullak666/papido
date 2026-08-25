@@ -107,6 +107,11 @@ const RiderController = {
 
   async getAvailableRequests(req, res, next) {
     try {
+      const lockCheck = await EarningModel.isRiderShiftLocked(req.user.id);
+      if (lockCheck.isLocked) {
+        return success(res, 'Account is locked due to unsettled shift commission.', []);
+      }
+
       const UserModel = require('../models/user.model');
       const [user, profile] = await Promise.all([
         UserModel.findById(req.user.id),
@@ -131,6 +136,16 @@ const RiderController = {
 
   async acceptRide(req, res, next) {
     try {
+      const lockCheck = await EarningModel.isRiderShiftLocked(req.user.id);
+      if (lockCheck.isLocked) {
+        return error(
+          res,
+          `Cannot accept ride. Your account is locked due to an unsettled platform commission of ₹${lockCheck.unpaidAmount.toFixed(2)} from your shift on ${lockCheck.pastDate}. Please settle via Admin UPI to unlock.`,
+          403,
+          { isShiftLocked: true, ...lockCheck }
+        );
+      }
+
       const rideId = req.params.id;
       const ride = await RideService.acceptRide(rideId, req.user.id);
       return success(res, 'Ride accepted successfully! Please head towards pickup.', ride);

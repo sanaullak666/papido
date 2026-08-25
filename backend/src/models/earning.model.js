@@ -414,28 +414,57 @@ const EarningModel = {
   },
 
   async isRiderShiftLocked(riderId) {
-    const today = new Date().toISOString().slice(0, 10);
-    // Find any past dates where driver completed rides and settlement is not SETTLED
+    // Robust Indian Standard Time (IST) date calculation
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istDate = new Date(now.getTime() + istOffset);
+    const today = istDate.toISOString().slice(0, 10);
+
+    // 1. Check daily_shift_settlements directly for past unsettled / pending / rejected shifts
+    const dssRow = await db.queryOne(`
+      SELECT date as shift_date, total_trips as trips_count, total_commission_due as total_due, status as shift_status, rejection_reason
+      FROM daily_shift_settlements
+      WHERE rider_id = ? 
+        AND (date < CURRENT_DATE() OR date < ?) 
+        AND status != 'SETTLED' 
+        AND total_commission_due > 0
+      ORDER BY date ASC
+      LIMIT 1
+    `, [riderId, today]).catch(() => null);
+
+    if (dssRow && parseFloat(dssRow.total_due || 0) > 0) {
+      return {
+        isLocked: true,
+        pastDate: String(dssRow.shift_date).slice(0, 10),
+        tripsCount: dssRow.trips_count || 1,
+        unpaidAmount: parseFloat(dssRow.total_due || 0),
+        status: dssRow.shift_status || 'UNSETTLED',
+        rejectionReason: dssRow.rejection_reason || null
+      };
+    }
+
+    // 2. Also check rides/rider_earnings table directly for any past shift with unpaid deductions
     const sql = `
       SELECT 
-        DATE(r.completed_at) as shift_date,
+        COALESCE(DATE(r.completed_at), DATE(re.created_at)) as shift_date,
         COUNT(r.id) as trips_count,
-        SUM(re.company_earning + re.controller_earning) as total_due,
+        SUM(COALESCE(re.company_earning, 0) + COALESCE(re.controller_earning, 0)) as total_due,
         dss.status as shift_status,
         dss.rejection_reason
       FROM rides r
       JOIN rider_earnings re ON r.id = re.ride_id
-      LEFT JOIN daily_shift_settlements dss ON (dss.rider_id = r.rider_id AND dss.date = DATE(r.completed_at))
+      LEFT JOIN daily_shift_settlements dss ON (dss.rider_id = r.rider_id AND dss.date = COALESCE(DATE(r.completed_at), DATE(re.created_at)))
       WHERE r.rider_id = ?
         AND r.status = 'COMPLETED'
-        AND DATE(r.completed_at) < ?
+        AND (DATE(r.completed_at) < CURRENT_DATE() OR DATE(re.created_at) < CURRENT_DATE() OR DATE(r.completed_at) < ? OR DATE(re.created_at) < ?)
         AND (re.settlement_status != 'SETTLED' OR re.settlement_status IS NULL)
         AND (dss.status != 'SETTLED' OR dss.status IS NULL)
-      GROUP BY DATE(r.completed_at), dss.status, dss.rejection_reason
-      ORDER BY DATE(r.completed_at) ASC
+      GROUP BY COALESCE(DATE(r.completed_at), DATE(re.created_at)), dss.status, dss.rejection_reason
+      HAVING total_due > 0
+      ORDER BY shift_date ASC
       LIMIT 1
     `;
-    const row = await db.queryOne(sql, [riderId, today]).catch(() => null);
+    const row = await db.queryOne(sql, [riderId, today, today]).catch(() => null);
     if (row && parseFloat(row.total_due || 0) > 0) {
       return {
         isLocked: true,

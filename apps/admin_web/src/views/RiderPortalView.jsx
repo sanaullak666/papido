@@ -392,7 +392,10 @@ export function RiderPortalView() {
   };
 
   const fetchAvailableRequests = async () => {
-    if (!isOnline || activeRide) return;
+    if (!isOnline || activeRide || shiftSettlement?.isLocked) {
+      if (shiftSettlement?.isLocked) setIncomingRequests([]);
+      return;
+    }
     try {
       const res = await apiRequest('/rider/requests', 'GET', null, token);
       const list = res.data || [];
@@ -546,7 +549,7 @@ export function RiderPortalView() {
 
     socket.on('ride:new_request', (ride) => {
       console.log('Incoming ride request:', ride);
-      if (!isOnline) return;
+      if (!isOnline || shiftSettlement?.isLocked) return;
       const rideId = ride.id || ride.rideId;
       if (!rideId || declinedRideIds.has(String(rideId))) return;
 
@@ -597,7 +600,7 @@ export function RiderPortalView() {
 
     socket.on('ride:reopened', (ride) => {
       console.log('Ride reopened by passenger:', ride);
-      if (!isOnline) return;
+      if (!isOnline || shiftSettlement?.isLocked) return;
       const rideId = ride.id || ride.rideId;
       if (!rideId || declinedRideIds.has(String(rideId))) return;
 
@@ -804,6 +807,11 @@ export function RiderPortalView() {
   // 6. Handle Accept Ride
   const handleAcceptRequest = async (rideId) => {
     alertManager.stopRingtone();
+    if (shiftSettlement?.isLocked) {
+      alert(`Cannot accept ride. Your driver account is locked due to an unsettled platform commission of ₹${Number(shiftSettlement.lockDetails?.unpaidAmount || 0).toFixed(2)} from your shift on ${shiftSettlement.lockDetails?.pastDate}. Please settle via Admin UPI in the Earnings tab to unlock your account.`);
+      setCurrentTab('earnings');
+      return;
+    }
     setAcceptingRideId(rideId);
     setActionLoading(true);
     setEnteredOtp('');
@@ -1499,8 +1507,50 @@ export function RiderPortalView() {
                 </div>
               </div>
 
+              {/* Account Shift Lock Notice in Radar */}
+              {shiftSettlement?.isLocked && (
+                <div style={{
+                  background: 'rgba(239, 68, 68, 0.12)',
+                  border: '1.5px solid rgba(239, 68, 68, 0.4)',
+                  borderRadius: '16px',
+                  padding: '24px',
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '12px'
+                }}>
+                  <div style={{
+                    width: '50px',
+                    height: '50px',
+                    borderRadius: '50%',
+                    background: '#FEE2E2',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#DC2626'
+                  }}>
+                    <Lock size={26} />
+                  </div>
+                  <div style={{ fontSize: '18px', fontWeight: 800, color: '#DC2626' }}>
+                    Driver Account Locked for Rides
+                  </div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)', maxWidth: '440px', lineHeight: 1.5 }}>
+                    You have an unpaid platform commission of <strong>₹{Number(shiftSettlement.lockDetails?.unpaidAmount || 0).toFixed(2)}</strong> from your shift on <strong>{shiftSettlement.lockDetails?.pastDate}</strong>. Settle via Admin UPI in the Earnings tab to unlock.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentTab('earnings')}
+                    className="btn btn-primary"
+                    style={{ fontWeight: 800, marginTop: '4px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <CreditCard size={15} /> Settle Commission &amp; Unlock
+                  </button>
+                </div>
+              )}
+
               {/* Incoming Requests Queue (Multiple Bookings Supported & Persistent until declined) */}
-              {!activeRide && incomingRequests.length > 0 && (
+              {!activeRide && !shiftSettlement?.isLocked && incomingRequests.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--primary)', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '6px' }}>
