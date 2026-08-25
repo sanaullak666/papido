@@ -1149,7 +1149,8 @@ export function CustomerPortalView() {
   // 7. Handle Cancel Ride (Warns if driver has already reached pickup)
   const handleCancelRide = () => {
     if (!activeRide) return;
-    if (activeRide.status === 'RIDER_REACHED') {
+    const isFreeRide = Boolean(activeRide.is_free_ride || activeRide.is_core_only || parseFloat(activeRide.total_fare || activeRide.estimated_fare || 0) === 0);
+    if (activeRide.status === 'RIDER_REACHED' && !isFreeRide) {
       setShowCancelWarningModal(true);
     } else {
       if (window.confirm('Are you sure you want to cancel this ride request?')) {
@@ -1161,6 +1162,7 @@ export function CustomerPortalView() {
   const executeCancelRide = async (reasonText) => {
     if (!activeRide) return;
     const currentActiveRide = { ...activeRide };
+    const isFreeRide = Boolean(currentActiveRide.is_free_ride || currentActiveRide.is_core_only || parseFloat(currentActiveRide.total_fare || currentActiveRide.estimated_fare || 0) === 0);
     const wasReached = currentActiveRide.status === 'RIDER_REACHED';
     setShowCancelWarningModal(false);
 
@@ -1172,7 +1174,7 @@ export function CustomerPortalView() {
       setActiveRide(null);
       
       let penaltyData = res.data?.penalty;
-      if (!penaltyData && wasReached) {
+      if (!isFreeRide && !penaltyData && wasReached) {
         try {
           const penRes = await apiRequest('/customer/pending-penalty', 'GET', null, token);
           if (penRes?.data) {
@@ -1181,7 +1183,7 @@ export function CustomerPortalView() {
         } catch (_) {}
       }
 
-      if (penaltyData || wasReached) {
+      if (!isFreeRide && (penaltyData || wasReached)) {
         const fallbackUpi = penaltyData?.rider_upi || penaltyData?.rider_upi_id || (currentActiveRide.rider_phone ? `${currentActiveRide.rider_phone}@upi` : 'driver@upi');
         const fallbackName = penaltyData?.rider_name || currentActiveRide.rider_name || 'Driver';
         const fallbackObj = penaltyData || {
@@ -1197,7 +1199,7 @@ export function CustomerPortalView() {
         setPendingPenalty(fallbackObj);
         setShowPenaltyModal(true);
       } else {
-        setStatusMessage('Ride cancelled.');
+        setStatusMessage(isFreeRide ? 'Free ride cancelled with zero charge.' : 'Ride cancelled.');
       }
     } catch (err) {
       alert(err.message || 'Failed to cancel ride.');

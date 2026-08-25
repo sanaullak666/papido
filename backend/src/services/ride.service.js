@@ -630,10 +630,12 @@ const RideService = {
     const isCustomerRole = String(cancelledByRole || '').toUpperCase() === 'CUSTOMER' || String(cancelledByUserId) === String(ride.customer_id);
     const isStatusReached = String(ride.status || '').toUpperCase() === 'RIDER_REACHED';
     const effectiveRiderId = ride.rider_id || ride.assigned_rider_id;
+    const isFreeRide = Boolean(ride.is_free_ride || ride.is_core_only || parseFloat(ride.estimated_fare || 0) === 0 || parseFloat(ride.final_fare || 0) === 0);
 
     // If Customer cancels AFTER the driver has already REACHED pickup location:
     // Apply ₹15 driver compensation fee directed to driver's UPI
-    if (isCustomerRole && isStatusReached && effectiveRiderId) {
+    // STRICT EXCEPTION: If this is a FREE RIDE, passenger is NEVER charged any cancellation penalty!
+    if (isCustomerRole && isStatusReached && effectiveRiderId && !isFreeRide) {
       try {
         const PenaltyModel = require('../models/penalty.model');
         const UserModel = require('../models/user.model');
