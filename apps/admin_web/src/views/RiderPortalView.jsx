@@ -121,6 +121,7 @@ export function RiderPortalView() {
   const [declinedRideIds, setDeclinedRideIds] = useState(() => new Set());
   const [tripCancelledNotice, setTripCancelledNotice] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [acceptingRideId, setAcceptingRideId] = useState(null);
   const [waitingLoading, setWaitingLoading] = useState(false);
   const [enteredOtp, setEnteredOtp] = useState('');
   const [otpError, setOtpError] = useState(null);
@@ -728,6 +729,7 @@ export function RiderPortalView() {
   // 6. Handle Accept Ride
   const handleAcceptRequest = async (rideId) => {
     alertManager.stopRingtone();
+    setAcceptingRideId(rideId);
     setActionLoading(true);
     setEnteredOtp('');
     setOtpError(null);
@@ -755,6 +757,7 @@ export function RiderPortalView() {
       setIncomingRequests(prev => prev.filter(r => String(r.id) !== String(rideId)));
     } finally {
       setActionLoading(false);
+      setAcceptingRideId(null);
     }
   };
 
@@ -1486,7 +1489,7 @@ export function RiderPortalView() {
                           </button>
                           <button
                             onClick={() => handleAcceptRequest(req.id)}
-                            disabled={actionLoading}
+                            disabled={acceptingRideId !== null || actionLoading}
                             style={{
                               padding: '10px',
                               fontWeight: 800,
@@ -1496,10 +1499,11 @@ export function RiderPortalView() {
                               border: 'none',
                               borderRadius: '10px',
                               boxShadow: '0 4px 14px rgba(234, 88, 12, 0.35)',
-                              cursor: 'pointer'
+                              cursor: (acceptingRideId !== null || actionLoading) ? 'not-allowed' : 'pointer',
+                              opacity: (acceptingRideId !== null && acceptingRideId !== req.id) ? 0.6 : 1
                             }}
                           >
-                            {actionLoading ? 'Accepting...' : 'Accept Ride Now'}
+                            {acceptingRideId === req.id ? 'Accepting...' : 'Accept Ride Now'}
                           </button>
                         </div>
                       </div>

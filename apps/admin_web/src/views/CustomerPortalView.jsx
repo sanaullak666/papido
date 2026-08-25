@@ -1190,7 +1190,7 @@ export function CustomerPortalView() {
         const fallbackUpi = penaltyData?.rider_upi || penaltyData?.rider_upi_id || (currentActiveRide.rider_phone ? `${currentActiveRide.rider_phone}@upi` : 'driver@upi');
         const fallbackName = penaltyData?.rider_name || currentActiveRide.rider_name || 'Driver';
         const fallbackObj = penaltyData || {
-          id: currentActiveRide.id,
+          id: penaltyData?.id || currentActiveRide.id,
           ride_id: currentActiveRide.id,
           ride_code: currentActiveRide.ride_code,
           amount: 15.00,
@@ -1214,7 +1214,8 @@ export function CustomerPortalView() {
     if (!pendingPenalty) return;
     setSettlingPenalty(true);
     try {
-      const res = await apiRequest(`/customer/penalties/${pendingPenalty.id}/claim-paid`, 'POST', {
+      const targetId = pendingPenalty.id || pendingPenalty.penalty_id || pendingPenalty.ride_id;
+      const res = await apiRequest(`/customer/penalties/${targetId}/claim-paid`, 'POST', {
         paymentReference: `CLAIMED_VIA_APP_${Date.now()}`
       }, token);
       setPendingPenalty(prev => ({

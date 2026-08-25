@@ -733,19 +733,25 @@ const RideService = {
    */
   async settlePenalty(penaltyId, customerId, paymentReference = null) {
     const PenaltyModel = require('../models/penalty.model');
-    const penalty = await PenaltyModel.findById(penaltyId);
+    let penalty = await PenaltyModel.findById(penaltyId);
+    if (!penalty) {
+      penalty = await PenaltyModel.findByRideId(penaltyId);
+    }
+    if (!penalty) {
+      penalty = await PenaltyModel.getPendingPenaltyForCustomer(customerId);
+    }
     if (!penalty) throw new Error('Penalty record not found.');
     if (penalty.customer_id !== customerId) throw new Error('Unauthorized.');
 
-    const updated = await PenaltyModel.markAsPaid(penaltyId, paymentReference || `UPI-TXN-${Date.now()}`);
+    const updated = await PenaltyModel.markAsPaid(penalty.id, paymentReference || `UPI-TXN-${Date.now()}`);
     
     // Notify customer
     await NotificationModel.create({
       userId: customerId,
       title: 'Compensation Settled',
-      message: `Your ₹15 cancellation fee for Ride #${penalty.ride_code} has been settled. You can now book rides!`,
+      message: `Your ₹15 cancellation fee for Ride #${penalty.ride_code || 'Trip'} has been settled. You can now book rides!`,
       type: 'PENALTY_SETTLED',
-      data: { penaltyId }
+      data: { penaltyId: penalty.id }
     });
 
     return updated;
@@ -756,11 +762,17 @@ const RideService = {
    */
   async claimPenaltyPaid(penaltyId, customerId, paymentReference = null) {
     const PenaltyModel = require('../models/penalty.model');
-    const penalty = await PenaltyModel.findById(penaltyId);
+    let penalty = await PenaltyModel.findById(penaltyId);
+    if (!penalty) {
+      penalty = await PenaltyModel.findByRideId(penaltyId);
+    }
+    if (!penalty) {
+      penalty = await PenaltyModel.getPendingPenaltyForCustomer(customerId);
+    }
     if (!penalty) throw new Error('Penalty record not found.');
     if (penalty.customer_id !== customerId) throw new Error('Unauthorized.');
 
-    const updated = await PenaltyModel.claimPaid(penaltyId, paymentReference || `CLAIMED_AT_${Date.now()}`);
+    const updated = await PenaltyModel.claimPaid(penalty.id, paymentReference || `CLAIMED_AT_${Date.now()}`);
 
     // Notify Rider in real-time
     if (socketManager) {
@@ -773,7 +785,7 @@ const RideService = {
       title: '₹15 Payment Verification Needed',
       message: `Passenger ${penalty.customer_name || 'Customer'} marked ₹15 compensation as paid to your UPI for Ride #${penalty.ride_code || ''}. Please confirm receipt.`,
       type: 'PENALTY_CONFIRMATION_REQUESTED',
-      data: { penaltyId, rideId: penalty.ride_id, amount: 15.00 }
+      data: { penaltyId: penalty.id, rideId: penalty.ride_id, amount: 15.00 }
     });
 
     return updated;
