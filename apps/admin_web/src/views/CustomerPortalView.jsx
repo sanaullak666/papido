@@ -122,9 +122,11 @@ const getCustomerTabFromPath = (path) => {
 const formatRideDateTime = (dateVal) => {
   if (!dateVal) return 'Recent';
   try {
-    const d = new Date(dateVal);
+    const str = String(dateVal).trim();
+    const d = new Date(str.includes('T') ? str : str.replace(' ', 'T'));
     if (isNaN(d.getTime())) return 'Recent';
     return d.toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
       day: 'numeric',
       month: 'short',
       year: 'numeric',

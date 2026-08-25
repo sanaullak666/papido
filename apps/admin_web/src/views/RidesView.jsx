@@ -113,12 +113,17 @@ export function RidesView() {
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
     try {
-      const d = new Date(dateStr);
-      return d.toLocaleDateString('en-IN', {
+      const str = String(dateStr).trim();
+      const d = new Date(str.includes('T') ? str : str.replace(' ', 'T'));
+      return d.toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
         day: '2-digit',
         month: 'short',
-        year: 'numeric'
-      }) + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
     } catch (_) {
       return dateStr;
     }

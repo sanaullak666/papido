@@ -81,9 +81,11 @@ const getRiderTabFromPath = (path) => {
 const formatRideDateTime = (dateVal) => {
   if (!dateVal) return 'Recent';
   try {
-    const d = new Date(dateVal);
+    const str = String(dateVal).trim();
+    const d = new Date(str.includes('T') ? str : str.replace(' ', 'T'));
     if (isNaN(d.getTime())) return 'Recent';
     return d.toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -256,17 +258,20 @@ export function RiderPortalView() {
     }
   };
 
-  // Helper to extract local date string (YYYY-MM-DD) in local time
+  // Helper to extract local date string (YYYY-MM-DD) in Asia/Kolkata time
   const getRideLocalDay = (ride) => {
     const raw = ride?.completed_at || ride?.created_at || ride?.requested_at;
     if (!raw) return '';
     try {
-      const d = new Date(raw);
+      const str = String(raw).trim();
+      const d = new Date(str.includes('T') ? str : str.replace(' ', 'T'));
       if (isNaN(d.getTime())) return String(raw).slice(0, 10);
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
+      return new Intl.DateTimeFormat('en-CA', { 
+        timeZone: 'Asia/Kolkata', 
+        year: 'numeric', 
+        month: '2-digit', 
+        day: '2-digit' 
+      }).format(d);
     } catch (_) {
       return String(raw).slice(0, 10);
     }

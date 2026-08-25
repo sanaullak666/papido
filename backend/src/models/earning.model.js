@@ -245,7 +245,12 @@ const EarningModel = {
 
   async listRiderEarnings(riderId, { limit = 20, offset = 0 }) {
     const sql = `
-      SELECT re.*, r.ride_code, r.pickup_address, r.destination_address
+      SELECT re.*, 
+             COALESCE(CONVERT_TZ(re.created_at, '+00:00', '+05:30'), re.created_at) as created_at,
+             COALESCE(CONVERT_TZ(re.settled_at, '+00:00', '+05:30'), re.settled_at) as settled_at,
+             COALESCE(CONVERT_TZ(r.requested_at, '+00:00', '+05:30'), r.requested_at) as requested_at,
+             COALESCE(CONVERT_TZ(r.completed_at, '+00:00', '+05:30'), r.completed_at) as completed_at,
+             r.ride_code, r.pickup_address, r.destination_address
       FROM rider_earnings re
       JOIN rides r ON re.ride_id = r.id
       WHERE re.rider_id = ?

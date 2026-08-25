@@ -4,6 +4,12 @@ const RideModel = {
   async findById(id) {
     const sql = `
       SELECT r.*, 
+             COALESCE(CONVERT_TZ(r.requested_at, '+00:00', '+05:30'), r.requested_at) as requested_at,
+             COALESCE(CONVERT_TZ(r.accepted_at, '+00:00', '+05:30'), r.accepted_at) as accepted_at,
+             COALESCE(CONVERT_TZ(r.arrived_at, '+00:00', '+05:30'), r.arrived_at) as arrived_at,
+             COALESCE(CONVERT_TZ(r.started_at, '+00:00', '+05:30'), r.started_at) as started_at,
+             COALESCE(CONVERT_TZ(r.completed_at, '+00:00', '+05:30'), r.completed_at) as completed_at,
+             COALESCE(CONVERT_TZ(r.cancelled_at, '+00:00', '+05:30'), r.cancelled_at) as cancelled_at,
              COALESCE(r.final_fare, r.estimated_fare) as total_fare,
              c.name as customer_name, c.gender as customer_gender, c.phone as customer_phone, c.profile_image as customer_avatar,
              rd.name as rider_name, rd.gender as rider_gender, rd.phone as rider_phone, rd.profile_image as rider_avatar,
@@ -29,6 +35,12 @@ const RideModel = {
   async findByCode(rideCode) {
     const sql = `
       SELECT r.*, 
+             COALESCE(CONVERT_TZ(r.requested_at, '+00:00', '+05:30'), r.requested_at) as requested_at,
+             COALESCE(CONVERT_TZ(r.accepted_at, '+00:00', '+05:30'), r.accepted_at) as accepted_at,
+             COALESCE(CONVERT_TZ(r.arrived_at, '+00:00', '+05:30'), r.arrived_at) as arrived_at,
+             COALESCE(CONVERT_TZ(r.started_at, '+00:00', '+05:30'), r.started_at) as started_at,
+             COALESCE(CONVERT_TZ(r.completed_at, '+00:00', '+05:30'), r.completed_at) as completed_at,
+             COALESCE(CONVERT_TZ(r.cancelled_at, '+00:00', '+05:30'), r.cancelled_at) as cancelled_at,
              c.name as customer_name, c.gender as customer_gender, c.phone as customer_phone,
              rd.name as rider_name, rd.gender as rider_gender, rd.phone as rider_phone
       FROM rides r
@@ -348,8 +360,13 @@ const RideModel = {
   }) {
     let sql = `
       SELECT r.*, 
-             COALESCE(r.requested_at, r.accepted_at, r.completed_at) as created_at,
-             COALESCE(r.requested_at, r.accepted_at, r.completed_at) as requested_at,
+             COALESCE(CONVERT_TZ(r.requested_at, '+00:00', '+05:30'), r.requested_at) as requested_at,
+             COALESCE(CONVERT_TZ(r.accepted_at, '+00:00', '+05:30'), r.accepted_at) as accepted_at,
+             COALESCE(CONVERT_TZ(r.arrived_at, '+00:00', '+05:30'), r.arrived_at) as arrived_at,
+             COALESCE(CONVERT_TZ(r.started_at, '+00:00', '+05:30'), r.started_at) as started_at,
+             COALESCE(CONVERT_TZ(r.completed_at, '+00:00', '+05:30'), r.completed_at) as completed_at,
+             COALESCE(CONVERT_TZ(r.cancelled_at, '+00:00', '+05:30'), r.cancelled_at) as cancelled_at,
+             COALESCE(CONVERT_TZ(COALESCE(r.requested_at, r.accepted_at, r.completed_at), '+00:00', '+05:30'), r.requested_at, r.accepted_at, r.completed_at) as created_at,
              c.name as customer_name, c.phone as customer_phone,
              rd.name as rider_name, rd.phone as rider_phone,
              rp.vehicle_number, rp.vehicle_model, rp.upi_id as rider_upi_id,
