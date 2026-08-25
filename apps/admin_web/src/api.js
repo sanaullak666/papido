@@ -35,9 +35,9 @@ export async function apiRequest(endpoint, method = 'GET', body = null, token = 
     'Content-Type': 'application/json'
   };
 
-  const isAdminRoute = window.location.pathname.startsWith('/admin') || window.location.hash.includes('admin');
+  const isAdminCall = endpoint.startsWith('/admin') || window.location.pathname.startsWith('/admin') || window.location.hash.includes('admin');
   const storedToken = token || (
-    isAdminRoute
+    isAdminCall
       ? (localStorage.getItem('papido_admin_token') || localStorage.getItem('papido_user_token'))
       : (localStorage.getItem('papido_user_token') || localStorage.getItem('papido_admin_token'))
   );
@@ -64,13 +64,30 @@ export async function apiRequest(endpoint, method = 'GET', body = null, token = 
       data = text ? JSON.parse(text) : {};
     } catch (_) {
       if (!res.ok) {
-        throw new Error(`Server returned HTTP ${res.status}: ${res.statusText || 'Service Temporarily Unavailable'}`);
+        const error = new Error(`Server returned HTTP ${res.status}: ${res.statusText || 'Service Temporarily Unavailable'}`);
+        error.status = res.status;
+        throw error;
       }
       throw new Error('Backend server returned an invalid non-JSON response. Please check server logs.');
     }
 
     if (!res.ok) {
-      throw new Error(data.message || `API Error: ${res.statusText || res.status}`);
+      const error = new Error(data.message || `API Error: ${res.statusText || res.status}`);
+      error.status = res.status;
+      error.data = data;
+
+      if (res.status === 401) {
+        if (isAdminCall) {
+          localStorage.removeItem('papido_admin_token');
+          localStorage.removeItem('papido_admin_user');
+          window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: { isAdmin: true } }));
+        } else {
+          localStorage.removeItem('papido_user_token');
+          localStorage.removeItem('papido_user');
+          window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: { isAdmin: false } }));
+        }
+      }
+      throw error;
     }
     return data;
   } catch (err) {

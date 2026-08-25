@@ -48,9 +48,13 @@ async function initializeDatabase() {
       dbEngine = 'mysql';
       console.log(`[Database] 🔒 Connected successfully to Permanent TiDB Cloud Database: ${env.DB.NAME} on ${env.DB.HOST}:${env.DB.PORT}`);
       
-      // Auto-bootstrap schema in MySQL/TiDB if tables do not exist (Non-destructive)
-      await bootstrapMysqlSchema(testPool);
-      await ensureDatabaseIndexes(testPool);
+      // Auto-bootstrap schema in MySQL/TiDB only if tables do not exist (Non-destructive)
+      try {
+        await testPool.query('SELECT 1 FROM users LIMIT 1');
+      } catch (_) {
+        await bootstrapMysqlSchema(testPool);
+        await ensureDatabaseIndexes(testPool);
+      }
 
       return { engine: 'mysql', pool };
     } catch (mysqlErr) {

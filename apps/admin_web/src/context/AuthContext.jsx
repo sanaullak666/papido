@@ -28,6 +28,26 @@ export function AuthProvider({ children }) {
 
   const [loading, setLoading] = useState(false);
 
+  // Listen for 401 unauthorized events to instantly reset state
+  useEffect(() => {
+    const handleUnauthorized = (e) => {
+      const isAdmin = e.detail?.isAdmin;
+      if (isAdmin) {
+        setAdminToken(null);
+        setAdminUser(null);
+        localStorage.removeItem('papido_admin_token');
+        localStorage.removeItem('papido_admin_user');
+      } else {
+        setToken(null);
+        setUser(null);
+        localStorage.removeItem('papido_user_token');
+        localStorage.removeItem('papido_user');
+      }
+    };
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('auth:unauthorized', handleUnauthorized);
+  }, []);
+
   // Load User & Admin profiles on start in the background
   useEffect(() => {
     async function loadSessions() {
@@ -35,7 +55,7 @@ export function AuthProvider({ children }) {
       if (token) {
         try {
           const res = await apiRequest('/auth/me', 'GET', null, token);
-          if (['CUSTOMER', 'RIDER'].includes(res.data.user.role)) {
+          if (['CUSTOMER', 'RIDER'].includes(res.data?.user?.role)) {
             const fullUser = {
               ...res.data.user,
               profile: res.data.profile || {}
@@ -49,7 +69,7 @@ export function AuthProvider({ children }) {
             setUser(null);
           }
         } catch (err) {
-          if (err.status === 401 || err.status === 403) {
+          if (err.status === 401 || err.status === 403 || err.message?.includes('token') || err.message?.includes('expired') || err.message?.includes('not found')) {
             localStorage.removeItem('papido_user_token');
             localStorage.removeItem('papido_user');
             setToken(null);
@@ -62,7 +82,7 @@ export function AuthProvider({ children }) {
       if (adminToken) {
         try {
           const res = await apiRequest('/auth/me', 'GET', null, adminToken);
-          if (res.data.user.role === 'ADMIN') {
+          if (res.data?.user?.role === 'ADMIN') {
             setAdminUser(res.data.user);
             localStorage.setItem('papido_admin_user', JSON.stringify(res.data.user));
           } else {
@@ -72,7 +92,7 @@ export function AuthProvider({ children }) {
             setAdminUser(null);
           }
         } catch (err) {
-          if (err.status === 401 || err.status === 403) {
+          if (err.status === 401 || err.status === 403 || err.message?.includes('token') || err.message?.includes('expired') || err.message?.includes('not found')) {
             localStorage.removeItem('papido_admin_token');
             localStorage.removeItem('papido_admin_user');
             setAdminToken(null);
