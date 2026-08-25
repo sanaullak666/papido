@@ -43,6 +43,24 @@ const getRiderTabFromPath = (path) => {
   return 'radar';
 };
 
+const formatRideDateTime = (dateVal) => {
+  if (!dateVal) return 'Recent';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return 'Recent';
+    return d.toLocaleString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  } catch (_) {
+    return 'Recent';
+  }
+};
+
 export function RiderPortalView() {
   const { user, token, logout, updateProfile, changePassword } = useAuth();
   const [currentTab, setCurrentTab] = useState(() => getRiderTabFromPath(window.location.pathname));
@@ -1893,7 +1911,7 @@ export function RiderPortalView() {
                           <td style={{ padding: '12px 16px' }}>
                             <div>{r.pickup_address} → {r.destination_address}</div>
                             <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                              {new Date(r.created_at || r.requested_at).toLocaleString()}
+                              {formatRideDateTime(r.requested_at || r.created_at || r.accepted_at || r.completed_at)}
                             </div>
                           </td>
                           <td style={{ padding: '12px 16px' }}>₹{r.total_fare || r.final_fare || r.estimated_fare || 20}</td>

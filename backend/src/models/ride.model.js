@@ -340,6 +340,8 @@ const RideModel = {
   }) {
     let sql = `
       SELECT r.*, 
+             COALESCE(r.requested_at, r.accepted_at, r.completed_at) as created_at,
+             COALESCE(r.requested_at, r.accepted_at, r.completed_at) as requested_at,
              c.name as customer_name, c.phone as customer_phone,
              rd.name as rider_name, rd.phone as rider_phone,
              rp.vehicle_number, rp.vehicle_model, rp.upi_id as rider_upi_id,

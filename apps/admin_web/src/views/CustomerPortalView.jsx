@@ -119,6 +119,24 @@ const getCustomerTabFromPath = (path) => {
   return 'book';
 };
 
+const formatRideDateTime = (dateVal) => {
+  if (!dateVal) return 'Recent';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return 'Recent';
+    return d.toLocaleString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  } catch (_) {
+    return 'Recent';
+  }
+};
+
 export function CustomerPortalView() {
   const { user, token, logout, updateProfile, changePassword } = useAuth();
   const [currentTab, setCurrentTab] = useState(() => getCustomerTabFromPath(window.location.pathname));
@@ -2719,8 +2737,11 @@ export function CustomerPortalView() {
                   <div key={r.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                     <div>
                       <div style={{ fontWeight: 800, fontSize: '15px' }}>{r.pickup_address} → {r.destination_address}</div>
-                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                        {new Date(r.created_at).toLocaleString()} • Rider: {r.rider_name || 'N/A'}
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        <span>{formatRideDateTime(r.requested_at || r.created_at || r.accepted_at || r.completed_at)}</span>
+                        <span>•</span>
+                        <span>Rider: {r.rider_name || 'Campus Rider'}</span>
+                        {r.ride_code && <span style={{ opacity: 0.8 }}>({r.ride_code})</span>}
                       </div>
                     </div>
                     <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
