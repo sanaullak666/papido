@@ -228,28 +228,29 @@ export function RiderPortalView() {
   const socketRef = useRef(null);
   const prevKnownRideIdsRef = useRef(new Set());
 
-  // Dynamic Company & Rider Fare Split Policy
-  // < 80 Rs => Company ₹4 (₹2 Company + ₹2 Controller), Rider remainder
-  // >= 80 Rs => Company 10% (Company), Controller ₹2, Rider remainder
+  // Dynamic Fare & Platform Fee Split Policy
+  // <= ₹80: Platform Fee = ₹4.00, Rider remainder
+  // > ₹80: Platform Fee = 10% + ₹2.00, Rider remainder
   const calcDriverSplit = (rawFare) => {
     const f = parseFloat(rawFare) || 0;
-    if (f < 80) {
-      const comp = Math.min(f, 4.0);
-      const ctrl = 0.0;
-      const rider = Math.max(0, f - comp);
-      return { rider, company: comp, controller: ctrl };
+    if (f <= 80) {
+      const fee = Math.min(f, 4.0);
+      const rider = Math.max(0, f - fee);
+      return { rider, company: 2.0, controller: 2.0, platformFee: fee };
     } else {
       const comp = Number((f * 0.10).toFixed(2));
       const ctrl = 2.0;
-      const rider = Number(Math.max(0, f - comp - ctrl).toFixed(2));
-      return { rider, company: comp, controller: ctrl };
+      const fee = Number((comp + ctrl).toFixed(2));
+      const rider = Number(Math.max(0, f - fee).toFixed(2));
+      return { rider, company: comp, controller: ctrl, platformFee: fee };
     }
   };
 
   // Derived Earnings Values
   const todayNetEarning = earnings?.netDriverEarning ?? earnings?.summary?.today?.earnings ?? earnings?.todayTotal ?? 0;
-  const todayTripsCount = earnings?.todayTrips ?? earnings?.summary?.today?.rides ?? (riderRides ? riderRides.length : 0);
-  const platformCommission = earnings?.companyCommission ?? earnings?.summary?.today?.companyDeduction ?? 0;
+  const todayTripsCount = earnings?.todayTrips ?? earnings?.summary?.today?.rides ?? 0;
+  const lifetimeTripsCount = earnings?.lifetimeTrips ?? earnings?.summary?.lifetime?.rides ?? todayTripsCount;
+  const platformFee = earnings?.todayPlatformFee ?? earnings?.companyCommission ?? earnings?.summary?.today?.platformFee ?? (todayTripsCount * 4);
 
   const fetchShiftSettlement = async (targetDate) => {
     try {
@@ -1709,7 +1710,7 @@ export function RiderPortalView() {
 
                           <div style={{ borderTop: '1px solid #E8DCCB', paddingTop: '6px', marginTop: '2px', display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#796D61' }}>
                             <span>Collect Cash: ₹{req.total_fare}</span>
-                            <span>Platform: ₹{split.company}{split.controller > 0 ? ` + ₹${split.controller} Ctrl` : ''}</span>
+                            <span>Platform Fee: ₹{Number(split.platformFee ?? (split.company + split.controller) ?? 4).toFixed(2)}</span>
                           </div>
                         </div>
 
@@ -2108,17 +2109,22 @@ export function RiderPortalView() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
               <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '18px' }}>
                 <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>TODAY'S NET EARNINGS</div>
-                <div style={{ fontSize: '26px', fontWeight: 900, color: 'var(--primary)' }}>₹{todayNetEarning}</div>
+                <div style={{ fontSize: '26px', fontWeight: 900, color: 'var(--primary)' }}>₹{Number(todayNetEarning).toFixed(2)}</div>
               </div>
 
               <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '18px' }}>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>TOTAL TRIPS COMPLETED</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>TODAY'S COMPLETED TRIPS</div>
                 <div style={{ fontSize: '26px', fontWeight: 900, color: '#10B981' }}>{todayTripsCount}</div>
               </div>
 
               <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '18px' }}>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>PLATFORM COMMISSION</div>
-                <div style={{ fontSize: '26px', fontWeight: 900, color: '#06B6D4' }}>₹{platformCommission}</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>TOTAL TRIPS COMPLETED (ALL-TIME)</div>
+                <div style={{ fontSize: '26px', fontWeight: 900, color: '#8B5CF6' }}>{lifetimeTripsCount}</div>
+              </div>
+
+              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '18px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>PLATFORM FEE</div>
+                <div style={{ fontSize: '26px', fontWeight: 900, color: '#06B6D4' }}>₹{Number(platformFee).toFixed(2)}</div>
               </div>
             </div>
 
@@ -2140,30 +2146,39 @@ export function RiderPortalView() {
                         <th style={{ padding: '12px 16px' }}>Route</th>
                         <th style={{ padding: '12px 16px' }}>Gross Fare</th>
                         <th style={{ padding: '12px 16px' }}>Your Net</th>
+                        <th style={{ padding: '12px 16px' }}>Platform Fee</th>
                         <th style={{ padding: '12px 16px' }}>Status</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {riderRides.map((r) => (
-                        <tr key={r.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                          <td style={{ padding: '12px 16px', fontWeight: 700 }}>#{r.id}</td>
-                          <td style={{ padding: '12px 16px' }}>
-                            <div>{r.pickup_address} → {r.destination_address}</div>
-                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                              {formatRideDateTime(r.requested_at || r.created_at || r.accepted_at || r.completed_at)}
-                            </div>
-                          </td>
-                          <td style={{ padding: '12px 16px' }}>₹{r.total_fare || r.final_fare || r.estimated_fare || 20}</td>
-                          <td style={{ padding: '12px 16px', fontWeight: 800, color: 'var(--primary)' }}>
-                            ₹{r.rider_earning || calcDriverSplit(r.total_fare || r.final_fare || r.estimated_fare || 20).rider}
-                          </td>
-                          <td style={{ padding: '12px 16px' }}>
-                            <span className={`badge ${r.status === 'COMPLETED' ? 'badge-success' : 'badge-warning'}`}>
-                              {r.status || 'COMPLETED'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+                      {riderRides.map((r) => {
+                        const fare = Number(r.total_fare || r.final_fare || r.estimated_fare || 20);
+                        const fee = fare <= 80 ? 4.0 : Number((fare * 0.10 + 2.0).toFixed(2));
+                        const net = r.rider_earning !== undefined ? Number(r.rider_earning) : Math.max(0, fare - fee);
+                        return (
+                          <tr key={r.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                            <td style={{ padding: '12px 16px', fontWeight: 700 }}>#{r.id}</td>
+                            <td style={{ padding: '12px 16px' }}>
+                              <div>{r.pickup_address} → {r.destination_address}</div>
+                              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                                {formatRideDateTime(r.requested_at || r.created_at || r.accepted_at || r.completed_at)}
+                              </div>
+                            </td>
+                            <td style={{ padding: '12px 16px' }}>₹{fare.toFixed(2)}</td>
+                            <td style={{ padding: '12px 16px', fontWeight: 800, color: 'var(--primary)' }}>
+                              ₹{net.toFixed(2)}
+                            </td>
+                            <td style={{ padding: '12px 16px', fontWeight: 700, color: '#06B6D4' }}>
+                              ₹{fee.toFixed(2)}
+                            </td>
+                            <td style={{ padding: '12px 16px' }}>
+                              <span className={`badge ${r.status === 'COMPLETED' ? 'badge-success' : 'badge-warning'}`}>
+                                {r.status || 'COMPLETED'}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -2359,12 +2374,12 @@ export function RiderPortalView() {
                 </div>
 
                 <div style={{ borderLeft: '2px dashed var(--border)', paddingLeft: '16px' }}>
-                  <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 800 }}>COMMISSION DUE TO PAPIDO:</div>
+                  <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 800 }}>PLATFORM FEE DUE:</div>
                   <div style={{ fontSize: '26px', fontWeight: 900, color: '#EF4444' }}>
                     ₹{Number(shiftSettlement?.totalCommissionDue ?? 0).toFixed(2)}
                   </div>
                   <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                    Standard: ₹4/ride (₹2 Co + ₹2 Ctrl) | Long: 10% + ₹2
+                    Standard: ₹4 / ride (Fare ≤ ₹80) | Long Trips: 10% + ₹2 (Fare &gt; ₹80)
                   </div>
                 </div>
               </div>

@@ -23,81 +23,147 @@ const EarningModel = {
   },
 
   async getRiderEarningsSummary(riderId) {
-    // Today's earnings from rider_earnings
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istDate = new Date(now.getTime() + istOffset);
+    const todayStr = istDate.toISOString().slice(0, 10);
+
+    // Today's earnings
     const todaySql = `
       SELECT 
-        COALESCE(SUM(rider_earning), 0) as today_earnings,
-        COALESCE(SUM(company_earning), 0) as today_company_cut,
-        COALESCE(SUM(total_fare), 0) as today_gross_fare,
-        COUNT(id) as today_completed_rides
-      FROM rider_earnings
-      WHERE rider_id = ? AND (created_at >= CURDATE() OR DATE(created_at) = CURDATE())
+        COALESCE(SUM(
+          CASE 
+            WHEN re.rider_earning IS NOT NULL THEN re.rider_earning
+            WHEN COALESCE(r.final_fare, r.total_fare, 20) <= 80 THEN GREATEST(0, COALESCE(r.final_fare, r.total_fare, 20) - 4.00)
+            ELSE GREATEST(0, COALESCE(r.final_fare, r.total_fare, 20) * 0.90 - 2.00)
+          END
+        ), 0) as today_earnings,
+        COALESCE(SUM(
+          CASE 
+            WHEN re.company_earning IS NOT NULL THEN (COALESCE(re.company_earning, 0) + COALESCE(re.controller_earning, 0))
+            WHEN COALESCE(r.final_fare, r.total_fare, 20) <= 80 THEN 4.00
+            ELSE (COALESCE(r.final_fare, r.total_fare, 20) * 0.10 + 2.00)
+          END
+        ), 0) as today_platform_fee,
+        COALESCE(SUM(COALESCE(r.final_fare, r.total_fare, re.total_fare, 20)), 0) as today_gross_fare,
+        COUNT(DISTINCT r.id) as today_completed_rides
+      FROM rides r
+      LEFT JOIN rider_earnings re ON r.id = re.ride_id
+      WHERE r.rider_id = ? AND r.status = 'COMPLETED'
+        AND (DATE(COALESCE(r.completed_at, re.created_at, r.created_at)) = CURRENT_DATE() 
+             OR DATE(COALESCE(r.completed_at, re.created_at, r.created_at)) = ? 
+             OR COALESCE(r.completed_at, re.created_at) >= CURDATE())
     `;
 
     // Weekly earnings (last 7 days)
     const weeklySql = `
       SELECT 
-        COALESCE(SUM(rider_earning), 0) as weekly_earnings,
-        COALESCE(SUM(company_earning), 0) as weekly_company_cut,
-        COALESCE(SUM(total_fare), 0) as weekly_gross_fare,
-        COUNT(id) as weekly_completed_rides
-      FROM rider_earnings
-      WHERE rider_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        COALESCE(SUM(
+          CASE 
+            WHEN re.rider_earning IS NOT NULL THEN re.rider_earning
+            WHEN COALESCE(r.final_fare, r.total_fare, 20) <= 80 THEN GREATEST(0, COALESCE(r.final_fare, r.total_fare, 20) - 4.00)
+            ELSE GREATEST(0, COALESCE(r.final_fare, r.total_fare, 20) * 0.90 - 2.00)
+          END
+        ), 0) as weekly_earnings,
+        COALESCE(SUM(
+          CASE 
+            WHEN re.company_earning IS NOT NULL THEN (COALESCE(re.company_earning, 0) + COALESCE(re.controller_earning, 0))
+            WHEN COALESCE(r.final_fare, r.total_fare, 20) <= 80 THEN 4.00
+            ELSE (COALESCE(r.final_fare, r.total_fare, 20) * 0.10 + 2.00)
+          END
+        ), 0) as weekly_platform_fee,
+        COALESCE(SUM(COALESCE(r.final_fare, r.total_fare, re.total_fare, 20)), 0) as weekly_gross_fare,
+        COUNT(DISTINCT r.id) as weekly_completed_rides
+      FROM rides r
+      LEFT JOIN rider_earnings re ON r.id = re.ride_id
+      WHERE r.rider_id = ? AND r.status = 'COMPLETED'
+        AND COALESCE(r.completed_at, re.created_at, r.created_at) >= DATE_SUB(NOW(), INTERVAL 7 DAY)
     `;
 
     // Monthly earnings (last 30 days)
     const monthlySql = `
       SELECT 
-        COALESCE(SUM(rider_earning), 0) as monthly_earnings,
-        COALESCE(SUM(company_earning), 0) as monthly_company_cut,
-        COALESCE(SUM(total_fare), 0) as monthly_gross_fare,
-        COUNT(id) as monthly_completed_rides
-      FROM rider_earnings
-      WHERE rider_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        COALESCE(SUM(
+          CASE 
+            WHEN re.rider_earning IS NOT NULL THEN re.rider_earning
+            WHEN COALESCE(r.final_fare, r.total_fare, 20) <= 80 THEN GREATEST(0, COALESCE(r.final_fare, r.total_fare, 20) - 4.00)
+            ELSE GREATEST(0, COALESCE(r.final_fare, r.total_fare, 20) * 0.90 - 2.00)
+          END
+        ), 0) as monthly_earnings,
+        COALESCE(SUM(
+          CASE 
+            WHEN re.company_earning IS NOT NULL THEN (COALESCE(re.company_earning, 0) + COALESCE(re.controller_earning, 0))
+            WHEN COALESCE(r.final_fare, r.total_fare, 20) <= 80 THEN 4.00
+            ELSE (COALESCE(r.final_fare, r.total_fare, 20) * 0.10 + 2.00)
+          END
+        ), 0) as monthly_platform_fee,
+        COALESCE(SUM(COALESCE(r.final_fare, r.total_fare, re.total_fare, 20)), 0) as monthly_gross_fare,
+        COUNT(DISTINCT r.id) as monthly_completed_rides
+      FROM rides r
+      LEFT JOIN rider_earnings re ON r.id = re.ride_id
+      WHERE r.rider_id = ? AND r.status = 'COMPLETED'
+        AND COALESCE(r.completed_at, re.created_at, r.created_at) >= DATE_SUB(NOW(), INTERVAL 30 DAY)
     `;
 
-    // Total lifetime
+    // Total lifetime (all completed rides from all time)
     const lifetimeSql = `
       SELECT 
-        COALESCE(SUM(rider_earning), 0) as lifetime_earnings,
-        COALESCE(SUM(company_earning), 0) as lifetime_company_cut,
-        COALESCE(SUM(total_fare), 0) as lifetime_gross_fare,
-        COUNT(id) as lifetime_completed_rides
-      FROM rider_earnings
-      WHERE rider_id = ?
+        COALESCE(SUM(
+          CASE 
+            WHEN re.rider_earning IS NOT NULL THEN re.rider_earning
+            WHEN COALESCE(r.final_fare, r.total_fare, 20) <= 80 THEN GREATEST(0, COALESCE(r.final_fare, r.total_fare, 20) - 4.00)
+            ELSE GREATEST(0, COALESCE(r.final_fare, r.total_fare, 20) * 0.90 - 2.00)
+          END
+        ), 0) as lifetime_earnings,
+        COALESCE(SUM(
+          CASE 
+            WHEN re.company_earning IS NOT NULL THEN (COALESCE(re.company_earning, 0) + COALESCE(re.controller_earning, 0))
+            WHEN COALESCE(r.final_fare, r.total_fare, 20) <= 80 THEN 4.00
+            ELSE (COALESCE(r.final_fare, r.total_fare, 20) * 0.10 + 2.00)
+          END
+        ), 0) as lifetime_platform_fee,
+        COALESCE(SUM(COALESCE(r.final_fare, r.total_fare, re.total_fare, 20)), 0) as lifetime_gross_fare,
+        COUNT(DISTINCT r.id) as lifetime_completed_rides
+      FROM rides r
+      LEFT JOIN rider_earnings re ON r.id = re.ride_id
+      WHERE r.rider_id = ? AND r.status = 'COMPLETED'
     `;
 
     const [today, weekly, monthly, lifetime] = await Promise.all([
-      db.queryOne(todaySql, [riderId]),
-      db.queryOne(weeklySql, [riderId]),
-      db.queryOne(monthlySql, [riderId]),
-      db.queryOne(lifetimeSql, [riderId])
+      db.queryOne(todaySql, [riderId, todayStr]).catch(() => ({})),
+      db.queryOne(weeklySql, [riderId]).catch(() => ({})),
+      db.queryOne(monthlySql, [riderId]).catch(() => ({})),
+      db.queryOne(lifetimeSql, [riderId]).catch(() => ({}))
     ]);
 
     return {
       today: {
-        earnings: parseFloat(today.today_earnings || 0),
-        companyDeduction: parseFloat(today.today_company_cut || 0),
-        grossFare: parseFloat(today.today_gross_fare || 0),
-        rides: parseInt(today.today_completed_rides || 0, 10)
+        earnings: parseFloat(today?.today_earnings || 0),
+        companyDeduction: parseFloat(today?.today_platform_fee || 0),
+        platformFee: parseFloat(today?.today_platform_fee || 0),
+        grossFare: parseFloat(today?.today_gross_fare || 0),
+        rides: parseInt(today?.today_completed_rides || 0, 10)
       },
       weekly: {
-        earnings: parseFloat(weekly.weekly_earnings || 0),
-        companyDeduction: parseFloat(weekly.weekly_company_cut || 0),
-        grossFare: parseFloat(weekly.weekly_gross_fare || 0),
-        rides: parseInt(weekly.weekly_completed_rides || 0, 10)
+        earnings: parseFloat(weekly?.weekly_earnings || 0),
+        companyDeduction: parseFloat(weekly?.weekly_platform_fee || 0),
+        platformFee: parseFloat(weekly?.weekly_platform_fee || 0),
+        grossFare: parseFloat(weekly?.weekly_gross_fare || 0),
+        rides: parseInt(weekly?.weekly_completed_rides || 0, 10)
       },
       monthly: {
-        earnings: parseFloat(monthly.monthly_earnings || 0),
-        companyDeduction: parseFloat(monthly.monthly_company_cut || 0),
-        grossFare: parseFloat(monthly.monthly_gross_fare || 0),
-        rides: parseInt(monthly.monthly_completed_rides || 0, 10)
+        earnings: parseFloat(monthly?.monthly_earnings || 0),
+        companyDeduction: parseFloat(monthly?.monthly_platform_fee || 0),
+        platformFee: parseFloat(monthly?.monthly_platform_fee || 0),
+        grossFare: parseFloat(monthly?.monthly_gross_fare || 0),
+        rides: parseInt(monthly?.monthly_completed_rides || 0, 10)
       },
       lifetime: {
-        earnings: parseFloat(lifetime.lifetime_earnings || 0),
-        companyDeduction: parseFloat(lifetime.lifetime_company_cut || 0),
-        grossFare: parseFloat(lifetime.lifetime_gross_fare || 0),
-        rides: parseInt(lifetime.lifetime_completed_rides || 0, 10)
+        earnings: parseFloat(lifetime?.lifetime_earnings || 0),
+        companyDeduction: parseFloat(lifetime?.lifetime_platform_fee || 0),
+        platformFee: parseFloat(lifetime?.lifetime_platform_fee || 0),
+        grossFare: parseFloat(lifetime?.lifetime_gross_fare || 0),
+        rides: parseInt(lifetime?.lifetime_completed_rides || 0, 10)
       }
     };
   },

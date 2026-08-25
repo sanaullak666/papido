@@ -231,7 +231,10 @@ const RiderController = {
         todayTotal: summary?.today?.earnings || 0,
         todayGross: summary?.today?.grossFare || 0,
         todayTrips: summary?.today?.rides || 0,
-        companyCommission: summary?.today?.companyDeduction || 0,
+        lifetimeTrips: summary?.lifetime?.rides || 0,
+        todayPlatformFee: summary?.today?.platformFee ?? summary?.today?.companyDeduction ?? 0,
+        totalPlatformFee: summary?.lifetime?.platformFee ?? summary?.lifetime?.companyDeduction ?? 0,
+        companyCommission: summary?.today?.platformFee ?? summary?.today?.companyDeduction ?? 0,
         recentEarnings
       });
     } catch (err) {
