@@ -38,7 +38,7 @@ const getAdminTabFromPath = (path) => {
 };
 
 export function App() {
-  const { user, adminUser, loading } = useAuth();
+  const { user, adminUser } = useAuth();
   const { socket } = useSocket() || {};
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [currentTab, setCurrentTab] = useState(() => getAdminTabFromPath(window.location.pathname));
@@ -159,22 +159,6 @@ export function App() {
     }
   };
 
-  if (loading) {
-    return (
-      <div style={{
-        height: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'var(--bg-main)',
-        color: 'var(--text-muted)',
-        fontFamily: 'var(--font-heading)',
-        fontSize: '18px'
-      }}>
-        Initializing Papido Campus Mobility...
-      </div>
-    );
-  }
 
   // ============================================================
   // 0. DEDICATED CORE MEMBER REGISTRATION (/register/core)

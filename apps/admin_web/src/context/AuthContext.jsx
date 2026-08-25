@@ -5,16 +5,30 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   // Regular Customer / Rider State
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('papido_user_token') || null);
+  const [token, setToken] = useState(() => localStorage.getItem('papido_user_token') || null);
+  const [user, setUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('papido_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch (_) {
+      return null;
+    }
+  });
 
   // Dedicated Admin State
-  const [adminUser, setAdminUser] = useState(null);
-  const [adminToken, setAdminToken] = useState(localStorage.getItem('papido_admin_token') || null);
+  const [adminToken, setAdminToken] = useState(() => localStorage.getItem('papido_admin_token') || null);
+  const [adminUser, setAdminUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('papido_admin_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch (_) {
+      return null;
+    }
+  });
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  // Load User & Admin profiles on start
+  // Load User & Admin profiles on start in the background
   useEffect(() => {
     async function loadSessions() {
       // 1. Check User token (Customer/Rider)
@@ -22,19 +36,25 @@ export function AuthProvider({ children }) {
         try {
           const res = await apiRequest('/auth/me', 'GET', null, token);
           if (['CUSTOMER', 'RIDER'].includes(res.data.user.role)) {
-            setUser({
+            const fullUser = {
               ...res.data.user,
               profile: res.data.profile || {}
-            });
+            };
+            setUser(fullUser);
+            localStorage.setItem('papido_user', JSON.stringify(fullUser));
           } else {
             localStorage.removeItem('papido_user_token');
+            localStorage.removeItem('papido_user');
             setToken(null);
             setUser(null);
           }
         } catch (err) {
-          localStorage.removeItem('papido_user_token');
-          setToken(null);
-          setUser(null);
+          if (err.status === 401 || err.status === 403) {
+            localStorage.removeItem('papido_user_token');
+            localStorage.removeItem('papido_user');
+            setToken(null);
+            setUser(null);
+          }
         }
       }
 
@@ -44,19 +64,22 @@ export function AuthProvider({ children }) {
           const res = await apiRequest('/auth/me', 'GET', null, adminToken);
           if (res.data.user.role === 'ADMIN') {
             setAdminUser(res.data.user);
+            localStorage.setItem('papido_admin_user', JSON.stringify(res.data.user));
           } else {
             localStorage.removeItem('papido_admin_token');
+            localStorage.removeItem('papido_admin_user');
             setAdminToken(null);
             setAdminUser(null);
           }
         } catch (err) {
-          localStorage.removeItem('papido_admin_token');
-          setAdminToken(null);
-          setAdminUser(null);
+          if (err.status === 401 || err.status === 403) {
+            localStorage.removeItem('papido_admin_token');
+            localStorage.removeItem('papido_admin_user');
+            setAdminToken(null);
+            setAdminUser(null);
+          }
         }
       }
-
-      setLoading(false);
     }
 
     loadSessions();
@@ -73,6 +96,7 @@ export function AuthProvider({ children }) {
       throw new Error('This portal is for students and riders only. Administrators must use the separate Admin Portal.');
     }
     localStorage.setItem('papido_user_token', accessToken);
+    localStorage.setItem('papido_user', JSON.stringify(userData));
     setToken(accessToken);
     setUser(userData);
     return userData;
@@ -90,6 +114,7 @@ export function AuthProvider({ children }) {
       throw new Error('Access Denied: Administrator credentials required.');
     }
     localStorage.setItem('papido_admin_token', accessToken);
+    localStorage.setItem('papido_admin_user', JSON.stringify(userData));
     setAdminToken(accessToken);
     setAdminUser(userData);
     return userData;
@@ -101,6 +126,7 @@ export function AuthProvider({ children }) {
     const { user: userData, accessToken } = res.data;
     if (accessToken) {
       localStorage.setItem('papido_user_token', accessToken);
+      localStorage.setItem('papido_user', JSON.stringify(userData));
       setToken(accessToken);
       setUser(userData);
     }
@@ -131,23 +157,29 @@ export function AuthProvider({ children }) {
     const activeToken = token || adminToken;
     const res = await apiRequest('/auth/profile', 'PATCH', profileData, activeToken);
     if (res.data?.user) {
-      setUser(prev => ({
-        ...prev,
-        ...res.data.user,
-        profile: res.data.profile || prev?.profile || {}
-      }));
+      setUser(prev => {
+        const updated = {
+          ...prev,
+          ...res.data.user,
+          profile: res.data.profile || prev?.profile || {}
+        };
+        localStorage.setItem('papido_user', JSON.stringify(updated));
+        return updated;
+      });
     }
     return res;
   };
 
   const logout = () => {
     localStorage.removeItem('papido_user_token');
+    localStorage.removeItem('papido_user');
     setToken(null);
     setUser(null);
   };
 
   const adminLogout = () => {
     localStorage.removeItem('papido_admin_token');
+    localStorage.removeItem('papido_admin_user');
     setAdminToken(null);
     setAdminUser(null);
   };
