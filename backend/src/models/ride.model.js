@@ -9,7 +9,10 @@ const RideModel = {
              rd.name as rider_name, rd.gender as rider_gender, rd.phone as rider_phone, rd.profile_image as rider_avatar,
              COALESCE(rp.is_core_member, rd.is_core_member, 0) as rider_is_core,
              rp.vehicle_type as rider_vehicle_type, rp.vehicle_number, rp.vehicle_number as rider_vehicle_number,
-             rp.vehicle_model, rp.vehicle_model as rider_vehicle_model, rp.rating as rider_rating,
+             rp.vehicle_model, rp.vehicle_model as rider_vehicle_model,
+             COALESCE(rp.rating, 5.00) as rider_rating,
+             COALESCE(rp.total_ratings_count, 0) as rider_total_ratings_count,
+             COALESCE(rp.total_rides, 0) as rider_total_rides,
              rp.current_latitude as rider_current_lat, rp.current_longitude as rider_current_lng,
              rt.rating as user_rating, rt.review as user_review
       FROM rides r
@@ -174,7 +177,10 @@ const RideModel = {
              rd.name as rider_name, rd.gender as rider_gender, rd.phone as rider_phone, rd.profile_image as rider_avatar,
              COALESCE(rp.is_core_member, rd.is_core_member, 0) as rider_is_core,
              rp.vehicle_type as rider_vehicle_type, rp.vehicle_number, rp.vehicle_number as rider_vehicle_number,
-             rp.vehicle_model, rp.vehicle_model as rider_vehicle_model, rp.rating as rider_rating,
+             rp.vehicle_model, rp.vehicle_model as rider_vehicle_model,
+             COALESCE(rp.rating, 5.00) as rider_rating,
+             COALESCE(rp.total_ratings_count, 0) as rider_total_ratings_count,
+             COALESCE(rp.total_rides, 0) as rider_total_rides,
              rp.current_latitude as rider_current_lat, rp.current_longitude as rider_current_lng
       FROM rides r
       JOIN users c ON r.customer_id = c.id
@@ -195,7 +201,10 @@ const RideModel = {
              rd.name as rider_name, rd.gender as rider_gender, rd.phone as rider_phone, rd.profile_image as rider_avatar,
              COALESCE(rp.is_core_member, rd.is_core_member, 0) as rider_is_core,
              rp.vehicle_type as rider_vehicle_type, rp.vehicle_number, rp.vehicle_number as rider_vehicle_number,
-             rp.vehicle_model, rp.vehicle_model as rider_vehicle_model, rp.rating as rider_rating,
+             rp.vehicle_model, rp.vehicle_model as rider_vehicle_model,
+             COALESCE(rp.rating, 5.00) as rider_rating,
+             COALESCE(rp.total_ratings_count, 0) as rider_total_ratings_count,
+             COALESCE(rp.total_rides, 0) as rider_total_rides,
              rp.current_latitude as rider_current_lat, rp.current_longitude as rider_current_lng
       FROM rides r
       JOIN users c ON r.customer_id = c.id

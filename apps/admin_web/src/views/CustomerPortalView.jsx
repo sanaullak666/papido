@@ -35,7 +35,11 @@ import {
   QrCode,
   Copy,
   Check,
-  Smartphone
+  Smartphone,
+  Award,
+  Sparkles,
+  ShieldCheck,
+  ThumbsUp
 } from 'lucide-react';
 
 const DEFAULT_GROUPED_CAMPUS_STOPS = [
@@ -2240,7 +2244,30 @@ export function CustomerPortalView() {
                               <Bike size={22} color="#FFFFFF" />
                             </div>
                             <div>
-                              <div style={{ fontWeight: 800, fontSize: '15px' }}>{activeRide.rider_name}</div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                <div style={{ fontWeight: 800, fontSize: '15px' }}>{activeRide.rider_name}</div>
+                                {Boolean(activeRide.rider_rating) && (
+                                  <span style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '3px',
+                                    background: '#FEF3C7',
+                                    color: '#D97706',
+                                    padding: '2px 8px',
+                                    borderRadius: '9999px',
+                                    fontSize: '11px',
+                                    fontWeight: 700
+                                  }}>
+                                    <Star size={11} fill="#D97706" color="#D97706" />
+                                    {Number(activeRide.rider_rating).toFixed(1)}
+                                    {Boolean(activeRide.rider_total_ratings_count && Number(activeRide.rider_total_ratings_count) > 0) && (
+                                      <span style={{ opacity: 0.85, fontWeight: 600 }}>
+                                        ({activeRide.rider_total_ratings_count})
+                                      </span>
+                                    )}
+                                  </span>
+                                )}
+                              </div>
                               {!(activeRide.rider_is_core || activeRide.is_core_member) && (
                                 <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                                   {activeRide.rider_vehicle_model || activeRide.vehicle_model || 'Honda Activa 6G'} • {activeRide.rider_vehicle_number || activeRide.vehicle_number || 'PY 01 AB 1234'}
@@ -2258,6 +2285,106 @@ export function CustomerPortalView() {
                             </a>
                           )}
                         </div>
+
+                        {/* Top Feedback / Most Chosen Rider Highlight Badge (No Emojis) */}
+                        {(Number(activeRide.rider_total_rides) >= 15 && Number(activeRide.rider_rating || 5.0) >= 4.6) ? (
+                          <div style={{
+                            background: 'linear-gradient(135deg, rgba(234, 88, 12, 0.08), rgba(245, 158, 11, 0.08))',
+                            border: '1px solid rgba(245, 158, 11, 0.3)',
+                            borderRadius: '10px',
+                            padding: '10px 12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px'
+                          }}>
+                            <div style={{
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '8px',
+                              background: '#FEF3C7',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                              color: '#D97706'
+                            }}>
+                              <Award size={18} />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                <span style={{ fontWeight: 800, fontSize: '13px', color: '#B45309' }}>
+                                  Most Chosen Rider
+                                </span>
+                                <span style={{
+                                  fontSize: '10px',
+                                  fontWeight: 700,
+                                  background: '#D97706',
+                                  color: '#FFFFFF',
+                                  padding: '1px 6px',
+                                  borderRadius: '9999px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '3px'
+                                }}>
+                                  <Sparkles size={10} /> Top Rated
+                                </span>
+                              </div>
+                              <div style={{ fontSize: '11px', color: 'var(--text-secondary, #6B7280)', lineHeight: '1.4' }}>
+                                Consistently chosen by passengers with a {Number(activeRide.rider_rating || 5.0).toFixed(1)} rating
+                                {Boolean(activeRide.rider_total_rides && Number(activeRide.rider_total_rides) > 0) && (
+                                  <span> and {activeRide.rider_total_rides}+ completed trips</span>
+                                )}.
+                              </div>
+                            </div>
+                          </div>
+                        ) : (Number(activeRide.rider_rating || 5.0) >= 4.7) ? (
+                          <div style={{
+                            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(5, 150, 105, 0.08))',
+                            border: '1px solid rgba(16, 185, 129, 0.25)',
+                            borderRadius: '10px',
+                            padding: '10px 12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px'
+                          }}>
+                            <div style={{
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '8px',
+                              background: '#D1FAE5',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                              color: '#059669'
+                            }}>
+                              <ShieldCheck size={18} />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ fontWeight: 800, fontSize: '13px', color: '#065F46' }}>
+                                  Top Rated Campus Rider
+                                </span>
+                                <span style={{
+                                  fontSize: '10px',
+                                  fontWeight: 700,
+                                  background: '#059669',
+                                  color: '#FFFFFF',
+                                  padding: '1px 6px',
+                                  borderRadius: '9999px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '3px'
+                                }}>
+                                  <ThumbsUp size={9} /> High Satisfaction
+                                </span>
+                              </div>
+                              <div style={{ fontSize: '11px', color: 'var(--text-secondary, #6B7280)', lineHeight: '1.4' }}>
+                                Verified trusted rider with excellent passenger feedback ({Number(activeRide.rider_rating || 5.0).toFixed(1)} rating).
+                              </div>
+                            </div>
+                          </div>
+                        ) : null}
                       </div>
                     )}
 
