@@ -91,19 +91,69 @@ export function LoginView({ onGoToAdminPortal }) {
     }
   };
 
+  // Field validation & uppercase states
+  const [regFieldErrors, setRegFieldErrors] = useState({});
+  const [regTouched, setRegTouched] = useState({});
+
+  const validateRegField = (field, value, customRole = regRole) => {
+    let err = '';
+    if (field === 'name') {
+      const val = (value || '').trim();
+      if (!val) err = 'FULL NAME IS REQUIRED.';
+      else if (val.length < 2) err = 'FULL NAME MUST BE AT LEAST 2 CHARACTERS.';
+      else if (!/^[A-Z\s.]+$/i.test(val)) err = 'FULL NAME CAN ONLY CONTAIN LETTERS, SPACES AND DOTS.';
+    } else if (field === 'email') {
+      const val = (value || '').trim();
+      if (!val) err = 'CAMPUS EMAIL IS REQUIRED.';
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) err = 'PLEASE ENTER A VALID EMAIL ADDRESS (E.G. NAME@PONDIUNI.AC.IN).';
+    } else if (field === 'phone') {
+      const val = (value || '').trim();
+      if (!val) err = 'PHONE NUMBER IS REQUIRED.';
+      else if (!/^[6-9]\d{9}$/.test(val)) err = 'PLEASE ENTER A VALID 10-DIGIT MOBILE NUMBER (STARTING WITH 6, 7, 8, OR 9).';
+    } else if (field === 'password') {
+      if (!value) err = 'PASSWORD IS REQUIRED.';
+      else if (value.length < 6) err = 'PASSWORD MUST BE AT LEAST 6 CHARACTERS LONG.';
+    } else if (field === 'vehicleModel') {
+      if (customRole === 'RIDER') {
+        const val = (value || '').trim();
+        if (!val) err = 'VEHICLE MODEL IS REQUIRED (E.G. HONDA ACTIVA 6G / SPLENDOR).';
+        else if (val.length < 2) err = 'VEHICLE MODEL MUST BE AT LEAST 2 CHARACTERS.';
+      }
+    }
+    return err;
+  };
+
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccessMsg('');
     setUploadStatus('');
 
+    // Trigger validation on all fields
+    const errors = {
+      name: validateRegField('name', regName),
+      email: validateRegField('email', regEmail),
+      phone: validateRegField('phone', regPhone),
+      password: validateRegField('password', regPassword),
+      vehicleModel: regRole === 'RIDER' ? validateRegField('vehicleModel', regVehicleModel) : ''
+    };
+
+    setRegTouched({ name: true, email: true, phone: true, password: true, vehicleModel: true });
+    setRegFieldErrors(errors);
+
+    const firstError = Object.values(errors).find(Boolean);
+    if (firstError) {
+      setError(firstError);
+      return;
+    }
+
     if (regRole === 'RIDER') {
       if (!regVehicleModel.trim()) {
-        setError('Please enter your Vehicle Model (e.g. Honda Activa 6G / Splendor).');
+        setError('PLEASE ENTER YOUR VEHICLE MODEL (E.G. HONDA ACTIVA 6G / HERO SPLENDOR).');
         return;
       }
       if (!collegeIdFile) {
-        setError('Please upload your Campus / College ID Card (PDF or JPG, max 150 KB).');
+        setError('PLEASE UPLOAD YOUR CAMPUS / COLLEGE ID CARD (PDF OR JPG, MAX 150 KB).');
         return;
       }
       const cidErr = validateDocFile(collegeIdFile, 'Campus ID Card');
@@ -113,7 +163,7 @@ export function LoginView({ onGoToAdminPortal }) {
       }
 
       if (!licenseFile) {
-        setError('Please upload your Driving Licence (DL) (PDF or JPG, max 150 KB).');
+        setError('PLEASE UPLOAD YOUR DRIVING LICENCE (DL) (PDF OR JPG, MAX 150 KB).');
         return;
       }
       const dlErr = validateDocFile(licenseFile, 'Driving Licence');
@@ -123,7 +173,7 @@ export function LoginView({ onGoToAdminPortal }) {
       }
 
       if (!rcFile) {
-        setError('Please upload your Vehicle RC Document (PDF or JPG, max 150 KB).');
+        setError('PLEASE UPLOAD YOUR VEHICLE RC DOCUMENT (PDF OR JPG, MAX 150 KB).');
         return;
       }
       const rcErr = validateDocFile(rcFile, 'Vehicle RC Document');
@@ -140,40 +190,40 @@ export function LoginView({ onGoToAdminPortal }) {
       let rcDocUrl = null;
 
       if (regRole === 'RIDER') {
-        setUploadStatus('1/3 Uploading Campus ID Card (max 150 KB)...');
+        setUploadStatus('1/3 UPLOADING CAMPUS ID CARD (MAX 150 KB)...');
         const cidRes = await uploadFile(collegeIdFile, null, 150);
         collegeIdDocUrl = cidRes.url || cidRes.relativePath;
 
-        setUploadStatus('2/3 Uploading Driving Licence (max 150 KB)...');
+        setUploadStatus('2/3 UPLOADING DRIVING LICENCE (MAX 150 KB)...');
         const dlRes = await uploadFile(licenseFile, null, 150);
         licenseDocUrl = dlRes.url || dlRes.relativePath;
 
-        setUploadStatus('3/3 Uploading Vehicle RC Document (max 150 KB)...');
+        setUploadStatus('3/3 UPLOADING VEHICLE RC DOCUMENT (MAX 150 KB)...');
         const rcRes = await uploadFile(rcFile, null, 150);
         rcDocUrl = rcRes.url || rcRes.relativePath;
 
-        setUploadStatus('Submitting Driver Registration...');
+        setUploadStatus('SUBMITTING DRIVER REGISTRATION...');
       }
 
       await register({
-        name: regName,
-        email: regEmail,
-        phone: regPhone,
+        name: regName.trim().toUpperCase(),
+        email: regEmail.trim().toLowerCase(),
+        phone: regPhone.trim(),
         gender: regGender,
         password: regPassword,
         role: regRole,
         vehicleType: regRole === 'RIDER' ? regVehicleType : undefined,
-        vehicleModel: regRole === 'RIDER' ? regVehicleModel : undefined,
-        vehicleNumber: regRole === 'RIDER' ? regVehicleNumber : undefined,
-        licenseNumber: regRole === 'RIDER' ? regLicenseNumber : undefined,
-        collegeIdNumber: regRole === 'RIDER' ? regCollegeIdNumber : undefined,
+        vehicleModel: regRole === 'RIDER' ? regVehicleModel.trim().toUpperCase() : undefined,
+        vehicleNumber: regRole === 'RIDER' ? (regVehicleNumber.trim().toUpperCase() || undefined) : undefined,
+        licenseNumber: regRole === 'RIDER' ? (regLicenseNumber.trim().toUpperCase() || undefined) : undefined,
+        collegeIdNumber: regRole === 'RIDER' ? (regCollegeIdNumber.trim().toUpperCase() || undefined) : undefined,
         collegeIdDocUrl: regRole === 'RIDER' ? collegeIdDocUrl : undefined,
         licenseDocUrl: regRole === 'RIDER' ? licenseDocUrl : undefined,
         rcDocUrl: regRole === 'RIDER' ? rcDocUrl : undefined
       });
-      setSuccessMsg('Account registered successfully! Logging you in...');
+      setSuccessMsg('ACCOUNT REGISTERED SUCCESSFULLY! LOGGING YOU IN...');
     } catch (err) {
-      setError(err.message || 'Registration failed.');
+      setError(err.message || 'REGISTRATION FAILED.');
     } finally {
       setLoading(false);
       setUploadStatus('');
@@ -463,46 +513,129 @@ export function LoginView({ onGoToAdminPortal }) {
             </div>
 
             <div className="form-group">
-              <label className="form-label" style={{ color: '#271E16', fontWeight: 700 }}>Full Name</label>
+              <label className="form-label" style={{ color: '#271E16', fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>FULL NAME <span style={{ color: '#EA580C' }}>*</span></span>
+                {regTouched.name && !regFieldErrors.name && regName.trim() && (
+                  <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <Check size={12} /> VALID
+                  </span>
+                )}
+              </label>
               <input
                 type="text"
                 required
                 className="form-input"
-                style={{ background: '#F8F3EC', border: '1.5px solid #E8DCCB', color: '#271E16' }}
-                placeholder="Ananya Sen"
+                style={{
+                  background: '#F8F3EC',
+                  border: regTouched.name && regFieldErrors.name ? '1.5px solid #EF4444' : (regTouched.name && regName.trim() ? '1.5px solid #10B981' : '1.5px solid #E8DCCB'),
+                  color: '#271E16',
+                  textTransform: 'uppercase',
+                  fontWeight: 600
+                }}
+                placeholder="ANANYA SEN"
                 value={regName}
-                onChange={(e) => setRegName(e.target.value)}
+                onChange={(e) => {
+                  const upper = e.target.value.toUpperCase();
+                  setRegName(upper);
+                  if (regTouched.name) {
+                    setRegFieldErrors(prev => ({ ...prev, name: validateRegField('name', upper) }));
+                  }
+                }}
+                onBlur={() => {
+                  setRegTouched(prev => ({ ...prev, name: true }));
+                  setRegFieldErrors(prev => ({ ...prev, name: validateRegField('name', regName) }));
+                }}
               />
+              {regTouched.name && regFieldErrors.name && (
+                <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 700, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <AlertCircle size={12} /> {regFieldErrors.name}
+                </div>
+              )}
             </div>
 
             <div className="form-group">
-              <label className="form-label" style={{ color: '#271E16', fontWeight: 700 }}>Campus Email</label>
+              <label className="form-label" style={{ color: '#271E16', fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>CAMPUS EMAIL <span style={{ color: '#EA580C' }}>*</span></span>
+                {regTouched.email && !regFieldErrors.email && regEmail.trim() && (
+                  <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <Check size={12} /> VALID
+                  </span>
+                )}
+              </label>
               <input
                 type="email"
                 required
                 className="form-input"
-                style={{ background: '#F8F3EC', border: '1.5px solid #E8DCCB', color: '#271E16' }}
+                style={{
+                  background: '#F8F3EC',
+                  border: regTouched.email && regFieldErrors.email ? '1.5px solid #EF4444' : (regTouched.email && regEmail.trim() ? '1.5px solid #10B981' : '1.5px solid #E8DCCB'),
+                  color: '#271E16'
+                }}
                 placeholder="student@pondiuni.ac.in"
                 value={regEmail}
-                onChange={(e) => setRegEmail(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setRegEmail(val);
+                  if (regTouched.email) {
+                    setRegFieldErrors(prev => ({ ...prev, email: validateRegField('email', val) }));
+                  }
+                }}
+                onBlur={() => {
+                  setRegTouched(prev => ({ ...prev, email: true }));
+                  setRegFieldErrors(prev => ({ ...prev, email: validateRegField('email', regEmail) }));
+                }}
               />
+              {regTouched.email && regFieldErrors.email && (
+                <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 700, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <AlertCircle size={12} /> {regFieldErrors.email}
+                </div>
+              )}
             </div>
 
             <div className="form-group">
-              <label className="form-label" style={{ color: '#271E16', fontWeight: 700 }}>Phone Number</label>
+              <label className="form-label" style={{ color: '#271E16', fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>PHONE NUMBER (10 DIGITS) <span style={{ color: '#EA580C' }}>*</span></span>
+                {regTouched.phone && !regFieldErrors.phone && regPhone.trim().length === 10 && (
+                  <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <Check size={12} /> VALID
+                  </span>
+                )}
+              </label>
               <input
-                type="text"
+                type="tel"
                 required
+                maxLength={10}
                 className="form-input"
-                style={{ background: '#F8F3EC', border: '1.5px solid #E8DCCB', color: '#271E16' }}
+                style={{
+                  background: '#F8F3EC',
+                  border: regTouched.phone && regFieldErrors.phone ? '1.5px solid #EF4444' : (regTouched.phone && regPhone.trim().length === 10 ? '1.5px solid #10B981' : '1.5px solid #E8DCCB'),
+                  color: '#271E16',
+                  letterSpacing: '1px',
+                  fontWeight: 600
+                }}
                 placeholder="9876543210"
                 value={regPhone}
-                onChange={(e) => setRegPhone(e.target.value)}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  setRegPhone(digits);
+                  if (regTouched.phone) {
+                    setRegFieldErrors(prev => ({ ...prev, phone: validateRegField('phone', digits) }));
+                  }
+                }}
+                onBlur={() => {
+                  setRegTouched(prev => ({ ...prev, phone: true }));
+                  setRegFieldErrors(prev => ({ ...prev, phone: validateRegField('phone', regPhone) }));
+                }}
               />
+              {regTouched.phone && regFieldErrors.phone && (
+                <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 700, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <AlertCircle size={12} /> {regFieldErrors.phone}
+                </div>
+              )}
             </div>
 
             <div className="form-group">
-              <label className="form-label" style={{ color: '#271E16', fontWeight: 700 }}>Gender</label>
+              <label className="form-label" style={{ color: '#271E16', fontWeight: 700 }}>GENDER <span style={{ color: '#EA580C' }}>*</span></label>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <button
                   type="button"
@@ -523,7 +656,7 @@ export function LoginView({ onGoToAdminPortal }) {
                     gap: '6px'
                   }}
                 >
-                  <User size={16} /> Male
+                  <User size={16} /> MALE
                 </button>
                 <button
                   type="button"
@@ -544,7 +677,7 @@ export function LoginView({ onGoToAdminPortal }) {
                     gap: '6px'
                   }}
                 >
-                  <ShieldCheck size={16} /> Female (Lady)
+                  <ShieldCheck size={16} /> FEMALE (LADY)
                 </button>
               </div>
             </div>
@@ -556,13 +689,18 @@ export function LoginView({ onGoToAdminPortal }) {
                   <ShieldCheck size={16} /> MANDATORY DRIVER VEHICLE & DOCUMENTS
                 </div>
                 <div style={{ fontSize: '11px', color: '#796D61', marginTop: '-8px' }}>
-                  Type your vehicle model and upload clear photos or PDF copies of your 3 documents for Admin verification.
+                  TYPE YOUR VEHICLE MODEL IN CAPITAL AND UPLOAD 3 MANDATORY DOCUMENTS (MAX 150 KB EACH, PDF / JPG).
                 </div>
 
                 {/* Vehicle Type & Model */}
                 <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '10px', border: '1px solid #E8DCCB', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#271E16', margin: 0 }}>
-                    Vehicle Type & Model <span style={{ color: '#EA580C' }}>*</span>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#271E16', margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>VEHICLE TYPE & MODEL <span style={{ color: '#EA580C' }}>*</span></span>
+                    {regTouched.vehicleModel && !regFieldErrors.vehicleModel && regVehicleModel.trim() && (
+                      <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        <Check size={12} /> VALID
+                      </span>
+                    )}
                   </label>
                   
                   {/* Two-Wheeler Type */}
@@ -585,7 +723,7 @@ export function LoginView({ onGoToAdminPortal }) {
                         fontSize: '12px'
                       }}
                     >
-                      <Bike size={14} /> Motorcycle (Bike)
+                      <Bike size={14} /> MOTORCYCLE (BIKE)
                     </button>
                     <button
                       type="button"
@@ -605,7 +743,7 @@ export function LoginView({ onGoToAdminPortal }) {
                         fontSize: '12px'
                       }}
                     >
-                      <Zap size={14} /> Scooter / Scooty
+                      <Zap size={14} /> SCOOTER / SCOOTY
                     </button>
                   </div>
 
@@ -613,24 +751,46 @@ export function LoginView({ onGoToAdminPortal }) {
                     type="text"
                     required
                     className="form-input"
-                    style={{ background: '#F8F3EC', border: '1.5px solid #E8DCCB', color: '#271E16', fontSize: '13px' }}
-                    placeholder="Type Vehicle Model (e.g. Honda Activa 6G / Splendor / Dio)"
+                    style={{
+                      background: '#F8F3EC',
+                      border: regTouched.vehicleModel && regFieldErrors.vehicleModel ? '1.5px solid #EF4444' : (regTouched.vehicleModel && regVehicleModel.trim() ? '1.5px solid #10B981' : '1.5px solid #E8DCCB'),
+                      color: '#271E16',
+                      fontSize: '13px',
+                      textTransform: 'uppercase',
+                      fontWeight: 600
+                    }}
+                    placeholder="E.G. HONDA ACTIVA 6G / HERO SPLENDOR / TVS NTORQ"
                     value={regVehicleModel}
-                    onChange={(e) => setRegVehicleModel(e.target.value)}
+                    onChange={(e) => {
+                      const upper = e.target.value.toUpperCase();
+                      setRegVehicleModel(upper);
+                      if (regTouched.vehicleModel) {
+                        setRegFieldErrors(prev => ({ ...prev, vehicleModel: validateRegField('vehicleModel', upper) }));
+                      }
+                    }}
+                    onBlur={() => {
+                      setRegTouched(prev => ({ ...prev, vehicleModel: true }));
+                      setRegFieldErrors(prev => ({ ...prev, vehicleModel: validateRegField('vehicleModel', regVehicleModel) }));
+                    }}
                   />
+                  {regTouched.vehicleModel && regFieldErrors.vehicleModel && (
+                    <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 700, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <AlertCircle size={12} /> {regFieldErrors.vehicleModel}
+                    </div>
+                  )}
                 </div>
 
                 {/* 1. College / Campus ID Upload */}
                 <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '10px', border: '1px solid #E8DCCB', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <label style={{ fontSize: '12px', fontWeight: 700, color: '#271E16', margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>1. Campus / College ID Card <span style={{ color: '#EA580C' }}>*</span></span>
+                    <span>1. CAMPUS / COLLEGE ID CARD <span style={{ color: '#EA580C' }}>*</span></span>
                     {collegeIdFile ? (
-                      <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 600 }}>
-                        <CheckCircle2 size={12} /> {(collegeIdFile.size / 1024).toFixed(1)} KB (Ready)
+                      <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 700 }}>
+                        <CheckCircle2 size={12} /> {(collegeIdFile.size / 1024).toFixed(1)} KB (READY)
                       </span>
                     ) : (
-                      <span style={{ fontSize: '11px', color: '#EA580C', fontWeight: 600 }}>
-                        Max: 150 KB (PDF / JPG)
+                      <span style={{ fontSize: '11px', color: '#EA580C', fontWeight: 700 }}>
+                        MAX: 150 KB (PDF / JPG)
                       </span>
                     )}
                   </label>
@@ -649,7 +809,7 @@ export function LoginView({ onGoToAdminPortal }) {
                     fontWeight: 700
                   }}>
                     <Upload size={14} />
-                    <span>{collegeIdFile ? collegeIdFile.name : 'Upload Campus ID Card (PDF or JPG, &le; 150 KB)'}</span>
+                    <span>{collegeIdFile ? collegeIdFile.name.toUpperCase() : 'UPLOAD CAMPUS ID CARD (PDF OR JPG, ≤ 150 KB)'}</span>
                     <input
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
@@ -663,14 +823,14 @@ export function LoginView({ onGoToAdminPortal }) {
                 {/* 2. Driving Licence Upload */}
                 <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '10px', border: '1px solid #E8DCCB', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <label style={{ fontSize: '12px', fontWeight: 700, color: '#271E16', margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>2. Driving Licence (DL) <span style={{ color: '#EA580C' }}>*</span></span>
+                    <span>2. DRIVING LICENCE (DL) <span style={{ color: '#EA580C' }}>*</span></span>
                     {licenseFile ? (
-                      <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 600 }}>
-                        <CheckCircle2 size={12} /> {(licenseFile.size / 1024).toFixed(1)} KB (Ready)
+                      <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 700 }}>
+                        <CheckCircle2 size={12} /> {(licenseFile.size / 1024).toFixed(1)} KB (READY)
                       </span>
                     ) : (
-                      <span style={{ fontSize: '11px', color: '#EA580C', fontWeight: 600 }}>
-                        Max: 150 KB (PDF / JPG)
+                      <span style={{ fontSize: '11px', color: '#EA580C', fontWeight: 700 }}>
+                        MAX: 150 KB (PDF / JPG)
                       </span>
                     )}
                   </label>
@@ -689,7 +849,7 @@ export function LoginView({ onGoToAdminPortal }) {
                     fontWeight: 700
                   }}>
                     <Upload size={14} />
-                    <span>{licenseFile ? licenseFile.name : 'Upload Driving Licence (PDF or JPG, &le; 150 KB)'}</span>
+                    <span>{licenseFile ? licenseFile.name.toUpperCase() : 'UPLOAD DRIVING LICENCE (PDF OR JPG, ≤ 150 KB)'}</span>
                     <input
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
@@ -703,14 +863,14 @@ export function LoginView({ onGoToAdminPortal }) {
                 {/* 3. Vehicle RC Document Upload */}
                 <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '10px', border: '1px solid #E8DCCB', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <label style={{ fontSize: '12px', fontWeight: 700, color: '#271E16', margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>3. Vehicle RC Document <span style={{ color: '#EA580C' }}>*</span></span>
+                    <span>3. VEHICLE RC DOCUMENT <span style={{ color: '#EA580C' }}>*</span></span>
                     {rcFile ? (
-                      <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 600 }}>
-                        <CheckCircle2 size={12} /> {(rcFile.size / 1024).toFixed(1)} KB (Ready)
+                      <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 700 }}>
+                        <CheckCircle2 size={12} /> {(rcFile.size / 1024).toFixed(1)} KB (READY)
                       </span>
                     ) : (
-                      <span style={{ fontSize: '11px', color: '#EA580C', fontWeight: 600 }}>
-                        Max: 150 KB (PDF / JPG)
+                      <span style={{ fontSize: '11px', color: '#EA580C', fontWeight: 700 }}>
+                        MAX: 150 KB (PDF / JPG)
                       </span>
                     )}
                   </label>
@@ -729,7 +889,7 @@ export function LoginView({ onGoToAdminPortal }) {
                     fontWeight: 700
                   }}>
                     <Upload size={14} />
-                    <span>{rcFile ? rcFile.name : 'Upload Vehicle RC Card (PDF or JPG, &le; 150 KB)'}</span>
+                    <span>{rcFile ? rcFile.name.toUpperCase() : 'UPLOAD VEHICLE RC CARD (PDF OR JPG, ≤ 150 KB)'}</span>
                     <input
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
@@ -743,16 +903,42 @@ export function LoginView({ onGoToAdminPortal }) {
             )}
 
             <div className="form-group">
-              <label className="form-label" style={{ color: '#271E16', fontWeight: 700 }}>Password (min 6 chars)</label>
+              <label className="form-label" style={{ color: '#271E16', fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>PASSWORD (MIN 6 CHARS) <span style={{ color: '#EA580C' }}>*</span></span>
+                {regTouched.password && !regFieldErrors.password && regPassword && regPassword.length >= 6 && (
+                  <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <Check size={12} /> VALID
+                  </span>
+                )}
+              </label>
               <input
                 type="password"
                 required
                 className="form-input"
-                style={{ background: '#F8F3EC', border: '1.5px solid #E8DCCB', color: '#271E16' }}
+                style={{
+                  background: '#F8F3EC',
+                  border: regTouched.password && regFieldErrors.password ? '1.5px solid #EF4444' : (regTouched.password && regPassword && regPassword.length >= 6 ? '1.5px solid #10B981' : '1.5px solid #E8DCCB'),
+                  color: '#271E16'
+                }}
                 placeholder="••••••••"
                 value={regPassword}
-                onChange={(e) => setRegPassword(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setRegPassword(val);
+                  if (regTouched.password) {
+                    setRegFieldErrors(prev => ({ ...prev, password: validateRegField('password', val) }));
+                  }
+                }}
+                onBlur={() => {
+                  setRegTouched(prev => ({ ...prev, password: true }));
+                  setRegFieldErrors(prev => ({ ...prev, password: validateRegField('password', regPassword) }));
+                }}
               />
+              {regTouched.password && regFieldErrors.password && (
+                <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 700, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <AlertCircle size={12} /> {regFieldErrors.password}
+                </div>
+              )}
             </div>
 
             <button
@@ -761,9 +947,9 @@ export function LoginView({ onGoToAdminPortal }) {
               style={{ width: '100%', padding: '12px', marginTop: '12px', fontWeight: 800, fontSize: '14px', background: 'linear-gradient(135deg, #F97316, #EA580C)', color: '#FFFFFF', border: 'none', borderRadius: '10px', boxShadow: '0 4px 14px rgba(234, 88, 12, 0.35)', cursor: 'pointer' }}
               disabled={loading}
             >
-              {loading ? (uploadStatus || 'Processing Registration...') : (
+              {loading ? (uploadStatus || 'PROCESSING REGISTRATION...') : (
                 <>
-                  Create Account <ArrowRight size={16} />
+                  CREATE ACCOUNT <ArrowRight size={16} />
                 </>
               )}
             </button>

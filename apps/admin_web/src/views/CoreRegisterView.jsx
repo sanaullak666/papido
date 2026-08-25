@@ -21,27 +21,46 @@ export function CoreRegisterView({ onGoToLogin }) {
     e.preventDefault();
     setErrorMsg(null);
 
-    if (!formData.name.trim() || !formData.email.trim() || !formData.phone.trim() || !formData.password) {
-      setErrorMsg('Please fill in all required fields (Name, Email, Phone, Password).');
+    const name = formData.name.trim().toUpperCase();
+    const email = formData.email.trim().toLowerCase();
+    const phone = formData.phone.trim().replace(/\D/g, '');
+
+    if (!name || !email || !phone || !formData.password) {
+      setErrorMsg('PLEASE FILL IN ALL REQUIRED FIELDS (NAME, EMAIL, PHONE, PASSWORD).');
+      return;
+    }
+
+    if (name.length < 2) {
+      setErrorMsg('FULL NAME MUST BE AT LEAST 2 CHARACTERS.');
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setErrorMsg('PLEASE ENTER A VALID EMAIL ADDRESS.');
+      return;
+    }
+
+    if (phone.length !== 10) {
+      setErrorMsg('PLEASE ENTER A VALID 10-DIGIT MOBILE NUMBER (STARTING WITH 6-9).');
       return;
     }
 
     if (formData.password.length < 6) {
-      setErrorMsg('Password must be at least 6 characters long.');
+      setErrorMsg('PASSWORD MUST BE AT LEAST 6 CHARACTERS LONG.');
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setErrorMsg('Passwords do not match.');
+      setErrorMsg('PASSWORDS DO NOT MATCH.');
       return;
     }
 
     try {
       setLoading(true);
       const res = await apiRequest('/auth/register-core', 'POST', {
-        name: formData.name.trim(),
-        email: formData.email.trim().toLowerCase(),
-        phone: formData.phone.trim(),
+        name,
+        email,
+        phone,
         gender: formData.gender,
         password: formData.password
       });
@@ -152,16 +171,16 @@ export function CoreRegisterView({ onGoToLogin }) {
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#D6C7B2', marginBottom: '6px' }}>
-              Full Name *
+              FULL NAME *
             </label>
             <div style={{ position: 'relative' }}>
               <User size={16} style={{ position: 'absolute', left: '12px', top: '13px', color: '#796D61' }} />
               <input
                 type="text"
                 required
-                placeholder="e.g. Sanaulla Khan"
+                placeholder="E.G. SANAULLA KHAN"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value.toUpperCase() })}
                 style={{
                   width: '100%',
                   padding: '11px 12px 11px 38px',
@@ -170,7 +189,9 @@ export function CoreRegisterView({ onGoToLogin }) {
                   borderRadius: '10px',
                   color: '#FFF',
                   fontSize: '14px',
-                  outline: 'none'
+                  outline: 'none',
+                  textTransform: 'uppercase',
+                  fontWeight: 600
                 }}
               />
             </div>
@@ -179,16 +200,17 @@ export function CoreRegisterView({ onGoToLogin }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#D6C7B2', marginBottom: '6px' }}>
-                Phone Number *
+                PHONE NUMBER *
               </label>
               <div style={{ position: 'relative' }}>
                 <Phone size={16} style={{ position: 'absolute', left: '12px', top: '13px', color: '#796D61' }} />
                 <input
                   type="tel"
                   required
-                  placeholder="+91 98765 43210"
+                  maxLength={10}
+                  placeholder="9876543210"
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
                   style={{
                     width: '100%',
                     padding: '11px 12px 11px 38px',
@@ -197,7 +219,9 @@ export function CoreRegisterView({ onGoToLogin }) {
                     borderRadius: '10px',
                     color: '#FFF',
                     fontSize: '14px',
-                    outline: 'none'
+                    outline: 'none',
+                    letterSpacing: '1px',
+                    fontWeight: 600
                   }}
                 />
               </div>

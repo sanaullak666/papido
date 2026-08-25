@@ -27,6 +27,25 @@ const AuthController = {
         return error(res, 'Name, email, phone, password, and role are required fields.', 400);
       }
 
+      const cleanName = name.trim().toUpperCase();
+      if (cleanName.length < 2) {
+        return error(res, 'Full Name must be at least 2 characters.', 400);
+      }
+
+      const cleanEmail = email.trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+        return error(res, 'Please provide a valid email address.', 400);
+      }
+
+      const cleanPhone = phone.trim().replace(/\D/g, '');
+      if (cleanPhone.length !== 10) {
+        return error(res, 'Please provide a valid 10-digit mobile number.', 400);
+      }
+
+      if (password.length < 6) {
+        return error(res, 'Password must be at least 6 characters.', 400);
+      }
+
       const validGender = ['MALE', 'FEMALE', 'OTHER'].includes((gender || '').toUpperCase())
         ? gender.toUpperCase()
         : 'OTHER';
@@ -36,10 +55,10 @@ const AuthController = {
         ...(profileData || {}),
         profileImage: profileImage || (profileData && profileData.profileImage) || null,
         vehicleType: vehicleType || (profileData && profileData.vehicleType) || 'BIKE',
-        vehicleModel: (vehicleModel || (profileData && profileData.vehicleModel) || '').trim(),
-        vehicleNumber: vehicleNumber || (profileData && profileData.vehicleNumber) || `RC-DOC-${uniqueSuffix}`,
-        licenseNumber: licenseNumber || (profileData && profileData.licenseNumber) || `DL-DOC-${uniqueSuffix}`,
-        collegeIdNumber: collegeIdNumber || (profileData && profileData.collegeIdNumber) || `ID-DOC-${uniqueSuffix}`,
+        vehicleModel: (vehicleModel || (profileData && profileData.vehicleModel) || '').trim().toUpperCase(),
+        vehicleNumber: (vehicleNumber || (profileData && profileData.vehicleNumber) || `RC-DOC-${uniqueSuffix}`).trim().toUpperCase(),
+        licenseNumber: (licenseNumber || (profileData && profileData.licenseNumber) || `DL-DOC-${uniqueSuffix}`).trim().toUpperCase(),
+        collegeIdNumber: (collegeIdNumber || (profileData && profileData.collegeIdNumber) || `ID-DOC-${uniqueSuffix}`).trim().toUpperCase(),
         licenseDocUrl: licenseDocUrl || (profileData && profileData.licenseDocUrl) || null,
         rcDocUrl: rcDocUrl || (profileData && profileData.rcDocUrl) || null,
         collegeIdDocUrl: collegeIdDocUrl || (profileData && profileData.collegeIdDocUrl) || null
@@ -61,9 +80,9 @@ const AuthController = {
       }
 
       const result = await AuthService.register({
-        name,
-        email,
-        phone,
+        name: cleanName,
+        email: cleanEmail,
+        phone: cleanPhone,
         gender: validGender,
         password,
         role,
