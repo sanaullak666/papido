@@ -43,20 +43,29 @@ import {
 import { alertManager } from '../utils/alertManager';
 
 const getTodayDateString = () => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  try {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  } catch (_) {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
 };
 
 const getYesterdayDateString = () => {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  try {
+    const d = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+  } catch (_) {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
 };
 
 const getRiderTabFromPath = (path) => {
@@ -2378,13 +2387,36 @@ export function RiderPortalView() {
                     <span className="badge badge-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', padding: '5px 12px' }}>
                       <Check size={14} /> No Due (₹0)
                     </span>
+                  ) : selectedSettlementDate === getTodayDateString() ? (
+                    <span className="badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', padding: '5px 12px', background: 'rgba(249, 115, 22, 0.15)', color: '#F97316', border: '1px solid rgba(249, 115, 22, 0.4)', borderRadius: '6px', fontWeight: 800 }}>
+                      <Clock size={14} /> Today's Active Shift
+                    </span>
                   ) : (
                     <span className="badge badge-danger" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', padding: '5px 12px' }}>
-                      <Clock size={14} /> Due Pending (Unsettled)
+                      <AlertTriangle size={14} /> Past Shift Due (Unsettled)
                     </span>
                   )}
                 </div>
               </div>
+
+              {selectedSettlementDate === getTodayDateString() && !shiftSettlement?.isLocked && (
+                <div style={{
+                  padding: '10px 14px',
+                  background: 'rgba(59, 130, 246, 0.08)',
+                  border: '1px solid rgba(59, 130, 246, 0.25)',
+                  borderRadius: '10px',
+                  color: '#60A5FA',
+                  fontSize: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <Clock size={15} style={{ flexShrink: 0 }} />
+                  <span>
+                    <strong>Today's Shift:</strong> Rides accumulate during your active day up to 12:00 midnight. You can take rides freely. Any unsettled commission becomes due for payment tomorrow.
+                  </span>
+                </div>
+              )}
 
               {shiftSuccessMsg && (
                 <div style={{

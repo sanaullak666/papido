@@ -26,7 +26,9 @@ async function initializeDatabase() {
     enableKeepAlive: true,
     keepAliveInitialDelay: 10000,
     connectTimeout: 10000,
-    compress: true
+    compress: true,
+    timezone: '+05:30',
+    dateStrings: true
   };
 
   if (env.DB.SSL || (env.DB.HOST && (env.DB.HOST.includes('tidbcloud.com') || env.DB.HOST.includes('aws.')))) {

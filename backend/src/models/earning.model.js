@@ -1,5 +1,34 @@
 const db = require('../config/database');
 
+/**
+ * Returns today's date formatted as YYYY-MM-DD in Indian Standard Time (IST, Asia/Kolkata)
+ */
+function getTodayISTString() {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(new Date());
+}
+
+/**
+ * Returns formatted YYYY-MM-DD in IST from any date / timestamp
+ */
+function getISTDateString(dateInput) {
+  if (!dateInput) return getTodayISTString();
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) {
+    return String(dateInput).slice(0, 10);
+  }
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(d);
+}
+
 const EarningModel = {
   async recordEarning({
     riderId,
@@ -23,10 +52,7 @@ const EarningModel = {
   },
 
   async getRiderEarningsSummary(riderId) {
-    const now = new Date();
-    const istOffset = 5.5 * 60 * 60 * 1000;
-    const istDate = new Date(now.getTime() + istOffset);
-    const todayStr = istDate.toISOString().slice(0, 10);
+    const todayStr = getTodayISTString();
 
     // Today's earnings
     const todaySql = `
@@ -50,9 +76,10 @@ const EarningModel = {
       FROM rides r
       LEFT JOIN rider_earnings re ON r.id = re.ride_id
       WHERE (r.rider_id = ? OR re.rider_id = ?) AND (r.status = 'COMPLETED' OR r.payment_status = 'PAID' OR r.status IS NULL)
-        AND (DATE(COALESCE(r.completed_at, re.created_at, r.created_at)) = CURRENT_DATE() 
-             OR DATE(COALESCE(r.completed_at, re.created_at, r.created_at)) = ? 
-             OR COALESCE(r.completed_at, re.created_at) >= CURDATE())
+        AND (
+          DATE(CONVERT_TZ(COALESCE(r.completed_at, re.created_at, r.created_at), '+00:00', '+05:30')) = ?
+          OR DATE(COALESCE(r.completed_at, re.created_at, r.created_at)) = ?
+        )
     `;
 
     // Weekly earnings (last 7 days)
@@ -136,7 +163,7 @@ const EarningModel = {
     `;
 
     const [today, weekly, monthly, lifetime, profile] = await Promise.all([
-      db.queryOne(todaySql, [riderId, riderId, todayStr]).catch(() => ({})),
+      db.queryOne(todaySql, [riderId, riderId, todayStr, todayStr]).catch(() => ({})),
       db.queryOne(weeklySql, [riderId, riderId]).catch(() => ({})),
       db.queryOne(monthlySql, [riderId, riderId]).catch(() => ({})),
       db.queryOne(lifetimeSql, [riderId, riderId]).catch(() => ({})),
@@ -235,7 +262,7 @@ const EarningModel = {
    * Daily Rider Settlement & Deductions aggregation (High Performance Parallel Execution)
    */
   async getDailySettlements({ date, search, riderId = null }) {
-    const targetDate = date || new Date().toISOString().slice(0, 10);
+    const targetDate = (date && String(date).trim()) || getTodayISTString();
 
     let sql = `
       SELECT 
@@ -264,9 +291,14 @@ const EarningModel = {
       JOIN rides r ON re.ride_id = r.id
       JOIN users u ON re.rider_id = u.id
       LEFT JOIN rider_profiles rp ON u.id = rp.user_id
-      WHERE (DATE(re.created_at) = ? OR DATE(r.completed_at) = ?)
+      WHERE (
+        DATE(CONVERT_TZ(re.created_at, '+00:00', '+05:30')) = ?
+        OR DATE(CONVERT_TZ(r.completed_at, '+00:00', '+05:30')) = ?
+        OR DATE(re.created_at) = ? 
+        OR DATE(r.completed_at) = ?
+      )
     `;
-    const params = [targetDate, targetDate];
+    const params = [targetDate, targetDate, targetDate, targetDate];
 
     if (riderId) {
       sql += ' AND re.rider_id = ?';
@@ -493,18 +525,19 @@ const EarningModel = {
   },
 
   async isRiderShiftLocked(riderId) {
-    // Robust Indian Standard Time (IST) date calculation
-    const now = new Date();
-    const istOffset = 5.5 * 60 * 60 * 1000;
-    const istDate = new Date(now.getTime() + istOffset);
-    const today = istDate.toISOString().slice(0, 10);
+    const today = getTodayISTString();
 
-    // 1. Check daily_shift_settlements directly for past unsettled / pending / rejected shifts
+    const settings = await this.getAdminSettlementSettings();
+    if (settings.autoLockEnabled === false) {
+      return { isLocked: false, unpaidAmount: 0 };
+    }
+
+    // 1. Check daily_shift_settlements directly for strictly past dates (< today)
     const dssRow = await db.queryOne(`
       SELECT date as shift_date, total_trips as trips_count, total_commission_due as total_due, status as shift_status, rejection_reason
       FROM daily_shift_settlements
       WHERE rider_id = ? 
-        AND (date < CURRENT_DATE() OR date < ?) 
+        AND date < ?
         AND status != 'SETTLED' 
         AND total_commission_due > 0
       ORDER BY date ASC
@@ -512,53 +545,75 @@ const EarningModel = {
     `, [riderId, today]).catch(() => null);
 
     if (dssRow && parseFloat(dssRow.total_due || 0) > 0) {
-      return {
-        isLocked: true,
-        pastDate: String(dssRow.shift_date).slice(0, 10),
-        tripsCount: dssRow.trips_count || 1,
-        unpaidAmount: parseFloat(dssRow.total_due || 0),
-        status: dssRow.shift_status || 'UNSETTLED',
-        rejectionReason: dssRow.rejection_reason || null
-      };
+      const shiftDateFormatted = getISTDateString(dssRow.shift_date);
+      if (shiftDateFormatted < today) {
+        return {
+          isLocked: true,
+          pastDate: shiftDateFormatted,
+          tripsCount: dssRow.trips_count || 1,
+          unpaidAmount: parseFloat(dssRow.total_due || 0),
+          status: dssRow.shift_status || 'UNSETTLED',
+          rejectionReason: dssRow.rejection_reason || null
+        };
+      }
     }
 
-    // 2. Also check rides/rider_earnings table directly for any past shift with unpaid deductions
+    // 2. Also check rides/rider_earnings table directly for any strictly past shift (< today) with unpaid deductions
     const sql = `
       SELECT 
-        COALESCE(DATE(r.completed_at), DATE(re.created_at)) as shift_date,
+        COALESCE(
+          DATE(CONVERT_TZ(r.completed_at, '+00:00', '+05:30')), 
+          DATE(r.completed_at), 
+          DATE(CONVERT_TZ(re.created_at, '+00:00', '+05:30')), 
+          DATE(re.created_at)
+        ) as shift_date,
         COUNT(r.id) as trips_count,
         SUM(COALESCE(re.company_earning, 0) + COALESCE(re.controller_earning, 0)) as total_due,
         dss.status as shift_status,
         dss.rejection_reason
       FROM rides r
       JOIN rider_earnings re ON r.id = re.ride_id
-      LEFT JOIN daily_shift_settlements dss ON (dss.rider_id = r.rider_id AND dss.date = COALESCE(DATE(r.completed_at), DATE(re.created_at)))
+      LEFT JOIN daily_shift_settlements dss ON (
+        dss.rider_id = r.rider_id 
+        AND (
+          dss.date = COALESCE(DATE(CONVERT_TZ(r.completed_at, '+00:00', '+05:30')), DATE(r.completed_at), DATE(re.created_at))
+          OR dss.date = COALESCE(DATE(r.completed_at), DATE(re.created_at))
+        )
+      )
       WHERE r.rider_id = ?
         AND r.status = 'COMPLETED'
-        AND (DATE(r.completed_at) < CURRENT_DATE() OR DATE(re.created_at) < CURRENT_DATE() OR DATE(r.completed_at) < ? OR DATE(re.created_at) < ?)
+        AND COALESCE(
+          DATE(CONVERT_TZ(r.completed_at, '+00:00', '+05:30')), 
+          DATE(r.completed_at), 
+          DATE(CONVERT_TZ(re.created_at, '+00:00', '+05:30')), 
+          DATE(re.created_at)
+        ) < ?
         AND (re.settlement_status != 'SETTLED' OR re.settlement_status IS NULL)
         AND (dss.status != 'SETTLED' OR dss.status IS NULL)
-      GROUP BY COALESCE(DATE(r.completed_at), DATE(re.created_at)), dss.status, dss.rejection_reason
+      GROUP BY shift_date, dss.status, dss.rejection_reason
       HAVING total_due > 0
       ORDER BY shift_date ASC
       LIMIT 1
     `;
-    const row = await db.queryOne(sql, [riderId, today, today]).catch(() => null);
+    const row = await db.queryOne(sql, [riderId, today]).catch(() => null);
     if (row && parseFloat(row.total_due || 0) > 0) {
-      return {
-        isLocked: true,
-        pastDate: String(row.shift_date).slice(0, 10),
-        tripsCount: row.trips_count,
-        unpaidAmount: parseFloat(row.total_due || 0),
-        status: row.shift_status || 'UNSETTLED',
-        rejectionReason: row.rejection_reason || null
-      };
+      const shiftDateFormatted = getISTDateString(row.shift_date);
+      if (shiftDateFormatted < today) {
+        return {
+          isLocked: true,
+          pastDate: shiftDateFormatted,
+          tripsCount: row.trips_count,
+          unpaidAmount: parseFloat(row.total_due || 0),
+          status: row.shift_status || 'UNSETTLED',
+          rejectionReason: row.rejection_reason || null
+        };
+      }
     }
     return { isLocked: false, unpaidAmount: 0 };
   },
 
   async getRiderShiftSettlement(riderId, date = null) {
-    const targetDate = (date && String(date).trim()) || new Date().toISOString().slice(0, 10);
+    const targetDate = (date && String(date).trim()) || getTodayISTString();
     const [settings, dailyData, shiftRecord, lockCheck, rawRecentShifts] = await Promise.all([
       this.getAdminSettlementSettings(),
       this.getDailySettlements({ date: targetDate, riderId }),
@@ -578,7 +633,12 @@ const EarningModel = {
           MAX(approved_at) as approved_at
         FROM (
           SELECT 
-            COALESCE(DATE(r.completed_at), DATE(re.created_at)) as shift_date,
+            COALESCE(
+              DATE(CONVERT_TZ(r.completed_at, '+00:00', '+05:30')), 
+              DATE(r.completed_at), 
+              DATE(CONVERT_TZ(re.created_at, '+00:00', '+05:30')), 
+              DATE(re.created_at)
+            ) as shift_date,
             r.id as ride_id,
             COALESCE(r.final_fare, r.total_fare, re.amount, 0) as fare,
             COALESCE(re.company_earning, 0) as company_due,
@@ -591,7 +651,13 @@ const EarningModel = {
             dss.approved_at
           FROM rides r
           JOIN rider_earnings re ON r.id = re.ride_id
-          LEFT JOIN daily_shift_settlements dss ON (dss.rider_id = r.rider_id AND dss.date = COALESCE(DATE(r.completed_at), DATE(re.created_at)))
+          LEFT JOIN daily_shift_settlements dss ON (
+            dss.rider_id = r.rider_id 
+            AND (
+              dss.date = COALESCE(DATE(CONVERT_TZ(r.completed_at, '+00:00', '+05:30')), DATE(r.completed_at), DATE(re.created_at))
+              OR dss.date = COALESCE(DATE(r.completed_at), DATE(re.created_at))
+            )
+          )
           WHERE r.rider_id = ? AND r.status = 'COMPLETED'
         ) sub
         GROUP BY shift_date
@@ -601,7 +667,7 @@ const EarningModel = {
     ]);
 
     const recentShifts = (rawRecentShifts || []).map(s => {
-      const sDate = String(s.shift_date).slice(0, 10);
+      const sDate = getISTDateString(s.shift_date);
       const isSettled = s.status === 'SETTLED';
       const effectiveSt = s.status || (isSettled ? 'SETTLED' : 'UNSETTLED');
       return {
@@ -731,7 +797,7 @@ const EarningModel = {
   },
 
   async approveRiderShiftSettlement({ riderId, date, approvedBy }) {
-    const targetDate = date || new Date().toISOString().slice(0, 10);
+    const targetDate = (date && String(date).trim()) || getTodayISTString();
     
     // Update daily_shift_settlements
     await db.query(`
@@ -744,14 +810,17 @@ const EarningModel = {
     await db.query(`
       UPDATE rider_earnings
       SET settlement_status = 'SETTLED', settled_at = CURRENT_TIMESTAMP
-      WHERE rider_id = ? AND (DATE(created_at) = ? OR DATE(created_at) = DATE(?))
+      WHERE rider_id = ? AND (
+        DATE(CONVERT_TZ(created_at, '+00:00', '+05:30')) = ? 
+        OR DATE(created_at) = ?
+      )
     `, [riderId, targetDate, targetDate]);
 
     return this.getDailySettlements({ date: targetDate, riderId });
   },
 
   async rejectRiderShiftSettlement({ riderId, date, reason, rejectedBy }) {
-    const targetDate = date || new Date().toISOString().slice(0, 10);
+    const targetDate = (date && String(date).trim()) || getTodayISTString();
     
     await db.query(`
       UPDATE daily_shift_settlements
@@ -762,7 +831,10 @@ const EarningModel = {
     await db.query(`
       UPDATE rider_earnings
       SET settlement_status = 'UNSETTLED', settled_at = NULL
-      WHERE rider_id = ? AND (DATE(created_at) = ? OR DATE(created_at) = DATE(?))
+      WHERE rider_id = ? AND (
+        DATE(CONVERT_TZ(created_at, '+00:00', '+05:30')) = ? 
+        OR DATE(created_at) = ?
+      )
     `, [riderId, targetDate, targetDate]);
 
     return this.getDailySettlements({ date: targetDate, riderId });
@@ -774,11 +846,14 @@ const EarningModel = {
     } else if (status === 'REJECTED') {
       return this.rejectRiderShiftSettlement({ riderId, date, reason, rejectedBy: approvedBy });
     } else {
-      const targetDate = date || new Date().toISOString().slice(0, 10);
+      const targetDate = (date && String(date).trim()) || getTodayISTString();
       await db.query(
         `UPDATE rider_earnings 
          SET settlement_status = 'UNSETTLED', settled_at = NULL 
-         WHERE rider_id = ? AND (DATE(created_at) = ? OR DATE(created_at) = DATE(?))`,
+         WHERE rider_id = ? AND (
+           DATE(CONVERT_TZ(created_at, '+00:00', '+05:30')) = ? 
+           OR DATE(created_at) = ?
+         )`,
         [riderId, targetDate, targetDate]
       );
       await db.query(
@@ -792,7 +867,7 @@ const EarningModel = {
   },
 
   async saveDailyDutyController({ date, coreMemberId, payoutStatus = 'PENDING', notes = null, assignedBy = null }) {
-    const targetDate = date || new Date().toISOString().slice(0, 10);
+    const targetDate = (date && String(date).trim()) || getTodayISTString();
     
     await db.query(`
       INSERT INTO daily_duty_controllers (date, core_member_id, payout_status, notes, assigned_by)

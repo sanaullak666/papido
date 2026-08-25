@@ -8,7 +8,8 @@
     "dev": "nodemon src/server.js",
     "test": "node tests/run-tests.js",
     "db:migrate": "node database/migrate.js",
-    "db:seed": "node database/seed.js"
+    "db:seed": "node database/seed.js",
+    "db:clean": "node ../database/clean_db.js"
   },
   "keywords": [
     "papido",
