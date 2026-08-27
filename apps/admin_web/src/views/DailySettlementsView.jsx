@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../api';
-import { useSocket } from '../context/SocketContext';
 import {
   Calendar,
   Search,
@@ -25,8 +24,7 @@ import {
   User,
   Phone,
   Mail,
-  Shield,
-  Radio
+  Shield
 } from 'lucide-react';
 
 const getTodayDateString = () => {
@@ -56,7 +54,6 @@ const getYesterdayDateString = () => {
 };
 
 export function DailySettlementsView() {
-  const { socket } = useSocket() || {};
   const [selectedDate, setSelectedDate] = useState(getTodayDateString);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -81,25 +78,12 @@ export function DailySettlementsView() {
   const [isSavingController, setIsSavingController] = useState(false);
   const [controllerSuccessMsg, setControllerSuccessMsg] = useState('');
 
-  const selectedDateRef = useRef(selectedDate);
-  const searchRef = useRef(search);
-
-  useEffect(() => {
-    selectedDateRef.current = selectedDate;
-  }, [selectedDate]);
-
-  useEffect(() => {
-    searchRef.current = search;
-  }, [search]);
-
-  const fetchSettlements = async (isSilent = false) => {
+  const fetchSettlements = async () => {
     try {
-      if (!isSilent) setLoading(true);
+      setLoading(true);
       const params = new URLSearchParams();
-      const curDate = selectedDateRef.current || selectedDate;
-      const curSearch = searchRef.current !== undefined ? searchRef.current : search;
-      if (curDate) params.append('date', curDate);
-      if (curSearch.trim()) params.append('search', curSearch.trim());
+      if (selectedDate) params.append('date', selectedDate);
+      if (search.trim()) params.append('search', search.trim());
 
       const res = await apiRequest(`/admin/daily-settlements?${params.toString()}`);
       setSettlementData(res.data);
@@ -122,38 +106,13 @@ export function DailySettlementsView() {
     } catch (err) {
       console.error('Failed to fetch daily settlements', err);
     } finally {
-      if (!isSilent) setLoading(false);
+      setLoading(false);
     }
   };
 
-  // Initial fetch and auto-polling every 3 seconds for real-time sync without manual refresh
   useEffect(() => {
-    fetchSettlements(false);
-    const interval = setInterval(() => {
-      fetchSettlements(true);
-    }, 3000);
-    return () => clearInterval(interval);
+    fetchSettlements();
   }, [selectedDate, search]);
-
-  // Real-time socket events listener for instant updates
-  useEffect(() => {
-    if (!socket) return;
-    const handleUpdate = () => {
-      fetchSettlements(true);
-    };
-
-    socket.on('admin:shift_settlement_submitted', handleUpdate);
-    socket.on('admin:shift_settlement_updated', handleUpdate);
-    socket.on('rider:shift_settlement_updated', handleUpdate);
-    socket.on('shift_settlement_updated', handleUpdate);
-
-    return () => {
-      socket.off('admin:shift_settlement_submitted', handleUpdate);
-      socket.off('admin:shift_settlement_updated', handleUpdate);
-      socket.off('rider:shift_settlement_updated', handleUpdate);
-      socket.off('shift_settlement_updated', handleUpdate);
-    };
-  }, [socket]);
 
   const handleSaveAdminSettings = async (e) => {
     if (e) e.preventDefault();
@@ -416,9 +375,8 @@ export function DailySettlementsView() {
             </button>
 
             {/* Refresh */}
-            <button className="btn btn-secondary btn-sm" onClick={() => fetchSettlements(false)} title="Refresh records">
+            <button className="btn btn-secondary btn-sm" onClick={fetchSettlements} title="Refresh records">
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-              <span>Refresh</span>
             </button>
           </div>
         </div>

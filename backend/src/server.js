@@ -19,7 +19,6 @@ async function startServer() {
     // 3. Initialize Real-Time WebSockets
     const socketManager = new SocketManager(server);
     RideService.setSocketManager(socketManager);
-    app.set('socketManager', socketManager);
     logger.info('Real-time Socket.IO subsystem attached.');
 
     // 4. Start Listening

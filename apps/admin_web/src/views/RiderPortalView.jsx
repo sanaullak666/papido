@@ -181,13 +181,6 @@ export function RiderPortalView() {
 
   // Daily Shift Commission Settlement State
   const [selectedSettlementDate, setSelectedSettlementDate] = useState(getTodayDateString);
-  const selectedSettlementDateRef = useRef(selectedSettlementDate);
-  const prevSettlementStatusRef = useRef(null);
-
-  useEffect(() => {
-    selectedSettlementDateRef.current = selectedSettlementDate;
-  }, [selectedSettlementDate]);
-
   const [shiftSettlement, setShiftSettlement] = useState(null);
   const [loadingShiftSettlement, setLoadingShiftSettlement] = useState(false);
   const [submittingShiftSettlement, setSubmittingShiftSettlement] = useState(false);
@@ -342,59 +335,25 @@ export function RiderPortalView() {
     earnings?.todayPlatformFee || earnings?.companyCommission || earnings?.summary?.today?.platformFee || clientTodayPlatformFee || (todayTripsCount * 4) || 0
   );
 
-  const fetchShiftSettlement = async (targetDate, isSilent = false) => {
+  const fetchShiftSettlement = async (targetDate) => {
     try {
-      if (!isSilent) setLoadingShiftSettlement(true);
-      const queryDate = targetDate || selectedSettlementDateRef.current || selectedSettlementDate || getTodayDateString();
+      setLoadingShiftSettlement(true);
+      const queryDate = targetDate || selectedSettlementDate || getTodayDateString();
       const res = await apiRequest(`/rider/shift-settlement?date=${queryDate}`, 'GET', null, token);
       if (res?.data) {
-        const prevStatus = prevSettlementStatusRef.current;
-        const newStatus = res.data.status;
-        const isLocked = Boolean(res.data.isLocked);
-
-        // Real-time notification when admin approves/clears or rejects payment
-        if (prevStatus && prevStatus !== newStatus) {
-          if (newStatus === 'SETTLED') {
-            setShiftSuccessMsg(`🎉 Admin approved your shift settlement for ${res.data.date || queryDate}! Your driver account is clear and active.`);
-            setTimeout(() => setShiftSuccessMsg(''), 8000);
-            if (soundEnabled) {
-              try {
-                alertManager.triggerRideAlert({
-                  title: 'Settlement Approved! 🚀',
-                  body: `Shift payment for ${res.data.date || queryDate} has been verified and cleared by Admin.`,
-                  repeat: false
-                });
-              } catch (_) {}
-            }
-          } else if (newStatus === 'REJECTED') {
-            setShiftSuccessMsg('');
-            alert(`⚠️ Your shift settlement for ${res.data.date || queryDate} was rejected: ${res.data.rejectionReason || 'Please re-verify UTR reference.'}`);
-          }
-        }
-        prevSettlementStatusRef.current = newStatus;
-
         setShiftSettlement(res.data);
-        
-        // Update UTR input cleanly without overwriting what user is actively typing during silent polling
-        if (!isSilent) {
-          if (res.data.utrReference) {
-            setShiftUtrInput(res.data.utrReference);
-          } else {
-            setShiftUtrInput('');
-          }
+        if (res.data.utrReference) {
+          setShiftUtrInput(res.data.utrReference);
         } else {
-          if (res.data.utrReference && !shiftUtrInput) {
-            setShiftUtrInput(res.data.utrReference);
-          }
+          setShiftUtrInput('');
         }
-
-        if (isLocked && isOnline) {
+        if (res.data.isLocked && isOnline) {
           setIsOnline(false);
         }
       }
     } catch (_) {}
     finally {
-      if (!isSilent) setLoadingShiftSettlement(false);
+      setLoadingShiftSettlement(false);
     }
   };
 
@@ -633,35 +592,21 @@ export function RiderPortalView() {
     }
   }, [token]);
 
-  // Refresh earnings, trip history, and shift settlement lock status periodically without flickering
+  // Refresh earnings and trip history periodically for top bar without flickering
   useEffect(() => {
     if (!token) return;
     fetchPendingPenalties();
-    const globalSyncInterval = setInterval(() => {
+    const earningsInterval = setInterval(() => {
       fetchEarnings(true);
       fetchPendingPenalties();
-      fetchShiftSettlement(selectedSettlementDateRef.current, true);
-    }, 4000);
-    return () => clearInterval(globalSyncInterval);
+    }, 5000);
+    return () => clearInterval(earningsInterval);
   }, [token]);
-
-  // Fast real-time polling (2 seconds) when actively on the Settlements tab
-  // Ensures admin payment approvals update automatically without needing manual refresh
-  useEffect(() => {
-    if (!token) return;
-    if (currentTab === 'settlements') {
-      fetchShiftSettlement(selectedSettlementDate, false);
-      const settlementsInterval = setInterval(() => {
-        fetchShiftSettlement(selectedSettlementDateRef.current, true);
-      }, 2000);
-      return () => clearInterval(settlementsInterval);
-    }
-  }, [token, currentTab, selectedSettlementDate]);
 
   useEffect(() => {
     if (currentTab === 'earnings') {
       fetchEarnings(false);
-      fetchShiftSettlement(selectedSettlementDateRef.current, false);
+      fetchShiftSettlement();
     }
     fetchPendingPenalties();
   }, [currentTab]);
@@ -906,22 +851,9 @@ export function RiderPortalView() {
       fetchPendingPenalties();
     });
 
-    socket.on('rider:shift_settlement_updated', (data) => {
-      console.log('Realtime shift settlement updated event received:', data);
-      fetchShiftSettlement(selectedSettlementDateRef.current, true);
-      fetchEarnings(true);
-    });
-
-    socket.on('shift_settlement_updated', (data) => {
-      if (!data?.riderId || String(data.riderId) === String(user?.id)) {
-        console.log('Broadcast shift settlement updated event received:', data);
-        fetchShiftSettlement(selectedSettlementDateRef.current, true);
-        fetchEarnings(true);
-      }
-    });
-
-    socket.on('admin:shift_settlement_submitted', () => {
-      fetchShiftSettlement(selectedSettlementDateRef.current, true);
+    socket.on('rider:shift_settlement_updated', () => {
+      fetchShiftSettlement();
+      fetchEarnings(false);
     });
 
     return () => {
@@ -2354,37 +2286,14 @@ export function RiderPortalView() {
                 </div>
               </div>
 
-              {/* Date Selector Filter Bar & Live Sync Status */}
+              {/* Date Selector Filter Bar */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                <div style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '11px',
-                  color: '#10B981',
-                  background: 'rgba(16, 185, 129, 0.12)',
-                  padding: '5px 10px',
-                  borderRadius: '20px',
-                  border: '1px solid rgba(16, 185, 129, 0.3)',
-                  fontWeight: 800
-                }}>
-                  <span style={{
-                    width: '7px',
-                    height: '7px',
-                    borderRadius: '50%',
-                    background: '#10B981',
-                    display: 'inline-block',
-                    boxShadow: '0 0 8px #10B981'
-                  }}></span>
-                  <span>Live Auto-Sync Active</span>
-                </div>
-
                 <button
                   type="button"
                   onClick={() => {
                     const todayStr = getTodayDateString();
                     setSelectedSettlementDate(todayStr);
-                    fetchShiftSettlement(todayStr, false);
+                    fetchShiftSettlement(todayStr);
                   }}
                   className={`btn btn-sm ${selectedSettlementDate === getTodayDateString() ? 'btn-primary' : 'btn-secondary'}`}
                   style={{ fontSize: '12px', fontWeight: 700, padding: '6px 12px' }}
@@ -2396,7 +2305,7 @@ export function RiderPortalView() {
                   onClick={() => {
                     const yestStr = getYesterdayDateString();
                     setSelectedSettlementDate(yestStr);
-                    fetchShiftSettlement(yestStr, false);
+                    fetchShiftSettlement(yestStr);
                   }}
                   className={`btn btn-sm ${selectedSettlementDate === getYesterdayDateString() ? 'btn-primary' : 'btn-secondary'}`}
                   style={{ fontSize: '12px', fontWeight: 700, padding: '6px 12px' }}
@@ -2411,7 +2320,7 @@ export function RiderPortalView() {
                     onChange={(e) => {
                       const newDate = e.target.value;
                       setSelectedSettlementDate(newDate);
-                      fetchShiftSettlement(newDate, false);
+                      fetchShiftSettlement(newDate);
                     }}
                     style={{
                       background: 'transparent',
@@ -2426,10 +2335,10 @@ export function RiderPortalView() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => fetchShiftSettlement(selectedSettlementDate, false)}
+                  onClick={() => fetchShiftSettlement(selectedSettlementDate)}
                   disabled={loadingShiftSettlement}
                   className="btn btn-secondary btn-sm"
-                  title="Force Refresh Settlement Data"
+                  title="Refresh Settlement Data"
                   style={{ padding: '7px 10px' }}
                 >
                   <RefreshCw size={13} className={loadingShiftSettlement ? 'animate-spin' : ''} />

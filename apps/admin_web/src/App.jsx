@@ -303,18 +303,11 @@ export function App() {
   // ============================================================
   // 2. DIRECT STANDALONE PORTAL ROUTES
   // ============================================================
-  if (currentPath === '/passenger' || currentPath === '/customer' || currentPath === '/book' || currentPath.startsWith('/passenger/') || currentPath.startsWith('/customer/')) {
+  if (currentPath === '/passenger' || currentPath === '/customer' || currentPath === '/book') {
     return <CustomerPortalView />;
   }
 
-  if (currentPath === '/driver' || currentPath === '/rider' || currentPath.startsWith('/driver/') || currentPath.startsWith('/rider/')) {
-    if (!user) {
-      return (
-        <LoginView
-          onGoToAdminPortal={() => navigateTo('/admin/dashboard')}
-        />
-      );
-    }
+  if (currentPath === '/driver' || currentPath === '/rider') {
     return <RiderPortalView />;
   }
 
