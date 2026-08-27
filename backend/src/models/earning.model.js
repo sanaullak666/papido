@@ -796,12 +796,43 @@ const EarningModel = {
   async approveRiderShiftSettlement({ riderId, date, approvedBy }) {
     const targetDate = (date && String(date).trim()) || getTodayISTString();
     
-    // Update daily_shift_settlements
+    // Ensure table exists
     await db.query(`
-      UPDATE daily_shift_settlements
-      SET status = 'SETTLED', approved_at = CURRENT_TIMESTAMP, approved_by = ?, rejection_reason = NULL
-      WHERE rider_id = ? AND date = ?
-    `, [approvedBy || null, riderId, targetDate]);
+      CREATE TABLE IF NOT EXISTS daily_shift_settlements (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        rider_id INT NOT NULL,
+        date DATE NOT NULL,
+        total_trips INT DEFAULT 0,
+        gross_fare DECIMAL(10, 2) DEFAULT 0.00,
+        company_due DECIMAL(10, 2) DEFAULT 0.00,
+        controller_due DECIMAL(10, 2) DEFAULT 0.00,
+        total_commission_due DECIMAL(10, 2) DEFAULT 0.00,
+        rider_net_earnings DECIMAL(10, 2) DEFAULT 0.00,
+        status VARCHAR(30) NOT NULL DEFAULT 'UNSETTLED',
+        utr_reference VARCHAR(150) DEFAULT NULL,
+        rejection_reason VARCHAR(255) DEFAULT NULL,
+        submitted_at DATETIME DEFAULT NULL,
+        approved_at DATETIME DEFAULT NULL,
+        approved_by INT DEFAULT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_dss_rider_date (rider_id, date),
+        INDEX idx_dss_rider (rider_id),
+        INDEX idx_dss_date (date),
+        INDEX idx_dss_status (status)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `).catch(() => {});
+
+    // UPSERT daily_shift_settlements
+    await db.query(`
+      INSERT INTO daily_shift_settlements (rider_id, date, status, approved_at, approved_by, rejection_reason)
+      VALUES (?, ?, 'SETTLED', CURRENT_TIMESTAMP, ?, NULL)
+      ON DUPLICATE KEY UPDATE 
+        status = 'SETTLED', 
+        approved_at = CURRENT_TIMESTAMP, 
+        approved_by = VALUES(approved_by), 
+        rejection_reason = NULL
+    `, [riderId, targetDate, approvedBy || null]);
 
     // Update rider_earnings
     await db.query(`
@@ -820,10 +851,14 @@ const EarningModel = {
     const targetDate = (date && String(date).trim()) || getTodayISTString();
     
     await db.query(`
-      UPDATE daily_shift_settlements
-      SET status = 'REJECTED', rejection_reason = ?, approved_at = NULL, approved_by = ?
-      WHERE rider_id = ? AND date = ?
-    `, [reason || 'Payment verification failed', rejectedBy || null, riderId, targetDate]);
+      INSERT INTO daily_shift_settlements (rider_id, date, status, rejection_reason, approved_at, approved_by)
+      VALUES (?, ?, 'REJECTED', ?, NULL, ?)
+      ON DUPLICATE KEY UPDATE 
+        status = 'REJECTED', 
+        rejection_reason = VALUES(rejection_reason), 
+        approved_at = NULL, 
+        approved_by = VALUES(approved_by)
+    `, [riderId, targetDate, reason || 'Payment verification failed', rejectedBy || null]);
 
     await db.query(`
       UPDATE rider_earnings
@@ -853,12 +888,15 @@ const EarningModel = {
          )`,
         [riderId, targetDate, targetDate]
       );
-      await db.query(
-        `UPDATE daily_shift_settlements 
-         SET status = 'UNSETTLED', approved_at = NULL, approved_by = NULL 
-         WHERE rider_id = ? AND date = ?`,
-        [riderId, targetDate]
-      );
+      await db.query(`
+        INSERT INTO daily_shift_settlements (rider_id, date, status, approved_at, approved_by, rejection_reason)
+        VALUES (?, ?, 'UNSETTLED', NULL, NULL, NULL)
+        ON DUPLICATE KEY UPDATE 
+          status = 'UNSETTLED', 
+          approved_at = NULL, 
+          approved_by = NULL,
+          rejection_reason = NULL
+      `, [riderId, targetDate]);
       return this.getDailySettlements({ date: targetDate, riderId });
     }
   },

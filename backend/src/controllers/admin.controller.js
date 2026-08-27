@@ -488,13 +488,17 @@ const AdminController = {
 
       const socketManager = req.app.get('socketManager');
       if (socketManager) {
-        socketManager.io.to(`user_${riderId}`).emit('rider:shift_settlement_updated', {
+        const payload = {
           riderId: parseInt(riderId, 10),
           date,
-          status,
-          reason,
+          status: status || 'SETTLED',
+          reason: reason || null,
           updatedAt: new Date().toISOString()
-        });
+        };
+        socketManager.io.to(`user_${riderId}`).emit('rider:shift_settlement_updated', payload);
+        socketManager.io.to(`rider_${riderId}`).emit('rider:shift_settlement_updated', payload);
+        socketManager.io.to('role_ADMIN').emit('admin:shift_settlement_updated', payload);
+        socketManager.io.emit('shift_settlement_updated', payload);
       }
 
       return success(res, `Settlement status updated to ${status}.`, data);
