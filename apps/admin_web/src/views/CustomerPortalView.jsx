@@ -242,6 +242,16 @@ export function CustomerPortalView() {
   const [scheduledLoading, setScheduledLoading] = useState(false);
   const [scheduledSuccessMsg, setScheduledSuccessMsg] = useState(null);
 
+  // Reschedule Pre-booked Ride Modal State
+  const [rescheduleTarget, setRescheduleTarget] = useState(null);
+  const [reschedDateOption, setReschedDateOption] = useState('TODAY');
+  const [reschedDate, setReschedDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [reschedHour, setReschedHour] = useState('09');
+  const [reschedMinute, setReschedMinute] = useState('00');
+  const [reschedAmPm, setReschedAmPm] = useState('AM');
+  const [reschedulingLoading, setReschedulingLoading] = useState(false);
+  const [rescheduleError, setRescheduleError] = useState(null);
+
   const getTodayDateStr = () => new Date().toISOString().split('T')[0];
   const getTomorrowDateStr = () => {
     const d = new Date();
@@ -254,6 +264,82 @@ export function CustomerPortalView() {
     if (scheduledAmPm === 'PM' && h < 12) h += 12;
     if (scheduledAmPm === 'AM' && h === 12) h = 0;
     return `${String(h).padStart(2, '0')}:${String(scheduledMinute).padStart(2, '0')}`;
+  };
+
+  const getComputedResched24Time = () => {
+    let h = parseInt(reschedHour, 10) || 12;
+    if (reschedAmPm === 'PM' && h < 12) h += 12;
+    if (reschedAmPm === 'AM' && h === 12) h = 0;
+    return `${String(h).padStart(2, '0')}:${String(reschedMinute).padStart(2, '0')}`;
+  };
+
+  const openRescheduleModal = (ride) => {
+    setRescheduleTarget(ride);
+    setRescheduleError(null);
+    try {
+      if (ride.scheduled_time) {
+        const str = String(ride.scheduled_time).trim();
+        const d = new Date(str.includes('T') ? str : str.replace(' ', 'T'));
+        if (!isNaN(d.getTime())) {
+          const dateStr = d.toISOString().split('T')[0];
+          const todayStr = getTodayDateStr();
+          const tomorrowStr = getTomorrowDateStr();
+          if (dateStr === todayStr) {
+            setReschedDateOption('TODAY');
+          } else if (dateStr === tomorrowStr) {
+            setReschedDateOption('TOMORROW');
+          } else {
+            setReschedDateOption('CUSTOM');
+          }
+          setReschedDate(dateStr);
+
+          let h = d.getHours() % 12;
+          if (h === 0) h = 12;
+          setReschedHour(String(h).padStart(2, '0'));
+          setReschedMinute(String(Math.floor(d.getMinutes() / 5) * 5).padStart(2, '0'));
+          setReschedAmPm(d.getHours() >= 12 ? 'PM' : 'AM');
+          return;
+        }
+      }
+    } catch (_) {}
+    setReschedDateOption('TODAY');
+    setReschedDate(getTodayDateStr());
+    setReschedHour('09');
+    setReschedMinute('00');
+    setReschedAmPm('AM');
+  };
+
+  const handleRescheduleSubmit = async (e) => {
+    if (e) e.preventDefault();
+    if (!rescheduleTarget) return;
+
+    const time24 = getComputedResched24Time();
+    if (!reschedDate || !time24) {
+      setRescheduleError('Please choose a valid date and time.');
+      return;
+    }
+
+    const chosenDateTime = new Date(`${reschedDate}T${time24}:00`);
+    const minDateTime = new Date(Date.now() + 5 * 60 * 1000);
+    if (isNaN(chosenDateTime.getTime()) || chosenDateTime <= minDateTime) {
+      setRescheduleError('Scheduled pickup time must be in the future (at least 5 minutes ahead).');
+      return;
+    }
+
+    setReschedulingLoading(true);
+    setRescheduleError(null);
+    try {
+      const finalDateTime = `${reschedDate} ${time24}:00`;
+      await apiRequest(`/customer/rides/${rescheduleTarget.id}/reschedule`, 'POST', { scheduledTime: finalDateTime }, token);
+      setScheduledSuccessMsg(`Schedule updated to ${formatRideDateTime(finalDateTime)}!`);
+      setRescheduleTarget(null);
+      fetchScheduledRides(false);
+      setTimeout(() => setScheduledSuccessMsg(null), 4000);
+    } catch (err) {
+      setRescheduleError(err.message || 'Failed to reschedule ride.');
+    } finally {
+      setReschedulingLoading(false);
+    }
   };
 
   // Preference Availability Confirmation Modal State
@@ -3459,6 +3545,24 @@ export function CustomerPortalView() {
                               )}
                               <button
                                 type="button"
+                                onClick={() => openRescheduleModal(sr)}
+                                className="btn btn-secondary btn-sm"
+                                style={{
+                                  padding: '8px 12px',
+                                  fontSize: '12px',
+                                  fontWeight: 700,
+                                  color: '#1E40AF',
+                                  borderColor: '#93C5FD',
+                                  background: '#EFF6FF',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}
+                              >
+                                <Clock size={13} /> Change Date & Time
+                              </button>
+                              <button
+                                type="button"
                                 onClick={() => handleCancelScheduledRide(sr.id)}
                                 className="btn btn-secondary btn-sm"
                                 style={{
@@ -3479,21 +3583,41 @@ export function CustomerPortalView() {
                             <div style={{ fontSize: '12px', color: '#92400E' }}>
                               Listed on advance board. Campus riders can claim your schedule.
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => handleCancelScheduledRide(sr.id)}
-                              className="btn btn-secondary btn-sm"
-                              style={{
-                                padding: '6px 12px',
-                                fontSize: '12px',
-                                fontWeight: 700,
-                                color: '#DC2626',
-                                borderColor: '#FECACA',
-                                background: '#FEF2F2'
-                              }}
-                            >
-                              Cancel Booking
-                            </button>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                              <button
+                                type="button"
+                                onClick={() => openRescheduleModal(sr)}
+                                className="btn btn-secondary btn-sm"
+                                style={{
+                                  padding: '6px 12px',
+                                  fontSize: '12px',
+                                  fontWeight: 700,
+                                  color: '#1E40AF',
+                                  borderColor: '#93C5FD',
+                                  background: '#EFF6FF',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}
+                              >
+                                <Clock size={13} /> Change Date & Time
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleCancelScheduledRide(sr.id)}
+                                className="btn btn-secondary btn-sm"
+                                style={{
+                                  padding: '6px 12px',
+                                  fontSize: '12px',
+                                  fontWeight: 700,
+                                  color: '#DC2626',
+                                  borderColor: '#FECACA',
+                                  background: '#FEF2F2'
+                                }}
+                              >
+                                Cancel Booking
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -4867,6 +4991,211 @@ export function CustomerPortalView() {
                 Adjust My Preferences
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* RESCHEDULE PRE-BOOKED RIDE MODAL */}
+      {/* ============================================================ */}
+      {rescheduleTarget && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.65)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px',
+          zIndex: 10000
+        }}>
+          <div style={{
+            background: '#FFFFFF',
+            borderRadius: '16px',
+            border: '1.5px solid #E8DCCB',
+            padding: '24px',
+            width: '100%',
+            maxWidth: '460px',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1C1917', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Calendar size={20} color="#EA580C" /> Change Date & Time
+                </h3>
+                <div style={{ fontSize: '12px', color: '#796D61', marginTop: '3px' }}>
+                  Trip #{rescheduleTarget.ride_code || rescheduleTarget.id} • {rescheduleTarget.pickup_address} → {rescheduleTarget.destination_address}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRescheduleTarget(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#796D61', padding: '4px' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {rescheduleError && (
+              <div style={{
+                background: '#FEF2F2',
+                border: '1px solid #FECACA',
+                color: '#DC2626',
+                borderRadius: '8px',
+                padding: '10px 12px',
+                fontSize: '12px',
+                fontWeight: 600
+              }}>
+                {rescheduleError}
+              </div>
+            )}
+
+            <form onSubmit={handleRescheduleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {/* Date Selection */}
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#271E16', marginBottom: '6px' }}>
+                  Pickup Date:
+                </label>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReschedDateOption('TODAY');
+                      setReschedDate(getTodayDateStr());
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '8px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      border: reschedDateOption === 'TODAY' ? '1.5px solid #EA580C' : '1px solid #E8DCCB',
+                      background: reschedDateOption === 'TODAY' ? '#FFF7ED' : '#FAF5EE',
+                      color: reschedDateOption === 'TODAY' ? '#EA580C' : '#796D61',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Today
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReschedDateOption('TOMORROW');
+                      setReschedDate(getTomorrowDateStr());
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '8px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      border: reschedDateOption === 'TOMORROW' ? '1.5px solid #EA580C' : '1px solid #E8DCCB',
+                      background: reschedDateOption === 'TOMORROW' ? '#FFF7ED' : '#FAF5EE',
+                      color: reschedDateOption === 'TOMORROW' ? '#EA580C' : '#796D61',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Tomorrow
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReschedDateOption('CUSTOM')}
+                    style={{
+                      flex: 1,
+                      padding: '8px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      border: reschedDateOption === 'CUSTOM' ? '1.5px solid #EA580C' : '1px solid #E8DCCB',
+                      background: reschedDateOption === 'CUSTOM' ? '#FFF7ED' : '#FAF5EE',
+                      color: reschedDateOption === 'CUSTOM' ? '#EA580C' : '#796D61',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Custom Date
+                  </button>
+                </div>
+
+                {reschedDateOption === 'CUSTOM' && (
+                  <input
+                    type="date"
+                    min={getTodayDateStr()}
+                    value={reschedDate}
+                    onChange={(e) => setReschedDate(e.target.value)}
+                    className="form-input"
+                    style={{ width: '100%', fontSize: '13px', background: '#FAF5EE' }}
+                    required
+                  />
+                )}
+              </div>
+
+              {/* Time Selection */}
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#271E16', marginBottom: '6px' }}>
+                  Pickup Time:
+                </label>
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  <select
+                    value={reschedHour}
+                    onChange={(e) => setReschedHour(e.target.value)}
+                    className="form-input"
+                    style={{ flex: 1, padding: '8px', fontSize: '13px', fontWeight: 700, background: '#FAF5EE' }}
+                  >
+                    {['01','02','03','04','05','06','07','08','09','10','11','12'].map(h => (
+                      <option key={h} value={h}>{h}</option>
+                    ))}
+                  </select>
+                  <span style={{ fontWeight: 800 }}>:</span>
+                  <select
+                    value={reschedMinute}
+                    onChange={(e) => setReschedMinute(e.target.value)}
+                    className="form-input"
+                    style={{ flex: 1, padding: '8px', fontSize: '13px', fontWeight: 700, background: '#FAF5EE' }}
+                  >
+                    {['00','05','10','15','20','25','30','35','40','45','50','55'].map(m => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={reschedAmPm}
+                    onChange={(e) => setReschedAmPm(e.target.value)}
+                    className="form-input"
+                    style={{ flex: 1, padding: '8px', fontSize: '13px', fontWeight: 700, background: '#FAF5EE' }}
+                  >
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                <button
+                  type="button"
+                  disabled={reschedulingLoading}
+                  onClick={() => setRescheduleTarget(null)}
+                  className="btn btn-secondary"
+                  style={{ flex: 1, padding: '10px', fontWeight: 700, fontSize: '13px' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={reschedulingLoading}
+                  className="btn btn-primary"
+                  style={{ flex: 1, padding: '10px', fontWeight: 800, fontSize: '13px' }}
+                >
+                  {reschedulingLoading ? 'Updating...' : 'Update Schedule'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

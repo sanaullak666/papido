@@ -612,6 +612,16 @@ const RideModel = {
     `;
     const res = await db.query(sql, [reason, rideId, customerId]);
     return res && res.affectedRows > 0;
+  },
+
+  async rescheduleRide(rideId, customerId, newScheduledTime) {
+    const sql = `
+      UPDATE rides 
+      SET scheduled_time = ?
+      WHERE id = ? AND customer_id = ? AND is_scheduled = 1 AND status IN ('SCHEDULED', 'ACCEPTED')
+    `;
+    const res = await db.query(sql, [newScheduledTime, rideId, customerId]);
+    return res && res.affectedRows > 0;
   }
 };
 

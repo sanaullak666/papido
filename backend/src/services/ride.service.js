@@ -460,6 +460,63 @@ const RideService = {
     return { success: true, rideId };
   },
 
+  async rescheduleRide(rideId, customerId, newScheduledTime) {
+    const ride = await RideModel.findById(rideId);
+    if (!ride) throw new Error('Ride not found.');
+    if (Number(ride.customer_id) !== Number(customerId)) {
+      throw new Error('Access denied to this ride reservation.');
+    }
+    if (!ride.is_scheduled) {
+      throw new Error('Only pre-booked advance rides can be rescheduled.');
+    }
+    if (!['SCHEDULED', 'ACCEPTED'].includes(ride.status)) {
+      throw new Error(`Cannot reschedule a ride that is already in ${ride.status} status.`);
+    }
+
+    const str = String(newScheduledTime).trim();
+    const d = new Date(str.includes('T') ? str : str.replace(' ', 'T'));
+    if (isNaN(d.getTime())) {
+      throw new Error('Invalid scheduled date/time format.');
+    }
+
+    const updated = await RideModel.rescheduleRide(rideId, customerId, newScheduledTime);
+    if (!updated) {
+      throw new Error('Failed to update scheduled time.');
+    }
+
+    const updatedRide = await RideModel.findById(rideId);
+
+    // If a rider is assigned, notify rider of updated time
+    if (updatedRide.rider_id) {
+      await NotificationModel.create({
+        userId: updatedRide.rider_id,
+        title: 'Advance Booking Rescheduled',
+        message: `Passenger updated pickup time for trip #${updatedRide.ride_code || updatedRide.id} to ${updatedRide.scheduled_time}.`,
+        type: 'SCHEDULED_RIDE_RESCHEDULED',
+        data: { rideId: updatedRide.id, rideCode: updatedRide.ride_code, scheduledTime: updatedRide.scheduled_time }
+      });
+
+      if (socketManager) {
+        socketManager.io.to(`user_${updatedRide.rider_id}`).emit('ride:scheduled_time_updated', {
+          rideId: updatedRide.id,
+          rideCode: updatedRide.ride_code,
+          scheduledTime: updatedRide.scheduled_time
+        });
+      }
+    }
+
+    if (socketManager) {
+      socketManager.io.to(`user_${customerId}`).emit('ride:scheduled_time_updated', {
+        rideId: updatedRide.id,
+        rideCode: updatedRide.ride_code,
+        scheduledTime: updatedRide.scheduled_time
+      });
+      socketManager.io.emit('ride:new_scheduled_booking', updatedRide);
+    }
+
+    return updatedRide;
+  },
+
   /**
    * Admin quotes the fare and dispatches an outside trip
    */

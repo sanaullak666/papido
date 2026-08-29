@@ -20,6 +20,8 @@ router.get('/flash-free-ride/active', CustomerController.getActiveFlashFreeRide)
 router.post('/flash-free-ride/claim', CustomerController.claimFlashFreeRide);
 router.get('/rides/active', CustomerController.getActiveRide);
 router.get('/rides/scheduled', CustomerController.getScheduledRides);
+router.post('/rides/:id/reschedule', CustomerController.rescheduleScheduledRide);
+router.patch('/rides/:id/reschedule', CustomerController.rescheduleScheduledRide);
 router.post('/rides/:id/cancel-scheduled', CustomerController.cancelScheduledRide);
 router.get('/rides/history', CustomerController.getMyRides);
 router.get('/rides', CustomerController.getMyRides);

@@ -484,6 +484,20 @@ const CustomerController = {
     } catch (err) {
       next(err);
     }
+  },
+
+  async rescheduleScheduledRide(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { scheduledTime } = req.body;
+      if (!scheduledTime) {
+        return error(res, 'New scheduled date and time is required.', 400);
+      }
+      const result = await RideService.rescheduleRide(id, req.user.id, scheduledTime);
+      return success(res, 'Scheduled ride date and time updated successfully.', result);
+    } catch (err) {
+      return error(res, err.message, 400);
+    }
   }
 };
 
