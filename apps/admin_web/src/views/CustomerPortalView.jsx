@@ -953,17 +953,17 @@ export function CustomerPortalView() {
     }
   };
 
-  const fetchScheduledRides = async () => {
+  const fetchScheduledRides = async (isBackground = false) => {
     if (!token) return;
     try {
-      setScheduledLoading(true);
+      if (!isBackground) setScheduledLoading(true);
       const res = await apiRequest('/customer/rides/scheduled', 'GET', null, token);
       if (res && res.data) {
         setScheduledRides(res.data || []);
       }
     } catch (_) {
     } finally {
-      setScheduledLoading(false);
+      if (!isBackground) setScheduledLoading(false);
     }
   };
 
@@ -971,7 +971,7 @@ export function CustomerPortalView() {
     if (!window.confirm('Are you sure you want to cancel this pre-booked ride? Zero cancellation fee applies.')) return;
     try {
       await apiRequest(`/customer/rides/${rideId}/cancel-scheduled`, 'POST', {}, token);
-      fetchScheduledRides();
+      fetchScheduledRides(true);
       setStatusMessage('Pre-booked ride cancelled successfully with zero charge.');
     } catch (err) {
       alert(err.message || 'Failed to cancel pre-booked ride.');
@@ -982,12 +982,12 @@ export function CustomerPortalView() {
     if (!token) return;
     fetchActiveRide(false);
     fetchFlashFreeRide();
-    fetchScheduledRides();
+    fetchScheduledRides(false);
     const pollInterval = setInterval(() => {
       fetchActiveRide(true);
       fetchFlashFreeRide();
-      fetchScheduledRides();
-    }, 3000);
+      fetchScheduledRides(true);
+    }, 5000);
     return () => clearInterval(pollInterval);
   }, [token]);
 

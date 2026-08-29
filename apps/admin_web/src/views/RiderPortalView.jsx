@@ -565,10 +565,10 @@ export function RiderPortalView() {
     }
   };
 
-  const fetchScheduledRides = async () => {
+  const fetchScheduledRides = async (isBackground = false) => {
     if (!token) return;
     try {
-      setLoadingScheduled(true);
+      if (!isBackground) setLoadingScheduled(true);
       const [openRes, resRes] = await Promise.all([
         apiRequest('/rider/rides/scheduled/available', 'GET', null, token),
         apiRequest('/rider/rides/scheduled/reserved', 'GET', null, token)
@@ -578,7 +578,7 @@ export function RiderPortalView() {
     } catch (err) {
       console.warn('Failed to fetch scheduled rides:', err);
     } finally {
-      setLoadingScheduled(false);
+      if (!isBackground) setLoadingScheduled(false);
     }
   };
 
@@ -655,7 +655,7 @@ export function RiderPortalView() {
     fetchEarnings();
     fetchAvailableRequests();
     fetchShiftSettlement();
-    fetchScheduledRides();
+    fetchScheduledRides(false);
     if (token) {
       alertManager.subscribeToPushNotifications(token);
     }
@@ -665,11 +665,11 @@ export function RiderPortalView() {
   useEffect(() => {
     if (!token) return;
     fetchPendingPenalties();
-    fetchScheduledRides();
+    fetchScheduledRides(true);
     const earningsInterval = setInterval(() => {
       fetchEarnings(true);
       fetchPendingPenalties();
-      fetchScheduledRides();
+      fetchScheduledRides(true);
     }, 5000);
     return () => clearInterval(earningsInterval);
   }, [token]);
@@ -679,7 +679,7 @@ export function RiderPortalView() {
       fetchEarnings(false);
       fetchShiftSettlement();
     } else if (currentTab === 'scheduled') {
-      fetchScheduledRides();
+      fetchScheduledRides(false);
     }
     fetchPendingPenalties();
   }, [currentTab]);
