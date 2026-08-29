@@ -186,10 +186,10 @@ const RideService = {
       userId: customerId,
       title: 'Ride Requested',
       message: femaleRiderOnly
-        ? `Searching for nearby female drivers for your ride ${rideCode}.`
+        ? `Searching for nearby female riders for your ride ${rideCode}.`
         : isDoubleRide
-          ? `Searching for nearby ${vehicleType.toLowerCase()} drivers for your double ride ${rideCode}.`
-          : `Searching for nearby ${vehicleType.toLowerCase()} drivers for your ride ${rideCode}.`,
+          ? `Searching for nearby ${vehicleType.toLowerCase()} riders for your double ride ${rideCode}.`
+          : `Searching for nearby ${vehicleType.toLowerCase()} riders for your ride ${rideCode}.`,
       type: 'RIDE_REQUESTED',
       data: { rideId: ride.id, rideCode, femaleRiderOnly, isDoubleRide }
     });

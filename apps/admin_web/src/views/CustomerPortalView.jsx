@@ -1035,7 +1035,7 @@ export function CustomerPortalView() {
         };
       });
       if (data.isWaiting || data.is_waiting) {
-        setStatusMessage(`Driver is currently On Waiting (+₹${data.waitingFare || data.waiting_fare || 0} waiting fee)`);
+        setStatusMessage(`Rider is currently On Waiting (+₹${data.waitingFare || data.waiting_fare || 0} waiting fee)`);
       }
     });
 
@@ -1053,12 +1053,12 @@ export function CustomerPortalView() {
       if (data.status === 'PAID') {
         setPendingPenalty(null);
         setShowPenaltyModal(false);
-        setStatusMessage('Driver confirmed receipt of ₹15! Booking unlocked.');
+        setStatusMessage('Rider confirmed receipt of ₹15! Booking unlocked.');
         fetchActiveRide(true);
         fetchPendingPenalty();
       } else if (data.status === 'UNPAID') {
         setPendingPenalty(prev => prev ? { ...prev, status: 'UNPAID' } : null);
-        alert('Driver indicated ₹15 was not received. Please scan the QR code or verify your UPI payment.');
+        alert('Rider indicated ₹15 was not received. Please scan the QR code or verify your UPI payment.');
       }
     });
 
@@ -1235,8 +1235,8 @@ export function CustomerPortalView() {
       }
 
       if (!isFreeRide && (penaltyData || wasReached)) {
-        const fallbackUpi = penaltyData?.rider_upi || penaltyData?.rider_upi_id || (currentActiveRide.rider_phone ? `${currentActiveRide.rider_phone}@upi` : 'driver@upi');
-        const fallbackName = penaltyData?.rider_name || currentActiveRide.rider_name || 'Driver';
+        const fallbackUpi = penaltyData?.rider_upi || penaltyData?.rider_upi_id || (currentActiveRide.rider_phone ? `${currentActiveRide.rider_phone}@upi` : 'rider@upi');
+        const fallbackName = penaltyData?.rider_name || currentActiveRide.rider_name || 'Rider';
         const fallbackObj = penaltyData || {
           id: penaltyData?.id || currentActiveRide.id,
           ride_id: currentActiveRide.id,
@@ -1245,7 +1245,7 @@ export function CustomerPortalView() {
           rider_name: fallbackName,
           rider_upi: fallbackUpi,
           rider_phone: currentActiveRide.rider_phone || '',
-          upiPayUrl: `upi://pay?pa=${encodeURIComponent(fallbackUpi)}&pn=${encodeURIComponent(fallbackName)}&am=15.00&tn=Papido_Driver_Compensation_${currentActiveRide.ride_code || 'Trip'}&cu=INR`
+          upiPayUrl: `upi://pay?pa=${encodeURIComponent(fallbackUpi)}&pn=${encodeURIComponent(fallbackName)}&am=15.00&tn=Papido_Rider_Compensation_${currentActiveRide.ride_code || 'Trip'}&cu=INR`
         };
         setPendingPenalty(fallbackObj);
         setShowPenaltyModal(true);
@@ -1257,7 +1257,7 @@ export function CustomerPortalView() {
     }
   };
 
-  // 7b. Claim ₹15 Cancellation Fee Paid to Driver
+  // 7b. Claim ₹15 Cancellation Fee Paid to Rider
   const handleSettlePenalty = async () => {
     if (!pendingPenalty) return;
     setSettlingPenalty(true);
@@ -1277,10 +1277,10 @@ export function CustomerPortalView() {
           ...(res.data || {}),
           status: 'PENDING_DRIVER_CONFIRMATION'
         }));
-        setStatusMessage('Payment notification sent to driver. Waiting for driver confirmation...');
+        setStatusMessage('Payment notification sent to rider. Waiting for rider confirmation...');
       }
     } catch (err) {
-      alert(err.message || 'Failed to submit payment confirmation to driver.');
+      alert(err.message || 'Failed to submit payment confirmation to rider.');
     } finally {
       setSettlingPenalty(false);
     }
@@ -2022,7 +2022,7 @@ export function CustomerPortalView() {
                       <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', fontSize: '13px', borderBottom: '1px solid #E8DCCB', paddingBottom: '10px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <Shield size={16} color="#EC4899" />
-                          <span style={{ color: '#BE185D', fontWeight: 700 }}>Female Rider Only (Lady Driver)</span>
+                          <span style={{ color: '#BE185D', fontWeight: 700 }}>Female Rider Only</span>
                         </div>
                         <input
                           type="checkbox"
@@ -2161,11 +2161,11 @@ export function CustomerPortalView() {
                           Trip #{activeRide.id || activeRide.ride_code}
                         </div>
                         <div style={{ fontSize: '15px', fontWeight: 800, color: '#1C1917' }}>
-                          Driver: {activeRide.rider_name || 'Campus Rider'}
+                          Rider: {activeRide.rider_name || 'Campus Rider'}
                         </div>
                         {activeRide.rider_upi_id && (
                           <div style={{ fontSize: '11px', color: '#059669', fontWeight: 700 }}>
-                            Driver UPI: {activeRide.rider_upi_id}
+                            Rider UPI: {activeRide.rider_upi_id}
                           </div>
                         )}
                         <div style={{ fontSize: '12px', color: '#796D61' }}>
@@ -2212,7 +2212,7 @@ export function CustomerPortalView() {
 
                         <input
                           type="text"
-                          placeholder="Write brief feedback about your driver (optional)..."
+                          placeholder="Write brief feedback about your rider (optional)..."
                           className="form-input"
                           style={{ width: '100%', marginBottom: '14px', background: '#F8F3EC', border: '1.5px solid #E8DCCB' }}
                           value={ratingReview}
@@ -2314,7 +2314,7 @@ export function CustomerPortalView() {
                       </div>
                     </div>
 
-                    {/* Live Driver On Waiting Alert Banner */}
+                    {/* Live Rider On Waiting Alert Banner */}
                     {Boolean(activeRide.is_waiting) && (
                       <div style={{
                         background: 'rgba(234, 88, 12, 0.12)',
@@ -2341,7 +2341,7 @@ export function CustomerPortalView() {
                           </div>
                           <div>
                             <div style={{ fontWeight: 800, fontSize: '13px', color: '#EA580C' }}>
-                              Driver is Currently On Waiting
+                              Rider is Currently On Waiting
                             </div>
                             <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                               Waiting Duration: <strong>{activeRide.waiting_minutes || 0} mins</strong> (+₹{activeRide.waiting_fare || 0} charge added)
@@ -2365,7 +2365,7 @@ export function CustomerPortalView() {
                       alignItems: 'center'
                     }}>
                       <div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>FARE TO PAY DRIVER:</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>FARE TO PAY RIDER:</div>
                         <div style={{ fontSize: '24px', fontWeight: 900, color: 'var(--primary)' }}>
                           ₹{activeRide.total_fare || activeRide.final_fare || activeRide.estimated_fare || 20}
                         </div>
@@ -2397,7 +2397,7 @@ export function CustomerPortalView() {
                         textAlign: 'center'
                       }}>
                         <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                          Share this 4-digit Ride OTP with your driver:
+                          Share this 4-digit Ride OTP with your rider:
                         </div>
                         <div style={{ fontSize: '32px', fontWeight: 900, letterSpacing: '8px', color: 'var(--primary)' }}>
                           {activeRide.otp || activeRide.otp_code}
@@ -2405,7 +2405,7 @@ export function CustomerPortalView() {
                       </div>
                     )}
 
-                    {/* Assigned Driver Card (If accepted) */}
+                    {/* Assigned Rider Card (If accepted) */}
                     {activeRide.rider_name && (
                       <div style={{
                         background: 'var(--bg-input)',
@@ -3847,7 +3847,7 @@ export function CustomerPortalView() {
                         Scan with ANY UPI App (GPay / PhonePe / Paytm / Cred)
                       </div>
                       <div style={{ fontSize: '11px', color: '#796D61', marginTop: '2px' }}>
-                        Amount (₹15) and driver details are pre-filled automatically
+                        Amount (₹15) and rider details are pre-filled automatically
                       </div>
                     </div>
                   )}
@@ -3921,7 +3921,7 @@ export function CustomerPortalView() {
                   {penaltyPayMode === 'UPI_ID' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '6px 0' }}>
                       <div style={{ background: '#F8F3EC', padding: '14px', borderRadius: '12px', border: '1px solid #E8DCCB' }}>
-                        <div style={{ fontSize: '11px', color: '#796D61', fontWeight: 600, marginBottom: '4px' }}>Driver UPI VPA Address:</div>
+                        <div style={{ fontSize: '11px', color: '#796D61', fontWeight: 600, marginBottom: '4px' }}>Rider UPI VPA Address:</div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                           <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: '15px', color: '#047857' }}>
                             {riderUpi}
@@ -3953,7 +3953,7 @@ export function CustomerPortalView() {
                     </div>
                   )}
 
-                  {/* Confirm Paid & Notify Driver Button */}
+                  {/* Confirm Paid & Notify Rider Button */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <button
                       type="button"
@@ -3977,7 +3977,7 @@ export function CustomerPortalView() {
                       }}
                     >
                       <CheckCircle2 size={18} />
-                      {settlingPenalty ? 'Sending Claim to Driver...' : 'I Have Paid ₹15 to Driver'}
+                      {settlingPenalty ? 'Sending Claim to Rider...' : 'I Have Paid ₹15 to Rider'}
                     </button>
                     <button
                       type="button"
@@ -4068,7 +4068,7 @@ export function CustomerPortalView() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', color: '#796D61' }}>
                 {preferenceModalData.isFemalePreference && (
-                  <div>• <strong>Preference:</strong> Female Rider Only (Lady Driver)</div>
+                  <div>• <strong>Preference:</strong> Female Rider Only</div>
                 )}
                 {preferenceModalData.isVehiclePreference && (
                   <div>• <strong>Vehicle Type:</strong> {preferenceModalData.vehicleType}</div>
@@ -4080,11 +4080,11 @@ export function CustomerPortalView() {
 
               {preferenceModalData.totalOnlineCount > 0 ? (
                 <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #E8DCCB', fontSize: '12px', color: '#059669', fontWeight: 600 }}>
-                  There are {preferenceModalData.totalOnlineCount} other campus drivers currently online.
+                  There are {preferenceModalData.totalOnlineCount} other campus riders currently online.
                 </div>
               ) : (
                 <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #E8DCCB', fontSize: '12px', color: '#796D61' }}>
-                  Campus drivers are currently busy or offline. You may still request a ride with any available driver.
+                  Campus riders are currently busy or offline. You may still request a ride with any available rider.
                 </div>
               )}
             </div>

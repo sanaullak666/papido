@@ -1696,7 +1696,7 @@ export function RiderPortalView() {
                               <span style={{ background: '#FEF3C7', color: '#92400E', padding: '2px 8px', borderRadius: '6px', fontWeight: 700 }}>{req.vehicle_type || 'BIKE'}</span>
                               {Boolean(req.is_outside) && <span style={{ background: '#E0E7FF', color: '#3730A3', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 700 }}>OUTSIDE CAMPUS</span>}
                               {Boolean(req.is_double_ride) && <span style={{ background: '#FED7AA', color: '#9A3412', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Users size={11} /> Double Ride</span>}
-                              {Boolean(req.female_rider_only) && <span style={{ background: '#FCE7F3', color: '#9D174D', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><ShieldCheck size={11} /> Lady Driver Only</span>}
+                              {Boolean(req.female_rider_only) && <span style={{ background: '#FCE7F3', color: '#9D174D', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><ShieldCheck size={11} /> Female Rider Only</span>}
                               {Boolean(req.is_core_only || req.is_free_ride) && <span style={{ background: '#FEF3C7', color: '#B45309', border: '1px solid #FDE68A', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Zap size={11} /> CORE FLASH FREE TRIP</span>}
                             </div>
                           </div>

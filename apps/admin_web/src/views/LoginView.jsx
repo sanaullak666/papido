@@ -1270,7 +1270,7 @@ export function LoginView({ onGoToAdminPortal }) {
               className="btn btn-secondary btn-sm"
               style={{ fontSize: '11px', justifyContent: 'flex-start', padding: '8px 10px', border: '1px solid #E8DCCB', background: '#FFFFFF', color: '#271E16', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}
             >
-              <Zap size={14} /> Scooter Driver (Sanaulla)
+              <Zap size={14} /> Scooter Rider (Sanaulla)
             </button>
 
             <button
@@ -1279,7 +1279,7 @@ export function LoginView({ onGoToAdminPortal }) {
               className="btn btn-secondary btn-sm"
               style={{ fontSize: '11px', justifyContent: 'flex-start', padding: '8px 10px', gridColumn: 'span 2', border: '1px solid #FBCFE8', background: '#FFF1F2', color: '#BE185D', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}
             >
-              <ShieldCheck size={14} /> Lady Driver (Priya)
+              <ShieldCheck size={14} /> Female Rider (Priya)
             </button>
           </div>
         </div>

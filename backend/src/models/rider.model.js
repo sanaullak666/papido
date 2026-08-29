@@ -198,13 +198,13 @@ const RiderModel = {
     if (!isAvailable) {
       if (isFemaleOnly && vType !== 'ANY') {
         unavailableReason = 'BOTH_UNAVAILABLE';
-        unavailableMessage = `No online female drivers with a ${vType.toLowerCase()} are currently active.`;
+        unavailableMessage = `No online female riders with a ${vType.toLowerCase()} are currently active.`;
       } else if (isFemaleOnly) {
         unavailableReason = 'FEMALE_UNAVAILABLE';
-        unavailableMessage = 'No online female drivers (Lady Driver) are currently active in the campus.';
+        unavailableMessage = 'No online female riders are currently active in the campus.';
       } else if (vType !== 'ANY') {
         unavailableReason = 'VEHICLE_UNAVAILABLE';
-        unavailableMessage = `No online drivers with a ${vType.toLowerCase()} are currently active.`;
+        unavailableMessage = `No online riders with a ${vType.toLowerCase()} are currently active.`;
       }
     }
 
