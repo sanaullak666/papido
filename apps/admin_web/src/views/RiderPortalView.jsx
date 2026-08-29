@@ -111,6 +111,33 @@ const isScheduledTimeReached = (dateVal) => {
   }
 };
 
+const getScheduleGapConflict = (candidateTimeVal, reservedList) => {
+  if (!candidateTimeVal || !reservedList || reservedList.length === 0) return null;
+  try {
+    const targetStr = String(candidateTimeVal).trim();
+    const targetMs = new Date(targetStr.includes('T') ? targetStr : targetStr.replace(' ', 'T')).getTime();
+    if (isNaN(targetMs)) return null;
+
+    for (const res of reservedList) {
+      const existTime = res.scheduled_time_ist || res.scheduled_time;
+      if (!existTime) continue;
+      const resStr = String(existTime).trim();
+      const resMs = new Date(resStr.includes('T') ? resStr : resStr.replace(' ', 'T')).getTime();
+      if (isNaN(resMs)) continue;
+
+      const diffMin = Math.abs(targetMs - resMs) / (1000 * 60);
+      if (diffMin < 15) {
+        return {
+          conflictingRideCode: res.ride_code || res.id,
+          conflictingTime: existTime,
+          diffMinutes: Math.round(diffMin)
+        };
+      }
+    }
+  } catch (_) {}
+  return null;
+};
+
 export function RiderPortalView() {
   const { user, token, logout, updateProfile, changePassword } = useAuth();
   const [currentTab, setCurrentTab] = useState(() => getRiderTabFromPath(window.location.pathname));
@@ -2515,91 +2542,109 @@ export function RiderPortalView() {
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  {availableScheduledRides.map((sr) => (
-                    <div
-                      key={`avail-${sr.id}`}
-                      style={{
-                        background: 'var(--bg-card)',
-                        border: '1.5px solid #FDBA74',
-                        borderRadius: '16px',
-                        padding: '18px 20px',
-                        boxShadow: '0 4px 16px rgba(249, 115, 22, 0.08)'
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', marginBottom: '12px' }}>
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                            <span style={{ background: '#FFF7ED', color: '#C2410C', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800, border: '1px solid #FFEDD5' }}>
-                              PRE-BOOKED TRIP
-                            </span>
-                            <span style={{ background: 'var(--bg-sidebar)', color: 'var(--text-secondary)', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>
-                              #{sr.ride_code || sr.id}
-                            </span>
-                            {Boolean(sr.female_rider_only) && (
-                              <span style={{ background: '#FCE7F3', color: '#BE185D', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800 }}>
-                                Female Rider Only
+                  {availableScheduledRides.map((sr) => {
+                    const conflict = getScheduleGapConflict(sr.scheduled_time_ist || sr.scheduled_time, reservedScheduledRides);
+                    return (
+                      <div
+                        key={`avail-${sr.id}`}
+                        style={{
+                          background: 'var(--bg-card)',
+                          border: conflict ? '1.5px dashed #CBD5E1' : '1.5px solid #FDBA74',
+                          borderRadius: '16px',
+                          padding: '18px 20px',
+                          boxShadow: conflict ? 'none' : '0 4px 16px rgba(249, 115, 22, 0.08)',
+                          opacity: conflict ? 0.78 : 1
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', marginBottom: '12px' }}>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                              <span style={{ background: '#FFF7ED', color: '#C2410C', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800, border: '1px solid #FFEDD5' }}>
+                                PRE-BOOKED TRIP
                               </span>
-                            )}
-                            {Boolean(sr.is_double_ride) && (
-                              <span style={{ background: '#E0E7FF', color: '#3730A3', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800 }}>
-                                Double Ride
+                              <span style={{ background: 'var(--bg-sidebar)', color: 'var(--text-secondary)', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>
+                                #{sr.ride_code || sr.id}
                               </span>
-                            )}
+                              {Boolean(sr.female_rider_only) && (
+                                <span style={{ background: '#FCE7F3', color: '#BE185D', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800 }}>
+                                  Female Rider Only
+                                </span>
+                              )}
+                              {Boolean(sr.is_double_ride) && (
+                                <span style={{ background: '#E0E7FF', color: '#3730A3', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800 }}>
+                                  Double Ride
+                                </span>
+                              )}
+                              {conflict && (
+                                <span style={{ background: '#FEE2E2', color: '#991B1B', border: '1px solid #FECACA', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800 }}>
+                                  Time Conflict (&lt; 15 min gap with #{conflict.conflictingRideCode})
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: '16px', fontWeight: 900, color: '#EA580C', marginTop: '6px' }}>
+                              Pickup Scheduled: {formatRideDateTime(sr.scheduled_time_ist || sr.scheduled_time)}
+                            </div>
                           </div>
-                          <div style={{ fontSize: '16px', fontWeight: 900, color: '#EA580C', marginTop: '6px' }}>
-                            Pickup Scheduled: {formatRideDateTime(sr.scheduled_time_ist || sr.scheduled_time)}
+
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>ESTIMATED FARE:</div>
+                            <div style={{ fontSize: '24px', fontWeight: 900, color: '#EA580C' }}>
+                              ₹{Number(sr.total_fare || sr.estimated_fare || 20).toFixed(2)}
+                            </div>
                           </div>
                         </div>
 
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>ESTIMATED FARE:</div>
-                          <div style={{ fontSize: '24px', fontWeight: 900, color: '#EA580C' }}>
-                            ₹{Number(sr.total_fare || sr.estimated_fare || 20).toFixed(2)}
+                        {/* Route Details */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '13px' }}>
+                            <span style={{ color: '#10B981', fontWeight: 900 }}>●</span>
+                            <div><strong>Pickup:</strong> {sr.pickup_address}</div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '13px' }}>
+                            <span style={{ color: '#EA580C', fontWeight: 900 }}>●</span>
+                            <div><strong>Drop:</strong> {sr.destination_address}</div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Route Details */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '13px' }}>
-                          <span style={{ color: '#10B981', fontWeight: 900 }}>●</span>
-                          <div><strong>Pickup:</strong> {sr.pickup_address}</div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '13px' }}>
-                          <span style={{ color: '#EA580C', fontWeight: 900 }}>●</span>
-                          <div><strong>Drop:</strong> {sr.destination_address}</div>
+                        {/* Claim Button */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                            Passenger: <strong>{sr.customer_name || 'Campus Passenger'}</strong> • Vehicle: <strong>{sr.vehicle_type || 'BIKE'}</strong>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleAcceptScheduledRide(sr.id)}
+                            disabled={scheduledActionLoadingId === sr.id || Boolean(conflict)}
+                            className="btn"
+                            title={conflict ? `Schedule conflict with your confirmed ride #${conflict.conflictingRideCode} at ${formatRideDateTime(conflict.conflictingTime)}. Please maintain at least a 15-minute gap.` : 'Claim this pre-booking for your shift'}
+                            style={{
+                              padding: '10px 24px',
+                              fontWeight: 900,
+                              fontSize: '14px',
+                              background: conflict ? '#E2E8F0' : 'linear-gradient(135deg, #F97316, #EA580C)',
+                              color: conflict ? '#64748B' : '#FFFFFF',
+                              border: conflict ? '1px solid #CBD5E1' : 'none',
+                              borderRadius: '10px',
+                              boxShadow: conflict ? 'none' : '0 4px 14px rgba(234, 88, 12, 0.35)',
+                              cursor: conflict ? 'not-allowed' : 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '8px'
+                            }}
+                          >
+                            <CheckCircle2 size={16} color={conflict ? '#94A3B8' : '#FFFFFF'} />
+                            <span>
+                              {scheduledActionLoadingId === sr.id
+                                ? 'Claiming...'
+                                : conflict
+                                ? `Unavailable (Conflicts with #${conflict.conflictingRideCode})`
+                                : 'ACCEPT & CONFIRM PRE-BOOKING'}
+                            </span>
+                          </button>
                         </div>
                       </div>
-
-                      {/* Claim Button */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                          Passenger: <strong>{sr.customer_name || 'Campus Passenger'}</strong> • Vehicle: <strong>{sr.vehicle_type || 'BIKE'}</strong>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleAcceptScheduledRide(sr.id)}
-                          disabled={scheduledActionLoadingId === sr.id}
-                          className="btn btn-primary"
-                          style={{
-                            padding: '10px 24px',
-                            fontWeight: 900,
-                            fontSize: '14px',
-                            background: 'linear-gradient(135deg, #F97316, #EA580C)',
-                            color: '#FFFFFF',
-                            borderRadius: '10px',
-                            boxShadow: '0 4px 14px rgba(234, 88, 12, 0.35)',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '8px'
-                          }}
-                        >
-                          <CheckCircle2 size={16} />
-                          <span>{scheduledActionLoadingId === sr.id ? 'Claiming...' : 'ACCEPT & CONFIRM PRE-BOOKING'}</span>
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

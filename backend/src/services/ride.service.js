@@ -377,6 +377,29 @@ const RideService = {
       throw new Error('This pre-booked ride is restricted to female riders.');
     }
 
+    // Enforce 15-minute minimum gap conflict protection against already confirmed advance rides
+    const existingReserved = await RideModel.getMyReservedScheduledRides(riderId);
+    if (existingReserved && existingReserved.length > 0 && ride.scheduled_time) {
+      const targetTimeStr = String(ride.scheduled_time).trim();
+      const targetTimeMs = new Date(targetTimeStr.includes('T') ? targetTimeStr : targetTimeStr.replace(' ', 'T')).getTime();
+
+      if (!isNaN(targetTimeMs)) {
+        for (const existing of existingReserved) {
+          if (Number(existing.id) === Number(ride.id)) continue;
+          if (!existing.scheduled_time) continue;
+          const existTimeStr = String(existing.scheduled_time).trim();
+          const existTimeMs = new Date(existTimeStr.includes('T') ? existTimeStr : existTimeStr.replace(' ', 'T')).getTime();
+          if (isNaN(existTimeMs)) continue;
+
+          const diffMinutes = Math.abs(targetTimeMs - existTimeMs) / (1000 * 60);
+          if (diffMinutes < 15) {
+            const timeLabel = existing.scheduled_time_ist || existing.scheduled_time;
+            throw new Error(`Schedule conflict: You already have a confirmed pre-booked ride #${existing.ride_code || existing.id} scheduled at ${timeLabel}. Please keep at least a 15-minute gap between pickups.`);
+          }
+        }
+      }
+    }
+
     const updated = await RideModel.acceptScheduledRide(rideId, riderId);
     if (!updated) {
       throw new Error('Could not accept scheduled ride. It may have already been claimed.');
