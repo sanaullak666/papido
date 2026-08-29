@@ -207,7 +207,11 @@ const RideModel = {
       LEFT JOIN users rd ON r.rider_id = rd.id
       LEFT JOIN rider_profiles rp ON rd.id = rp.user_id
       WHERE r.customer_id = ? 
-        AND r.status IN ('PENDING_ADMIN_QUOTE', 'REQUESTED', 'ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED')
+        AND (
+          (COALESCE(r.is_scheduled, 0) = 0 AND r.status IN ('PENDING_ADMIN_QUOTE', 'REQUESTED', 'ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED'))
+          OR
+          (r.is_scheduled = 1 AND r.status IN ('RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED'))
+        )
       ORDER BY r.id DESC LIMIT 1
     `;
     return db.queryOne(sql, [customerId]);
@@ -249,7 +253,11 @@ const RideModel = {
       FROM rides r
       JOIN users c ON r.customer_id = c.id
       WHERE r.rider_id = ? 
-        AND r.status IN ('ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED')
+        AND (
+          (COALESCE(r.is_scheduled, 0) = 0 AND r.status IN ('ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED'))
+          OR
+          (r.is_scheduled = 1 AND r.status IN ('RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED'))
+        )
       ORDER BY r.id DESC LIMIT 1
     `;
     return db.queryOne(sql, [riderId]);
