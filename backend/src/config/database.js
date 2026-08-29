@@ -464,8 +464,6 @@ async function bootstrapMysqlSchema(targetPool) {
       await targetPool.query('ALTER TABLE users MODIFY COLUMN profile_image MEDIUMTEXT;');
     } catch (_) {}
 
-    } catch (_) {}
-
     await ensureDatabaseSchemaMigrations(targetPool);
   } catch (err) {
     console.warn('[Database Warning] MySQL bootstrap notice:', err.message);
