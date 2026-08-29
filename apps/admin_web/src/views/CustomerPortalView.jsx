@@ -3455,8 +3455,8 @@ export function CustomerPortalView() {
                         {/* Card Header */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                            <span style={{ background: '#DBEAFE', color: '#1E40AF', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800 }}>
-                              #{sr.ride_code || sr.id}
+                            <span style={{ background: '#DBEAFE', color: '#1E40AF', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800, letterSpacing: '0.3px' }}>
+                              {sr.ride_code || `PAP-${sr.id}`}
                             </span>
                             <span style={{ fontSize: '15px', fontWeight: 900, color: '#1E40AF' }}>
                               {formatRideDateTime(sr.scheduled_time_ist || sr.scheduled_time)}
@@ -3932,6 +3932,9 @@ export function CustomerPortalView() {
                     <div key={r.id} style={{ background: 'var(--bg-card)', border: isPrebooked ? '1.5px solid #FDBA74' : '1px solid var(--border)', borderRadius: '12px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <span style={{ background: '#EFF6FF', color: '#1E40AF', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800, letterSpacing: '0.3px' }}>
+                            {r.ride_code || `PAP-${r.id}`}
+                          </span>
                           <span style={{ fontWeight: 800, fontSize: '15px' }}>{r.pickup_address} → {r.destination_address}</span>
                           {isPrebooked && (
                             <span style={{ background: '#FFF7ED', color: '#C2410C', border: '1px solid #FFEDD5', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
@@ -3953,7 +3956,6 @@ export function CustomerPortalView() {
                           )}
                           <span>•</span>
                           <span>Rider: {r.rider_name || 'Campus Rider'}</span>
-                          {r.ride_code && <span style={{ opacity: 0.8 }}>({r.ride_code})</span>}
                         </div>
                       </div>
                       <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>

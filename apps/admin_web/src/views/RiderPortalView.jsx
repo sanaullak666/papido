@@ -2425,8 +2425,8 @@ export function RiderPortalView() {
                             <span style={{ background: '#D1FAE5', color: '#065F46', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800 }}>
                               CONFIRMED TO YOU
                             </span>
-                            <span style={{ background: 'var(--bg-sidebar)', color: 'var(--text-secondary)', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>
-                              #{sr.ride_code || sr.id}
+                            <span style={{ background: 'var(--bg-sidebar)', color: 'var(--text-secondary)', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800, letterSpacing: '0.3px' }}>
+                              {sr.ride_code || `PAP-${sr.id}`}
                             </span>
                             <span style={{ fontSize: '14px', fontWeight: 900, color: 'var(--primary)' }}>
                               {formatRideDateTime(sr.scheduled_time_ist || sr.scheduled_time)}
@@ -2562,8 +2562,8 @@ export function RiderPortalView() {
                               <span style={{ background: '#FFF7ED', color: '#C2410C', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800, border: '1px solid #FFEDD5' }}>
                                 PRE-BOOKED TRIP
                               </span>
-                              <span style={{ background: 'var(--bg-sidebar)', color: 'var(--text-secondary)', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>
-                                #{sr.ride_code || sr.id}
+                              <span style={{ background: 'var(--bg-sidebar)', color: 'var(--text-secondary)', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800, letterSpacing: '0.3px' }}>
+                                {sr.ride_code || `PAP-${sr.id}`}
                               </span>
                               {Boolean(sr.female_rider_only) && (
                                 <span style={{ background: '#FCE7F3', color: '#BE185D', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800 }}>
@@ -2577,7 +2577,7 @@ export function RiderPortalView() {
                               )}
                               {conflict && (
                                 <span style={{ background: '#FEE2E2', color: '#991B1B', border: '1px solid #FECACA', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800 }}>
-                                  Time Conflict (&lt; 15 min gap with #{conflict.conflictingRideCode})
+                                  Time Conflict (&lt; 15 min gap with {conflict.conflictingRideCode})
                                 </span>
                               )}
                             </div>
@@ -2616,7 +2616,7 @@ export function RiderPortalView() {
                             onClick={() => handleAcceptScheduledRide(sr.id)}
                             disabled={scheduledActionLoadingId === sr.id || Boolean(conflict)}
                             className="btn"
-                            title={conflict ? `Schedule conflict with your confirmed ride #${conflict.conflictingRideCode} at ${formatRideDateTime(conflict.conflictingTime)}. Please maintain at least a 15-minute gap.` : 'Claim this pre-booking for your shift'}
+                            title={conflict ? `Schedule conflict with your confirmed ride ${conflict.conflictingRideCode} at ${formatRideDateTime(conflict.conflictingTime)}. Please maintain at least a 15-minute gap.` : 'Claim this pre-booking for your shift'}
                             style={{
                               padding: '10px 24px',
                               fontWeight: 900,
@@ -2637,7 +2637,7 @@ export function RiderPortalView() {
                               {scheduledActionLoadingId === sr.id
                                 ? 'Claiming...'
                                 : conflict
-                                ? `Unavailable (Conflicts with #${conflict.conflictingRideCode})`
+                                ? `Unavailable (Conflicts with ${conflict.conflictingRideCode})`
                                 : 'ACCEPT & CONFIRM PRE-BOOKING'}
                             </span>
                           </button>
@@ -2695,7 +2695,7 @@ export function RiderPortalView() {
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                     <thead>
                       <tr style={{ background: 'var(--bg-sidebar)', textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
-                        <th style={{ padding: '12px 16px' }}>Ride ID</th>
+                        <th style={{ padding: '12px 16px' }}>Ride Code</th>
                         <th style={{ padding: '12px 16px' }}>Route</th>
                         <th style={{ padding: '12px 16px' }}>Gross Fare</th>
                         <th style={{ padding: '12px 16px' }}>Your Net</th>
@@ -2711,7 +2711,9 @@ export function RiderPortalView() {
                         const isPrebooked = Boolean(r.is_scheduled || r.isScheduled || r.scheduled_time);
                         return (
                           <tr key={r.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                            <td style={{ padding: '12px 16px', fontWeight: 700 }}>#{r.ride_code || r.id}</td>
+                            <td style={{ padding: '12px 16px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '0.3px' }}>
+                              {r.ride_code || `PAP-${r.id}`}
+                            </td>
                             <td style={{ padding: '12px 16px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                                 <span>{r.pickup_address} → {r.destination_address}</span>
