@@ -496,9 +496,12 @@ const RideModel = {
         SELECT r.*,
                r.scheduled_time as scheduled_time_ist,
                COALESCE(r.final_fare, r.estimated_fare) as total_fare,
-               rd.name as rider_name, rd.phone as rider_phone
+               rd.name as rider_name, rd.phone as rider_phone, rd.profile_image as rider_profile_image,
+               rp.vehicle_model as rider_vehicle_model, rp.vehicle_number as rider_vehicle_number,
+               rp.rating as rider_rating, rp.upi_id as rider_upi_id
         FROM rides r
         LEFT JOIN users rd ON r.rider_id = rd.id
+        LEFT JOIN rider_profiles rp ON rd.id = rp.user_id
         WHERE r.customer_id = ? 
           AND r.is_scheduled = 1
           AND r.status IN ('SCHEDULED', 'REQUESTED', 'ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED')
@@ -511,6 +514,85 @@ const RideModel = {
     }
   },
 
+  async getAvailableScheduledRidesForRider(gender = 'OTHER') {
+    try {
+      let sql = `
+        SELECT r.*,
+               r.scheduled_time as scheduled_time_ist,
+               COALESCE(r.final_fare, r.estimated_fare) as total_fare,
+               c.name as customer_name, c.gender as customer_gender, c.phone as customer_phone
+        FROM rides r
+        JOIN users c ON r.customer_id = c.id
+        WHERE r.is_scheduled = 1
+          AND r.rider_id IS NULL
+          AND r.status = 'SCHEDULED'
+          AND r.scheduled_time >= CURRENT_TIMESTAMP
+      `;
+      const params = [];
+
+      if (gender !== 'FEMALE') {
+        sql += ` AND r.female_rider_only = 0`;
+      }
+
+      sql += ` ORDER BY r.scheduled_time ASC, r.id DESC LIMIT 50`;
+      return await db.query(sql, params);
+    } catch (err) {
+      console.warn('[RideModel] getAvailableScheduledRidesForRider notice:', err.message);
+      return [];
+    }
+  },
+
+  async getMyReservedScheduledRides(riderId) {
+    try {
+      const sql = `
+        SELECT r.*,
+               r.scheduled_time as scheduled_time_ist,
+               COALESCE(r.final_fare, r.estimated_fare) as total_fare,
+               c.name as customer_name, c.gender as customer_gender, c.phone as customer_phone
+        FROM rides r
+        JOIN users c ON r.customer_id = c.id
+        WHERE r.rider_id = ?
+          AND r.is_scheduled = 1
+          AND r.status IN ('SCHEDULED', 'ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED')
+        ORDER BY r.scheduled_time ASC, r.id DESC
+      `;
+      return await db.query(sql, [riderId]);
+    } catch (err) {
+      console.warn('[RideModel] getMyReservedScheduledRides notice:', err.message);
+      return [];
+    }
+  },
+
+  async acceptScheduledRide(rideId, riderId) {
+    const sql = `
+      UPDATE rides 
+      SET rider_id = ?,
+          status = 'ACCEPTED',
+          accepted_at = CURRENT_TIMESTAMP
+      WHERE id = ? 
+        AND is_scheduled = 1 
+        AND (rider_id IS NULL OR rider_id = ?)
+        AND status = 'SCHEDULED'
+    `;
+    const res = await db.query(sql, [riderId, rideId, riderId]);
+    return res && res.affectedRows > 0;
+  },
+
+  async cancelScheduledByRider(rideId, riderId) {
+    const sql = `
+      UPDATE rides 
+      SET rider_id = NULL,
+          status = 'SCHEDULED',
+          accepted_at = NULL
+      WHERE id = ? 
+        AND rider_id = ? 
+        AND is_scheduled = 1 
+        AND status = 'ACCEPTED'
+    `;
+    const res = await db.query(sql, [rideId, riderId]);
+    return res && res.affectedRows > 0;
+  },
+
   async cancelScheduledRide(rideId, customerId, reason = 'Cancelled by passenger') {
     const sql = `
       UPDATE rides 
@@ -518,7 +600,7 @@ const RideModel = {
           cancellation_reason = ?,
           cancelled_by_role = 'CUSTOMER',
           cancelled_at = CURRENT_TIMESTAMP
-      WHERE id = ? AND customer_id = ? AND status = 'SCHEDULED'
+      WHERE id = ? AND customer_id = ? AND status IN ('SCHEDULED', 'ACCEPTED')
     `;
     const res = await db.query(sql, [reason, rideId, customerId]);
     return res && res.affectedRows > 0;

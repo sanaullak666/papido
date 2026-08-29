@@ -1,4 +1,5 @@
 const { RIDE_STATUS, ROLES } = require('../config/constants');
+const UserModel = require('../models/user.model');
 const RideModel = require('../models/ride.model');
 const RiderModel = require('../models/rider.model');
 const CustomerModel = require('../models/customer.model');
@@ -208,6 +209,20 @@ const RideService = {
         details: { rideCode, scheduledTime, estimatedFare: fareEstimate.estimatedFare, isDoubleRide }
       });
 
+      // Broadcast new pre-booking to all eligible riders
+      if (socketManager) {
+        socketManager.io.emit('ride:new_scheduled_booking', {
+          id: ride.id,
+          ride_code: ride.ride_code,
+          pickup_address: ride.pickup_address,
+          destination_address: ride.destination_address,
+          scheduled_time: ride.scheduled_time,
+          estimated_fare: ride.estimated_fare,
+          vehicle_type: ride.vehicle_type,
+          female_rider_only: ride.female_rider_only
+        });
+      }
+
       return ride;
     }
 
@@ -327,6 +342,121 @@ const RideService = {
     if (!success) {
       throw new Error('Scheduled ride not found or could not be cancelled.');
     }
+    if (socketManager) {
+      socketManager.io.emit('ride:scheduled_cancelled', { rideId });
+    }
+    return { success: true, rideId };
+  },
+
+  async getAvailableScheduledRidesForRider(riderId) {
+    const riderUser = await UserModel.findById(riderId);
+    const gender = riderUser ? riderUser.gender : 'OTHER';
+    return RideModel.getAvailableScheduledRidesForRider(gender);
+  },
+
+  async getMyReservedScheduledRides(riderId) {
+    return RideModel.getMyReservedScheduledRides(riderId);
+  },
+
+  async acceptScheduledRide(rideId, riderId) {
+    const ride = await RideModel.findById(rideId);
+    if (!ride) {
+      throw new Error('Scheduled ride not found.');
+    }
+    if (!ride.is_scheduled || ride.status !== 'SCHEDULED') {
+      throw new Error('This ride is no longer available for advance booking.');
+    }
+
+    const riderUser = await UserModel.findById(riderId);
+    if (!riderUser) throw new Error('Rider account not found.');
+
+    const riderProfile = await RiderModel.findByUserId(riderId);
+    if (!riderProfile) throw new Error('Rider profile not found.');
+
+    if (ride.female_rider_only && riderUser.gender !== 'FEMALE') {
+      throw new Error('This pre-booked ride is restricted to female riders.');
+    }
+
+    const updated = await RideModel.acceptScheduledRide(rideId, riderId);
+    if (!updated) {
+      throw new Error('Could not accept scheduled ride. It may have already been claimed.');
+    }
+
+    const updatedRide = await RideModel.findById(rideId);
+
+    // Notify customer
+    await NotificationModel.create({
+      userId: ride.customer_id,
+      title: 'Pre-Booked Ride Confirmed',
+      message: `Your pre-booked trip for ${ride.scheduled_time} has been accepted and confirmed by Rider ${riderUser.name} (${riderProfile.vehicle_model || 'Two-Wheeler'} - ${riderProfile.vehicle_number || ''}).`,
+      type: 'SCHEDULED_RIDE_CONFIRMED',
+      data: {
+        rideId: ride.id,
+        rideCode: ride.ride_code,
+        scheduledTime: ride.scheduled_time,
+        riderName: riderUser.name,
+        riderPhone: riderUser.phone,
+        vehicleModel: riderProfile.vehicle_model,
+        vehicleNumber: riderProfile.vehicle_number
+      }
+    });
+
+    // Real-time notifications via socket
+    if (socketManager) {
+      socketManager.io.to(`user_${ride.customer_id}`).emit('ride:scheduled_confirmed', {
+        rideId: updatedRide.id,
+        rideCode: updatedRide.ride_code,
+        status: 'ACCEPTED',
+        scheduledTime: updatedRide.scheduled_time,
+        rider: {
+          id: riderUser.id,
+          name: riderUser.name,
+          phone: riderUser.phone,
+          profileImage: riderUser.profile_image,
+          vehicleModel: riderProfile.vehicle_model,
+          vehicleNumber: riderProfile.vehicle_number,
+          rating: riderProfile.rating || 5.0
+        }
+      });
+
+      // Broadcast to other riders that this scheduled ride has been claimed
+      socketManager.io.emit('ride:scheduled_claimed', { rideId });
+    }
+
+    return updatedRide;
+  },
+
+  async cancelScheduledRideByRider(rideId, riderId, reason = 'Rider cancelled reservation') {
+    const ride = await RideModel.findById(rideId);
+    if (!ride) throw new Error('Ride not found.');
+    if (ride.rider_id !== riderId) {
+      throw new Error('You are not the assigned rider for this pre-booked trip.');
+    }
+
+    const success = await RideModel.cancelScheduledByRider(rideId, riderId);
+    if (!success) {
+      throw new Error('Could not release scheduled ride.');
+    }
+
+    // Notify customer that rider changed
+    await NotificationModel.create({
+      userId: ride.customer_id,
+      title: 'Scheduled Ride Rider Update',
+      message: `Your assigned rider was unable to take the trip. Your scheduled ride is now searching for another available rider.`,
+      type: 'SCHEDULED_RIDER_UNASSIGNED',
+      data: { rideId: ride.id, rideCode: ride.ride_code }
+    });
+
+    if (socketManager) {
+      socketManager.io.to(`user_${ride.customer_id}`).emit('ride:scheduled_reopened', {
+        rideId: ride.id,
+        status: 'SCHEDULED'
+      });
+
+      // Broadcast back to online riders
+      socketManager.io.emit('ride:new_scheduled_booking', ride);
+    }
+
     return { success: true, rideId };
   },
 

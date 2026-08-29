@@ -325,6 +325,45 @@ const RiderController = {
     } catch (err) {
       return error(res, err.message, 400);
     }
+  },
+
+  async getAvailableScheduledRides(req, res, next) {
+    try {
+      const rides = await RideService.getAvailableScheduledRidesForRider(req.user.id);
+      return success(res, 'Available advance scheduled rides fetched.', rides);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async getMyReservedScheduledRides(req, res, next) {
+    try {
+      const rides = await RideService.getMyReservedScheduledRides(req.user.id);
+      return success(res, 'Reserved scheduled rides fetched.', rides);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async acceptScheduledRide(req, res, next) {
+    try {
+      const rideId = req.params.id;
+      const ride = await RideService.acceptScheduledRide(rideId, req.user.id);
+      return success(res, 'Pre-booked ride confirmed! Scheduled in your calendar.', ride);
+    } catch (err) {
+      return error(res, err.message, 400);
+    }
+  },
+
+  async cancelScheduledRide(req, res, next) {
+    try {
+      const rideId = req.params.id;
+      const { reason } = req.body;
+      const result = await RideService.cancelScheduledRideByRider(rideId, req.user.id, reason);
+      return success(res, 'Scheduled ride reservation released.', result);
+    } catch (err) {
+      return error(res, err.message, 400);
+    }
   }
 };
 

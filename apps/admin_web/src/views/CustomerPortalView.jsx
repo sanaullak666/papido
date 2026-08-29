@@ -1085,6 +1085,16 @@ export function CustomerPortalView() {
       fetchActiveRide();
     });
 
+    socket.on('ride:scheduled_confirmed', (data) => {
+      fetchScheduledRides();
+      setStatusMessage(`Great news! Rider ${data?.rider?.name || 'assigned'} has confirmed your pre-booked ride for ${data?.scheduledTime || 'your trip'}.`);
+    });
+
+    socket.on('ride:scheduled_reopened', () => {
+      fetchScheduledRides();
+      setStatusMessage('Assigned rider changed for your scheduled trip. Searching for a replacement rider.');
+    });
+
     socket.on('ride:waiting_update', (data) => {
       console.log('Realtime ride waiting update:', data);
       setActiveRide(prev => {
@@ -2548,60 +2558,138 @@ export function CustomerPortalView() {
                         </button>
                       </div>
 
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {scheduledRides.map((sr) => (
-                          <div
-                            key={`sch-${sr.id}`}
-                            style={{
-                              background: '#FFFFFF',
-                              border: '1px solid #BFDBFE',
-                              borderRadius: '10px',
-                              padding: '12px',
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              gap: '10px'
-                            }}
-                          >
-                            <div style={{ flex: 1 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '3px' }}>
-                                <span style={{ background: '#DBEAFE', color: '#1E40AF', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 800 }}>
-                                  #{sr.ride_code}
-                                </span>
-                                <span style={{ fontSize: '12px', fontWeight: 800, color: '#1E40AF' }}>
-                                  {sr.scheduled_time_ist || sr.scheduled_time}
-                                </span>
-                                <span style={{ background: '#FEF3C7', color: '#92400E', padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }}>
-                                  {sr.status}
-                                </span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {scheduledRides.map((sr) => {
+                          const isRiderAssigned = Boolean(sr.rider_name || sr.rider_id || sr.status === 'ACCEPTED');
+                          return (
+                            <div
+                              key={`sch-${sr.id}`}
+                              style={{
+                                background: '#FFFFFF',
+                                border: isRiderAssigned ? '1.5px solid #10B981' : '1px solid #BFDBFE',
+                                borderRadius: '12px',
+                                padding: '14px',
+                                boxShadow: isRiderAssigned ? '0 4px 12px rgba(16, 185, 129, 0.1)' : '0 2px 6px rgba(59, 130, 246, 0.05)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '10px'
+                              }}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                  <span style={{ background: '#DBEAFE', color: '#1E40AF', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 800 }}>
+                                    #{sr.ride_code || sr.id}
+                                  </span>
+                                  <span style={{ fontSize: '13px', fontWeight: 900, color: '#1E40AF' }}>
+                                    {sr.scheduled_time_ist || sr.scheduled_time}
+                                  </span>
+                                  {isRiderAssigned ? (
+                                    <span style={{ background: '#D1FAE5', color: '#065F46', padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                      <CheckCircle2 size={12} color="#059669" /> CONFIRMED WITH RIDER
+                                    </span>
+                                  ) : (
+                                    <span style={{ background: '#FEF3C7', color: '#92400E', padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }}>
+                                      PENDING RIDER ACCEPTANCE
+                                    </span>
+                                  )}
+                                </div>
+                                <div style={{ fontSize: '14px', fontWeight: 900, color: '#EA580C' }}>
+                                  ₹{sr.total_fare || sr.estimated_fare}
+                                </div>
                               </div>
-                              <div style={{ fontSize: '11px', color: '#4B5563', lineHeight: '1.4' }}>
-                                {sr.pickup_address} → {sr.destination_address}
+
+                              <div style={{ fontSize: '12px', color: '#374151', lineHeight: '1.4' }}>
+                                <div><strong style={{ color: '#10B981' }}>Pickup:</strong> {sr.pickup_address}</div>
+                                <div style={{ marginTop: '2px' }}><strong style={{ color: '#EA580C' }}>Drop:</strong> {sr.destination_address}</div>
                               </div>
-                              <div style={{ fontSize: '11px', color: '#2563EB', fontWeight: 700, marginTop: '2px' }}>
-                                Estimated Fare: ₹{sr.total_fare || sr.estimated_fare} • {sr.vehicle_type || 'BIKE'}
-                              </div>
+
+                              {/* Assigned Rider Card */}
+                              {isRiderAssigned ? (
+                                <div style={{
+                                  background: '#F0FDF4',
+                                  border: '1px solid #BBF7D0',
+                                  borderRadius: '8px',
+                                  padding: '10px 12px',
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  flexWrap: 'wrap',
+                                  gap: '8px'
+                                }}>
+                                  <div>
+                                    <div style={{ fontSize: '10px', color: '#047857', fontWeight: 800, textTransform: 'uppercase' }}>
+                                      ASSIGNED RIDER
+                                    </div>
+                                    <div style={{ fontSize: '13px', fontWeight: 800, color: '#065F46' }}>
+                                      {sr.rider_name || 'Campus Rider'}
+                                    </div>
+                                    <div style={{ fontSize: '11px', color: '#047857' }}>
+                                      {sr.rider_vehicle_model || 'Two-Wheeler'} {sr.rider_vehicle_number ? `(${sr.rider_vehicle_number})` : ''}
+                                    </div>
+                                  </div>
+
+                                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    {sr.rider_phone && (
+                                      <a
+                                        href={`tel:${sr.rider_phone}`}
+                                        style={{
+                                          padding: '6px 12px',
+                                          background: '#10B981',
+                                          color: '#FFFFFF',
+                                          borderRadius: '6px',
+                                          fontSize: '11px',
+                                          fontWeight: 800,
+                                          textDecoration: 'none',
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: '4px'
+                                        }}
+                                      >
+                                        <Phone size={12} /> Call Rider
+                                      </a>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCancelScheduledRide(sr.id)}
+                                      className="btn btn-secondary btn-sm"
+                                      style={{
+                                        padding: '5px 10px',
+                                        fontSize: '11px',
+                                        fontWeight: 700,
+                                        color: '#DC2626',
+                                        borderColor: '#FECACA',
+                                        background: '#FEF2F2'
+                                      }}
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                                  <div style={{ fontSize: '11px', color: '#6B7280' }}>
+                                    Listed on advance board. Matching with campus riders...
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCancelScheduledRide(sr.id)}
+                                    className="btn btn-secondary btn-sm"
+                                    style={{
+                                      padding: '5px 10px',
+                                      fontSize: '11px',
+                                      fontWeight: 700,
+                                      color: '#DC2626',
+                                      borderColor: '#FECACA',
+                                      background: '#FEF2F2'
+                                    }}
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              )}
                             </div>
-                            {sr.status === 'SCHEDULED' && (
-                              <button
-                                type="button"
-                                onClick={() => handleCancelScheduledRide(sr.id)}
-                                className="btn btn-secondary btn-sm"
-                                style={{
-                                  padding: '5px 10px',
-                                  fontSize: '11px',
-                                  fontWeight: 700,
-                                  color: '#DC2626',
-                                  borderColor: '#FECACA',
-                                  background: '#FEF2F2',
-                                  flexShrink: 0
-                                }}
-                              >
-                                Cancel
-                              </button>
-                            )}
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}
