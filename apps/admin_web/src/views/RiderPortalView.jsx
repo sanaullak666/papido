@@ -2385,7 +2385,7 @@ export function RiderPortalView() {
                               #{sr.ride_code || sr.id}
                             </span>
                             <span style={{ fontSize: '14px', fontWeight: 900, color: 'var(--primary)' }}>
-                              {sr.scheduled_time_ist || sr.scheduled_time}
+                              {formatRideDateTime(sr.scheduled_time_ist || sr.scheduled_time)}
                             </span>
                           </div>
                         </div>
@@ -2511,7 +2511,7 @@ export function RiderPortalView() {
                             )}
                           </div>
                           <div style={{ fontSize: '16px', fontWeight: 900, color: '#EA580C', marginTop: '6px' }}>
-                            Pickup Scheduled: {sr.scheduled_time_ist || sr.scheduled_time}
+                            Pickup Scheduled: {formatRideDateTime(sr.scheduled_time_ist || sr.scheduled_time)}
                           </div>
                         </div>
 

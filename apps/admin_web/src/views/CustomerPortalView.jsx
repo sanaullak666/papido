@@ -3459,7 +3459,7 @@ export function CustomerPortalView() {
                               #{sr.ride_code || sr.id}
                             </span>
                             <span style={{ fontSize: '15px', fontWeight: 900, color: '#1E40AF' }}>
-                              {sr.scheduled_time_ist || sr.scheduled_time}
+                              {formatRideDateTime(sr.scheduled_time_ist || sr.scheduled_time)}
                             </span>
                             {isRiderAssigned ? (
                               <span style={{ background: '#D1FAE5', color: '#065F46', padding: '3px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
@@ -3518,7 +3518,7 @@ export function CustomerPortalView() {
                                 {sr.rider_vehicle_model || 'Two-Wheeler'} {sr.rider_vehicle_number ? `(${sr.rider_vehicle_number})` : ''}
                               </div>
                               <div style={{ fontSize: '11px', color: '#059669', marginTop: '4px' }}>
-                                Rider has confirmed and will arrive at your pickup spot at {sr.scheduled_time_ist || sr.scheduled_time}.
+                                Rider has confirmed and will arrive at your pickup spot at {formatRideDateTime(sr.scheduled_time_ist || sr.scheduled_time)}.
                               </div>
                             </div>
 
