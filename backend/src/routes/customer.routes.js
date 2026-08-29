@@ -9,6 +9,8 @@ router.use(verifyToken, requireRole('CUSTOMER'));
 
 router.get('/profile', CustomerController.getProfile);
 router.post('/estimate', CustomerController.estimateFare);
+router.post('/rides/check-availability', CustomerController.checkPreferenceAvailability);
+router.get('/rides/check-availability', CustomerController.checkPreferenceAvailability);
 router.post('/rides', CustomerController.requestRide);
 router.post('/outside-rides', CustomerController.requestRide);
 router.get('/outside-rides', CustomerController.getMyRides);

@@ -136,7 +136,7 @@ const RiderModel = {
     `;
     const params = [];
 
-    if (vehicleType) {
+    if (vehicleType && vehicleType !== 'ANY') {
       sql += ' AND rp.vehicle_type = ?';
       params.push(vehicleType);
     }
@@ -161,6 +161,61 @@ const RiderModel = {
       .sort((a, b) => a.distance_to_pickup - b.distance_to_pickup);
 
     return ridersWithDistance;
+  },
+
+  async checkPreferenceAvailability({ vehicleType = 'ANY', femaleRiderOnly = false }) {
+    const vType = (vehicleType || 'ANY').toUpperCase();
+    const isFemaleOnly = femaleRiderOnly === true || femaleRiderOnly === 'true' || femaleRiderOnly === 1;
+
+    // Get all online approved active riders
+    const sql = `
+      SELECT rp.id, rp.user_id, rp.vehicle_type, u.gender
+      FROM rider_profiles rp
+      JOIN users u ON rp.user_id = u.id
+      WHERE rp.is_online = 1 
+        AND rp.verification_status = 'APPROVED'
+        AND u.status = 'ACTIVE'
+    `;
+    const onlineRiders = await db.query(sql).catch(() => []);
+
+    const totalOnlineCount = onlineRiders.length;
+
+    // Filter for specific requested preferences
+    const matchingRiders = onlineRiders.filter(r => {
+      if (isFemaleOnly && (r.gender || '').toUpperCase() !== 'FEMALE') {
+        return false;
+      }
+      if (vType !== 'ANY' && (r.vehicle_type || 'BIKE').toUpperCase() !== vType) {
+        return false;
+      }
+      return true;
+    });
+
+    const isAvailable = matchingRiders.length > 0;
+    let unavailableReason = null;
+    let unavailableMessage = null;
+
+    if (!isAvailable) {
+      if (isFemaleOnly && vType !== 'ANY') {
+        unavailableReason = 'BOTH_UNAVAILABLE';
+        unavailableMessage = `No online female drivers with a ${vType.toLowerCase()} are currently active.`;
+      } else if (isFemaleOnly) {
+        unavailableReason = 'FEMALE_UNAVAILABLE';
+        unavailableMessage = 'No online female drivers (Lady Driver) are currently active in the campus.';
+      } else if (vType !== 'ANY') {
+        unavailableReason = 'VEHICLE_UNAVAILABLE';
+        unavailableMessage = `No online drivers with a ${vType.toLowerCase()} are currently active.`;
+      }
+    }
+
+    return {
+      isAvailable,
+      matchingCount: matchingRiders.length,
+      totalOnlineCount,
+      unavailableReason,
+      unavailableMessage,
+      hasOtherRidersOnline: totalOnlineCount > 0
+    };
   },
 
   async listAll({ verificationStatus, vehicleType, isOnline, search, limit = 20, offset = 0 }) {

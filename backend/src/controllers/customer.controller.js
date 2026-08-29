@@ -50,6 +50,30 @@ const CustomerController = {
     }
   },
 
+  async checkPreferenceAvailability(req, res, next) {
+    try {
+      const vehicleType = req.body?.vehicleType || req.query?.vehicleType || 'ANY';
+      const femaleRiderOnly = req.body?.femaleRiderOnly !== undefined
+        ? req.body.femaleRiderOnly
+        : req.query?.femaleRiderOnly;
+
+      const UserModel = require('../models/user.model');
+      const user = await UserModel.findById(req.user.id);
+      const isFemaleCustomer = (user?.gender || req.user.gender || '').toUpperCase() === 'FEMALE';
+      const isFemaleOnlyRequested = isFemaleCustomer && (femaleRiderOnly === true || femaleRiderOnly === 'true' || femaleRiderOnly === 1 || femaleRiderOnly === '1');
+
+      const RiderModel = require('../models/rider.model');
+      const availability = await RiderModel.checkPreferenceAvailability({
+        vehicleType,
+        femaleRiderOnly: isFemaleOnlyRequested
+      });
+
+      return success(res, 'Preference availability checked successfully.', availability);
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async requestRide(req, res, next) {
     try {
       const {

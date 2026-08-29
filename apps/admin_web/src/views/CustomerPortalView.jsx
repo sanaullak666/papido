@@ -213,6 +213,10 @@ export function CustomerPortalView() {
   const [isDoubleRide, setIsDoubleRide] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('CASH');
 
+  // Preference Availability Confirmation Modal State
+  const [showPreferenceModal, setShowPreferenceModal] = useState(false);
+  const [preferenceModalData, setPreferenceModalData] = useState(null);
+
   // Flash Free Ride State
   const [flashFreeRide, setFlashFreeRide] = useState(null);
   const [claimingFlash, setClaimingFlash] = useState(false);
@@ -1098,15 +1102,9 @@ export function CustomerPortalView() {
   }, [token, pendingPenalty?.status]);
 
   // 6. Handle Request Ride
-  const handleRequestRide = async () => {
-    if (pendingPenalty) {
-      setShowPenaltyModal(true);
-      return;
-    }
-    if (!pickupCoords || !destCoords) {
-      alert('Please select valid pickup and destination locations.');
-      return;
-    }
+  const executeRequestRide = async (overrides = {}) => {
+    const finalVehicleType = overrides.vehicleType !== undefined ? overrides.vehicleType : vehicleType;
+    const finalFemaleOnly = overrides.femaleRiderOnly !== undefined ? overrides.femaleRiderOnly : femaleRiderOnly;
 
     setBookingLoading(true);
     const isFemaleCustomer = (user?.gender || '').toUpperCase() === 'FEMALE';
@@ -1131,14 +1129,15 @@ export function CustomerPortalView() {
         destinationLatitude: destCoords.lat,
         destinationLongitude: destCoords.lng,
         destinationAddress: finalDest,
-        vehicleType,
-        femaleRiderOnly: isFemaleCustomer ? Boolean(femaleRiderOnly) : false,
+        vehicleType: finalVehicleType,
+        femaleRiderOnly: isFemaleCustomer ? Boolean(finalFemaleOnly) : false,
         isDoubleRide,
         paymentMethod
       }, token);
 
       setActiveRide(res.data);
       setStatusMessage('Searching for available campus riders...');
+      setShowPreferenceModal(false);
     } catch (err) {
       if (err.hasPendingPenalty || err.penalty) {
         setPendingPenalty(err.penalty);
@@ -1149,6 +1148,53 @@ export function CustomerPortalView() {
     } finally {
       setBookingLoading(false);
     }
+  };
+
+  const handleRequestRide = async () => {
+    if (pendingPenalty) {
+      setShowPenaltyModal(true);
+      return;
+    }
+    if (!pickupCoords || !destCoords) {
+      alert('Please select valid pickup and destination locations.');
+      return;
+    }
+
+    const isFemaleCustomer = (user?.gender || '').toUpperCase() === 'FEMALE';
+    const isFemalePreference = isFemaleCustomer && Boolean(femaleRiderOnly);
+    const isVehiclePreference = vehicleType && vehicleType !== 'ANY';
+
+    // If specific preferences are selected, verify online driver availability first
+    if (isFemalePreference || isVehiclePreference) {
+      try {
+        setBookingLoading(true);
+        const res = await apiRequest('/customer/rides/check-availability', 'POST', {
+          vehicleType,
+          femaleRiderOnly: isFemalePreference
+        }, token);
+
+        if (res?.data && res.data.isAvailable === false) {
+          setPreferenceModalData({
+            isFemalePreference,
+            isVehiclePreference,
+            vehicleType,
+            unavailableReason: res.data.unavailableReason,
+            unavailableMessage: res.data.unavailableMessage || 'The selected preferred rider is not available.',
+            totalOnlineCount: res.data.totalOnlineCount || 0,
+            hasOtherRidersOnline: res.data.hasOtherRidersOnline
+          });
+          setShowPreferenceModal(true);
+          setBookingLoading(false);
+          return;
+        }
+      } catch (checkErr) {
+        console.warn('Availability check notice:', checkErr);
+      } finally {
+        setBookingLoading(false);
+      }
+    }
+
+    executeRequestRide();
   };
 
   // 7. Handle Cancel Ride (Warns if driver has already reached pickup)
@@ -3955,6 +4001,141 @@ export function CustomerPortalView() {
           </div>
         );
       })()}
+
+      {/* Preference Unavailable Confirmation Modal */}
+      {showPreferenceModal && preferenceModalData && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.65)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '16px',
+          backdropFilter: 'blur(4px)'
+        }}>
+          <div style={{
+            background: '#FFFFFF',
+            borderRadius: '20px',
+            maxWidth: '460px',
+            width: '100%',
+            padding: '26px 22px',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            animation: 'fadeIn 0.2s ease-out'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+              <div style={{
+                background: 'rgba(234, 88, 12, 0.12)',
+                color: '#EA580C',
+                borderRadius: '50%',
+                width: '44px',
+                height: '44px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <AlertCircle size={24} color="#EA580C" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1C1917', margin: '0 0 4px' }}>
+                  Preferred Rider Not Available
+                </h3>
+                <p style={{ fontSize: '13px', color: '#44403C', margin: 0, fontWeight: 600 }}>
+                  The selected preferred rider is not available.
+                </p>
+              </div>
+            </div>
+
+            <div style={{
+              background: '#F8F3EC',
+              border: '1px solid #E8DCCB',
+              borderRadius: '12px',
+              padding: '14px 16px',
+              fontSize: '13px',
+              color: '#44403C',
+              lineHeight: 1.5
+            }}>
+              <div style={{ fontWeight: 700, color: '#271E16', marginBottom: '4px' }}>
+                Selected Preference:
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', color: '#796D61' }}>
+                {preferenceModalData.isFemalePreference && (
+                  <div>• <strong>Preference:</strong> Female Rider Only (Lady Driver)</div>
+                )}
+                {preferenceModalData.isVehiclePreference && (
+                  <div>• <strong>Vehicle Type:</strong> {preferenceModalData.vehicleType}</div>
+                )}
+                <div style={{ color: '#DC2626', fontWeight: 700, marginTop: '2px' }}>
+                  {preferenceModalData.unavailableMessage}
+                </div>
+              </div>
+
+              {preferenceModalData.totalOnlineCount > 0 ? (
+                <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #E8DCCB', fontSize: '12px', color: '#059669', fontWeight: 600 }}>
+                  There are {preferenceModalData.totalOnlineCount} other campus drivers currently online.
+                </div>
+              ) : (
+                <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #E8DCCB', fontSize: '12px', color: '#796D61' }}>
+                  Campus drivers are currently busy or offline. You may still request a ride with any available driver.
+                </div>
+              )}
+            </div>
+
+            <div style={{ fontSize: '13px', color: '#1C1917', fontWeight: 700, textAlign: 'center' }}>
+              Would you like to continue with other preferences (Any Rider / Any Vehicle)?
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '4px' }}>
+              <button
+                type="button"
+                disabled={bookingLoading}
+                onClick={() => {
+                  setVehicleType('ANY');
+                  setFemaleRiderOnly(false);
+                  executeRequestRide({ vehicleType: 'ANY', femaleRiderOnly: false });
+                }}
+                className="btn btn-primary"
+                style={{
+                  padding: '13px',
+                  fontWeight: 800,
+                  fontSize: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  width: '100%'
+                }}
+              >
+                {bookingLoading ? 'Requesting Ride...' : 'Continue with Other Preferences (Any Available)'}
+              </button>
+
+              <button
+                type="button"
+                disabled={bookingLoading}
+                onClick={() => setShowPreferenceModal(false)}
+                className="btn btn-secondary"
+                style={{
+                  padding: '11px',
+                  fontWeight: 700,
+                  fontSize: '13px',
+                  textAlign: 'center',
+                  width: '100%'
+                }}
+              >
+                Adjust My Preferences
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
