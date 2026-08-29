@@ -164,7 +164,6 @@ const RideService = {
     const otp = this.generateOTP();
 
     // Check if this is a pre-booked scheduled trip
-    const isScheduledTrip = isScheduled === true || isScheduled === 'true' || isScheduled === 1;
     if (isScheduledTrip && scheduledTime) {
       const ride = await RideModel.create({
         rideCode,
