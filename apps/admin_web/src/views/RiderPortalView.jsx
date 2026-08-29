@@ -99,6 +99,18 @@ const formatRideDateTime = (dateVal) => {
   }
 };
 
+const isScheduledTimeReached = (dateVal) => {
+  if (!dateVal) return true;
+  try {
+    const str = String(dateVal).trim();
+    const d = new Date(str.includes('T') ? str : str.replace(' ', 'T'));
+    if (isNaN(d.getTime())) return true;
+    return Date.now() >= d.getTime();
+  } catch (_) {
+    return true;
+  }
+};
+
 export function RiderPortalView() {
   const { user, token, logout, updateProfile, changePassword } = useAuth();
   const [currentTab, setCurrentTab] = useState(() => getRiderTabFromPath(window.location.pathname));
@@ -614,6 +626,11 @@ export function RiderPortalView() {
   };
 
   const handleStartScheduledTrip = async (ride) => {
+    const schedTime = ride.scheduled_time_ist || ride.scheduled_time;
+    if (!isScheduledTimeReached(schedTime)) {
+      alert(`This advance pre-booking is scheduled for ${formatRideDateTime(schedTime)}. Active trip view will be enabled at the booked time.`);
+      return;
+    }
     try {
       setScheduledActionLoadingId(ride.id);
       setActiveRide(ride);
@@ -2426,7 +2443,7 @@ export function RiderPortalView() {
                           )}
                         </div>
 
-                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                           <button
                             type="button"
                             onClick={() => handleCancelScheduledRide(sr.id)}
@@ -2436,15 +2453,34 @@ export function RiderPortalView() {
                           >
                             Release Booking
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => handleStartScheduledTrip(sr)}
-                            disabled={scheduledActionLoadingId === sr.id}
-                            className="btn btn-primary btn-sm"
-                            style={{ padding: '8px 16px', fontSize: '12px', fontWeight: 800, background: 'linear-gradient(135deg, #10B981, #059669)', color: '#FFFFFF', border: 'none' }}
-                          >
-                            Open Active Trip View <ArrowRight size={14} />
-                          </button>
+                          {(() => {
+                            const isTimeReady = isScheduledTimeReached(sr.scheduled_time_ist || sr.scheduled_time);
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => handleStartScheduledTrip(sr)}
+                                disabled={scheduledActionLoadingId === sr.id || !isTimeReady}
+                                className="btn btn-sm"
+                                title={isTimeReady ? 'Open active trip view' : `Enabled at scheduled pickup time (${formatRideDateTime(sr.scheduled_time_ist || sr.scheduled_time)})`}
+                                style={{
+                                  padding: '8px 16px',
+                                  fontSize: '12px',
+                                  fontWeight: 800,
+                                  background: isTimeReady ? 'linear-gradient(135deg, #10B981, #059669)' : '#E2E8F0',
+                                  color: isTimeReady ? '#FFFFFF' : '#64748B',
+                                  border: isTimeReady ? 'none' : '1px solid #CBD5E1',
+                                  cursor: isTimeReady ? 'pointer' : 'not-allowed',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  opacity: isTimeReady ? 1 : 0.8
+                                }}
+                              >
+                                <span>{isTimeReady ? 'Open Active Trip View' : `Opens at Booked Time (${formatRideDateTime(sr.scheduled_time_ist || sr.scheduled_time)})`}</span>
+                                {isTimeReady && <ArrowRight size={14} />}
+                              </button>
+                            );
+                          })()}
                         </div>
                       </div>
                     </div>
