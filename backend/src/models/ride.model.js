@@ -453,18 +453,33 @@ const RideModel = {
   },
 
   async findDueScheduledRides(dispatchWindowMinutes = 15) {
-    const sql = `
-      SELECT r.*, 
-             COALESCE(CONVERT_TZ(r.scheduled_time, '+00:00', '+05:30'), r.scheduled_time) as scheduled_time_ist,
-             c.name as customer_name, c.gender as customer_gender, c.phone as customer_phone
-      FROM rides r
-      JOIN users c ON r.customer_id = c.id
-      WHERE r.is_scheduled = 1 
-        AND r.is_dispatched = 0
-        AND r.status = 'SCHEDULED'
-        AND r.scheduled_time <= DATE_ADD(NOW(), INTERVAL ? MINUTE)
-    `;
-    return db.query(sql, [dispatchWindowMinutes]);
+    try {
+      const targetDate = new Date(Date.now() + (dispatchWindowMinutes + 5) * 60 * 1000);
+      // Format as YYYY-MM-DD HH:mm:ss in local time
+      const year = targetDate.getFullYear();
+      const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+      const day = String(targetDate.getDate()).padStart(2, '0');
+      const hours = String(targetDate.getHours()).padStart(2, '0');
+      const minutes = String(targetDate.getMinutes()).padStart(2, '0');
+      const seconds = String(targetDate.getSeconds()).padStart(2, '0');
+      const targetTimeStr = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+
+      const sql = `
+        SELECT r.*, 
+               r.scheduled_time as scheduled_time_ist,
+               c.name as customer_name, c.gender as customer_gender, c.phone as customer_phone
+        FROM rides r
+        JOIN users c ON r.customer_id = c.id
+        WHERE r.is_scheduled = 1 
+          AND r.is_dispatched = 0
+          AND r.status = 'SCHEDULED'
+          AND r.scheduled_time <= ?
+      `;
+      return await db.query(sql, [targetTimeStr]);
+    } catch (err) {
+      console.warn('[RideModel] findDueScheduledRides error notice:', err.message);
+      return [];
+    }
   },
 
   async markScheduledDispatched(rideId) {
@@ -476,19 +491,24 @@ const RideModel = {
   },
 
   async getScheduledRidesForCustomer(customerId) {
-    const sql = `
-      SELECT r.*,
-             COALESCE(CONVERT_TZ(r.scheduled_time, '+00:00', '+05:30'), r.scheduled_time) as scheduled_time_ist,
-             COALESCE(r.final_fare, r.estimated_fare) as total_fare,
-             rd.name as rider_name, rd.phone as rider_phone
-      FROM rides r
-      LEFT JOIN users rd ON r.rider_id = rd.id
-      WHERE r.customer_id = ? 
-        AND r.is_scheduled = 1
-        AND r.status IN ('SCHEDULED', 'REQUESTED', 'ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED')
-      ORDER BY r.scheduled_time ASC, r.id DESC
-    `;
-    return db.query(sql, [customerId]);
+    try {
+      const sql = `
+        SELECT r.*,
+               r.scheduled_time as scheduled_time_ist,
+               COALESCE(r.final_fare, r.estimated_fare) as total_fare,
+               rd.name as rider_name, rd.phone as rider_phone
+        FROM rides r
+        LEFT JOIN users rd ON r.rider_id = rd.id
+        WHERE r.customer_id = ? 
+          AND r.is_scheduled = 1
+          AND r.status IN ('SCHEDULED', 'REQUESTED', 'ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED')
+        ORDER BY r.scheduled_time ASC, r.id DESC
+      `;
+      return await db.query(sql, [customerId]);
+    } catch (err) {
+      console.warn('[RideModel] getScheduledRidesForCustomer notice:', err.message);
+      return [];
+    }
   },
 
   async cancelScheduledRide(rideId, customerId, reason = 'Cancelled by passenger') {
@@ -501,7 +521,7 @@ const RideModel = {
       WHERE id = ? AND customer_id = ? AND status = 'SCHEDULED'
     `;
     const res = await db.query(sql, [reason, rideId, customerId]);
-    return res.affectedRows > 0;
+    return res && res.affectedRows > 0;
   }
 };
 

@@ -50,17 +50,16 @@ async function initializeDatabase() {
       dbEngine = 'mysql';
       console.log(`[Database] 🔒 Connected successfully to Permanent TiDB Cloud Database: ${env.DB.NAME} on ${env.DB.HOST}:${env.DB.PORT}`);
       
-      // Auto-bootstrap schema in MySQL/TiDB only if tables do not exist (Non-destructive)
+      // Auto-bootstrap schema in MySQL/TiDB if missing and ensure migrations run unconditionally
       try {
         await testPool.query('SELECT 1 FROM users LIMIT 1');
-        await ensureFlashFreeRidesSchema(testPool);
-        await ensureSettlementsSchema(testPool);
       } catch (_) {
         await bootstrapMysqlSchema(testPool);
-        await ensureDatabaseIndexes(testPool);
-        await ensureFlashFreeRidesSchema(testPool);
-        await ensureSettlementsSchema(testPool);
       }
+      await ensureDatabaseSchemaMigrations(testPool);
+      await ensureDatabaseIndexes(testPool);
+      await ensureFlashFreeRidesSchema(testPool);
+      await ensureSettlementsSchema(testPool);
 
       return { engine: 'mysql', pool };
     } catch (mysqlErr) {
@@ -214,6 +213,9 @@ async function bootstrapMysqlSchema(targetPool) {
         female_rider_only BOOLEAN DEFAULT FALSE,
         is_double_ride BOOLEAN DEFAULT FALSE,
         is_outside BOOLEAN DEFAULT FALSE,
+        is_scheduled BOOLEAN DEFAULT FALSE,
+        scheduled_time DATETIME DEFAULT NULL,
+        is_dispatched BOOLEAN DEFAULT FALSE,
         cancellation_reason VARCHAR(500) DEFAULT NULL,
         cancelled_by_role VARCHAR(30) DEFAULT NULL,
         requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -462,72 +464,44 @@ async function bootstrapMysqlSchema(targetPool) {
       await targetPool.query('ALTER TABLE users MODIFY COLUMN profile_image MEDIUMTEXT;');
     } catch (_) {}
 
-    // Ensure rider_earnings columns match models and reporting
-    try {
-      await targetPool.query('ALTER TABLE rider_earnings ADD COLUMN total_fare DECIMAL(10, 2) NOT NULL DEFAULT 0.00 AFTER ride_id;');
-    } catch (_) {}
-    try {
-      await targetPool.query('ALTER TABLE rider_earnings ADD COLUMN rider_earning DECIMAL(10, 2) NOT NULL DEFAULT 0.00 AFTER total_fare;');
-    } catch (_) {}
-    try {
-      await targetPool.query('ALTER TABLE rider_earnings ADD COLUMN company_earning DECIMAL(10, 2) NOT NULL DEFAULT 0.00 AFTER rider_earning;');
-    } catch (_) {}
-    try {
-      await targetPool.query('ALTER TABLE rider_earnings ADD COLUMN controller_earning DECIMAL(10, 2) DEFAULT 0.00 AFTER company_earning;');
-    } catch (_) {}
-    try {
-      await targetPool.query('ALTER TABLE rider_earnings ADD COLUMN applied_rule_description VARCHAR(255) DEFAULT NULL AFTER controller_earning;');
     } catch (_) {}
 
-    // Ensure payments table has gateway_response column
-    try {
-      await targetPool.query('ALTER TABLE payments ADD COLUMN gateway_response LONGTEXT DEFAULT NULL AFTER transaction_reference;');
-    } catch (_) {}
-
-    // Ensure is_core_member column exists in users and rider_profiles
-    try {
-      await targetPool.query('ALTER TABLE users ADD COLUMN is_core_member BOOLEAN DEFAULT FALSE AFTER profile_image;');
-    } catch (_) {}
-    try {
-      await targetPool.query('ALTER TABLE rider_profiles ADD COLUMN is_core_member BOOLEAN DEFAULT FALSE AFTER total_rides;');
-    } catch (_) {}
-
-    // Ensure via stops and waiting fee columns exist in rides
-    try {
-      await targetPool.query('ALTER TABLE rides ADD COLUMN via_address VARCHAR(500) DEFAULT NULL AFTER pickup_address;');
-    } catch (_) {}
-    try {
-      await targetPool.query('ALTER TABLE rides ADD COLUMN via_latitude DECIMAL(10, 8) DEFAULT NULL AFTER via_address;');
-    } catch (_) {}
-    try {
-      await targetPool.query('ALTER TABLE rides ADD COLUMN via_longitude DECIMAL(11, 8) DEFAULT NULL AFTER via_latitude;');
-    } catch (_) {}
-    try {
-      await targetPool.query('ALTER TABLE rides ADD COLUMN waiting_minutes INT DEFAULT 0 AFTER final_fare;');
-    } catch (_) {}
-    try {
-      await targetPool.query('ALTER TABLE rides ADD COLUMN waiting_fare DECIMAL(10, 2) DEFAULT 0.00 AFTER waiting_minutes;');
-    } catch (_) {}
-    try {
-      await targetPool.query('ALTER TABLE rides ADD COLUMN is_waiting BOOLEAN DEFAULT FALSE AFTER waiting_fare;');
-    } catch (_) {}
-    try {
-      await targetPool.query('ALTER TABLE rides ADD COLUMN waiting_started_at DATETIME DEFAULT NULL AFTER is_waiting;');
-    } catch (_) {}
-    try {
-      await targetPool.query('ALTER TABLE rider_profiles ADD COLUMN upi_id VARCHAR(100) DEFAULT NULL AFTER license_number;');
-    } catch (_) {}
-    try {
-      await targetPool.query('ALTER TABLE rides ADD COLUMN is_scheduled BOOLEAN DEFAULT FALSE AFTER is_outside;');
-    } catch (_) {}
-    try {
-      await targetPool.query('ALTER TABLE rides ADD COLUMN scheduled_time DATETIME DEFAULT NULL AFTER is_scheduled;');
-    } catch (_) {}
-    try {
-      await targetPool.query('ALTER TABLE rides ADD COLUMN is_dispatched BOOLEAN DEFAULT FALSE AFTER scheduled_time;');
-    } catch (_) {}
+    await ensureDatabaseSchemaMigrations(targetPool);
   } catch (err) {
     console.warn('[Database Warning] MySQL bootstrap notice:', err.message);
+  }
+}
+
+/**
+ * Ensures all incremental columns and migrations are applied on every boot
+ */
+async function ensureDatabaseSchemaMigrations(targetPool) {
+  const migrations = [
+    'ALTER TABLE rider_earnings ADD COLUMN total_fare DECIMAL(10, 2) NOT NULL DEFAULT 0.00 AFTER ride_id;',
+    'ALTER TABLE rider_earnings ADD COLUMN rider_earning DECIMAL(10, 2) NOT NULL DEFAULT 0.00 AFTER total_fare;',
+    'ALTER TABLE rider_earnings ADD COLUMN company_earning DECIMAL(10, 2) NOT NULL DEFAULT 0.00 AFTER rider_earning;',
+    'ALTER TABLE rider_earnings ADD COLUMN controller_earning DECIMAL(10, 2) DEFAULT 0.00 AFTER company_earning;',
+    'ALTER TABLE rider_earnings ADD COLUMN applied_rule_description VARCHAR(255) DEFAULT NULL AFTER controller_earning;',
+    'ALTER TABLE payments ADD COLUMN gateway_response LONGTEXT DEFAULT NULL AFTER transaction_reference;',
+    'ALTER TABLE users ADD COLUMN is_core_member BOOLEAN DEFAULT FALSE AFTER profile_image;',
+    'ALTER TABLE rider_profiles ADD COLUMN is_core_member BOOLEAN DEFAULT FALSE AFTER total_rides;',
+    'ALTER TABLE rides ADD COLUMN via_address VARCHAR(500) DEFAULT NULL AFTER pickup_address;',
+    'ALTER TABLE rides ADD COLUMN via_latitude DECIMAL(10, 8) DEFAULT NULL AFTER via_address;',
+    'ALTER TABLE rides ADD COLUMN via_longitude DECIMAL(11, 8) DEFAULT NULL AFTER via_latitude;',
+    'ALTER TABLE rides ADD COLUMN waiting_minutes INT DEFAULT 0 AFTER final_fare;',
+    'ALTER TABLE rides ADD COLUMN waiting_fare DECIMAL(10, 2) DEFAULT 0.00 AFTER waiting_minutes;',
+    'ALTER TABLE rides ADD COLUMN is_waiting BOOLEAN DEFAULT FALSE AFTER waiting_fare;',
+    'ALTER TABLE rides ADD COLUMN waiting_started_at DATETIME DEFAULT NULL AFTER is_waiting;',
+    'ALTER TABLE rider_profiles ADD COLUMN upi_id VARCHAR(100) DEFAULT NULL AFTER license_number;',
+    'ALTER TABLE rides ADD COLUMN is_scheduled BOOLEAN DEFAULT FALSE AFTER is_outside;',
+    'ALTER TABLE rides ADD COLUMN scheduled_time DATETIME DEFAULT NULL AFTER is_scheduled;',
+    'ALTER TABLE rides ADD COLUMN is_dispatched BOOLEAN DEFAULT FALSE AFTER scheduled_time;'
+  ];
+
+  for (const sql of migrations) {
+    try {
+      await targetPool.query(sql);
+    } catch (_) {}
   }
 }
 
