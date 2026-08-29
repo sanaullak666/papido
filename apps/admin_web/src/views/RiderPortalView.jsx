@@ -2499,12 +2499,12 @@ export function RiderPortalView() {
                             <span style={{ background: 'var(--bg-sidebar)', color: 'var(--text-secondary)', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>
                               #{sr.ride_code || sr.id}
                             </span>
-                            {sr.female_rider_only && (
+                            {Boolean(sr.female_rider_only) && (
                               <span style={{ background: '#FCE7F3', color: '#BE185D', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800 }}>
                                 Female Rider Only
                               </span>
                             )}
-                            {sr.is_double_ride && (
+                            {Boolean(sr.is_double_ride) && (
                               <span style={{ background: '#E0E7FF', color: '#3730A3', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800 }}>
                                 Double Ride
                               </span>
