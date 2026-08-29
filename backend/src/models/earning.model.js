@@ -522,90 +522,7 @@ const EarningModel = {
   },
 
   async isRiderShiftLocked(riderId) {
-    const today = getTodayISTString();
-
-    const settings = await this.getAdminSettlementSettings();
-    if (settings.autoLockEnabled === false) {
-      return { isLocked: false, unpaidAmount: 0 };
-    }
-
-    // 1. Check daily_shift_settlements directly for strictly past dates (< today)
-    const dssRow = await db.queryOne(`
-      SELECT date as shift_date, total_trips as trips_count, total_commission_due as total_due, status as shift_status, rejection_reason
-      FROM daily_shift_settlements
-      WHERE rider_id = ? 
-        AND date < ?
-        AND status != 'SETTLED' 
-        AND total_commission_due > 0
-      ORDER BY date ASC
-      LIMIT 1
-    `, [riderId, today]).catch(() => null);
-
-    if (dssRow && parseFloat(dssRow.total_due || 0) > 0) {
-      const shiftDateFormatted = getISTDateString(dssRow.shift_date);
-      if (shiftDateFormatted < today) {
-        return {
-          isLocked: true,
-          pastDate: shiftDateFormatted,
-          tripsCount: dssRow.trips_count || 1,
-          unpaidAmount: parseFloat(dssRow.total_due || 0),
-          status: dssRow.shift_status || 'UNSETTLED',
-          rejectionReason: dssRow.rejection_reason || null
-        };
-      }
-    }
-
-    // 2. Also check rides/rider_earnings table directly for any strictly past shift (< today) with unpaid deductions
-    const sql = `
-      SELECT 
-        COALESCE(
-          DATE(CONVERT_TZ(r.completed_at, '+00:00', '+05:30')), 
-          DATE(r.completed_at), 
-          DATE(CONVERT_TZ(re.created_at, '+00:00', '+05:30')), 
-          DATE(re.created_at)
-        ) as shift_date,
-        COUNT(r.id) as trips_count,
-        SUM(COALESCE(re.company_earning, 0) + COALESCE(re.controller_earning, 0)) as total_due,
-        dss.status as shift_status,
-        dss.rejection_reason
-      FROM rides r
-      JOIN rider_earnings re ON r.id = re.ride_id
-      LEFT JOIN daily_shift_settlements dss ON (
-        dss.rider_id = r.rider_id 
-        AND (
-          dss.date = COALESCE(DATE(CONVERT_TZ(r.completed_at, '+00:00', '+05:30')), DATE(r.completed_at), DATE(re.created_at))
-          OR dss.date = COALESCE(DATE(r.completed_at), DATE(re.created_at))
-        )
-      )
-      WHERE r.rider_id = ?
-        AND r.status = 'COMPLETED'
-        AND COALESCE(
-          DATE(CONVERT_TZ(r.completed_at, '+00:00', '+05:30')), 
-          DATE(r.completed_at), 
-          DATE(CONVERT_TZ(re.created_at, '+00:00', '+05:30')), 
-          DATE(re.created_at)
-        ) < ?
-        AND (re.settlement_status != 'SETTLED' OR re.settlement_status IS NULL)
-        AND (dss.status != 'SETTLED' OR dss.status IS NULL)
-      GROUP BY shift_date, dss.status, dss.rejection_reason
-      HAVING total_due > 0
-      ORDER BY shift_date ASC
-      LIMIT 1
-    `;
-    const row = await db.queryOne(sql, [riderId, today]).catch(() => null);
-    if (row && parseFloat(row.total_due || 0) > 0) {
-      const shiftDateFormatted = getISTDateString(row.shift_date);
-      if (shiftDateFormatted < today) {
-        return {
-          isLocked: true,
-          pastDate: shiftDateFormatted,
-          tripsCount: row.trips_count,
-          unpaidAmount: parseFloat(row.total_due || 0),
-          status: row.shift_status || 'UNSETTLED',
-          rejectionReason: row.rejection_reason || null
-        };
-      }
-    }
+    // Shifts never lock driver accounts; drivers can pay anytime.
     return { isLocked: false, unpaidAmount: 0 };
   },
 
@@ -681,6 +598,13 @@ const EarningModel = {
       };
     });
 
+    const pendingShifts = recentShifts.filter(
+      s => s.status !== 'SETTLED' && s.totalCommissionDue > 0
+    );
+    const totalPendingDues = Number(
+      pendingShifts.reduce((acc, s) => acc + (s.totalCommissionDue || 0), 0).toFixed(2)
+    );
+
     const riderData = (dailyData.riders && dailyData.riders[0]) || {
       totalTrips: 0,
       grossFare: 0,
@@ -716,8 +640,10 @@ const EarningModel = {
         upiPayUrl,
         qrCodeUrl
       },
-      isLocked: lockCheck.isLocked,
-      lockDetails: lockCheck,
+      isLocked: false,
+      lockDetails: { isLocked: false, unpaidAmount: 0 },
+      pendingShifts,
+      totalPendingDues,
       recentShifts
     };
   },

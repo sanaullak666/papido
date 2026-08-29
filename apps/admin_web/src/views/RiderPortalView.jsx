@@ -335,6 +335,13 @@ export function RiderPortalView() {
     earnings?.todayPlatformFee || earnings?.companyCommission || earnings?.summary?.today?.platformFee || clientTodayPlatformFee || (todayTripsCount * 4) || 0
   );
 
+  const pendingShiftsList = shiftSettlement?.pendingShifts || (shiftSettlement?.recentShifts || []).filter(
+    s => s.status !== 'SETTLED' && Number(s.totalCommissionDue || 0) > 0
+  );
+  const totalPendingCommissionDues = Number(
+    shiftSettlement?.totalPendingDues || pendingShiftsList.reduce((sum, s) => sum + Number(s.totalCommissionDue || 0), 0)
+  ).toFixed(2);
+
   const fetchShiftSettlement = async (targetDate) => {
     try {
       setLoadingShiftSettlement(true);
@@ -346,9 +353,6 @@ export function RiderPortalView() {
           setShiftUtrInput(res.data.utrReference);
         } else {
           setShiftUtrInput('');
-        }
-        if (res.data.isLocked && isOnline) {
-          setIsOnline(false);
         }
       }
     } catch (_) {}
@@ -375,7 +379,7 @@ export function RiderPortalView() {
       } else {
         await fetchShiftSettlement(targetDate);
       }
-      setShiftSuccessMsg(`Shift settlement for ${targetDate} submitted to Admin for verification. Once approved, tomorrow's rides will be unlocked.`);
+      setShiftSuccessMsg(`Shift settlement for ${targetDate} submitted to Admin for verification.`);
       setTimeout(() => setShiftSuccessMsg(''), 6000);
     } catch (err) {
       alert(err.message || 'Failed to submit shift settlement.');
@@ -387,12 +391,6 @@ export function RiderPortalView() {
   const handleToggleOnline = async () => {
     if (!isOnline && kycStatus !== 'APPROVED') {
       alert(`Cannot go online. Your driver account is ${kycStatus}. Admin approval of your Campus ID, Driving Licence, and RC is required before you can accept rides.`);
-      return;
-    }
-
-    if (!isOnline && shiftSettlement?.isLocked) {
-      alert(`Cannot go online. Your driver account is locked due to an unsettled platform commission of ₹${Number(shiftSettlement.lockDetails?.unpaidAmount || 0).toFixed(2)} from your shift on ${shiftSettlement.lockDetails?.pastDate}. Please settle via Admin UPI in the Daily Settlements tab to unlock your account.`);
-      setCurrentTab('settlements');
       return;
     }
 
@@ -502,8 +500,7 @@ export function RiderPortalView() {
   };
 
   const fetchAvailableRequests = async () => {
-    if (!isOnline || activeRide || shiftSettlement?.isLocked) {
-      if (shiftSettlement?.isLocked) setIncomingRequests([]);
+    if (!isOnline || activeRide) {
       return;
     }
     try {
@@ -662,7 +659,7 @@ export function RiderPortalView() {
 
     socket.on('ride:new_request', (ride) => {
       console.log('Incoming ride request:', ride);
-      if (!isOnline || shiftSettlement?.isLocked) return;
+      if (!isOnline) return;
       const rideId = ride.id || ride.rideId;
       if (!rideId || declinedRideIds.has(String(rideId))) return;
 
@@ -713,7 +710,7 @@ export function RiderPortalView() {
 
     socket.on('ride:reopened', (ride) => {
       console.log('Ride reopened by passenger:', ride);
-      if (!isOnline || shiftSettlement?.isLocked) return;
+      if (!isOnline) return;
       const rideId = ride.id || ride.rideId;
       if (!rideId || declinedRideIds.has(String(rideId))) return;
 
@@ -920,14 +917,6 @@ export function RiderPortalView() {
   // 6. Handle Accept Ride
   const handleAcceptRequest = async (rideId) => {
     alertManager.stopRingtone();
-    if (shiftSettlement?.isLocked) {
-      alert(`Cannot accept ride. Your driver account is locked due to an unsettled platform commission of ₹${Number(shiftSettlement.lockDetails?.unpaidAmount || 0).toFixed(2)} from your shift on ${shiftSettlement.lockDetails?.pastDate}. Please settle via Admin UPI in the Daily Settlements tab to unlock your account.`);
-      if (shiftSettlement.lockDetails?.pastDate) {
-        setSelectedSettlementDate(shiftSettlement.lockDetails.pastDate);
-      }
-      setCurrentTab('settlements');
-      return;
-    }
     setAcceptingRideId(rideId);
     setActionLoading(true);
     setEnteredOtp('');
@@ -1321,7 +1310,7 @@ export function RiderPortalView() {
               cursor: 'pointer'
             }}
           >
-            <CreditCard size={16} /> Daily Settlements {shiftSettlement?.isLocked && <span style={{ background: '#EF4444', color: '#FFFFFF', padding: '1px 6px', borderRadius: '10px', fontSize: '10px', fontWeight: 900 }}>DUE</span>}
+            <CreditCard size={16} /> Daily Settlements {pendingShiftsList.length > 0 && <span style={{ background: '#F59E0B', color: '#000000', padding: '1px 6px', borderRadius: '10px', fontSize: '10px', fontWeight: 900 }}>{pendingShiftsList.length} PENDING</span>}
           </a>
           <a
             href="/driver/kyc"
@@ -1388,11 +1377,11 @@ export function RiderPortalView() {
 
       {/* Main Driver Body */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        {/* Overdue Shift Commission Lock Alert Banner */}
-        {shiftSettlement?.isLocked && (
+        {/* Pending Shift Commission Alert Notice */}
+        {pendingShiftsList.length > 0 && (
           <div style={{
-            background: 'linear-gradient(135deg, #450A0A, #7F1D1D)',
-            borderBottom: '2px solid #EF4444',
+            background: 'linear-gradient(135deg, #2D1B00, #451A03)',
+            borderBottom: '2px solid #F59E0B',
             color: '#FFFFFF',
             padding: '14px 20px',
             display: 'flex',
@@ -1400,43 +1389,65 @@ export function RiderPortalView() {
             justifyContent: 'space-between',
             flexWrap: 'wrap',
             gap: '12px',
-            boxShadow: '0 4px 15px rgba(220, 38, 38, 0.3)'
+            boxShadow: '0 4px 15px rgba(245, 158, 11, 0.2)'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', flex: 1, minWidth: '280px' }}>
               <div style={{
-                background: '#EF4444',
-                color: '#FFFFFF',
+                background: '#F59E0B',
+                color: '#000000',
                 borderRadius: '50%',
-                width: '40px',
-                height: '40px',
+                width: '36px',
+                height: '36px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                flexShrink: 0
+                flexShrink: 0,
+                marginTop: '2px'
               }}>
-                <Lock size={20} />
+                <AlertTriangle size={20} />
               </div>
               <div>
-                <div style={{ fontWeight: 800, fontSize: '15px', color: '#FCA5A5' }}>
-                  Account Locked: Unsettled Shift Commission Due
+                <div style={{ fontWeight: 800, fontSize: '14px', color: '#FDE68A' }}>
+                  Pending Platform Fees Notice - Total Due: Rs. {totalPendingCommissionDues}
                 </div>
-                <div style={{ fontSize: '12px', color: '#FEE2E2', marginTop: '2px' }}>
-                  You have an unpaid platform commission of <strong>₹{Number(shiftSettlement.lockDetails?.unpaidAmount || 0).toFixed(2)}</strong> from your shift on <strong>{shiftSettlement.lockDetails?.pastDate}</strong>. Settle via Admin UPI to unlock.
+                <div style={{ fontSize: '12px', color: '#FEF3C7', marginTop: '3px', lineHeight: 1.4 }}>
+                  You have pending shift commission on the following date(s):
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '6px' }}>
+                    {pendingShiftsList.map((ps) => (
+                      <span
+                        key={`pending-pill-${ps.date}`}
+                        style={{
+                          background: 'rgba(0, 0, 0, 0.4)',
+                          border: '1px solid #D97706',
+                          borderRadius: '6px',
+                          padding: '2px 8px',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          color: '#FDE68A'
+                        }}
+                      >
+                        {ps.date}: Rs. {Number(ps.totalCommissionDue || 0).toFixed(2)} ({ps.status === 'PENDING_APPROVAL' ? 'In Verification' : ps.status === 'REJECTED' ? 'Rejected' : 'Unsettled'})
+                      </span>
+                    ))}
+                  </div>
+                  <span style={{ fontSize: '11px', color: '#D1D5DB', display: 'block', marginTop: '4px' }}>
+                    You can continue driving and take rides freely. You may pay anytime via UPI in the Daily Settlements tab.
+                  </span>
                 </div>
               </div>
             </div>
             <button
               type="button"
               onClick={() => {
-                if (shiftSettlement.lockDetails?.pastDate) {
-                  setSelectedSettlementDate(shiftSettlement.lockDetails.pastDate);
+                if (pendingShiftsList[0]?.date) {
+                  setSelectedSettlementDate(pendingShiftsList[0].date);
                 }
                 setCurrentTab('settlements');
               }}
               className="btn btn-primary btn-sm"
               style={{ fontWeight: 800, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
-              <CreditCard size={14} /> Settle Commission Now
+              <CreditCard size={14} /> View &amp; Settle Dues
             </button>
           </div>
         )}
@@ -1650,55 +1661,8 @@ export function RiderPortalView() {
                 </div>
               </div>
 
-              {/* Account Shift Lock Notice in Radar */}
-              {shiftSettlement?.isLocked && (
-                <div style={{
-                  background: 'rgba(239, 68, 68, 0.12)',
-                  border: '1.5px solid rgba(239, 68, 68, 0.4)',
-                  borderRadius: '16px',
-                  padding: '24px',
-                  textAlign: 'center',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '12px'
-                }}>
-                  <div style={{
-                    width: '50px',
-                    height: '50px',
-                    borderRadius: '50%',
-                    background: '#FEE2E2',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#DC2626'
-                  }}>
-                    <Lock size={26} />
-                  </div>
-                  <div style={{ fontSize: '18px', fontWeight: 800, color: '#DC2626' }}>
-                    Driver Account Locked for Rides
-                  </div>
-                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)', maxWidth: '440px', lineHeight: 1.5 }}>
-                    You have an unpaid platform commission of <strong>₹{Number(shiftSettlement.lockDetails?.unpaidAmount || 0).toFixed(2)}</strong> from your shift on <strong>{shiftSettlement.lockDetails?.pastDate}</strong>. Settle via Admin UPI in the Daily Settlements tab to unlock.
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (shiftSettlement.lockDetails?.pastDate) {
-                        setSelectedSettlementDate(shiftSettlement.lockDetails.pastDate);
-                      }
-                      setCurrentTab('settlements');
-                    }}
-                    className="btn btn-primary"
-                    style={{ fontWeight: 800, marginTop: '4px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                  >
-                    <CreditCard size={15} /> Settle Commission &amp; Unlock
-                  </button>
-                </div>
-              )}
-
               {/* Incoming Requests Queue (Multiple Bookings Supported & Persistent until declined) */}
-              {!activeRide && !shiftSettlement?.isLocked && incomingRequests.length > 0 && (
+              {!activeRide && incomingRequests.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--primary)', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -2349,7 +2313,7 @@ export function RiderPortalView() {
             {/* Selected Day Shift Settlement Card */}
             <div style={{
               background: 'var(--bg-card)',
-              border: (shiftSettlement?.isLocked || shiftSettlement?.status === 'REJECTED') ? '2px solid #EF4444' : '1.5px solid var(--border)',
+              border: (shiftSettlement?.status === 'REJECTED') ? '2px solid #EF4444' : '1.5px solid var(--border)',
               borderRadius: '16px',
               padding: '24px',
               marginBottom: '24px',
@@ -2386,7 +2350,7 @@ export function RiderPortalView() {
                     </span>
                   ) : shiftSettlement?.status === 'REJECTED' ? (
                     <span className="badge badge-danger" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', padding: '5px 12px' }}>
-                      <AlertTriangle size={14} /> Settlement Rejected (Locked)
+                      <AlertTriangle size={14} /> Settlement Rejected (Please Resubmit)
                     </span>
                   ) : Number(shiftSettlement?.totalCommissionDue || 0) === 0 ? (
                     <span className="badge badge-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', padding: '5px 12px' }}>
@@ -2404,7 +2368,7 @@ export function RiderPortalView() {
                 </div>
               </div>
 
-              {selectedSettlementDate === getTodayDateString() && !shiftSettlement?.isLocked && (
+              {selectedSettlementDate === getTodayDateString() && (
                 <div style={{
                   padding: '10px 14px',
                   background: 'rgba(59, 130, 246, 0.08)',
@@ -2512,7 +2476,7 @@ export function RiderPortalView() {
                   <div>
                     <div style={{ fontWeight: 800, fontSize: '14px' }}>Shift Commission Cleared &amp; Approved</div>
                     <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                      Admin has verified UTR <strong>{shiftSettlement.utrReference || 'N/A'}</strong>. Your driver account is fully unlocked for rides.
+                      Admin has verified UTR <strong>{shiftSettlement.utrReference || 'N/A'}</strong>. This shift settlement is complete.
                     </div>
                   </div>
                 </div>
@@ -2545,7 +2509,7 @@ export function RiderPortalView() {
                       Today's Shift is Currently Active
                     </div>
                     <div style={{ fontSize: '12px', color: '#93C5FD', marginTop: '3px', lineHeight: 1.5 }}>
-                      Your rides accumulate throughout today. The final shift settlement amount will be closed and payable <strong>after 12:00 AM midnight</strong>. You can drive freely without any lock today!
+                      Your rides accumulate throughout today. The final shift settlement amount will be closed and payable <strong>after 12:00 AM midnight</strong>. You can drive freely anytime!
                     </div>
                   </div>
                 </div>

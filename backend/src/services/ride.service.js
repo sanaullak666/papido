@@ -296,15 +296,6 @@ const RideService = {
       throw new Error('Rider is not verified or approved to accept rides.');
     }
 
-    // Verify driver shift is not locked due to unsettled commission
-    const EarningModel = require('../models/earning.model');
-    const lockCheck = await EarningModel.isRiderShiftLocked(riderId);
-    if (lockCheck.isLocked) {
-      throw new Error(
-        `Cannot accept rides. Your driver account is locked due to an unsettled platform commission of ₹${lockCheck.unpaidAmount.toFixed(2)} from your shift on ${lockCheck.pastDate}. Settle via Admin UPI and get Admin verification to unlock.`
-      );
-    }
-
     // Check if rider is already on another active ride
     const riderActiveRide = await RideModel.getActiveRideForRider(riderId);
     if (riderActiveRide) {
