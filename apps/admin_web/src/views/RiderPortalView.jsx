@@ -2627,13 +2627,29 @@ export function RiderPortalView() {
                         const fare = Number(r.total_fare || r.final_fare || r.estimated_fare || 20);
                         const fee = fare <= 80 ? 4.0 : Number((fare * 0.10 + 2.0).toFixed(2));
                         const net = r.rider_earning !== undefined ? Number(r.rider_earning) : Math.max(0, fare - fee);
+                        const isPrebooked = Boolean(r.is_scheduled || r.isScheduled || r.scheduled_time);
                         return (
                           <tr key={r.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                            <td style={{ padding: '12px 16px', fontWeight: 700 }}>#{r.id}</td>
+                            <td style={{ padding: '12px 16px', fontWeight: 700 }}>#{r.ride_code || r.id}</td>
                             <td style={{ padding: '12px 16px' }}>
-                              <div>{r.pickup_address} → {r.destination_address}</div>
-                              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                                {formatRideDateTime(r.requested_at || r.created_at || r.accepted_at || r.completed_at)}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                <span>{r.pickup_address} → {r.destination_address}</span>
+                                {isPrebooked && (
+                                  <span style={{ background: '#FFF7ED', color: '#C2410C', border: '1px solid #FFEDD5', padding: '1px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase' }}>
+                                    PRE-BOOKED
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                {isPrebooked && r.scheduled_time ? (
+                                  <>
+                                    <span style={{ color: '#EA580C', fontWeight: 700 }}>Pickup Scheduled: {formatRideDateTime(r.scheduled_time)}</span>
+                                    <span>•</span>
+                                    <span>Completed: {formatRideDateTime(r.completed_at || r.settled_at || r.created_at)}</span>
+                                  </>
+                                ) : (
+                                  <span>{formatRideDateTime(r.completed_at || r.requested_at || r.created_at || r.accepted_at)}</span>
+                                )}
                               </div>
                             </td>
                             <td style={{ padding: '12px 16px' }}>₹{fare.toFixed(2)}</td>

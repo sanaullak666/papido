@@ -250,7 +250,8 @@ const EarningModel = {
              COALESCE(CONVERT_TZ(re.settled_at, '+00:00', '+05:30'), re.settled_at) as settled_at,
              COALESCE(CONVERT_TZ(r.requested_at, '+00:00', '+05:30'), r.requested_at) as requested_at,
              COALESCE(CONVERT_TZ(r.completed_at, '+00:00', '+05:30'), r.completed_at) as completed_at,
-             r.ride_code, r.pickup_address, r.destination_address
+             r.ride_code, r.pickup_address, r.destination_address,
+             r.is_scheduled, r.scheduled_time
       FROM rider_earnings re
       JOIN rides r ON re.ride_id = r.id
       WHERE re.rider_id = ?

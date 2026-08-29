@@ -3926,27 +3926,47 @@ export function CustomerPortalView() {
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {pastRides.map((r) => (
-                  <div key={r.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                    <div>
-                      <div style={{ fontWeight: 800, fontSize: '15px' }}>{r.pickup_address} → {r.destination_address}</div>
-                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                        <span>{formatRideDateTime(r.requested_at || r.created_at || r.accepted_at || r.completed_at)}</span>
-                        <span>•</span>
-                        <span>Rider: {r.rider_name || 'Campus Rider'}</span>
-                        {r.ride_code && <span style={{ opacity: 0.8 }}>({r.ride_code})</span>}
+                {pastRides.map((r) => {
+                  const isPrebooked = Boolean(r.is_scheduled || r.isScheduled || r.scheduled_time);
+                  return (
+                    <div key={r.id} style={{ background: 'var(--bg-card)', border: isPrebooked ? '1.5px solid #FDBA74' : '1px solid var(--border)', borderRadius: '12px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <span style={{ fontWeight: 800, fontSize: '15px' }}>{r.pickup_address} → {r.destination_address}</span>
+                          {isPrebooked && (
+                            <span style={{ background: '#FFF7ED', color: '#C2410C', border: '1px solid #FFEDD5', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                              PRE-BOOKED TRIP
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                          {isPrebooked && r.scheduled_time ? (
+                            <>
+                              <span style={{ fontWeight: 700, color: '#EA580C' }}>
+                                Pickup Scheduled: {formatRideDateTime(r.scheduled_time)}
+                              </span>
+                              <span>•</span>
+                              <span>Booked On: {formatRideDateTime(r.requested_at || r.created_at)}</span>
+                            </>
+                          ) : (
+                            <span>{formatRideDateTime(r.requested_at || r.created_at || r.accepted_at || r.completed_at)}</span>
+                          )}
+                          <span>•</span>
+                          <span>Rider: {r.rider_name || 'Campus Rider'}</span>
+                          {r.ride_code && <span style={{ opacity: 0.8 }}>({r.ride_code})</span>}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                        <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--primary)' }}>
+                          ₹{r.total_fare || r.final_fare || r.estimated_fare || 20}
+                        </div>
+                        <span className={`badge ${r.status === 'COMPLETED' ? 'badge-success' : 'badge-danger'}`}>
+                          {r.status}
+                        </span>
                       </div>
                     </div>
-                    <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                      <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--primary)' }}>
-                        ₹{r.total_fare || r.final_fare || r.estimated_fare || 20}
-                      </div>
-                      <span className={`badge ${r.status === 'COMPLETED' ? 'badge-success' : 'badge-danger'}`}>
-                        {r.status}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
