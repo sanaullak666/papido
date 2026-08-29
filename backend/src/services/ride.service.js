@@ -48,12 +48,18 @@ const RideService = {
     paymentMethod = 'CASH',
     femaleRiderOnly = false,
     isDoubleRide = false,
-    isOutside = false
+    isOutside = false,
+    isScheduled = false,
+    scheduledTime = null
   }) {
-    // Check if customer already has an active ride in progress
-    const existingActive = await RideModel.getActiveRideForCustomer(customerId);
-    if (existingActive && ['PENDING_ADMIN_QUOTE', 'REQUESTED', 'ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED'].includes(existingActive.status)) {
-      throw new Error(`You already have an active ride (${existingActive.ride_code}) in progress.`);
+    const isScheduledTrip = isScheduled === true || isScheduled === 'true' || isScheduled === 1;
+
+    // Check if customer already has an active ride in progress (only for instant rides)
+    if (!isScheduledTrip) {
+      const existingActive = await RideModel.getActiveRideForCustomer(customerId);
+      if (existingActive && ['PENDING_ADMIN_QUOTE', 'REQUESTED', 'ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED'].includes(existingActive.status)) {
+        throw new Error(`You already have an active ride (${existingActive.ride_code}) in progress.`);
+      }
     }
 
     // Check if customer has any unpaid cancellation penalty

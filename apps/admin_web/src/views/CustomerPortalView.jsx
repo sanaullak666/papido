@@ -216,19 +216,42 @@ export function CustomerPortalView() {
 
   // Pre-Booking / Scheduled Ride State
   const [bookingMode, setBookingMode] = useState('NOW'); // 'NOW' or 'SCHEDULE'
+  const [schedDateOption, setSchedDateOption] = useState('TODAY'); // 'TODAY', 'TOMORROW', 'CUSTOM'
   const [scheduledDate, setScheduledDate] = useState(() => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
+    return new Date().toISOString().split('T')[0];
   });
-  const [scheduledTime, setScheduledTime] = useState(() => {
+  const [scheduledHour, setScheduledHour] = useState(() => {
     const now = new Date(Date.now() + 60 * 60 * 1000);
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(Math.floor(now.getMinutes() / 15) * 15).padStart(2, '0');
-    return `${hours}:${minutes}`;
+    let h = now.getHours() % 12;
+    if (h === 0) h = 12;
+    return String(h).padStart(2, '0');
+  });
+  const [scheduledMinute, setScheduledMinute] = useState(() => {
+    const now = new Date(Date.now() + 60 * 60 * 1000);
+    const m = Math.floor(now.getMinutes() / 5) * 5;
+    return String(m).padStart(2, '0');
+  });
+  const [scheduledAmPm, setScheduledAmPm] = useState(() => {
+    const now = new Date(Date.now() + 60 * 60 * 1000);
+    return now.getHours() >= 12 ? 'PM' : 'AM';
   });
   const [scheduledRides, setScheduledRides] = useState([]);
   const [scheduledLoading, setScheduledLoading] = useState(false);
   const [scheduledSuccessMsg, setScheduledSuccessMsg] = useState(null);
+
+  const getTodayDateStr = () => new Date().toISOString().split('T')[0];
+  const getTomorrowDateStr = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split('T')[0];
+  };
+
+  const getComputedScheduled24Time = () => {
+    let h = parseInt(scheduledHour, 10) || 12;
+    if (scheduledAmPm === 'PM' && h < 12) h += 12;
+    if (scheduledAmPm === 'AM' && h === 12) h = 0;
+    return `${String(h).padStart(2, '0')}:${String(scheduledMinute).padStart(2, '0')}`;
+  };
 
   // Preference Availability Confirmation Modal State
   const [showPreferenceModal, setShowPreferenceModal] = useState(false);
@@ -1151,7 +1174,9 @@ export function CustomerPortalView() {
     const finalFemaleOnly = overrides.femaleRiderOnly !== undefined ? overrides.femaleRiderOnly : femaleRiderOnly;
     const isSched = overrides.isScheduled !== undefined ? overrides.isScheduled : (bookingMode === 'SCHEDULE');
     const schedDate = overrides.scheduledDate !== undefined ? overrides.scheduledDate : scheduledDate;
-    const schedTime = overrides.scheduledTime !== undefined ? overrides.scheduledTime : scheduledTime;
+    const time24 = getComputedScheduled24Time();
+    const schedDateTime = overrides.scheduledDateTime !== undefined ? overrides.scheduledDateTime : `${schedDate} ${time24}:00`;
+    const formattedDisplayTime = `${schedDate} at ${scheduledHour}:${scheduledMinute} ${scheduledAmPm}`;
 
     setBookingLoading(true);
     const isFemaleCustomer = (user?.gender || '').toUpperCase() === 'FEMALE';
@@ -1184,14 +1209,14 @@ export function CustomerPortalView() {
 
       if (isSched) {
         payload.isScheduled = true;
-        payload.scheduledTime = `${schedDate} ${schedTime}:00`;
+        payload.scheduledTime = schedDateTime;
       }
 
       const res = await apiRequest('/customer/rides', 'POST', payload, token);
 
       if (isSched) {
-        setScheduledSuccessMsg(`Your ride has been pre-booked for ${schedDate} at ${schedTime}!`);
-        setStatusMessage(`Ride pre-booked for ${schedDate} at ${schedTime}.`);
+        setScheduledSuccessMsg(`Your ride has been pre-booked for ${formattedDisplayTime}!`);
+        setStatusMessage(`Ride pre-booked for ${formattedDisplayTime}.`);
         fetchScheduledRides();
       } else {
         setActiveRide(res.data);
@@ -1221,17 +1246,18 @@ export function CustomerPortalView() {
     }
 
     if (bookingMode === 'SCHEDULE') {
-      if (!scheduledDate || !scheduledTime) {
+      const time24 = getComputedScheduled24Time();
+      if (!scheduledDate || !time24) {
         alert('Please select a valid date and pickup time for pre-booking.');
         return;
       }
-      const chosenDateTime = new Date(`${scheduledDate}T${scheduledTime}:00`);
-      const minDateTime = new Date(Date.now() + 10 * 60 * 1000);
-      if (chosenDateTime <= minDateTime) {
-        alert('Pre-booking must be at least 15 minutes ahead of the current time.');
+      const chosenDateTime = new Date(`${scheduledDate}T${time24}:00`);
+      const minDateTime = new Date(Date.now() + 5 * 60 * 1000);
+      if (isNaN(chosenDateTime.getTime()) || chosenDateTime <= minDateTime) {
+        alert('Pre-booking pickup time must be in the future (at least 15 minutes ahead).');
         return;
       }
-      executeRequestRide({ isScheduled: true });
+      executeRequestRide({ isScheduled: true, scheduledDateTime: `${scheduledDate} ${time24}:00` });
       return;
     }
 
@@ -1845,44 +1871,225 @@ export function CustomerPortalView() {
                   {/* Pre-Booking Date & Time Selector */}
                   {bookingMode === 'SCHEDULE' && (
                     <div style={{
-                      background: 'linear-gradient(135deg, #EFF6FF, #DBEAFE)',
-                      border: '1.5px solid #93C5FD',
-                      borderRadius: '12px',
-                      padding: '14px 16px',
+                      background: '#F0F7FF',
+                      border: '2px solid #3B82F6',
+                      borderRadius: '16px',
+                      padding: '16px',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '10px'
+                      gap: '14px',
+                      boxShadow: '0 4px 16px rgba(59, 130, 246, 0.12)'
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, color: '#1E40AF', fontSize: '13px' }}>
-                        <Calendar size={16} /> Schedule Trip Date &amp; Pickup Time
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, color: '#1D4ED8', fontSize: '14px' }}>
+                          <Calendar size={18} /> Schedule Trip Date &amp; Pickup Time
+                        </div>
+                        <span style={{ background: '#DBEAFE', color: '#1E40AF', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 800 }}>
+                          ADVANCE BOOKING
+                        </span>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                        <div>
-                          <label style={{ fontSize: '11px', fontWeight: 700, color: '#1E3A8A', display: 'block', marginBottom: '4px' }}>
-                            Trip Date
-                          </label>
+
+                      {/* 1. Date Selection Pills */}
+                      <div>
+                        <label style={{ fontSize: '11px', fontWeight: 800, color: '#1E3A8A', display: 'block', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          1. Select Trip Date
+                        </label>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '8px' }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSchedDateOption('TODAY');
+                              setScheduledDate(getTodayDateStr());
+                            }}
+                            style={{
+                              padding: '10px 6px',
+                              borderRadius: '10px',
+                              border: schedDateOption === 'TODAY' ? '2px solid #2563EB' : '1.5px solid #BFDBFE',
+                              background: schedDateOption === 'TODAY' ? '#2563EB' : '#FFFFFF',
+                              color: schedDateOption === 'TODAY' ? '#FFFFFF' : '#1E40AF',
+                              fontWeight: 800,
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              textAlign: 'center'
+                            }}
+                          >
+                            Today
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSchedDateOption('TOMORROW');
+                              setScheduledDate(getTomorrowDateStr());
+                            }}
+                            style={{
+                              padding: '10px 6px',
+                              borderRadius: '10px',
+                              border: schedDateOption === 'TOMORROW' ? '2px solid #2563EB' : '1.5px solid #BFDBFE',
+                              background: schedDateOption === 'TOMORROW' ? '#2563EB' : '#FFFFFF',
+                              color: schedDateOption === 'TOMORROW' ? '#FFFFFF' : '#1E40AF',
+                              fontWeight: 800,
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              textAlign: 'center'
+                            }}
+                          >
+                            Tomorrow
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSchedDateOption('CUSTOM');
+                            }}
+                            style={{
+                              padding: '10px 6px',
+                              borderRadius: '10px',
+                              border: schedDateOption === 'CUSTOM' ? '2px solid #2563EB' : '1.5px solid #BFDBFE',
+                              background: schedDateOption === 'CUSTOM' ? '#2563EB' : '#FFFFFF',
+                              color: schedDateOption === 'CUSTOM' ? '#FFFFFF' : '#1E40AF',
+                              fontWeight: 800,
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              textAlign: 'center'
+                            }}
+                          >
+                            Pick Date
+                          </button>
+                        </div>
+
+                        {schedDateOption === 'CUSTOM' && (
                           <input
                             type="date"
-                            min={new Date().toISOString().split('T')[0]}
+                            min={getTodayDateStr()}
                             value={scheduledDate}
                             onChange={(e) => setScheduledDate(e.target.value)}
-                            className="form-input"
-                            style={{ background: '#FFFFFF', border: '1.5px solid #BFDBFE', fontSize: '13px', padding: '8px 10px', color: '#1E3A8A', fontWeight: 700 }}
+                            style={{
+                              width: '100%',
+                              background: '#FFFFFF',
+                              border: '2px solid #93C5FD',
+                              borderRadius: '10px',
+                              padding: '10px 12px',
+                              fontSize: '14px',
+                              fontWeight: 700,
+                              color: '#1E3A8A'
+                            }}
                           />
-                        </div>
-                        <div>
-                          <label style={{ fontSize: '11px', fontWeight: 700, color: '#1E3A8A', display: 'block', marginBottom: '4px' }}>
-                            Pickup Time
-                          </label>
-                          <input
-                            type="time"
-                            value={scheduledTime}
-                            onChange={(e) => setScheduledTime(e.target.value)}
-                            className="form-input"
-                            style={{ background: '#FFFFFF', border: '1.5px solid #BFDBFE', fontSize: '13px', padding: '8px 10px', color: '#1E3A8A', fontWeight: 700 }}
-                          />
+                        )}
+                      </div>
+
+                      {/* 2. Pickup Time Picker (Hour, Minute, AM/PM) */}
+                      <div>
+                        <label style={{ fontSize: '11px', fontWeight: 800, color: '#1E3A8A', display: 'block', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          2. Select Pickup Time (12-Hour)
+                        </label>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gap: '8px', alignItems: 'center' }}>
+                          {/* Hour Selector */}
+                          <div>
+                            <div style={{ fontSize: '10px', fontWeight: 700, color: '#3B82F6', marginBottom: '3px' }}>Hour</div>
+                            <select
+                              value={scheduledHour}
+                              onChange={(e) => setScheduledHour(e.target.value)}
+                              style={{
+                                width: '100%',
+                                background: '#FFFFFF',
+                                border: '2px solid #93C5FD',
+                                borderRadius: '10px',
+                                padding: '10px 8px',
+                                fontSize: '14px',
+                                fontWeight: 800,
+                                color: '#1E3A8A',
+                                textAlign: 'center'
+                              }}
+                            >
+                              {['01','02','03','04','05','06','07','08','09','10','11','12'].map((h) => (
+                                <option key={`h-${h}`} value={h}>{h}</option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Minute Selector */}
+                          <div>
+                            <div style={{ fontSize: '10px', fontWeight: 700, color: '#3B82F6', marginBottom: '3px' }}>Minute</div>
+                            <select
+                              value={scheduledMinute}
+                              onChange={(e) => setScheduledMinute(e.target.value)}
+                              style={{
+                                width: '100%',
+                                background: '#FFFFFF',
+                                border: '2px solid #93C5FD',
+                                borderRadius: '10px',
+                                padding: '10px 8px',
+                                fontSize: '14px',
+                                fontWeight: 800,
+                                color: '#1E3A8A',
+                                textAlign: 'center'
+                              }}
+                            >
+                              {['00','05','10','15','20','25','30','35','40','45','50','55'].map((m) => (
+                                <option key={`m-${m}`} value={m}>{m}</option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* AM / PM Toggle Buttons */}
+                          <div>
+                            <div style={{ fontSize: '10px', fontWeight: 700, color: '#3B82F6', marginBottom: '3px' }}>Period</div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
+                              <button
+                                type="button"
+                                onClick={() => setScheduledAmPm('AM')}
+                                style={{
+                                  padding: '10px 4px',
+                                  borderRadius: '8px',
+                                  border: scheduledAmPm === 'AM' ? '2px solid #2563EB' : '1.5px solid #BFDBFE',
+                                  background: scheduledAmPm === 'AM' ? '#2563EB' : '#FFFFFF',
+                                  color: scheduledAmPm === 'AM' ? '#FFFFFF' : '#1E40AF',
+                                  fontWeight: 900,
+                                  fontSize: '12px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                AM
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setScheduledAmPm('PM')}
+                                style={{
+                                  padding: '10px 4px',
+                                  borderRadius: '8px',
+                                  border: scheduledAmPm === 'PM' ? '2px solid #2563EB' : '1.5px solid #BFDBFE',
+                                  background: scheduledAmPm === 'PM' ? '#2563EB' : '#FFFFFF',
+                                  color: scheduledAmPm === 'PM' ? '#FFFFFF' : '#1E40AF',
+                                  fontWeight: 900,
+                                  fontSize: '12px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                PM
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       </div>
+
+                      {/* Selected Schedule Summary Card */}
+                      <div style={{
+                        background: '#FFFFFF',
+                        border: '1.5px solid #BFDBFE',
+                        borderRadius: '10px',
+                        padding: '10px 14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Clock size={16} color="#2563EB" />
+                          <span style={{ fontSize: '12px', color: '#1E3A8A', fontWeight: 600 }}>Pickup Schedule:</span>
+                        </div>
+                        <span style={{ fontSize: '13px', fontWeight: 900, color: '#1D4ED8' }}>
+                          {scheduledDate} at {scheduledHour}:{scheduledMinute} {scheduledAmPm}
+                        </span>
+                      </div>
+
                       <div style={{ fontSize: '11px', color: '#3B82F6', lineHeight: '1.4' }}>
                         • We will automatically dispatch your ride to nearby active riders 15 minutes before your scheduled pickup time.<br />
                         • Free cancellation anytime before dispatch.
