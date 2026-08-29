@@ -72,8 +72,11 @@ const RideModel = {
     paymentMethod = 'CASH',
     femaleRiderOnly = false,
     isDoubleRide = false,
-    isOutside = false
+    isOutside = false,
+    isScheduled = false,
+    scheduledTime = null
   }) {
+    const finalStatus = isScheduled ? 'SCHEDULED' : status;
     const result = await db.query(
       `INSERT INTO rides (
         ride_code, customer_id, vehicle_type,
@@ -81,15 +84,18 @@ const RideModel = {
         via_address, via_latitude, via_longitude,
         destination_address, destination_latitude, destination_longitude,
         estimated_distance, estimated_duration, estimated_fare,
-        otp, status, payment_method, female_rider_only, is_double_ride, is_outside, payment_status, requested_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', CURRENT_TIMESTAMP)`,
+        otp, status, payment_method, female_rider_only, is_double_ride, is_outside,
+        is_scheduled, scheduled_time, is_dispatched,
+        payment_status, requested_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'PENDING', CURRENT_TIMESTAMP)`,
       [
         rideCode, customerId, vehicleType,
         pickupAddress, pickupLatitude, pickupLongitude,
         viaAddress || null, viaLatitude || null, viaLongitude || null,
         destinationAddress, destinationLatitude, destinationLongitude,
         estimatedDistance, estimatedDuration, estimatedFare,
-        otp, status, paymentMethod, femaleRiderOnly ? 1 : 0, isDoubleRide ? 1 : 0, isOutside ? 1 : 0
+        otp, finalStatus, paymentMethod, femaleRiderOnly ? 1 : 0, isDoubleRide ? 1 : 0, isOutside ? 1 : 0,
+        isScheduled ? 1 : 0, scheduledTime || null
       ]
     );
     return this.findById(result.insertId);
@@ -444,6 +450,58 @@ const RideModel = {
 
     const row = await db.queryOne(sql, params);
     return row ? row.total : 0;
+  },
+
+  async findDueScheduledRides(dispatchWindowMinutes = 15) {
+    const sql = `
+      SELECT r.*, 
+             COALESCE(CONVERT_TZ(r.scheduled_time, '+00:00', '+05:30'), r.scheduled_time) as scheduled_time_ist,
+             c.name as customer_name, c.gender as customer_gender, c.phone as customer_phone
+      FROM rides r
+      JOIN users c ON r.customer_id = c.id
+      WHERE r.is_scheduled = 1 
+        AND r.is_dispatched = 0
+        AND r.status = 'SCHEDULED'
+        AND r.scheduled_time <= DATE_ADD(NOW(), INTERVAL ? MINUTE)
+    `;
+    return db.query(sql, [dispatchWindowMinutes]);
+  },
+
+  async markScheduledDispatched(rideId) {
+    await db.query(
+      `UPDATE rides SET status = 'REQUESTED', is_dispatched = 1, requested_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'SCHEDULED'`,
+      [rideId]
+    );
+    return this.findById(rideId);
+  },
+
+  async getScheduledRidesForCustomer(customerId) {
+    const sql = `
+      SELECT r.*,
+             COALESCE(CONVERT_TZ(r.scheduled_time, '+00:00', '+05:30'), r.scheduled_time) as scheduled_time_ist,
+             COALESCE(r.final_fare, r.estimated_fare) as total_fare,
+             rd.name as rider_name, rd.phone as rider_phone
+      FROM rides r
+      LEFT JOIN users rd ON r.rider_id = rd.id
+      WHERE r.customer_id = ? 
+        AND r.is_scheduled = 1
+        AND r.status IN ('SCHEDULED', 'REQUESTED', 'ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED')
+      ORDER BY r.scheduled_time ASC, r.id DESC
+    `;
+    return db.query(sql, [customerId]);
+  },
+
+  async cancelScheduledRide(rideId, customerId, reason = 'Cancelled by passenger') {
+    const sql = `
+      UPDATE rides 
+      SET status = 'CANCELLED',
+          cancellation_reason = ?,
+          cancelled_by_role = 'CUSTOMER',
+          cancelled_at = CURRENT_TIMESTAMP
+      WHERE id = ? AND customer_id = ? AND status = 'SCHEDULED'
+    `;
+    const res = await db.query(sql, [reason, rideId, customerId]);
+    return res.affectedRows > 0;
   }
 };
 

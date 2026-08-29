@@ -24,11 +24,20 @@ async function startServer() {
     // 4. Start Listening
     server.listen(env.PORT, () => {
       logger.info(`========================================================`);
-      logger.info(`  🚀 PAPIDO BACKEND SERVER RUNNING ON PORT ${env.PORT}     `);
+      logger.info(`  PAPIDO BACKEND SERVER RUNNING ON PORT ${env.PORT}     `);
       logger.info(`  Environment: ${env.NODE_ENV}                            `);
       logger.info(`  Health Check: http://localhost:${env.PORT}/api/health   `);
       logger.info(`========================================================`);
     });
+
+    // 5. Scheduled Rides Periodic Background Dispatcher (Every 30s)
+    setInterval(async () => {
+      try {
+        await RideService.dispatchScheduledRides(15);
+      } catch (schErr) {
+        logger.warn(`Scheduled ride dispatch notice: ${schErr.message}`);
+      }
+    }, 30000);
 
     // Graceful Shutdown
     const gracefulShutdown = (signal) => {

@@ -157,6 +157,55 @@ const RideService = {
     const rideCode = this.generateRideCode();
     const otp = this.generateOTP();
 
+    // Check if this is a pre-booked scheduled trip
+    const isScheduledTrip = isScheduled === true || isScheduled === 'true' || isScheduled === 1;
+    if (isScheduledTrip && scheduledTime) {
+      const ride = await RideModel.create({
+        rideCode,
+        customerId,
+        vehicleType,
+        pickupAddress,
+        pickupLatitude,
+        pickupLongitude,
+        viaAddress,
+        viaLatitude,
+        viaLongitude,
+        destinationAddress,
+        destinationLatitude,
+        destinationLongitude,
+        estimatedDistance: fareEstimate.distanceKm,
+        estimatedDuration: fareEstimate.durationMinutes,
+        estimatedFare: fareEstimate.estimatedFare,
+        otp,
+        status: 'SCHEDULED',
+        paymentMethod,
+        femaleRiderOnly,
+        isDoubleRide: Boolean(fareEstimate.isDoubleRide),
+        isOutside: false,
+        isScheduled: true,
+        scheduledTime
+      });
+
+      // Notify customer
+      await NotificationModel.create({
+        userId: customerId,
+        title: 'Ride Pre-Booked',
+        message: `Your ride ${rideCode} has been scheduled for ${scheduledTime}. Nearby riders will be matched 15 minutes before departure.`,
+        type: 'RIDE_SCHEDULED',
+        data: { rideId: ride.id, rideCode, scheduledTime, femaleRiderOnly, isDoubleRide }
+      });
+
+      await AuditModel.log({
+        userId: customerId,
+        action: 'RIDE_SCHEDULED',
+        entityType: 'RIDE',
+        entityId: ride.id,
+        details: { rideCode, scheduledTime, estimatedFare: fareEstimate.estimatedFare, isDoubleRide }
+      });
+
+      return ride;
+    }
+
     const ride = await RideModel.create({
       rideCode,
       customerId,
@@ -212,6 +261,68 @@ const RideService = {
     });
 
     return ride;
+  },
+
+  /**
+   * Dispatches scheduled rides whose pickup time is within 15 minutes
+   */
+  async dispatchScheduledRides(dispatchWindowMinutes = 15) {
+    const dueRides = await RideModel.findDueScheduledRides(dispatchWindowMinutes);
+    if (!dueRides || dueRides.length === 0) return 0;
+
+    for (const ride of dueRides) {
+      try {
+        const updatedRide = await RideModel.markScheduledDispatched(ride.id);
+        if (!updatedRide) continue;
+
+        // Notify customer
+        await NotificationModel.create({
+          userId: ride.customer_id,
+          title: 'Scheduled Ride Dispatching',
+          message: `Your pre-booked ride ${ride.ride_code} is now searching for nearby riders.`,
+          type: 'SCHEDULED_RIDE_DISPATCHING',
+          data: { rideId: ride.id, rideCode: ride.ride_code }
+        });
+
+        if (socketManager) {
+          // Notify customer in real-time
+          socketManager.io.to(`user_${ride.customer_id}`).emit('ride:status_change', {
+            rideId: updatedRide.id,
+            rideCode: updatedRide.ride_code,
+            status: 'REQUESTED',
+            ride: updatedRide,
+            timestamp: new Date().toISOString()
+          });
+
+          // Broadcast to online riders
+          let nearbyRiders = await RiderModel.findNearbyOnlineRiders(
+            updatedRide.pickup_latitude,
+            updatedRide.pickup_longitude,
+            updatedRide.vehicle_type,
+            10.0
+          );
+          if (updatedRide.female_rider_only) {
+            nearbyRiders = nearbyRiders.filter(r => r.gender === 'FEMALE');
+          }
+          socketManager.broadcastNewRideRequest(updatedRide, nearbyRiders);
+        }
+      } catch (err) {
+        console.warn(`Error dispatching scheduled ride #${ride.id}:`, err.message);
+      }
+    }
+    return dueRides.length;
+  },
+
+  async getScheduledRides(customerId) {
+    return RideModel.getScheduledRidesForCustomer(customerId);
+  },
+
+  async cancelScheduledRide(rideId, customerId, reason) {
+    const success = await RideModel.cancelScheduledRide(rideId, customerId, reason || 'Cancelled by passenger before dispatch');
+    if (!success) {
+      throw new Error('Scheduled ride not found or could not be cancelled.');
+    }
+    return { success: true, rideId };
   },
 
   /**

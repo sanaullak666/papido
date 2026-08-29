@@ -517,6 +517,15 @@ async function bootstrapMysqlSchema(targetPool) {
     try {
       await targetPool.query('ALTER TABLE rider_profiles ADD COLUMN upi_id VARCHAR(100) DEFAULT NULL AFTER license_number;');
     } catch (_) {}
+    try {
+      await targetPool.query('ALTER TABLE rides ADD COLUMN is_scheduled BOOLEAN DEFAULT FALSE AFTER is_outside;');
+    } catch (_) {}
+    try {
+      await targetPool.query('ALTER TABLE rides ADD COLUMN scheduled_time DATETIME DEFAULT NULL AFTER is_scheduled;');
+    } catch (_) {}
+    try {
+      await targetPool.query('ALTER TABLE rides ADD COLUMN is_dispatched BOOLEAN DEFAULT FALSE AFTER scheduled_time;');
+    } catch (_) {}
   } catch (err) {
     console.warn('[Database Warning] MySQL bootstrap notice:', err.message);
   }

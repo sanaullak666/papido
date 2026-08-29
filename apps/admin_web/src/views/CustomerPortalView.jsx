@@ -39,7 +39,8 @@ import {
   Award,
   Sparkles,
   ShieldCheck,
-  ThumbsUp
+  ThumbsUp,
+  Calendar
 } from 'lucide-react';
 
 const DEFAULT_GROUPED_CAMPUS_STOPS = [
@@ -212,6 +213,22 @@ export function CustomerPortalView() {
   const [femaleRiderOnly, setFemaleRiderOnly] = useState(false);
   const [isDoubleRide, setIsDoubleRide] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('CASH');
+
+  // Pre-Booking / Scheduled Ride State
+  const [bookingMode, setBookingMode] = useState('NOW'); // 'NOW' or 'SCHEDULE'
+  const [scheduledDate, setScheduledDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
+  const [scheduledTime, setScheduledTime] = useState(() => {
+    const now = new Date(Date.now() + 60 * 60 * 1000);
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(Math.floor(now.getMinutes() / 15) * 15).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  });
+  const [scheduledRides, setScheduledRides] = useState([]);
+  const [scheduledLoading, setScheduledLoading] = useState(false);
+  const [scheduledSuccessMsg, setScheduledSuccessMsg] = useState(null);
 
   // Preference Availability Confirmation Modal State
   const [showPreferenceModal, setShowPreferenceModal] = useState(false);
@@ -910,14 +927,41 @@ export function CustomerPortalView() {
     }
   };
 
+  const fetchScheduledRides = async () => {
+    if (!token) return;
+    try {
+      setScheduledLoading(true);
+      const res = await apiRequest('/customer/rides/scheduled', 'GET', null, token);
+      if (res && res.data) {
+        setScheduledRides(res.data || []);
+      }
+    } catch (_) {
+    } finally {
+      setScheduledLoading(false);
+    }
+  };
+
+  const handleCancelScheduledRide = async (rideId) => {
+    if (!window.confirm('Are you sure you want to cancel this pre-booked ride? Zero cancellation fee applies.')) return;
+    try {
+      await apiRequest(`/customer/rides/${rideId}/cancel-scheduled`, 'POST', {}, token);
+      fetchScheduledRides();
+      setStatusMessage('Pre-booked ride cancelled successfully with zero charge.');
+    } catch (err) {
+      alert(err.message || 'Failed to cancel pre-booked ride.');
+    }
+  };
+
   useEffect(() => {
     if (!token) return;
     fetchActiveRide(false);
     fetchFlashFreeRide();
+    fetchScheduledRides();
     const pollInterval = setInterval(() => {
       fetchActiveRide(true);
       fetchFlashFreeRide();
-    }, 2500);
+      fetchScheduledRides();
+    }, 3000);
     return () => clearInterval(pollInterval);
   }, [token]);
 
@@ -1105,6 +1149,9 @@ export function CustomerPortalView() {
   const executeRequestRide = async (overrides = {}) => {
     const finalVehicleType = overrides.vehicleType !== undefined ? overrides.vehicleType : vehicleType;
     const finalFemaleOnly = overrides.femaleRiderOnly !== undefined ? overrides.femaleRiderOnly : femaleRiderOnly;
+    const isSched = overrides.isScheduled !== undefined ? overrides.isScheduled : (bookingMode === 'SCHEDULE');
+    const schedDate = overrides.scheduledDate !== undefined ? overrides.scheduledDate : scheduledDate;
+    const schedTime = overrides.scheduledTime !== undefined ? overrides.scheduledTime : scheduledTime;
 
     setBookingLoading(true);
     const isFemaleCustomer = (user?.gender || '').toUpperCase() === 'FEMALE';
@@ -1119,7 +1166,7 @@ export function CustomerPortalView() {
       : destAddress;
 
     try {
-      const res = await apiRequest('/customer/rides', 'POST', {
+      const payload = {
         pickupLatitude: pickupCoords.lat,
         pickupLongitude: pickupCoords.lng,
         pickupAddress: finalPickup,
@@ -1133,10 +1180,23 @@ export function CustomerPortalView() {
         femaleRiderOnly: isFemaleCustomer ? Boolean(finalFemaleOnly) : false,
         isDoubleRide,
         paymentMethod
-      }, token);
+      };
 
-      setActiveRide(res.data);
-      setStatusMessage('Searching for available campus riders...');
+      if (isSched) {
+        payload.isScheduled = true;
+        payload.scheduledTime = `${schedDate} ${schedTime}:00`;
+      }
+
+      const res = await apiRequest('/customer/rides', 'POST', payload, token);
+
+      if (isSched) {
+        setScheduledSuccessMsg(`Your ride has been pre-booked for ${schedDate} at ${schedTime}!`);
+        setStatusMessage(`Ride pre-booked for ${schedDate} at ${schedTime}.`);
+        fetchScheduledRides();
+      } else {
+        setActiveRide(res.data);
+        setStatusMessage('Searching for available campus riders...');
+      }
       setShowPreferenceModal(false);
     } catch (err) {
       if (err.hasPendingPenalty || err.penalty) {
@@ -1157,6 +1217,21 @@ export function CustomerPortalView() {
     }
     if (!pickupCoords || !destCoords) {
       alert('Please select valid pickup and destination locations.');
+      return;
+    }
+
+    if (bookingMode === 'SCHEDULE') {
+      if (!scheduledDate || !scheduledTime) {
+        alert('Please select a valid date and pickup time for pre-booking.');
+        return;
+      }
+      const chosenDateTime = new Date(`${scheduledDate}T${scheduledTime}:00`);
+      const minDateTime = new Date(Date.now() + 10 * 60 * 1000);
+      if (chosenDateTime <= minDateTime) {
+        alert('Pre-booking must be at least 15 minutes ahead of the current time.');
+        return;
+      }
+      executeRequestRide({ isScheduled: true });
       return;
     }
 
@@ -1709,8 +1784,135 @@ export function CustomerPortalView() {
 
                   <div>
                     <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '4px' }}>Book a Campus Ride</h2>
-                    <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Affordable & instant rides across Pondicherry University</p>
+                    <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Affordable &amp; instant rides across Pondicherry University</p>
                   </div>
+
+                  {/* Booking Mode Switch: Ride Now vs Pre-Book for Later */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '8px',
+                    background: '#F3ECE2',
+                    padding: '4px',
+                    borderRadius: '12px',
+                    border: '1px solid #E8DCCB'
+                  }}>
+                    <button
+                      type="button"
+                      onClick={() => setBookingMode('NOW')}
+                      style={{
+                        padding: '10px',
+                        borderRadius: '10px',
+                        border: 'none',
+                        background: bookingMode === 'NOW' ? '#FFFFFF' : 'transparent',
+                        color: bookingMode === 'NOW' ? '#EA580C' : '#796D61',
+                        fontWeight: 800,
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        boxShadow: bookingMode === 'NOW' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <Zap size={15} /> Ride Now
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setBookingMode('SCHEDULE')}
+                      style={{
+                        padding: '10px',
+                        borderRadius: '10px',
+                        border: 'none',
+                        background: bookingMode === 'SCHEDULE' ? '#FFFFFF' : 'transparent',
+                        color: bookingMode === 'SCHEDULE' ? '#2563EB' : '#796D61',
+                        fontWeight: 800,
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        boxShadow: bookingMode === 'SCHEDULE' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <Calendar size={15} /> Pre-Book for Later
+                    </button>
+                  </div>
+
+                  {/* Pre-Booking Date & Time Selector */}
+                  {bookingMode === 'SCHEDULE' && (
+                    <div style={{
+                      background: 'linear-gradient(135deg, #EFF6FF, #DBEAFE)',
+                      border: '1.5px solid #93C5FD',
+                      borderRadius: '12px',
+                      padding: '14px 16px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '10px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, color: '#1E40AF', fontSize: '13px' }}>
+                        <Calendar size={16} /> Schedule Trip Date &amp; Pickup Time
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                        <div>
+                          <label style={{ fontSize: '11px', fontWeight: 700, color: '#1E3A8A', display: 'block', marginBottom: '4px' }}>
+                            Trip Date
+                          </label>
+                          <input
+                            type="date"
+                            min={new Date().toISOString().split('T')[0]}
+                            value={scheduledDate}
+                            onChange={(e) => setScheduledDate(e.target.value)}
+                            className="form-input"
+                            style={{ background: '#FFFFFF', border: '1.5px solid #BFDBFE', fontSize: '13px', padding: '8px 10px', color: '#1E3A8A', fontWeight: 700 }}
+                          />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '11px', fontWeight: 700, color: '#1E3A8A', display: 'block', marginBottom: '4px' }}>
+                            Pickup Time
+                          </label>
+                          <input
+                            type="time"
+                            value={scheduledTime}
+                            onChange={(e) => setScheduledTime(e.target.value)}
+                            className="form-input"
+                            style={{ background: '#FFFFFF', border: '1.5px solid #BFDBFE', fontSize: '13px', padding: '8px 10px', color: '#1E3A8A', fontWeight: 700 }}
+                          />
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#3B82F6', lineHeight: '1.4' }}>
+                        • We will automatically dispatch your ride to nearby active riders 15 minutes before your scheduled pickup time.<br />
+                        • Free cancellation anytime before dispatch.
+                      </div>
+                    </div>
+                  )}
+
+                  {scheduledSuccessMsg && (
+                    <div style={{
+                      background: '#ECFDF5',
+                      border: '1.5px solid #6EE7B7',
+                      borderRadius: '10px',
+                      padding: '10px 14px',
+                      color: '#065F46',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}>
+                      <span>{scheduledSuccessMsg}</span>
+                      <button
+                        type="button"
+                        onClick={() => setScheduledSuccessMsg(null)}
+                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#065F46', fontWeight: 800 }}
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  )}
 
                   {/* Pickup Campus Stop Selection */}
                   <div className="form-group">
@@ -2101,10 +2303,101 @@ export function CustomerPortalView() {
                     disabled={bookingLoading || !pickupAddress || !destAddress}
                     onClick={handleRequestRide}
                     className="btn btn-primary"
-                    style={{ width: '100%', padding: '14px', fontWeight: 800, fontSize: '15px' }}
+                    style={{
+                      width: '100%',
+                      padding: '14px',
+                      fontWeight: 800,
+                      fontSize: '15px',
+                      background: bookingMode === 'SCHEDULE' ? 'linear-gradient(135deg, #2563EB, #1D4ED8)' : undefined
+                    }}
                   >
-                    {bookingLoading ? 'Requesting Ride...' : 'Request Campus Ride Now'}
+                    {bookingLoading
+                      ? (bookingMode === 'SCHEDULE' ? 'Pre-Booking Ride...' : 'Requesting Ride...')
+                      : (bookingMode === 'SCHEDULE' ? 'Pre-Book Campus Ride Now' : 'Request Campus Ride Now')}
                   </button>
+
+                  {/* Upcoming Pre-Booked Scheduled Rides Section */}
+                  {scheduledRides && scheduledRides.length > 0 && (
+                    <div style={{
+                      background: '#EFF6FF',
+                      border: '1.5px solid #93C5FD',
+                      borderRadius: '14px',
+                      padding: '14px 16px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '10px',
+                      marginTop: '6px'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800, fontSize: '13px', color: '#1E40AF' }}>
+                          <Calendar size={15} /> My Upcoming Pre-Booked Rides ({scheduledRides.length})
+                        </div>
+                        <button
+                          type="button"
+                          onClick={fetchScheduledRides}
+                          style={{ background: 'transparent', border: 'none', color: '#2563EB', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: 700 }}
+                        >
+                          <RefreshCw size={12} /> Refresh
+                        </button>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {scheduledRides.map((sr) => (
+                          <div
+                            key={`sch-${sr.id}`}
+                            style={{
+                              background: '#FFFFFF',
+                              border: '1px solid #BFDBFE',
+                              borderRadius: '10px',
+                              padding: '12px',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              gap: '10px'
+                            }}
+                          >
+                            <div style={{ flex: 1 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '3px' }}>
+                                <span style={{ background: '#DBEAFE', color: '#1E40AF', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 800 }}>
+                                  #{sr.ride_code}
+                                </span>
+                                <span style={{ fontSize: '12px', fontWeight: 800, color: '#1E40AF' }}>
+                                  {sr.scheduled_time_ist || sr.scheduled_time}
+                                </span>
+                                <span style={{ background: '#FEF3C7', color: '#92400E', padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }}>
+                                  {sr.status}
+                                </span>
+                              </div>
+                              <div style={{ fontSize: '11px', color: '#4B5563', lineHeight: '1.4' }}>
+                                {sr.pickup_address} → {sr.destination_address}
+                              </div>
+                              <div style={{ fontSize: '11px', color: '#2563EB', fontWeight: 700, marginTop: '2px' }}>
+                                Estimated Fare: ₹{sr.total_fare || sr.estimated_fare} • {sr.vehicle_type || 'BIKE'}
+                              </div>
+                            </div>
+                            {sr.status === 'SCHEDULED' && (
+                              <button
+                                type="button"
+                                onClick={() => handleCancelScheduledRide(sr.id)}
+                                className="btn btn-secondary btn-sm"
+                                style={{
+                                  padding: '5px 10px',
+                                  fontSize: '11px',
+                                  fontWeight: 700,
+                                  color: '#DC2626',
+                                  borderColor: '#FECACA',
+                                  background: '#FEF2F2',
+                                  flexShrink: 0
+                                }}
+                              >
+                                Cancel
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
 

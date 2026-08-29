@@ -90,7 +90,9 @@ const CustomerController = {
         paymentMethod,
         femaleRiderOnly,
         isDoubleRide,
-        isOutside
+        isOutside,
+        isScheduled,
+        scheduledTime
       } = req.body;
 
       if (!pickupAddress || !destinationAddress) {
@@ -157,6 +159,8 @@ const CustomerController = {
       const routeFare = await FareModel.findRouteFare(finalPickup, finalDest);
       const outsideTrip = isExplicitOutside || (isKeywordsOutside && !routeFare);
 
+      const isScheduledTrip = isScheduled === true || isScheduled === 'true' || isScheduled === 1;
+
       const UserModel = require('../models/user.model');
       const customer = await UserModel.findById(req.user.id);
       const isFemaleCustomer = (customer?.gender || req.user.gender || '').toUpperCase() === 'FEMALE';
@@ -177,12 +181,16 @@ const CustomerController = {
         paymentMethod: paymentMethod || 'CASH',
         femaleRiderOnly: isFemaleOnlyRequested,
         isDoubleRide: !outsideTrip && (isDoubleRide === true || isDoubleRide === 'true' || isDoubleRide === 1),
-        isOutside: outsideTrip
+        isOutside: outsideTrip,
+        isScheduled: isScheduledTrip,
+        scheduledTime: isScheduledTrip ? scheduledTime : null
       });
 
-      const responseMessage = outsideTrip
-        ? 'Outside trip submitted to Dispatch. Admin is setting the fare & assigning a rider.'
-        : 'Ride requested successfully. Searching for nearby riders.';
+      const responseMessage = isScheduledTrip
+        ? `Ride pre-booked successfully for ${scheduledTime}.`
+        : (outsideTrip
+            ? 'Outside trip submitted to Dispatch. Admin is setting the fare & assigning a rider.'
+            : 'Ride requested successfully. Searching for nearby riders.');
 
       return success(res, responseMessage, ride, 201);
     } catch (err) {
@@ -453,6 +461,26 @@ const CustomerController = {
       }
 
       return success(res, 'Congratulations! You won the Papido Flash Free Ride!', completeRide);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async getScheduledRides(req, res, next) {
+    try {
+      const rides = await RideService.getScheduledRides(req.user.id);
+      return success(res, 'Scheduled rides fetched successfully.', rides);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async cancelScheduledRide(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { reason } = req.body || {};
+      const result = await RideService.cancelScheduledRide(id, req.user.id, reason);
+      return success(res, 'Scheduled ride cancelled successfully with zero charge.', result);
     } catch (err) {
       next(err);
     }
