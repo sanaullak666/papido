@@ -193,15 +193,23 @@ export function AuthProvider({ children }) {
   const logout = () => {
     localStorage.removeItem('papido_user_token');
     localStorage.removeItem('papido_user');
+    try {
+      sessionStorage.clear();
+    } catch (_) {}
     setToken(null);
     setUser(null);
+    window.location.replace('/login');
   };
 
   const adminLogout = () => {
     localStorage.removeItem('papido_admin_token');
     localStorage.removeItem('papido_admin_user');
+    try {
+      sessionStorage.clear();
+    } catch (_) {}
     setAdminToken(null);
     setAdminUser(null);
+    window.location.replace('/admin');
   };
 
   return (

@@ -301,18 +301,7 @@ export function App() {
   }
 
   // ============================================================
-  // 2. DIRECT STANDALONE PORTAL ROUTES
-  // ============================================================
-  if (currentPath === '/passenger' || currentPath.startsWith('/passenger/') || currentPath === '/customer' || currentPath.startsWith('/customer/') || currentPath === '/book') {
-    return <CustomerPortalView />;
-  }
-
-  if (currentPath === '/driver' || currentPath.startsWith('/driver/') || currentPath === '/rider' || currentPath.startsWith('/rider/')) {
-    return <RiderPortalView />;
-  }
-
-  // ============================================================
-  // 3. AUTHENTICATION (Not Logged In)
+  // 2. AUTHENTICATION (Not Logged In)
   // ============================================================
   if (!user) {
     return (
@@ -323,13 +312,13 @@ export function App() {
   }
 
   // ============================================================
-  // 4. ROLE-BASED ROUTING FOR AUTHENTICATED USERS
+  // 3. ROLE-BASED ROUTING FOR AUTHENTICATED USERS
   // ============================================================
-  if (user.role === 'CUSTOMER') {
+  if (user.role === 'CUSTOMER' || currentPath === '/passenger' || currentPath.startsWith('/passenger/') || currentPath === '/customer' || currentPath.startsWith('/customer/') || currentPath === '/book') {
     return <CustomerPortalView />;
   }
 
-  if (user.role === 'RIDER') {
+  if (user.role === 'RIDER' || currentPath === '/driver' || currentPath.startsWith('/driver/') || currentPath === '/rider' || currentPath.startsWith('/rider/')) {
     return <RiderPortalView />;
   }
 
