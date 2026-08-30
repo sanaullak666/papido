@@ -1920,7 +1920,7 @@ export function CustomerPortalView() {
                           gap: '8px'
                         }}
                       >
-                        {claimingFlash ? 'CLAIMING FREE RIDE...' : '🔥 CLAIM THIS FREE RIDE NOW (₹0)'}
+                        {claimingFlash ? 'CLAIMING FREE RIDE...' : 'CLAIM THIS FREE RIDE NOW (₹0)'}
                       </button>
                       {flashClaimMsg && (
                         <div style={{ marginTop: '8px', fontSize: '12px', color: '#EF4444', fontWeight: 700, textAlign: 'center' }}>
