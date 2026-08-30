@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../api';
-import { MapPin, Save, Plus, Edit2, CheckCircle, RefreshCw, Trash2, ArrowRight, Sliders } from 'lucide-react';
+import { MapPin, Save, Plus, Edit2, CheckCircle, RefreshCw, Trash2, ArrowRight, Sliders, Users, Tag, Sparkles, Check, X, Info } from 'lucide-react';
 
 const CAMPUS_STOPS = [
   'SJC (Silver Jubilee Campus)',
@@ -22,6 +22,8 @@ export function FareSettingsView() {
   const [editingConfig, setEditingConfig] = useState(null);
   const [editingRoute, setEditingRoute] = useState(null);
   const [showAddRoute, setShowAddRoute] = useState(false);
+  const [isEditingStandardFare, setIsEditingStandardFare] = useState(false);
+  const [tempStandardFare, setTempStandardFare] = useState('25.00');
   const [newRoute, setNewRoute] = useState({
     pickupStop: '',
     destinationStop: '',
@@ -48,8 +50,14 @@ export function FareSettingsView() {
         apiRequest('/admin/fare-settings'),
         apiRequest('/admin/route-fares')
       ]);
-      setFareConfigs(configsRes.data || []);
+      const cfgs = configsRes.data || [];
+      setFareConfigs(cfgs);
       setRouteFares(routesRes.data || []);
+
+      const bikeCfg = cfgs.find(c => c.vehicle_type === 'BIKE') || cfgs[0];
+      if (bikeCfg) {
+        setTempStandardFare(String(parseFloat(bikeCfg.minimum_fare || bikeCfg.base_fare || 25).toFixed(2)));
+      }
     } catch (err) {
       console.error('Failed to load fare settings', err);
     } finally {
@@ -60,6 +68,36 @@ export function FareSettingsView() {
   useEffect(() => {
     loadData();
   }, []);
+
+  const handleUpdateStandardCampusFare = async () => {
+    const val = parseFloat(tempStandardFare);
+    if (!val || isNaN(val) || val <= 0) {
+      alert('Please enter a valid positive fare amount.');
+      return;
+    }
+
+    try {
+      setSavingFare(true);
+      await Promise.all([
+        apiRequest('/admin/fare-settings/BIKE', 'PATCH', {
+          baseFare: val,
+          minimumFare: val
+        }),
+        apiRequest('/admin/fare-settings/SCOOTER', 'PATCH', {
+          baseFare: val,
+          minimumFare: val
+        })
+      ]);
+      setSuccessMsg(`Global standard campus flat fare updated to ₹${val.toFixed(2)} for all standard trips!`);
+      setTimeout(() => setSuccessMsg(''), 4000);
+      setIsEditingStandardFare(false);
+      loadData();
+    } catch (err) {
+      alert(`Failed to update standard fare: ${err.message}`);
+    } finally {
+      setSavingFare(false);
+    }
+  };
 
   const handleUpdateFare = async (config) => {
     try {
@@ -135,12 +173,175 @@ export function FareSettingsView() {
         </div>
       )}
 
+      {/* Basic Fare Settings Quick Dashboard */}
+      <div className="panel" style={{ marginBottom: '24px' }}>
+        <div className="panel-header" style={{ marginBottom: '16px' }}>
+          <div>
+            <h2 className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Sparkles className="text-primary" size={20} /> Basic Campus Fare Policy
+            </h2>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+              Unified campus pricing: standard flat fare, double ride discount, and outer SJC route exceptions.
+            </p>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+          {/* Card 1: Standard Flat Campus Fare */}
+          <div style={{
+            background: 'var(--bg-sidebar)',
+            border: '1px solid var(--border)',
+            borderRadius: '12px',
+            padding: '18px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between'
+          }}>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span className="badge badge-warning" style={{ fontSize: '11px', fontWeight: 800 }}>
+                  STANDARD CAMPUS FARE
+                </span>
+                {!isEditingStandardFare ? (
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => setIsEditingStandardFare(true)}
+                    style={{ padding: '3px 8px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    <Edit2 size={12} /> Edit
+                  </button>
+                ) : (
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <button
+                      className="btn btn-primary btn-sm"
+                      onClick={handleUpdateStandardCampusFare}
+                      disabled={savingFare}
+                      style={{ padding: '3px 8px', fontSize: '11px' }}
+                    >
+                      <Check size={12} /> Save
+                    </button>
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => setIsEditingStandardFare(false)}
+                      style={{ padding: '3px 8px', fontSize: '11px' }}
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ margin: '10px 0' }}>
+                {isEditingStandardFare ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--primary)' }}>₹</span>
+                    <input
+                      type="number"
+                      step="1"
+                      className="form-input"
+                      style={{ fontSize: '20px', fontWeight: 800, padding: '4px 10px', width: '110px' }}
+                      value={tempStandardFare}
+                      onChange={(e) => setTempStandardFare(e.target.value)}
+                      autoFocus
+                    />
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '28px', fontWeight: 900, color: 'var(--primary)' }}>
+                    ₹{parseFloat(tempStandardFare || 25).toFixed(2)}
+                  </div>
+                )}
+              </div>
+
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.4, margin: 0 }}>
+                Default flat rate applied to all standard intra-campus rides (Hostels, Library, Departments, Canteen).
+              </p>
+            </div>
+            <div style={{ marginTop: '12px', fontSize: '11px', color: 'var(--text-muted)', background: 'var(--bg-card)', padding: '6px 10px', borderRadius: '6px' }}>
+              Driver take-home: <strong>₹{(parseFloat(tempStandardFare || 25) - 4).toFixed(2)}</strong> (after ₹4 platform split)
+            </div>
+          </div>
+
+          {/* Card 2: Double Ride Policy */}
+          <div style={{
+            background: 'var(--bg-sidebar)',
+            border: '1px solid var(--border)',
+            borderRadius: '12px',
+            padding: '18px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between'
+          }}>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span className="badge badge-success" style={{ fontSize: '11px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <Users size={12} /> DOUBLE RIDE (2 RIDERS)
+                </span>
+                <span style={{ fontSize: '11px', color: '#34D399', fontWeight: 700 }}>Save ₹10</span>
+              </div>
+
+              <div style={{ fontSize: '28px', fontWeight: 900, color: '#34D399', margin: '10px 0' }}>
+                ₹40.00 <span style={{ fontSize: '13px', fontWeight: 'normal', color: 'var(--text-muted)' }}>(₹20 / student)</span>
+              </div>
+
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.4, margin: 0 }}>
+                Formula: <strong>(Single Fare × 2) − ₹10</strong>. Students pool to save ₹5 each; drivers earn +71% more per trip.
+              </p>
+            </div>
+            <div style={{ marginTop: '12px', fontSize: '11px', color: 'var(--text-muted)', background: 'var(--bg-card)', padding: '6px 10px', borderRadius: '6px' }}>
+              Driver payout on double ride: <strong>₹36.00</strong>
+            </div>
+          </div>
+
+          {/* Card 3: Outer SJC Campus Rates Summary */}
+          <div style={{
+            background: 'var(--bg-sidebar)',
+            border: '1px solid var(--border)',
+            borderRadius: '12px',
+            padding: '18px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between'
+          }}>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span className="badge badge-info" style={{ fontSize: '11px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <Tag size={12} /> SJC ROUTE EXCEPTIONS
+                </span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>4 active routes</span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', margin: '10px 0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                  <span>Girls Hostel ⟷ SJC:</span>
+                  <strong style={{ color: 'var(--primary)' }}>₹30.00</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                  <span>Gate 1 (Main Gate) ⟷ SJC:</span>
+                  <strong style={{ color: 'var(--primary)' }}>₹30.00</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                  <span>Gate 2 (ECR Gate) ⟷ SJC:</span>
+                  <strong style={{ color: 'var(--primary)' }}>₹35.00</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                  <span>Boys Hostel ⟷ SJC:</span>
+                  <strong style={{ color: 'var(--primary)' }}>₹25.00</strong>
+                </div>
+              </div>
+            </div>
+            <div style={{ marginTop: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
+              Managed in the route matrix table below.
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* 1. Campus Route Fares Manager (Admin-Controlled Fixed Route Pricing) */}
       <div className="panel" style={{ marginBottom: '24px' }}>
         <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h2 className="panel-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <MapPin className="text-primary" size={20} /> Campus Route-to-Route Fare Matrix
+              <MapPin className="text-primary" size={20} /> Campus Route-to-Route Fare Matrix & SJC Overrides
             </h2>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
               Set exact fixed pricing (₹) between campus locations. These rates directly sync with the Papido Mobile App.
