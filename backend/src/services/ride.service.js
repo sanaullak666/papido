@@ -573,18 +573,31 @@ const RideService = {
 
       // If directly assigned to a specific rider
       if (assignedRiderId) {
-        socketManager.io.to(`user_${assignedRiderId}`).emit('ride:new_request', {
+        const directPayload = {
+          id: updatedRide.id,
           rideId: updatedRide.id,
           rideCode: updatedRide.ride_code,
           vehicleType: updatedRide.vehicle_type,
+          vehicle_type: updatedRide.vehicle_type,
           pickupAddress: updatedRide.pickup_address,
+          pickup_address: updatedRide.pickup_address,
           destinationAddress: updatedRide.destination_address,
+          destination_address: updatedRide.destination_address,
           estimatedFare: fareAmount,
-          customerName: updatedRide.customer_name,
-          customerGender: updatedRide.customer_gender,
+          estimated_fare: fareAmount,
+          totalFare: fareAmount,
+          total_fare: fareAmount,
+          customerName: updatedRide.customer_name || 'Passenger',
+          customer_name: updatedRide.customer_name || 'Passenger',
+          customerGender: updatedRide.customer_gender || 'OTHER',
+          customer_gender: updatedRide.customer_gender || 'OTHER',
           isDirectAssignment: true,
-          isOutside: true
-        });
+          isOutside: true,
+          is_outside: true
+        };
+
+        socketManager.io.to(`user_${assignedRiderId}`).emit('ride:new_request', directPayload);
+        socketManager.io.to(`user_${assignedRiderId}`).emit('ride:requested', directPayload);
       } else {
         // Broadcast to all eligible online riders
         let nearbyRiders = await RiderModel.findNearbyOnlineRiders(
