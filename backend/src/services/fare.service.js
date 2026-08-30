@@ -29,30 +29,19 @@ const FareService = {
     }
 
     if (!baseResult) {
-      // 2. Fallback to standard base + distance fare configuration if not an exact preset route
+      // 2. Standard Flat Campus Fare Fallback (for any intra-campus ride where no custom route is set)
       const config = await FareModel.getFareConfiguration(vehicleType);
-      const baseFare = config ? parseFloat(config.base_fare) : 25.0;
-      const baseDistance = config ? parseFloat(config.base_distance_km) : 1.5;
-      const perKmFare = config ? parseFloat(config.per_km_fare) : 8.5;
-      const perMinuteFare = config ? parseFloat(config.per_minute_fare) : 0.75;
-      const minimumFare = config ? parseFloat(config.minimum_fare) : 25.0;
-
-      const extraDistance = Math.max(0, distanceKm - baseDistance);
-      const distanceCharge = extraDistance * perKmFare;
-      const timeCharge = durationMinutes * perMinuteFare;
-
-      const rawFare = baseFare + distanceCharge + timeCharge;
-      const finalEstimatedFare = Math.max(minimumFare, Math.round(rawFare));
+      const standardFlatFare = config ? parseFloat(config.base_fare || config.minimum_fare || 25.0) : 25.0;
 
       baseResult = {
         distanceKm,
         durationMinutes,
         vehicleType,
-        baseFare,
-        distanceCharge: Number(distanceCharge.toFixed(2)),
-        timeCharge: Number(timeCharge.toFixed(2)),
-        estimatedFare: finalEstimatedFare,
-        minimumFare,
+        baseFare: standardFlatFare,
+        distanceCharge: 0.00,
+        timeCharge: 0.00,
+        estimatedFare: standardFlatFare,
+        minimumFare: standardFlatFare,
         isRouteBased: false
       };
     }
