@@ -18,8 +18,7 @@ export function CustomersView() {
     email: '',
     phone: '',
     gender: 'OTHER',
-    status: 'ACTIVE',
-    wallet_balance: '0.00'
+    status: 'ACTIVE'
   });
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
   const [editError, setEditError] = useState(null);
@@ -54,8 +53,7 @@ export function CustomersView() {
       email: customer.email || '',
       phone: customer.phone || '',
       gender: customer.gender || 'OTHER',
-      status: customer.user_status || 'ACTIVE',
-      wallet_balance: customer.wallet_balance !== undefined ? String(customer.wallet_balance) : '0.00'
+      status: customer.user_status || 'ACTIVE'
     });
     setEditError(null);
   };
@@ -83,8 +81,7 @@ export function CustomersView() {
         email: editFormData.email.trim(),
         phone: editFormData.phone.trim(),
         gender: editFormData.gender,
-        status: editFormData.status,
-        walletBalance: parseFloat(editFormData.wallet_balance) || 0.00
+        status: editFormData.status
       });
       setEditingCustomer(null);
       fetchCustomers();
@@ -654,35 +651,19 @@ export function CustomersView() {
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontSize: '11px', fontWeight: 'bold' }}>
-                      ACCOUNT STATUS
-                    </label>
-                    <select
-                      className="form-select"
-                      value={editFormData.status}
-                      onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
-                    >
-                      <option value="ACTIVE">ACTIVE (Normal Access)</option>
-                      <option value="SUSPENDED">SUSPENDED (Blocked)</option>
-                      <option value="INACTIVE">INACTIVE</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontSize: '11px', fontWeight: 'bold' }}>
-                      WALLET BALANCE (₹)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      className="form-input"
-                      value={editFormData.wallet_balance}
-                      onChange={(e) => setEditFormData({ ...editFormData, wallet_balance: e.target.value })}
-                      placeholder="0.00"
-                    />
-                  </div>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '11px', fontWeight: 'bold' }}>
+                    ACCOUNT STATUS
+                  </label>
+                  <select
+                    className="form-select"
+                    value={editFormData.status}
+                    onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
+                  >
+                    <option value="ACTIVE">ACTIVE (Normal Access)</option>
+                    <option value="SUSPENDED">SUSPENDED (Blocked)</option>
+                    <option value="INACTIVE">INACTIVE</option>
+                  </select>
                 </div>
               </div>
 
