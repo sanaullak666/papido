@@ -305,13 +305,13 @@ export function RidesView() {
 
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
             {/* Search Input */}
-            <div style={{ position: 'relative', width: '100%', maxWidth: '240px', minWidth: '160px' }}>
-              <Search size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <div style={{ position: 'relative', width: '220px' }}>
+              <Search size={15} style={{ position: 'absolute', left: '10px', top: '10px', color: 'var(--text-muted)' }} />
               <input
                 type="text"
-                placeholder="Search ride code, address..."
+                placeholder="Search ride code, address, driver..."
                 className="form-input"
-                style={{ paddingLeft: '32px', width: '100%', fontSize: '13px', minHeight: '38px' }}
+                style={{ paddingLeft: '32px', width: '100%', fontSize: '13px' }}
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -589,16 +589,29 @@ export function RidesView() {
 
       {/* Ride Details Modal */}
       {selectedRide && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{
-            maxWidth: 'min(650px, calc(100vw - 20px))',
-            maxHeight: 'calc(100vh - 24px)',
-            padding: 0,
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0, 0, 0, 0.75)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-lg)',
+            width: '100%',
+            maxWidth: '650px',
+            maxHeight: '85vh',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden'
           }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+            <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h3 style={{ fontSize: '17px', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Navigation size={18} color="var(--primary)" />
