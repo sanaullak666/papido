@@ -14,8 +14,7 @@ import {
   Send,
   Radio,
   Sparkles,
-  Award,
-  RefreshCw
+  Award
 } from 'lucide-react';
 
 export function DashboardView() {
@@ -128,16 +127,15 @@ export function DashboardView() {
 
   if (loading && !data) {
     return (
-      <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
-        <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 12px' }} />
-        <div>Loading real-time overview metrics...</div>
+      <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+        Loading real-time overview metrics...
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ padding: '16px 20px', background: 'rgba(244, 63, 94, 0.12)', color: '#FB7185', border: '1px solid rgba(244, 63, 94, 0.3)', borderRadius: 'var(--radius-md)' }}>
+      <div style={{ padding: '20px', background: 'rgba(244, 63, 94, 0.1)', color: '#FB7185', borderRadius: '8px' }}>
         Failed to load dashboard: {error}
       </div>
     );
@@ -147,7 +145,7 @@ export function DashboardView() {
   const recentRides = data?.recentRides || [];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div>
       {/* KPI Cards Grid */}
       <div className="card-grid">
         {/* Total Customers */}
@@ -203,29 +201,26 @@ export function DashboardView() {
             ₹{(metrics.totalCompanyRevenue || 0).toFixed(2)}
           </div>
           <div className="stat-desc">
-            Today: ₹{(metrics.todayCompanyRevenue || 0).toFixed(2)} (Rider Payouts: ₹{(metrics.totalRiderPayouts || 0).toFixed(2)})
+  Today: ₹{(metrics.todayCompanyRevenue || 0).toFixed(2)} (Rider Payouts: ₹{(metrics.totalRiderPayouts || 0).toFixed(2)})
           </div>
         </div>
       </div>
 
       {/* Flash Free Ride Drop Manager */}
-      <div className="panel" style={{
-        border: flashRide?.status === 'OPEN' ? '1.5px solid #F59E0B' : '1px solid var(--border)',
-        background: 'linear-gradient(180deg, rgba(245, 158, 11, 0.04) 0%, var(--bg-card) 100%)'
-      }}>
-        <div className="panel-header">
+      <div className="panel" style={{ border: flashRide?.status === 'OPEN' ? '2px solid #F59E0B' : '1px solid var(--border)', background: 'linear-gradient(180deg, rgba(245, 158, 11, 0.04), var(--bg-card))' }}>
+        <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Zap size={18} style={{ color: '#F59E0B' }} />
               <h2 className="panel-title" style={{ margin: 0 }}>Flash Free Ride Drop (First-Come, First-Served)</h2>
             </div>
-            <div style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
               Broadcast an instant live ₹0 free ride on a specific campus route. First student to tap gets the ride, dispatched exclusively to Core Members.
             </div>
           </div>
           {flashRide?.status === 'OPEN' && (
-            <span className="badge badge-warning" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', padding: '6px 12px', fontWeight: 800 }}>
-              <Radio size={13} className="radar-scanning" /> LIVE BROADCAST ACTIVE
+            <span className="badge badge-warning" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '6px 12px', fontWeight: 800 }}>
+              <Radio size={14} className="pulse" /> LIVE BROADCAST ACTIVE
             </span>
           )}
         </div>
@@ -233,7 +228,7 @@ export function DashboardView() {
         {flashMsg && (
           <div style={{
             padding: '10px 14px',
-            borderRadius: 'var(--radius-md)',
+            borderRadius: '8px',
             marginBottom: '16px',
             fontSize: '13px',
             fontWeight: 700,
@@ -246,7 +241,7 @@ export function DashboardView() {
         )}
 
         {flashRide?.status === 'OPEN' ? (
-          <div style={{ background: 'var(--bg-sidebar)', padding: '20px', borderRadius: 'var(--radius-md)', border: '1px solid rgba(245, 158, 11, 0.4)' }}>
+          <div style={{ background: 'var(--bg-sidebar)', padding: '20px', borderRadius: '12px', border: '1px solid #F59E0B' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
               <div>
                 <div style={{ fontSize: '11px', color: '#F59E0B', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>
@@ -273,15 +268,15 @@ export function DashboardView() {
         ) : (
           <div>
             {flashRide?.status === 'CLAIMED' && (
-              <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10B981', padding: '12px 16px', borderRadius: 'var(--radius-md)', marginBottom: '16px', fontSize: '13px', color: '#34D399' }}>
+              <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10B981', padding: '12px 16px', borderRadius: '10px', marginBottom: '16px', fontSize: '13px', color: '#34D399' }}>
                 <strong>Recent Winner:</strong> {flashRide.winner_name || 'Student'} ({flashRide.winner_phone || 'N/A'}) claimed {flashRide.pickup_location} &rarr; {flashRide.destination_location} (Trip: {flashRide.ride_code || 'Assigned'}).
               </div>
             )}
 
             <form onSubmit={handleBroadcastFlash} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">
+                <div>
+                  <label className="form-label" style={{ fontSize: '12px', fontWeight: 700, color: '#D6C7B2', marginBottom: '6px', display: 'block' }}>
                     Pickup Source (Where to start) *
                   </label>
                   <input
@@ -291,12 +286,23 @@ export function DashboardView() {
                     value={flashPickup}
                     onChange={(e) => setFlashPickup(e.target.value.toUpperCase())}
                     className="form-input"
-                    style={{ textTransform: 'uppercase', height: '44px' }}
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      textTransform: 'uppercase',
+                      height: '44px',
+                      background: 'var(--bg-input, #1E293B)',
+                      border: '1.5px solid var(--border, #23314E)',
+                      color: '#FFF',
+                      borderRadius: '8px',
+                      padding: '0 14px',
+                      fontSize: '13px'
+                    }}
                   />
                 </div>
 
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">
+                <div>
+                  <label className="form-label" style={{ fontSize: '12px', fontWeight: 700, color: '#D6C7B2', marginBottom: '6px', display: 'block' }}>
                     Destination Drop (Where to go) *
                   </label>
                   <input
@@ -306,19 +312,40 @@ export function DashboardView() {
                     value={flashDest}
                     onChange={(e) => setFlashDest(e.target.value.toUpperCase())}
                     className="form-input"
-                    style={{ textTransform: 'uppercase', height: '44px' }}
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      textTransform: 'uppercase',
+                      height: '44px',
+                      background: 'var(--bg-input, #1E293B)',
+                      border: '1.5px solid var(--border, #23314E)',
+                      color: '#FFF',
+                      borderRadius: '8px',
+                      padding: '0 14px',
+                      fontSize: '13px'
+                    }}
                   />
                 </div>
 
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">
+                <div>
+                  <label className="form-label" style={{ fontSize: '12px', fontWeight: 700, color: '#D6C7B2', marginBottom: '6px', display: 'block' }}>
                     Offer Expiry Window
                   </label>
                   <select
                     value={flashDuration}
                     onChange={(e) => setFlashDuration(e.target.value)}
-                    className="form-select"
-                    style={{ height: '44px' }}
+                    className="form-input"
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      height: '44px',
+                      background: 'var(--bg-input, #1E293B)',
+                      border: '1.5px solid var(--border, #23314E)',
+                      color: '#FFF',
+                      borderRadius: '8px',
+                      padding: '0 12px',
+                      fontSize: '13px'
+                    }}
                   >
                     <option value="10">10 Minutes</option>
                     <option value="15">15 Minutes</option>
@@ -335,16 +362,23 @@ export function DashboardView() {
                   className="btn btn-primary"
                   style={{
                     height: '46px',
-                    padding: '0 28px',
-                    fontWeight: 800,
+                    padding: '0 32px',
+                    background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+                    color: '#000000',
+                    fontWeight: 900,
                     fontSize: '14px',
+                    border: 'none',
+                    borderRadius: '10px',
+                    boxShadow: '0 4px 18px rgba(245, 158, 11, 0.45)',
+                    cursor: 'pointer',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '8px'
+                    justifyContent: 'center',
+                    gap: '8px',
+                    whiteSpace: 'nowrap'
                   }}
                 >
-                  <Zap size={16} />
-                  <span>{flashLoading ? 'Broadcasting Live...' : 'Broadcast Flash Free Ride'}</span>
+                  <Zap size={16} /> {flashLoading ? 'Broadcasting Live...' : '⚡ Broadcast Flash Free Ride Now'}
                 </button>
               </div>
             </form>
@@ -358,26 +392,26 @@ export function DashboardView() {
           <h2 className="panel-title">Active Fleet & Live Ride Status</h2>
           <span className="badge badge-info">Auto-Synced</span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '14px' }}>
-          <div style={{ background: 'var(--bg-sidebar)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
-            <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Online Drivers</div>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: '#34D399', marginTop: '4px' }}>{metrics.activeRiders || 0}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px' }}>
+          <div style={{ background: 'var(--bg-sidebar)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Online Drivers</div>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: '#34D399' }}>{metrics.activeRiders || 0}</div>
           </div>
-          <div style={{ background: 'var(--bg-sidebar)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
-            <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Pending Outside Quotes</div>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: '#60A5FA', marginTop: '4px' }}>{metrics.pendingOutsideRides || 0}</div>
+          <div style={{ background: 'var(--bg-sidebar)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Pending Outside Quotes</div>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: '#60A5FA' }}>{metrics.pendingOutsideRides || 0}</div>
           </div>
-          <div style={{ background: 'var(--bg-sidebar)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
-            <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Ride Requests Searching</div>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: '#FBBF24', marginTop: '4px' }}>{metrics.requestedRides || 0}</div>
+          <div style={{ background: 'var(--bg-sidebar)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Ride Requests Searching</div>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: '#FBBF24' }}>{metrics.requestedRides || 0}</div>
           </div>
-          <div style={{ background: 'var(--bg-sidebar)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
-            <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>In-Progress Trips</div>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: '#38BDF8', marginTop: '4px' }}>{metrics.inProgressRides || 0}</div>
+          <div style={{ background: 'var(--bg-sidebar)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>In-Progress Trips</div>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: '#38BDF8' }}>{metrics.inProgressRides || 0}</div>
           </div>
-          <div style={{ background: 'var(--bg-sidebar)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
-            <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Total Gross Volume</div>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: '#FFF', marginTop: '4px' }}>₹{(metrics.totalVolume || 0).toFixed(2)}</div>
+          <div style={{ background: 'var(--bg-sidebar)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Total Gross Volume</div>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: '#FFF' }}>₹{(metrics.totalVolume || 0).toFixed(2)}</div>
           </div>
         </div>
       </div>
@@ -385,10 +419,8 @@ export function DashboardView() {
       {/* Recent Rides Table */}
       <div className="panel">
         <div className="panel-header">
-          <div>
-            <h2 className="panel-title">Recent Ride Requests</h2>
-            <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '2px' }}>Latest platform dispatch activity</p>
-          </div>
+          <h2 className="panel-title">Recent Ride Requests</h2>
+          <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Latest platform activity</span>
         </div>
 
         <div className="table-container">
@@ -407,7 +439,7 @@ export function DashboardView() {
             <tbody>
               {recentRides.length === 0 ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '36px', color: 'var(--text-muted)' }}>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
                     No recent rides found.
                   </td>
                 </tr>
@@ -415,32 +447,32 @@ export function DashboardView() {
                 recentRides.map((ride) => (
                   <tr key={ride.id}>
                     <td>
-                      <strong style={{ color: 'var(--primary)', fontFamily: 'monospace', fontSize: '13.5px' }}>
+                      <strong style={{ color: 'var(--primary)', fontFamily: 'monospace', fontSize: '14px' }}>
                         {ride.ride_code}
                       </strong>
                     </td>
                     <td>
-                      <div><strong>{ride.customer_name}</strong></div>
+                      <div>{ride.customer_name}</div>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{ride.customer_phone}</div>
                     </td>
                     <td>
                       {ride.rider_name ? (
                         <div>
-                          <div><strong>{ride.rider_name}</strong></div>
+                          <div>{ride.rider_name}</div>
                           <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                            {ride.vehicle_model} {ride.vehicle_number ? `(${ride.vehicle_number})` : ''}
+                            {ride.vehicle_model} ({ride.vehicle_number})
                           </div>
                         </div>
                       ) : (
-                        <span style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '12px' }}>Unassigned</span>
+                        <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Unassigned</span>
                       )}
                     </td>
                     <td>
-                      <div style={{ fontSize: '12.5px', fontWeight: 600 }}>{ride.pickup_address}</div>
-                      <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>&rarr; {ride.destination_address}</div>
+                      <div style={{ fontSize: '13px', fontWeight: 600 }}>{ride.pickup_address}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>&rarr; {ride.destination_address}</div>
                     </td>
                     <td>
-                      <strong style={{ color: '#FFF' }}>₹{parseFloat(ride.final_fare || ride.estimated_fare).toFixed(2)}</strong>
+                      <strong>₹{parseFloat(ride.final_fare || ride.estimated_fare).toFixed(2)}</strong>
                     </td>
                     <td>
                       <span className={`badge ${
@@ -451,7 +483,7 @@ export function DashboardView() {
                         {ride.status}
                       </span>
                     </td>
-                    <td style={{ fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                    <td style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                       {new Date(ride.requested_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </td>
                   </tr>
@@ -464,5 +496,3 @@ export function DashboardView() {
     </div>
   );
 }
-
-export default DashboardView;

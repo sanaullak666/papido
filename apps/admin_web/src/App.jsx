@@ -159,6 +159,7 @@ export function App() {
     }
   };
 
+
   // ============================================================
   // 0. DEDICATED CORE MEMBER REGISTRATION (/register/core)
   // ============================================================
@@ -205,7 +206,7 @@ export function App() {
         case 'reports':
           return { title: 'Reports & Analytics', subtitle: 'Performance metrics and CSV exports' };
         default:
-          return { title: 'Papido Operations Portal', subtitle: '' };
+          return { title: 'Papido Portal', subtitle: '' };
       }
     };
 
@@ -225,39 +226,38 @@ export function App() {
           {/* Global Outside Campus Ride Alert Banner */}
           {newOutsideAlert && (
             <div
-              className="outside-alert-banner"
+              style={{
+                background: 'linear-gradient(135deg, #F59E0B, #EA580C)',
+                color: '#000',
+                padding: '14px 20px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontWeight: 800,
+                fontSize: '14px',
+                boxShadow: '0 6px 25px rgba(245, 158, 11, 0.4)',
+                zIndex: 1000,
+                cursor: 'pointer'
+              }}
               onClick={() => {
                 alertManager.stopRingtone();
                 navigateTo('/admin/outside-trips', 'outside-trips');
                 setNewOutsideAlert(null);
               }}
-              role="alert"
-              aria-live="assertive"
             >
-              <div className="outside-alert-content">
-                <AlertTriangle size={20} color="#000" style={{ flexShrink: 0 }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <AlertTriangle size={22} color="#000" />
                 <div>
-                  <span style={{ fontWeight: 900 }}>NEW OUTSIDE TRIP REQUEST:</span>{' '}
-                  <span>{newOutsideAlert.customerName}</span> requested{' '}
-                  <strong>{newOutsideAlert.pickupAddress} &rarr; {newOutsideAlert.destinationAddress}</strong>
+                  <span style={{ fontWeight: 900 }}>NEW OUTSIDE CAMPUS TRIP:</span> {newOutsideAlert.customerName} requested <strong>{newOutsideAlert.pickupAddress} → {newOutsideAlert.destinationAddress}</strong>
                 </div>
               </div>
-              <div className="outside-alert-actions">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <button
                   type="button"
                   className="btn btn-secondary btn-sm"
-                  style={{
-                    background: '#000',
-                    color: '#FFF',
-                    border: 'none',
-                    fontWeight: 800,
-                    padding: '6px 14px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
+                  style={{ background: '#000', color: '#fff', border: 'none', fontWeight: 800, padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
-                  <span>Open Dispatch</span>
+                  <span>Open Dispatch & Set Fare</span>
                   <ArrowRight size={14} />
                 </button>
                 <button
@@ -267,18 +267,8 @@ export function App() {
                     alertManager.stopRingtone();
                     setNewOutsideAlert(null);
                   }}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    padding: '6px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    color: '#000',
-                    borderRadius: '4px'
-                  }}
+                  style={{ background: 'transparent', border: 'none', padding: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#000' }}
                   title="Dismiss Alert"
-                  aria-label="Dismiss Alert"
                 >
                   <X size={18} />
                 </button>

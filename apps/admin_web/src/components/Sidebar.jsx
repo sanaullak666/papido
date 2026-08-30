@@ -22,7 +22,7 @@ export function Sidebar({ currentTab, onNavigate, isOpen, onClose, hasPendingOut
 
   const navItems = [
     { id: 'dashboard', path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'daily-settlements', path: '/admin/daily-settlements', label: 'Daily Deductions', icon: CreditCard, badge: 'DAILY' },
+    { id: 'daily-settlements', path: '/admin/daily-settlements', label: 'Daily Rider Deductions', icon: CreditCard, badge: 'DAILY' },
     { id: 'outside-trips', path: '/admin/outside-trips', label: 'Outside Trips Dispatch', icon: Globe, badge: hasPendingOutsideAlert ? 'NEW' : 'DISPATCH' },
     { id: 'core-team', path: '/admin/core-team', label: 'Core Team Management', icon: Shield, badge: 'CORE' },
     { id: 'customers', path: '/admin/customers', label: 'Customers Directory', icon: Users },
@@ -39,23 +39,18 @@ export function Sidebar({ currentTab, onNavigate, isOpen, onClose, hasPendingOut
         <div
           className="mobile-sidebar-backdrop"
           onClick={onClose}
-          aria-hidden="true"
         />
       )}
-      <aside
-        className={`sidebar ${isOpen ? 'mobile-open' : ''}`}
-        aria-label="Admin Navigation Sidebar"
-      >
+      <aside className={`sidebar ${isOpen ? 'mobile-open' : ''}`}>
         <div className="brand-header">
-          <div className="brand-logo" aria-hidden="true">P</div>
+          <div className="brand-logo">P</div>
           <div>
             <div className="brand-title">PAPIDO</div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Command Console</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Portal</div>
           </div>
           <span className="brand-badge">PROD</span>
           {onClose && (
             <button
-              type="button"
               onClick={onClose}
               style={{
                 marginLeft: 'auto',
@@ -63,34 +58,35 @@ export function Sidebar({ currentTab, onNavigate, isOpen, onClose, hasPendingOut
                 border: 'none',
                 color: 'var(--text-muted)',
                 cursor: 'pointer',
-                padding: '8px',
+                padding: '4px',
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '6px'
+                alignItems: 'center'
               }}
               title="Close Menu"
-              aria-label="Close sidebar menu"
             >
               <X size={20} />
             </button>
           )}
         </div>
 
-        <nav className="nav-list" aria-label="Main Menu">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = currentTab === item.id;
-            const isOutsideAlert = item.id === 'outside-trips' && hasPendingOutsideAlert;
-
-            return (
+      <ul className="nav-list">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = currentTab === item.id;
+          const isOutsideAlert = item.id === 'outside-trips' && hasPendingOutsideAlert;
+          return (
+            <li key={item.id}>
               <a
-                key={item.id}
                 href={item.path}
                 className={`nav-item ${isActive ? 'active' : ''}`}
                 style={{
-                  background: isOutsideAlert && !isActive ? 'rgba(245, 158, 11, 0.12)' : undefined,
-                  borderColor: isOutsideAlert && !isActive ? 'rgba(245, 158, 11, 0.5)' : undefined
+                  width: '100%',
+                  textDecoration: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: isOutsideAlert ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
+                  textAlign: 'left',
+                  border: isOutsideAlert ? '1px solid #F59E0B' : 'none'
                 }}
                 onClick={(e) => {
                   e.preventDefault();
@@ -101,15 +97,13 @@ export function Sidebar({ currentTab, onNavigate, isOpen, onClose, hasPendingOut
                 }}
               >
                 <Icon size={18} color={isOutsideAlert ? '#F59E0B' : undefined} />
-                <span style={{ fontWeight: isOutsideAlert ? 800 : undefined, color: isOutsideAlert && !isActive ? '#F59E0B' : undefined }}>
-                  {item.label}
-                </span>
+                <span style={{ fontWeight: isOutsideAlert ? 800 : undefined, color: isOutsideAlert ? '#F59E0B' : undefined }}>{item.label}</span>
                 {item.badge && (
                   <span
                     className="nav-item-badge"
                     style={{
-                      background: isOutsideAlert ? 'var(--primary)' : undefined,
-                      color: isOutsideAlert ? '#000' : undefined,
+                      background: isOutsideAlert ? '#F59E0B' : undefined,
+                      color: isOutsideAlert ? '#000' : 'var(--primary)',
                       fontWeight: 800
                     }}
                   >
@@ -117,37 +111,35 @@ export function Sidebar({ currentTab, onNavigate, isOpen, onClose, hasPendingOut
                   </span>
                 )}
               </a>
-            );
-          })}
-        </nav>
+            </li>
+          );
+        })}
+      </ul>
 
         {currentUser && (
           <div className="user-profile-widget">
             <img
               src={currentUser.profile_image || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
-              alt={currentUser.name || 'Admin'}
+              alt={currentUser.name}
               className="user-avatar"
             />
             <div className="user-info">
-              <div className="user-name">{currentUser.name || 'Master Admin'}</div>
+              <div className="user-name">{currentUser.name || 'Admin'}</div>
               <div className="user-role">{adminUser ? 'Super Admin' : 'Administrator'}</div>
             </div>
             <button
-              type="button"
               onClick={handleLogout}
               title="Log Out of Admin Portal"
-              aria-label="Log Out of Admin Portal"
               style={{
                 background: 'rgba(239, 68, 68, 0.1)',
                 border: '1px solid rgba(239, 68, 68, 0.3)',
                 borderRadius: '8px',
                 color: '#F87171',
                 cursor: 'pointer',
-                padding: '8px',
+                padding: '6px 8px',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0
+                gap: '4px'
               }}
             >
               <LogOut size={16} />
@@ -158,5 +150,3 @@ export function Sidebar({ currentTab, onNavigate, isOpen, onClose, hasPendingOut
     </>
   );
 }
-
-export default Sidebar;

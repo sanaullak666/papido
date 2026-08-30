@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../api';
-import { Search, UserCheck, UserX, Star, RefreshCw, AlertTriangle, ShieldAlert, X } from 'lucide-react';
+import { Search, UserCheck, UserX, Star, RefreshCw, AlertTriangle, ShieldAlert } from 'lucide-react';
 
 export function CustomersView() {
   const [customers, setCustomers] = useState([]);
@@ -93,7 +93,7 @@ export function CustomersView() {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div>
       <div className="panel">
         <div className="panel-header">
           <div>
@@ -101,26 +101,19 @@ export function CustomersView() {
             <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Manage campus passenger accounts and suspension policies</p>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <div style={{ position: 'relative', width: '280px', maxWidth: '100%' }}>
-              <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <div style={{ position: 'relative', width: '280px' }}>
+              <Search size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
               <input
                 type="text"
                 placeholder="Search name, phone, email..."
                 className="form-input"
-                style={{ paddingLeft: '36px', height: '40px', fontSize: '13.5px' }}
+                style={{ paddingLeft: '36px', width: '100%' }}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={fetchCustomers}
-              title="Refresh list"
-              aria-label="Refresh list"
-              style={{ height: '40px', padding: '0 14px' }}
-            >
+            <button className="btn btn-secondary btn-sm" onClick={fetchCustomers} title="Refresh list">
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
             </button>
           </div>
@@ -135,20 +128,19 @@ export function CustomersView() {
                 <th>Rating</th>
                 <th>Total Rides</th>
                 <th>Account Status</th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="6" style={{ textAlign: 'center', padding: '36px', color: 'var(--text-muted)' }}>
-                    <RefreshCw size={20} className="animate-spin" style={{ margin: '0 auto 8px' }} />
-                    <div>Loading customer accounts...</div>
+                  <td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+                    Loading customer accounts...
                   </td>
                 </tr>
               ) : customers.length === 0 ? (
                 <tr>
-                  <td colSpan="6" style={{ textAlign: 'center', padding: '36px', color: 'var(--text-muted)' }}>
+                  <td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
                     No customers found matching search.
                   </td>
                 </tr>
@@ -206,10 +198,9 @@ export function CustomersView() {
                         <span className="badge badge-secondary">{c.user_status}</span>
                       )}
                     </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', gap: '8px', justifyContent: 'flex-end' }}>
+                    <td>
+                      <div style={{ display: 'flex', gap: '8px' }}>
                         <button
-                          type="button"
                           className="btn btn-secondary btn-sm"
                           onClick={() => viewHistory(c)}
                         >
@@ -217,7 +208,6 @@ export function CustomersView() {
                         </button>
                         {c.user_status === 'ACTIVE' ? (
                           <button
-                            type="button"
                             className="btn btn-danger btn-sm"
                             onClick={() => handleOpenSuspendModal(c)}
                             title="Suspend Customer Account"
@@ -227,7 +217,6 @@ export function CustomersView() {
                           </button>
                         ) : (
                           <button
-                            type="button"
                             className="btn btn-success btn-sm"
                             onClick={() => handleReactivateUser(c)}
                             title="Reactivate Customer Account"
@@ -248,49 +237,55 @@ export function CustomersView() {
 
       {/* Suspension Reason Dialog Modal */}
       {suspendingUser && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ border: '1px solid #EF4444', padding: 0 }}>
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(5px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'var(--bg-card)',
+            border: '1px solid #EF4444',
+            borderRadius: 'var(--radius-lg)',
+            width: '100%',
+            maxWidth: '520px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5)',
+            overflow: 'hidden'
+          }}>
             <div style={{
               padding: '18px 24px',
               background: 'rgba(239, 68, 68, 0.12)',
               borderBottom: '1px solid rgba(239, 68, 68, 0.3)',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between',
               gap: '12px'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{
-                  background: '#EF4444',
-                  color: '#fff',
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}>
-                  <ShieldAlert size={20} />
-                </div>
-                <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#F87171', margin: 0 }}>Suspend Customer Account</h3>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                    User: <strong>{suspendingUser.name}</strong> ({suspendingUser.email})
-                  </div>
+              <div style={{
+                background: '#EF4444',
+                color: '#fff',
+                width: '36px',
+                height: '36px',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <ShieldAlert size={20} />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#F87171', margin: 0 }}>Suspend Customer Account</h3>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  User: <strong>{suspendingUser.name}</strong> ({suspendingUser.email})
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setSuspendingUser(null)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '6px' }}
-                aria-label="Close dialog"
-              >
-                <X size={18} />
-              </button>
             </div>
 
-            <div style={{ padding: '20px 24px' }}>
+            <div style={{ padding: '24px' }}>
               <div style={{
                 background: 'rgba(245, 158, 11, 0.1)',
                 border: '1px solid rgba(245, 158, 11, 0.3)',
@@ -307,7 +302,7 @@ export function CustomersView() {
                 <span><strong>Important:</strong> The reason you specify below will be <strong>directly displayed to the customer</strong> in their Papido mobile app upon login or attempt to book rides.</span>
               </div>
 
-              <label className="form-label" style={{ display: 'block', marginBottom: '6px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
                 Suspension Reason <span style={{ color: '#EF4444' }}>*</span>
               </label>
               <textarea
@@ -331,7 +326,7 @@ export function CustomersView() {
                       style={{
                         background: 'rgba(255, 255, 255, 0.06)',
                         border: '1px solid var(--border)',
-                        color: 'var(--text-secondary)',
+                        color: 'var(--text-muted)',
                         fontSize: '11px',
                         padding: '4px 8px',
                         borderRadius: '4px',
@@ -379,15 +374,33 @@ export function CustomersView() {
 
       {/* Customer Trip History Modal */}
       {selectedCustomer && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '750px', padding: 0 }}>
-            <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0, 0, 0, 0.75)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 100
+        }}>
+          <div style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-lg)',
+            width: '90%',
+            maxWidth: '750px',
+            maxHeight: '80vh',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <h3 style={{ fontSize: '18px', margin: 0 }}>{selectedCustomer.name}'s Ride History</h3>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{selectedCustomer.email} &bull; {selectedCustomer.phone}</div>
+                <h3 style={{ fontSize: '18px' }}>{selectedCustomer.name}'s Ride History</h3>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{selectedCustomer.email} &bull; {selectedCustomer.phone}</div>
               </div>
               <button
-                type="button"
                 className="btn btn-secondary btn-sm"
                 onClick={() => setSelectedCustomer(null)}
               >
@@ -395,7 +408,7 @@ export function CustomersView() {
               </button>
             </div>
 
-            <div style={{ padding: '20px 24px', overflowY: 'auto', maxHeight: '60vh' }}>
+            <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
               {loadingRides ? (
                 <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>Loading trips...</div>
               ) : customerRides.length === 0 ? (
@@ -440,5 +453,3 @@ export function CustomersView() {
     </div>
   );
 }
-
-export default CustomersView;
