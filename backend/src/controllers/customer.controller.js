@@ -397,14 +397,14 @@ const CustomerController = {
         return error(res, 'Flash offer details could not be found.', 404);
       }
 
-      // Create ₹0 Ride for Core Members only
+      // Create ₹0 Ride for All Core Members (Any vehicle: Bike, Scooter, Auto, etc.)
       const rideCode = RideService.generateRideCode();
       const otp = RideService.generateOTP();
 
       const newRide = await RideModel.create({
         rideCode,
         customerId,
-        vehicleType: 'BIKE',
+        vehicleType: 'ANY',
         pickupAddress: flashOffer.pickup_location,
         pickupLatitude: 12.0240,
         pickupLongitude: 79.8530,
@@ -424,10 +424,10 @@ const CustomerController = {
         isOutside: false
       });
 
-      // Update ride to be is_free_ride = 1, is_core_only = 1
+      // Update ride to be is_free_ride = 1, is_core_only = 1, vehicle_type = 'ANY'
       await db.query(`
         UPDATE rides 
-        SET is_free_ride = 1, is_core_only = 1, final_fare = 0.00, payment_status = 'COMPLETED'
+        SET is_free_ride = 1, is_core_only = 1, vehicle_type = 'ANY', final_fare = 0.00, payment_status = 'COMPLETED'
         WHERE id = ?
       `, [newRide.id]);
 
@@ -436,7 +436,7 @@ const CustomerController = {
 
       const completeRide = await RideModel.findById(newRide.id);
 
-      // Broadcast to socket: offer is claimed
+      // Broadcast to socket: offer is claimed and dispatch to all core riders
       const socketManager = req.app.get('socketManager');
       if (socketManager) {
         socketManager.io.emit('flash_free_ride:claimed', {
@@ -446,18 +446,32 @@ const CustomerController = {
           destination: flashOffer.destination_location
         });
 
-        // Notify Core Riders of new trip
-        socketManager.io.emit('ride:requested', {
+        const ridePayload = {
+          id: completeRide.id,
           rideId: completeRide.id,
           rideCode: completeRide.ride_code,
           pickupAddress: completeRide.pickup_address,
+          pickup_address: completeRide.pickup_address,
           destinationAddress: completeRide.destination_address,
-          vehicleType: completeRide.vehicle_type,
+          destination_address: completeRide.destination_address,
+          vehicleType: 'ANY',
+          vehicle_type: 'ANY',
           estimatedFare: 0.00,
+          totalFare: 0.00,
+          total_fare: 0.00,
+          customerName: req.user.name || 'Passenger',
+          customer_name: req.user.name || 'Passenger',
           isFreeRide: true,
+          is_free_ride: true,
           isCoreOnly: true,
-          femaleRiderOnly: false
-        });
+          is_core_only: true,
+          femaleRiderOnly: false,
+          female_rider_only: false
+        };
+
+        // Notify all Core Riders across active socket listeners
+        socketManager.io.emit('ride:new_request', ridePayload);
+        socketManager.io.emit('ride:requested', ridePayload);
       }
 
       return success(res, 'Congratulations! You won the Papido Flash Free Ride!', completeRide);
