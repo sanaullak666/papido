@@ -95,7 +95,7 @@ export function CoreRegisterView({ onGoToLogin }) {
       alignItems: 'center',
       justifyContent: 'center',
       background: 'radial-gradient(circle at 50% 20%, #2A1D13 0%, #15100B 100%)',
-      padding: '24px',
+      padding: 'clamp(16px, 4vw, 32px)',
       color: '#FFFFFF'
     }}>
       <div style={{
@@ -104,7 +104,7 @@ export function CoreRegisterView({ onGoToLogin }) {
         background: '#1F1812',
         border: '1px solid #3D2D1E',
         borderRadius: '20px',
-        padding: '32px',
+        padding: 'clamp(24px, 4vw, 36px)',
         boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
         position: 'relative'
       }}>
@@ -116,9 +116,9 @@ export function CoreRegisterView({ onGoToLogin }) {
           background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.1))',
           border: '1px solid #F59E0B',
           color: '#FBBF24',
-          padding: '6px 12px',
+          padding: '5px 12px',
           borderRadius: '30px',
-          fontSize: '12px',
+          fontSize: '11.5px',
           fontWeight: 800,
           marginBottom: '16px'
         }}>
@@ -128,8 +128,8 @@ export function CoreRegisterView({ onGoToLogin }) {
         <h1 style={{ fontSize: '24px', fontWeight: 900, marginBottom: '8px', color: '#FFFFFF' }}>
           Core Member Registration
         </h1>
-        <p style={{ fontSize: '13px', color: '#A8998A', lineHeight: 1.5, marginBottom: '24px' }}>
-          As a Papido Core Team member, your account is <strong>pre-approved with core team privileges</strong>. No vehicle RC or document uploads required.
+        <p style={{ fontSize: '13px', color: '#A8998A', lineHeight: 1.5, marginBottom: '22px' }}>
+          As a Papido Core Team member, your account is <strong>pre-approved with core driver privileges</strong>. Zero document upload required.
         </p>
 
         {errorMsg && (
@@ -146,7 +146,7 @@ export function CoreRegisterView({ onGoToLogin }) {
             alignItems: 'center',
             gap: '8px'
           }}>
-            <AlertTriangle size={14} color="#EF4444" />
+            <AlertTriangle size={15} color="#EF4444" style={{ flexShrink: 0 }} />
             <span>{errorMsg}</span>
           </div>
         )}
@@ -165,18 +165,18 @@ export function CoreRegisterView({ onGoToLogin }) {
             alignItems: 'center',
             gap: '8px'
           }}>
-            <CheckCircle size={18} color="#10B981" />
-            {successMsg}
+            <CheckCircle size={18} color="#10B981" style={{ flexShrink: 0 }} />
+            <span>{successMsg}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#D6C7B2', marginBottom: '6px' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label" style={{ color: '#D6C7B2', fontSize: '11.5px' }}>
               FULL NAME *
             </label>
             <div style={{ position: 'relative' }}>
-              <User size={16} style={{ position: 'absolute', left: '12px', top: '13px', color: '#796D61' }} />
+              <User size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#796D61', pointerEvents: 'none' }} />
               <input
                 type="text"
                 required
@@ -185,7 +185,7 @@ export function CoreRegisterView({ onGoToLogin }) {
                 onChange={(e) => setFormData({ ...formData, name: e.target.value.toUpperCase() })}
                 style={{
                   width: '100%',
-                  padding: '11px 12px 11px 38px',
+                  padding: '10px 12px 10px 38px',
                   background: '#2B2016',
                   border: '1px solid #433323',
                   borderRadius: '10px',
@@ -193,19 +193,20 @@ export function CoreRegisterView({ onGoToLogin }) {
                   fontSize: '14px',
                   outline: 'none',
                   textTransform: 'uppercase',
-                  fontWeight: 600
+                  fontWeight: 600,
+                  minHeight: '44px'
                 }}
               />
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#D6C7B2', marginBottom: '6px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label" style={{ color: '#D6C7B2', fontSize: '11.5px' }}>
                 PHONE NUMBER *
               </label>
               <div style={{ position: 'relative' }}>
-                <Phone size={16} style={{ position: 'absolute', left: '12px', top: '13px', color: '#796D61' }} />
+                <Phone size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#796D61', pointerEvents: 'none' }} />
                 <input
                   type="tel"
                   required
@@ -215,7 +216,7 @@ export function CoreRegisterView({ onGoToLogin }) {
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
                   style={{
                     width: '100%',
-                    padding: '11px 12px 11px 38px',
+                    padding: '10px 12px 10px 38px',
                     background: '#2B2016',
                     border: '1px solid #433323',
                     borderRadius: '10px',
@@ -223,28 +224,30 @@ export function CoreRegisterView({ onGoToLogin }) {
                     fontSize: '14px',
                     outline: 'none',
                     letterSpacing: '1px',
-                    fontWeight: 600
+                    fontWeight: 600,
+                    minHeight: '44px'
                   }}
                 />
               </div>
             </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#D6C7B2', marginBottom: '6px' }}>
-                Gender
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label" style={{ color: '#D6C7B2', fontSize: '11.5px' }}>
+                GENDER
               </label>
               <select
                 value={formData.gender}
                 onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                 style={{
                   width: '100%',
-                  padding: '11px 12px',
+                  padding: '10px 12px',
                   background: '#2B2016',
                   border: '1px solid #433323',
                   borderRadius: '10px',
                   color: '#FFF',
                   fontSize: '14px',
-                  outline: 'none'
+                  outline: 'none',
+                  minHeight: '44px'
                 }}
               >
                 <option value="MALE">Male</option>
@@ -254,39 +257,40 @@ export function CoreRegisterView({ onGoToLogin }) {
             </div>
           </div>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#D6C7B2', marginBottom: '6px' }}>
-              Email Address *
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label" style={{ color: '#D6C7B2', fontSize: '11.5px' }}>
+              CAMPUS EMAIL ADDRESS *
             </label>
             <div style={{ position: 'relative' }}>
-              <Mail size={16} style={{ position: 'absolute', left: '12px', top: '13px', color: '#796D61' }} />
+              <Mail size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#796D61', pointerEvents: 'none' }} />
               <input
                 type="email"
                 required
-                placeholder="name@gmail.com"
+                placeholder="name@pondiuni.ac.in"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 style={{
                   width: '100%',
-                  padding: '11px 12px 11px 38px',
+                  padding: '10px 12px 10px 38px',
                   background: '#2B2016',
                   border: '1px solid #433323',
                   borderRadius: '10px',
                   color: '#FFF',
                   fontSize: '14px',
-                  outline: 'none'
+                  outline: 'none',
+                  minHeight: '44px'
                 }}
               />
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#D6C7B2', marginBottom: '6px' }}>
-                Password *
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label" style={{ color: '#D6C7B2', fontSize: '11.5px' }}>
+                PASSWORD *
               </label>
               <div style={{ position: 'relative' }}>
-                <Lock size={16} style={{ position: 'absolute', left: '12px', top: '13px', color: '#796D61' }} />
+                <Lock size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#796D61', pointerEvents: 'none' }} />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
@@ -295,13 +299,14 @@ export function CoreRegisterView({ onGoToLogin }) {
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   style={{
                     width: '100%',
-                    padding: '11px 38px 11px 38px',
+                    padding: '10px 38px 10px 38px',
                     background: '#2B2016',
                     border: '1px solid #433323',
                     borderRadius: '10px',
                     color: '#FFF',
                     fontSize: '14px',
-                    outline: 'none'
+                    outline: 'none',
+                    minHeight: '44px'
                   }}
                 />
                 <button
@@ -309,7 +314,7 @@ export function CoreRegisterView({ onGoToLogin }) {
                   onClick={() => setShowPassword(!showPassword)}
                   style={{
                     position: 'absolute',
-                    right: '10px',
+                    right: '6px',
                     top: '50%',
                     transform: 'translateY(-50%)',
                     background: 'none',
@@ -319,21 +324,22 @@ export function CoreRegisterView({ onGoToLogin }) {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: '4px'
+                    padding: '6px'
                   }}
                   title={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#D6C7B2', marginBottom: '6px' }}>
-                Confirm Password *
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label" style={{ color: '#D6C7B2', fontSize: '11.5px' }}>
+                CONFIRM PASSWORD *
               </label>
               <div style={{ position: 'relative' }}>
-                <Lock size={16} style={{ position: 'absolute', left: '12px', top: '13px', color: '#796D61' }} />
+                <Lock size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#796D61', pointerEvents: 'none' }} />
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
                   required
@@ -342,13 +348,14 @@ export function CoreRegisterView({ onGoToLogin }) {
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                   style={{
                     width: '100%',
-                    padding: '11px 38px 11px 38px',
+                    padding: '10px 38px 10px 38px',
                     background: '#2B2016',
                     border: '1px solid #433323',
                     borderRadius: '10px',
                     color: '#FFF',
                     fontSize: '14px',
-                    outline: 'none'
+                    outline: 'none',
+                    minHeight: '44px'
                   }}
                 />
                 <button
@@ -356,7 +363,7 @@ export function CoreRegisterView({ onGoToLogin }) {
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   style={{
                     position: 'absolute',
-                    right: '10px',
+                    right: '6px',
                     top: '50%',
                     transform: 'translateY(-50%)',
                     background: 'none',
@@ -366,9 +373,10 @@ export function CoreRegisterView({ onGoToLogin }) {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: '4px'
+                    padding: '6px'
                   }}
                   title={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                 >
                   {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -380,14 +388,15 @@ export function CoreRegisterView({ onGoToLogin }) {
             type="submit"
             disabled={loading}
             style={{
-              marginTop: '12px',
-              padding: '14px',
+              marginTop: '10px',
+              padding: '12px',
+              minHeight: '46px',
               background: 'linear-gradient(135deg, #F59E0B, #EA580C)',
               color: '#000',
               border: 'none',
               borderRadius: '12px',
               fontWeight: 900,
-              fontSize: '15px',
+              fontSize: '14.5px',
               cursor: loading ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -405,7 +414,7 @@ export function CoreRegisterView({ onGoToLogin }) {
           </button>
         </form>
 
-        <div style={{ marginTop: '24px', textAlign: 'center', fontSize: '13px', color: '#A8998A' }}>
+        <div style={{ marginTop: '22px', textAlign: 'center', fontSize: '13px', color: '#A8998A' }}>
           Already have an account?{' '}
           <button
             type="button"
@@ -413,7 +422,7 @@ export function CoreRegisterView({ onGoToLogin }) {
               if (onGoToLogin) onGoToLogin();
               else window.location.pathname = '/login';
             }}
-            style={{ background: 'transparent', border: 'none', color: '#FB923C', fontWeight: 800, cursor: 'pointer' }}
+            style={{ background: 'transparent', border: 'none', color: '#FB923C', fontWeight: 800, cursor: 'pointer', padding: '4px' }}
           >
             Sign In Here
           </button>
@@ -422,3 +431,5 @@ export function CoreRegisterView({ onGoToLogin }) {
     </div>
   );
 }
+
+export default CoreRegisterView;

@@ -139,118 +139,95 @@ export function OutsideTripsView() {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'PENDING_ADMIN_QUOTE':
-        return <span style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Clock size={12} /> Awaiting Quote</span>;
+        return <span className="badge badge-info" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Clock size={12} /> Awaiting Quote</span>;
       case 'REQUESTED':
-        return <span style={{ background: 'rgba(234, 179, 8, 0.2)', color: '#facc15', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Radio size={12} /> Dispatched (Searching)</span>;
+        return <span className="badge badge-warning" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Radio size={12} /> Dispatched</span>;
       case 'ACCEPTED':
       case 'RIDER_ARRIVING':
       case 'RIDER_REACHED':
-        return <span style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Bike size={12} /> Rider Assigned</span>;
+        return <span className="badge badge-info" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Bike size={12} /> Rider Assigned</span>;
       case 'STARTED':
-        return <span style={{ background: 'rgba(168, 85, 247, 0.2)', color: '#c084fc', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Send size={12} /> On Trip</span>;
+        return <span className="badge badge-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Send size={12} /> On Trip</span>;
       case 'COMPLETED':
-        return <span style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><CheckCircle size={12} /> Completed</span>;
+        return <span className="badge badge-success" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><CheckCircle size={12} /> Completed</span>;
       case 'CANCELLED':
-        return <span style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><XCircle size={12} /> Cancelled</span>;
+        return <span className="badge badge-danger" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><XCircle size={12} /> Cancelled</span>;
       default:
-        return <span style={{ background: 'rgba(255, 255, 255, 0.1)', color: '#fff', padding: '3px 8px', borderRadius: '6px', fontSize: '11px' }}>{status}</span>;
+        return <span className="badge badge-secondary">{status}</span>;
     }
   };
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1250px', margin: '0 auto' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Top Header Banner */}
-      <div style={{
-        background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-        border: '1px solid var(--border)',
-        borderRadius: '16px',
-        padding: '24px',
-        marginBottom: '20px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '16px'
+      <div className="panel" style={{
+        background: 'linear-gradient(135deg, #131D31 0%, #0F172A 100%)',
+        padding: '22px'
       }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-            <div style={{
-              background: 'rgba(59, 130, 246, 0.2)',
-              color: '#3b82f6',
-              padding: '8px',
-              borderRadius: '10px'
-            }}>
-              <Globe size={24} />
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '16px'
+        }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
+              <div style={{
+                background: 'rgba(59, 130, 246, 0.2)',
+                color: '#3b82f6',
+                padding: '8px',
+                borderRadius: 'var(--radius-md)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Globe size={22} />
+              </div>
+              <h2 style={{ fontSize: '19px', fontWeight: 800, margin: 0, color: '#fff' }}>
+                Outside Trips Quoting &amp; Dispatch Command Center
+              </h2>
+              <span className={`badge ${pendingRides.length > 0 ? 'badge-danger' : 'badge-success'}`}>
+                {pendingRides.length} Action Needed
+              </span>
             </div>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, margin: 0, color: '#fff' }}>
-              Outside Trips Quoting & Dispatch Command Center
-            </h2>
-            <span style={{
-              background: pendingRides.length > 0 ? '#ef4444' : '#10b981',
-              color: '#fff',
-              padding: '2px 10px',
-              borderRadius: '20px',
-              fontSize: '12px',
-              fontWeight: 700
-            }}>
-              {pendingRides.length} Action Needed
-            </span>
+            <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: 0, lineHeight: 1.4 }}>
+              Review passenger-typed outside pickup and destination locations, quote the custom fare (₹), and dispatch to drivers.
+            </p>
           </div>
-          <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: 0 }}>
-            Review passenger-typed outside pickup and destination locations, quote the custom fare (₹), and assign a driver.
-          </p>
-        </div>
 
-        <button
-          onClick={fetchData}
-          disabled={loading}
-          className="btn btn-secondary"
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}
-        >
-          <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
-          <span>Refresh Queue</span>
-        </button>
+          <button
+            type="button"
+            onClick={() => fetchData(false)}
+            disabled={loading}
+            className="btn btn-secondary"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            <span>Refresh Queue</span>
+          </button>
+        </div>
       </div>
 
       {/* Tabs Navigation */}
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
+      <div style={{ display: 'flex', gap: '10px', borderBottom: '1px solid var(--border)', paddingBottom: '10px', flexWrap: 'wrap' }}>
         <button
+          type="button"
           onClick={() => setActiveTab('pending')}
-          style={{
-            padding: '8px 16px',
-            borderRadius: '8px',
-            border: 'none',
-            background: activeTab === 'pending' ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
-            color: activeTab === 'pending' ? '#000' : '#fff',
-            fontWeight: 700,
-            fontSize: '13px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
+          className={`btn ${activeTab === 'pending' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}
         >
-          <ListFilter size={16} />
+          <ListFilter size={15} />
           <span>Pending Dispatch Queue ({pendingRides.length})</span>
         </button>
 
         <button
+          type="button"
           onClick={() => setActiveTab('history')}
-          style={{
-            padding: '8px 16px',
-            borderRadius: '8px',
-            border: 'none',
-            background: activeTab === 'history' ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
-            color: activeTab === 'history' ? '#000' : '#fff',
-            fontWeight: 700,
-            fontSize: '13px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
+          className={`btn ${activeTab === 'history' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}
         >
-          <History size={16} />
+          <History size={15} />
           <span>All Outside Trips Log ({allOutsideRides.length})</span>
         </button>
       </div>
@@ -262,14 +239,13 @@ export function OutsideTripsView() {
           border: '1px solid rgba(239, 68, 68, 0.4)',
           color: '#f87171',
           padding: '12px 16px',
-          borderRadius: '10px',
-          marginBottom: '20px',
+          borderRadius: 'var(--radius-md)',
           display: 'flex',
           alignItems: 'center',
           gap: '10px',
           fontSize: '13px'
         }}>
-          <AlertCircle size={18} />
+          <AlertCircle size={18} style={{ flexShrink: 0 }} />
           <span>{error}</span>
         </div>
       )}
@@ -280,14 +256,13 @@ export function OutsideTripsView() {
           border: '1px solid rgba(16, 185, 129, 0.4)',
           color: '#34d399',
           padding: '12px 16px',
-          borderRadius: '10px',
-          marginBottom: '20px',
+          borderRadius: 'var(--radius-md)',
           display: 'flex',
           alignItems: 'center',
           gap: '10px',
           fontSize: '13px'
         }}>
-          <CheckCircle size={18} />
+          <CheckCircle size={18} style={{ flexShrink: 0 }} />
           <span>{successMsg}</span>
         </div>
       )}
@@ -296,20 +271,18 @@ export function OutsideTripsView() {
       {activeTab === 'pending' && (
         <>
           {pendingRides.length === 0 ? (
-            <div style={{
-              background: 'var(--card-bg)',
-              border: '1px solid var(--border)',
-              borderRadius: '16px',
+            <div className="panel" style={{
               padding: '48px 24px',
               textAlign: 'center',
               color: 'var(--text-muted)'
             }}>
-              <CheckCircle size={48} style={{ color: '#10b981', marginBottom: '16px', opacity: 0.8 }} />
+              <CheckCircle size={44} style={{ color: '#10b981', marginBottom: '14px', opacity: 0.8 }} />
               <h3 style={{ fontSize: '16px', color: '#fff', marginBottom: '6px' }}>No Pending Outside Rides to Dispatch</h3>
-              <p style={{ fontSize: '13px', maxWidth: '460px', margin: '0 auto 16px auto' }}>
-                When a passenger books a trip with custom outside typed locations, it will appear here instantly for you to set the custom fare & assign a rider.
+              <p style={{ fontSize: '13px', maxWidth: '460px', margin: '0 auto 16px auto', lineHeight: 1.4 }}>
+                When a passenger books a trip with custom outside typed locations, it will appear here instantly for you to set the custom fare &amp; assign a rider.
               </p>
               <button
+                type="button"
                 onClick={() => setActiveTab('history')}
                 className="btn btn-secondary btn-sm"
               >
@@ -325,12 +298,12 @@ export function OutsideTripsView() {
                 return (
                   <div
                     key={ride.id}
+                    className="panel"
                     style={{
-                      background: 'var(--card-bg)',
-                      border: '1px solid var(--border)',
-                      borderRadius: '16px',
                       padding: '20px',
-                      boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '16px'
                     }}
                   >
                     {/* Header Row */}
@@ -339,8 +312,7 @@ export function OutsideTripsView() {
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       borderBottom: '1px solid var(--border)',
-                      paddingBottom: '14px',
-                      marginBottom: '16px',
+                      paddingBottom: '12px',
                       flexWrap: 'wrap',
                       gap: '10px'
                     }}>
@@ -355,19 +327,8 @@ export function OutsideTripsView() {
                         }}>
                           {ride.ride_code || `RIDE #${ride.id}`}
                         </span>
-                        <span style={{
-                          background: 'rgba(59, 130, 246, 0.15)',
-                          color: '#60a5fa',
-                          border: '1px solid rgba(59, 130, 246, 0.3)',
-                          fontSize: '11px',
-                          fontWeight: 600,
-                          padding: '3px 8px',
-                          borderRadius: '6px',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px'
-                        }}>
-                          <Globe size={12} /> Outside Campus Trip
+                        <span className="badge badge-info" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <Globe size={11} /> Outside Campus Trip
                         </span>
                       </div>
 
@@ -381,20 +342,19 @@ export function OutsideTripsView() {
                     <div style={{
                       display: 'grid',
                       gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                      gap: '20px',
-                      marginBottom: '20px'
+                      gap: '16px'
                     }}>
                       {/* Passenger Info */}
                       <div style={{
-                        background: 'rgba(255, 255, 255, 0.03)',
+                        background: 'var(--bg-sidebar)',
                         border: '1px solid var(--border)',
-                        borderRadius: '12px',
+                        borderRadius: 'var(--radius-md)',
                         padding: '14px'
                       }}>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '8px' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>
                           PASSENGER DETAILS
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                           <div style={{
                             width: '36px',
                             height: '36px',
@@ -403,7 +363,8 @@ export function OutsideTripsView() {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            color: '#fff'
+                            color: '#fff',
+                            flexShrink: 0
                           }}>
                             <User size={18} />
                           </div>
@@ -412,7 +373,7 @@ export function OutsideTripsView() {
                               <span>{ride.customer_name || 'Passenger'}</span>
                               <span style={{
                                 fontSize: '10px',
-                                padding: '2px 6px',
+                                padding: '1px 6px',
                                 borderRadius: '4px',
                                 background: ride.customer_gender === 'FEMALE' ? 'rgba(236, 72, 153, 0.2)' : 'rgba(59, 130, 246, 0.2)',
                                 color: ride.customer_gender === 'FEMALE' ? '#f472b6' : '#60a5fa',
@@ -431,19 +392,19 @@ export function OutsideTripsView() {
 
                       {/* Route Details */}
                       <div style={{
-                        background: 'rgba(255, 255, 255, 0.03)',
+                        background: 'var(--bg-sidebar)',
                         border: '1px solid var(--border)',
-                        borderRadius: '12px',
+                        borderRadius: 'var(--radius-md)',
                         padding: '14px'
                       }}>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '8px' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>
                           TYPED ROUTE DETAILS
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                              <MapPin size={16} style={{ color: '#10b981', flexShrink: 0, marginTop: '2px' }} />
+                              <MapPin size={15} style={{ color: '#10b981', flexShrink: 0, marginTop: '2px' }} />
                               <div>
                                 <div style={{ fontSize: '10px', color: '#10b981', fontWeight: 700 }}>PICKUP LOCATION</div>
                                 <div style={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>{ride.pickup_address}</div>
@@ -453,19 +414,8 @@ export function OutsideTripsView() {
                               href={getMapLink(ride.pickup_address, ride.pickup_latitude, ride.pickup_longitude)}
                               target="_blank"
                               rel="noreferrer"
-                              style={{
-                                fontSize: '11px',
-                                color: '#38bdf8',
-                                background: 'rgba(56, 189, 248, 0.1)',
-                                border: '1px solid rgba(56, 189, 248, 0.3)',
-                                padding: '3px 8px',
-                                borderRadius: '6px',
-                                textDecoration: 'none',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                flexShrink: 0
-                              }}
+                              className="btn btn-secondary btn-sm"
+                              style={{ padding: '3px 8px', fontSize: '11px', height: '26px' }}
                             >
                               <ExternalLink size={11} /> Maps
                             </a>
@@ -473,7 +423,7 @@ export function OutsideTripsView() {
 
                           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                              <MapPin size={16} style={{ color: '#ef4444', flexShrink: 0, marginTop: '2px' }} />
+                              <MapPin size={15} style={{ color: '#ef4444', flexShrink: 0, marginTop: '2px' }} />
                               <div>
                                 <div style={{ fontSize: '10px', color: '#ef4444', fontWeight: 700 }}>DROP-OFF DESTINATION</div>
                                 <div style={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>{ride.destination_address}</div>
@@ -483,19 +433,8 @@ export function OutsideTripsView() {
                               href={getMapLink(ride.destination_address, ride.destination_latitude, ride.destination_longitude)}
                               target="_blank"
                               rel="noreferrer"
-                              style={{
-                                fontSize: '11px',
-                                color: '#f87171',
-                                background: 'rgba(239, 68, 68, 0.1)',
-                                border: '1px solid rgba(239, 68, 68, 0.3)',
-                                padding: '3px 8px',
-                                borderRadius: '6px',
-                                textDecoration: 'none',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                flexShrink: 0
-                              }}
+                              className="btn btn-secondary btn-sm"
+                              style={{ padding: '3px 8px', fontSize: '11px', height: '26px' }}
                             >
                               <ExternalLink size={11} /> Maps
                             </a>
@@ -506,20 +445,20 @@ export function OutsideTripsView() {
 
                     {/* Admin Action Bar (Quoting & Dispatch) */}
                     <div style={{
-                      background: 'rgba(255, 255, 255, 0.04)',
+                      background: 'rgba(0, 0, 0, 0.25)',
                       border: '1px solid var(--border)',
-                      borderRadius: '12px',
-                      padding: '16px',
+                      borderRadius: 'var(--radius-md)',
+                      padding: '14px 16px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       flexWrap: 'wrap',
-                      gap: '16px'
+                      gap: '14px'
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap', flex: 1 }}>
                         {/* Fare Input */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>
+                          <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>
                             SET CUSTOM FARE (₹) *
                           </label>
                           <div style={{ position: 'relative', width: '140px' }}>
@@ -531,36 +470,22 @@ export function OutsideTripsView() {
                               placeholder="e.g. 80"
                               value={currentForm.fare}
                               onChange={(e) => handleFareChange(ride.id, e.target.value)}
-                              style={{
-                                width: '100%',
-                                padding: '8px 12px 8px 26px',
-                                borderRadius: '8px',
-                                border: '1px solid var(--border)',
-                                background: 'var(--bg-main)',
-                                color: '#fff',
-                                fontWeight: 700,
-                                fontSize: '14px'
-                              }}
+                              className="form-input"
+                              style={{ paddingLeft: '26px', height: '40px', fontWeight: 700 }}
                             />
                           </div>
                         </div>
 
                         {/* Rider Selector */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: '220px' }}>
-                          <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>
+                          <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)' }}>
                             ASSIGN TO RIDER (OPTIONAL)
                           </label>
                           <select
                             value={currentForm.riderId}
                             onChange={(e) => handleRiderChange(ride.id, e.target.value)}
-                            style={{
-                              padding: '8px 12px',
-                              borderRadius: '8px',
-                              border: '1px solid var(--border)',
-                              background: 'var(--bg-main)',
-                              color: '#fff',
-                              fontSize: '13px'
-                            }}
+                            className="form-select"
+                            style={{ height: '40px' }}
                           >
                             <option value="">Broadcast to All Available Online Riders</option>
                             {activeRiders.map((r) => (
@@ -574,23 +499,15 @@ export function OutsideTripsView() {
 
                       {/* Dispatch Button */}
                       <button
+                        type="button"
                         onClick={() => handleDispatch(ride.id)}
                         disabled={isSubmitting || !currentForm.fare}
+                        className="btn btn-success"
                         style={{
-                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                          color: '#fff',
-                          border: 'none',
-                          padding: '10px 20px',
-                          borderRadius: '8px',
-                          fontWeight: 700,
-                          fontSize: '13px',
-                          cursor: currentForm.fare ? 'pointer' : 'not-allowed',
-                          opacity: currentForm.fare ? 1 : 0.6,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          height: '38px',
-                          alignSelf: 'flex-end'
+                          height: '40px',
+                          padding: '0 20px',
+                          alignSelf: 'flex-end',
+                          fontWeight: 700
                         }}
                       >
                         <Send size={15} />
@@ -607,111 +524,110 @@ export function OutsideTripsView() {
 
       {/* TAB 2: ALL OUTSIDE TRIPS LOG */}
       {activeTab === 'history' && (
-        <div style={{
-          background: 'var(--card-bg)',
-          border: '1px solid var(--border)',
-          borderRadius: '16px',
-          overflow: 'hidden'
-        }}>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Ride Code</th>
-                <th>Passenger</th>
-                <th>Pickup Location</th>
-                <th>Drop-Off Destination</th>
-                <th>Status</th>
-                <th>Fare (₹)</th>
-                <th>Driver Assigned</th>
-                <th>Requested At</th>
-              </tr>
-            </thead>
-            <tbody>
-              {allOutsideRides.length === 0 ? (
+        <div className="panel" style={{ padding: 0, overflow: 'hidden' }}>
+          <div className="table-container" style={{ border: 'none' }}>
+            <table className="data-table">
+              <thead>
                 <tr>
-                  <td colSpan="8" style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
-                    No outside trips recorded yet.
-                  </td>
+                  <th>Ride Code</th>
+                  <th>Passenger</th>
+                  <th>Pickup Location</th>
+                  <th>Drop-Off Destination</th>
+                  <th>Status</th>
+                  <th>Fare (₹)</th>
+                  <th>Driver Assigned</th>
+                  <th>Requested At</th>
                 </tr>
-              ) : (
-                allOutsideRides.map(ride => (
-                  <tr key={ride.id}>
-                    <td>
-                      <span style={{ fontWeight: 700, color: 'var(--primary)' }}>{ride.ride_code || `#${ride.id}`}</span>
-                    </td>
-                    <td>
-                      <div>
-                        <div style={{ fontWeight: 600, color: '#fff' }}>{ride.customer_name || 'Passenger'}</div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{ride.customer_phone || 'N/A'}</div>
-                      </div>
-                    </td>
-                    <td style={{ maxWidth: '200px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }} title={ride.pickup_address}>
-                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981', flexShrink: 0 }}></span>
-                          <span>{ride.pickup_address}</span>
-                        </span>
-                        {ride.pickup_latitude && (
-                          <a
-                            href={`https://www.google.com/maps?q=${ride.pickup_latitude},${ride.pickup_longitude}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{ fontSize: '10px', color: '#38bdf8', textDecoration: 'none', background: 'rgba(56,189,248,0.1)', padding: '2px 5px', borderRadius: '4px', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '2px' }}
-                          >
-                            <ExternalLink size={10} /> Maps
-                          </a>
-                        )}
-                      </div>
-                    </td>
-                    <td style={{ maxWidth: '200px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }} title={ride.destination_address}>
-                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#EF4444', flexShrink: 0 }}></span>
-                          <span>{ride.destination_address}</span>
-                        </span>
-                        {ride.destination_latitude && (
-                          <a
-                            href={`https://www.google.com/maps?q=${ride.destination_latitude},${ride.destination_longitude}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{ fontSize: '10px', color: '#f87171', textDecoration: 'none', background: 'rgba(239,68,68,0.1)', padding: '2px 5px', borderRadius: '4px', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '2px' }}
-                          >
-                            <ExternalLink size={10} /> Maps
-                          </a>
-                        )}
-                      </div>
-                    </td>
-                    <td>
-                      {getStatusBadge(ride.status)}
-                    </td>
-                    <td>
-                      <span style={{ fontWeight: 700, color: '#10b981' }}>
-                        ₹{ride.final_fare || ride.estimated_fare || '0.00'}
-                      </span>
-                    </td>
-                    <td>
-                      {ride.rider_name ? (
-                        <div>
-                          <div style={{ fontWeight: 600, color: '#fff', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <Bike size={13} />
-                            <span>{ride.rider_name}</span>
-                          </div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{ride.vehicle_number || ''}</div>
-                        </div>
-                      ) : (
-                        <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
-                          {ride.assigned_rider_id ? `Assigned (ID: ${ride.assigned_rider_id})` : 'Broadcast / Unassigned'}
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                      {new Date(ride.requested_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
+              </thead>
+              <tbody>
+                {allOutsideRides.length === 0 ? (
+                  <tr>
+                    <td colSpan="8" style={{ textAlign: 'center', padding: '36px', color: 'var(--text-muted)' }}>
+                      No outside trips recorded yet.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  allOutsideRides.map(ride => (
+                    <tr key={ride.id}>
+                      <td>
+                        <strong style={{ color: 'var(--primary)', fontFamily: 'monospace' }}>
+                          {ride.ride_code || `#${ride.id}`}
+                        </strong>
+                      </td>
+                      <td>
+                        <div>
+                          <strong style={{ color: '#fff' }}>{ride.customer_name || 'Passenger'}</strong>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{ride.customer_phone || 'N/A'}</div>
+                        </div>
+                      </td>
+                      <td style={{ maxWidth: '200px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }} title={ride.pickup_address}>
+                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981', flexShrink: 0 }}></span>
+                            <span>{ride.pickup_address}</span>
+                          </span>
+                          {ride.pickup_latitude && (
+                            <a
+                              href={`https://www.google.com/maps?q=${ride.pickup_latitude},${ride.pickup_longitude}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{ fontSize: '10px', color: '#38bdf8', textDecoration: 'none', background: 'rgba(56,189,248,0.1)', padding: '2px 5px', borderRadius: '4px', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '2px' }}
+                            >
+                              <ExternalLink size={10} /> Maps
+                            </a>
+                          )}
+                        </div>
+                      </td>
+                      <td style={{ maxWidth: '200px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }} title={ride.destination_address}>
+                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#EF4444', flexShrink: 0 }}></span>
+                            <span>{ride.destination_address}</span>
+                          </span>
+                          {ride.destination_latitude && (
+                            <a
+                              href={`https://www.google.com/maps?q=${ride.destination_latitude},${ride.destination_longitude}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{ fontSize: '10px', color: '#f87171', textDecoration: 'none', background: 'rgba(239,68,68,0.1)', padding: '2px 5px', borderRadius: '4px', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '2px' }}
+                            >
+                              <ExternalLink size={10} /> Maps
+                            </a>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        {getStatusBadge(ride.status)}
+                      </td>
+                      <td>
+                        <strong style={{ color: '#10b981' }}>
+                          ₹{ride.final_fare || ride.estimated_fare || '0.00'}
+                        </strong>
+                      </td>
+                      <td>
+                        {ride.rider_name ? (
+                          <div>
+                            <div style={{ fontWeight: 600, color: '#fff', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <Bike size={13} />
+                              <span>{ride.rider_name}</span>
+                            </div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{ride.vehicle_number || ''}</div>
+                          </div>
+                        ) : (
+                          <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
+                            {ride.assigned_rider_id ? `Assigned (ID: ${ride.assigned_rider_id})` : 'Broadcast / Unassigned'}
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                        {new Date(ride.requested_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
