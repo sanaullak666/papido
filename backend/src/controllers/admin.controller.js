@@ -699,6 +699,177 @@ const AdminController = {
     } catch (err) {
       next(err);
     }
+  },
+
+  /**
+   * Edit Customer Details
+   */
+  async updateCustomer(req, res, next) {
+    try {
+      const customerUserId = req.params.id;
+      const { name, email, phone, gender, status, walletBalance, wallet_balance } = req.body;
+
+      const user = await db.queryOne('SELECT * FROM users WHERE id = ?', [customerUserId]);
+      if (!user) {
+        return error(res, 'Customer account not found.', 404);
+      }
+
+      if (email && email.toLowerCase() !== user.email.toLowerCase()) {
+        const existingEmail = await db.queryOne('SELECT id FROM users WHERE LOWER(email) = LOWER(?) AND id != ?', [email, customerUserId]);
+        if (existingEmail) {
+          return error(res, 'Email is already registered with another account.', 409);
+        }
+      }
+
+      if (phone && phone !== user.phone) {
+        const existingPhone = await db.queryOne('SELECT id FROM users WHERE phone = ? AND id != ?', [phone, customerUserId]);
+        if (existingPhone) {
+          return error(res, 'Phone number is already registered with another account.', 409);
+        }
+      }
+
+      const newName = name !== undefined ? name.trim() : user.name;
+      const newEmail = email !== undefined ? email.trim().toLowerCase() : user.email;
+      const newPhone = phone !== undefined ? phone.trim() : user.phone;
+      const newGender = gender !== undefined ? gender : (user.gender || 'OTHER');
+      const newStatus = status !== undefined ? status : user.status;
+
+      await db.query(`
+        UPDATE users 
+        SET name = ?, email = ?, phone = ?, gender = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `, [newName, newEmail, newPhone, newGender, newStatus, customerUserId]);
+
+      const finalWallet = walletBalance !== undefined ? walletBalance : wallet_balance;
+      if (finalWallet !== undefined && finalWallet !== null) {
+        await db.query(`
+          UPDATE customer_profiles 
+          SET wallet_balance = ?, updated_at = CURRENT_TIMESTAMP
+          WHERE user_id = ?
+        `, [Number(finalWallet) || 0.00, customerUserId]);
+      }
+
+      const updatedCustomer = await CustomerModel.findByUserId(customerUserId);
+      return success(res, 'Customer details updated successfully.', updatedCustomer);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
+   * Edit Driver / Rider Details
+   */
+  async updateRider(req, res, next) {
+    try {
+      const riderUserId = req.params.id;
+      const {
+        name,
+        email,
+        phone,
+        gender,
+        status,
+        vehicleType,
+        vehicle_type,
+        vehicleModel,
+        vehicle_model,
+        vehicleNumber,
+        vehicle_number,
+        licenseNumber,
+        license_number,
+        upiId,
+        upi_id,
+        verificationStatus,
+        verification_status,
+        isCoreMember,
+        is_core_member
+      } = req.body;
+
+      const user = await db.queryOne('SELECT * FROM users WHERE id = ?', [riderUserId]);
+      if (!user) {
+        return error(res, 'Driver account not found.', 404);
+      }
+
+      if (email && email.toLowerCase() !== user.email.toLowerCase()) {
+        const existingEmail = await db.queryOne('SELECT id FROM users WHERE LOWER(email) = LOWER(?) AND id != ?', [email, riderUserId]);
+        if (existingEmail) {
+          return error(res, 'Email is already registered with another account.', 409);
+        }
+      }
+
+      if (phone && phone !== user.phone) {
+        const existingPhone = await db.queryOne('SELECT id FROM users WHERE phone = ? AND id != ?', [phone, riderUserId]);
+        if (existingPhone) {
+          return error(res, 'Phone number is already registered with another account.', 409);
+        }
+      }
+
+      const finalIsCore = isCoreMember !== undefined ? isCoreMember : is_core_member;
+      const isCoreNum = finalIsCore !== undefined ? (finalIsCore ? 1 : 0) : (user.is_core_member ? 1 : 0);
+
+      const newName = name !== undefined ? name.trim() : user.name;
+      const newEmail = email !== undefined ? email.trim().toLowerCase() : user.email;
+      const newPhone = phone !== undefined ? phone.trim() : user.phone;
+      const newGender = gender !== undefined ? gender : (user.gender || 'OTHER');
+      const newStatus = status !== undefined ? status : user.status;
+
+      await db.query(`
+        UPDATE users 
+        SET name = ?, email = ?, phone = ?, gender = ?, status = ?, is_core_member = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `, [newName, newEmail, newPhone, newGender, newStatus, isCoreNum, riderUserId]);
+
+      const finalVType = vehicleType !== undefined ? vehicleType : vehicle_type;
+      const finalVModel = vehicleModel !== undefined ? vehicleModel : vehicle_model;
+      const finalVNumber = vehicleNumber !== undefined ? vehicleNumber : vehicle_number;
+      const finalLicense = licenseNumber !== undefined ? licenseNumber : license_number;
+      const finalUpi = upiId !== undefined ? upiId : upi_id;
+      const finalVStatus = verificationStatus !== undefined ? verificationStatus : verification_status;
+
+      const profile = await db.queryOne('SELECT * FROM rider_profiles WHERE user_id = ?', [riderUserId]);
+      if (profile) {
+        await db.query(`
+          UPDATE rider_profiles 
+          SET vehicle_type = COALESCE(?, vehicle_type),
+              vehicle_model = COALESCE(?, vehicle_model),
+              vehicle_number = COALESCE(?, vehicle_number),
+              license_number = COALESCE(?, license_number),
+              upi_id = COALESCE(?, upi_id),
+              verification_status = COALESCE(?, verification_status),
+              is_core_member = ?,
+              updated_at = CURRENT_TIMESTAMP
+          WHERE user_id = ?
+        `, [
+          finalVType !== undefined ? finalVType : null,
+          finalVModel !== undefined ? finalVModel : null,
+          finalVNumber !== undefined ? finalVNumber : null,
+          finalLicense !== undefined ? finalLicense : null,
+          finalUpi !== undefined ? finalUpi : null,
+          finalVStatus !== undefined ? finalVStatus : null,
+          isCoreNum,
+          riderUserId
+        ]);
+      } else {
+        await db.query(`
+          INSERT INTO rider_profiles 
+          (user_id, vehicle_type, vehicle_model, vehicle_number, license_number, upi_id, verification_status, is_core_member)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+          riderUserId,
+          finalVType || 'BIKE',
+          finalVModel || '',
+          finalVNumber || '',
+          finalLicense || '',
+          finalUpi || '',
+          finalVStatus || 'PENDING',
+          isCoreNum
+        ]);
+      }
+
+      const updatedRider = await RiderModel.findByUserId(riderUserId);
+      return success(res, 'Driver details updated successfully.', updatedRider);
+    } catch (err) {
+      next(err);
+    }
   }
 };
 

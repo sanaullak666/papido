@@ -9,7 +9,9 @@ router.use(verifyToken, requireRole('ADMIN'));
 
 router.get('/dashboard', AdminController.getDashboardOverview);
 router.get('/customers', AdminController.listCustomers);
+router.patch('/customers/:id', AdminController.updateCustomer);
 router.get('/riders', AdminController.listRiders);
+router.patch('/riders/:id', AdminController.updateRider);
 router.get('/riders/leaderboard', AdminController.getRiderLeaderboard);
 router.patch('/riders/:id/verify', AdminController.verifyRider);
 router.patch('/users/:id/status', AdminController.updateUserStatus);

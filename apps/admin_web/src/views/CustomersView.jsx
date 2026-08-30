@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../api';
-import { Search, UserCheck, UserX, Star, RefreshCw, AlertTriangle, ShieldAlert } from 'lucide-react';
+import { Search, UserCheck, UserX, Star, RefreshCw, AlertTriangle, ShieldAlert, Edit, Check, X, Save, User } from 'lucide-react';
 
 export function CustomersView() {
   const [customers, setCustomers] = useState([]);
@@ -10,6 +10,19 @@ export function CustomersView() {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [customerRides, setCustomerRides] = useState([]);
   const [loadingRides, setLoadingRides] = useState(false);
+
+  // Edit Customer Modal State
+  const [editingCustomer, setEditingCustomer] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    gender: 'OTHER',
+    status: 'ACTIVE',
+    wallet_balance: '0.00'
+  });
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
+  const [editError, setEditError] = useState(null);
 
   // Suspension Modal State
   const [suspendingUser, setSuspendingUser] = useState(null);
@@ -33,6 +46,54 @@ export function CustomersView() {
   useEffect(() => {
     fetchCustomers();
   }, [search]);
+
+  const handleOpenEditModal = (customer) => {
+    setEditingCustomer(customer);
+    setEditFormData({
+      name: customer.name || '',
+      email: customer.email || '',
+      phone: customer.phone || '',
+      gender: customer.gender || 'OTHER',
+      status: customer.user_status || 'ACTIVE',
+      wallet_balance: customer.wallet_balance !== undefined ? String(customer.wallet_balance) : '0.00'
+    });
+    setEditError(null);
+  };
+
+  const handleSaveEditCustomer = async (e) => {
+    if (e) e.preventDefault();
+    if (!editFormData.name.trim()) {
+      setEditError('Customer name is required.');
+      return;
+    }
+    if (!editFormData.email.trim()) {
+      setEditError('Email address is required.');
+      return;
+    }
+    if (!editFormData.phone.trim()) {
+      setEditError('Phone number is required.');
+      return;
+    }
+
+    try {
+      setIsSubmittingEdit(true);
+      setEditError(null);
+      await apiRequest(`/admin/customers/${editingCustomer.user_id}`, 'PATCH', {
+        name: editFormData.name.trim(),
+        email: editFormData.email.trim(),
+        phone: editFormData.phone.trim(),
+        gender: editFormData.gender,
+        status: editFormData.status,
+        walletBalance: parseFloat(editFormData.wallet_balance) || 0.00
+      });
+      setEditingCustomer(null);
+      fetchCustomers();
+    } catch (err) {
+      setEditError(err.message || 'Failed to update customer details.');
+    } finally {
+      setIsSubmittingEdit(false);
+    }
+  };
 
   const handleOpenSuspendModal = (customer) => {
     setSuspendingUser(customer);
@@ -199,7 +260,15 @@ export function CustomersView() {
                       )}
                     </td>
                     <td>
-                      <div style={{ display: 'flex', gap: '8px' }}>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => handleOpenEditModal(c)}
+                          title="Edit Passenger Profile Details"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                        >
+                          <Edit size={13} /> Edit
+                        </button>
                         <button
                           className="btn btn-secondary btn-sm"
                           onClick={() => viewHistory(c)}
@@ -447,6 +516,205 @@ export function CustomersView() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+      {/* Edit Passenger Details Modal */}
+      {editingCustomer && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(5px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-lg)',
+            width: '100%',
+            maxWidth: '520px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              padding: '18px 24px',
+              borderBottom: '1px solid var(--border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  background: 'rgba(245, 158, 11, 0.15)',
+                  color: 'var(--primary)',
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <User size={18} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0 }}>Edit Passenger Details</h3>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                    Customer ID: #{editingCustomer.user_id}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => setEditingCustomer(null)}
+                style={{ padding: '6px 8px' }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditCustomer} style={{ padding: '24px' }}>
+              {editError && (
+                <div style={{
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  border: '1px solid #EF4444',
+                  color: '#F87171',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  marginBottom: '16px'
+                }}>
+                  {editError}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '11px', fontWeight: 'bold' }}>
+                    FULL PASSENGER NAME *
+                  </label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={editFormData.name}
+                    onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                    placeholder="e.g. Rahul Sharma"
+                    required
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '11px', fontWeight: 'bold' }}>
+                      PHONE NUMBER *
+                    </label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={editFormData.phone}
+                      onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                      placeholder="e.g. +91 98765 43210"
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '11px', fontWeight: 'bold' }}>
+                      GENDER
+                    </label>
+                    <select
+                      className="form-select"
+                      value={editFormData.gender}
+                      onChange={(e) => setEditFormData({ ...editFormData, gender: e.target.value })}
+                    >
+                      <option value="MALE">Male</option>
+                      <option value="FEMALE">Female</option>
+                      <option value="OTHER">Other / Prefer not to say</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '11px', fontWeight: 'bold' }}>
+                    EMAIL ADDRESS *
+                  </label>
+                  <input
+                    type="email"
+                    className="form-input"
+                    value={editFormData.email}
+                    onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                    placeholder="e.g. student@pondiuni.ac.in"
+                    required
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '11px', fontWeight: 'bold' }}>
+                      ACCOUNT STATUS
+                    </label>
+                    <select
+                      className="form-select"
+                      value={editFormData.status}
+                      onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
+                    >
+                      <option value="ACTIVE">ACTIVE (Normal Access)</option>
+                      <option value="SUSPENDED">SUSPENDED (Blocked)</option>
+                      <option value="INACTIVE">INACTIVE</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '11px', fontWeight: 'bold' }}>
+                      WALLET BALANCE (₹)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="form-input"
+                      value={editFormData.wallet_balance}
+                      onChange={(e) => setEditFormData({ ...editFormData, wallet_balance: e.target.value })}
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setEditingCustomer(null)}
+                  disabled={isSubmittingEdit}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={isSubmittingEdit}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  {isSubmittingEdit ? (
+                    <>
+                      <RefreshCw size={14} className="animate-spin" />
+                      Saving Changes...
+                    </>
+                  ) : (
+                    <>
+                      <Save size={14} />
+                      Save Passenger Details
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

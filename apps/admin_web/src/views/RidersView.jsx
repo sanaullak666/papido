@@ -23,7 +23,10 @@ import {
   TrendingUp,
   AlertCircle,
   CheckCircle2,
-  Users
+  Users,
+  Edit,
+  Save,
+  User
 } from 'lucide-react';
 
 const MONTH_NAMES = [
@@ -70,6 +73,25 @@ export function RidersView() {
   const [leaderboardSearch, setLeaderboardSearch] = useState('');
   const [leaderboardData, setLeaderboardData] = useState({ items: [], summary: {}, total: 0 });
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
+
+  // Edit Driver Modal State
+  const [editingRider, setEditingRider] = useState(null);
+  const [editRiderForm, setEditRiderForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    gender: 'OTHER',
+    status: 'ACTIVE',
+    vehicle_type: 'BIKE',
+    vehicle_model: '',
+    vehicle_number: '',
+    license_number: '',
+    upi_id: '',
+    verification_status: 'APPROVED',
+    is_core_member: false
+  });
+  const [isSubmittingRiderEdit, setIsSubmittingRiderEdit] = useState(false);
+  const [editRiderError, setEditRiderError] = useState(null);
 
   // Suspension Modal State
   const [suspendingRider, setSuspendingRider] = useState(null);
@@ -146,6 +168,69 @@ export function RidersView() {
       socket.off('admin:rider_status_changed', handleRiderStatusChanged);
     };
   }, [socket]);
+
+  // Handle Edit Driver Modal Open & Save
+  const handleOpenEditRiderModal = (rider) => {
+    setEditingRider(rider);
+    setEditRiderForm({
+      name: rider.name || '',
+      email: rider.email || '',
+      phone: rider.phone || '',
+      gender: rider.gender || 'OTHER',
+      status: rider.user_status || rider.status || 'ACTIVE',
+      vehicle_type: rider.vehicle_type || 'BIKE',
+      vehicle_model: rider.vehicle_model || '',
+      vehicle_number: rider.vehicle_number || '',
+      license_number: rider.license_number || '',
+      upi_id: rider.upi_id || '',
+      verification_status: rider.verification_status || 'APPROVED',
+      is_core_member: Boolean(rider.is_core_member)
+    });
+    setEditRiderError(null);
+  };
+
+  const handleSaveEditRider = async (e) => {
+    if (e) e.preventDefault();
+    if (!editRiderForm.name.trim()) {
+      setEditRiderError('Driver name is required.');
+      return;
+    }
+    if (!editRiderForm.phone.trim()) {
+      setEditRiderError('Phone number is required.');
+      return;
+    }
+    if (!editRiderForm.email.trim()) {
+      setEditRiderError('Email address is required.');
+      return;
+    }
+
+    try {
+      setIsSubmittingRiderEdit(true);
+      setEditRiderError(null);
+      const targetUserId = editingRider.user_id || editingRider.id;
+      await apiRequest(`/admin/riders/${targetUserId}`, 'PATCH', {
+        name: editRiderForm.name.trim(),
+        email: editRiderForm.email.trim(),
+        phone: editRiderForm.phone.trim(),
+        gender: editRiderForm.gender,
+        status: editRiderForm.status,
+        vehicleType: editRiderForm.vehicle_type,
+        vehicleModel: editRiderForm.vehicle_model.trim(),
+        vehicleNumber: editRiderForm.vehicle_number.trim(),
+        licenseNumber: editRiderForm.license_number.trim(),
+        upiId: editRiderForm.upi_id.trim(),
+        verificationStatus: editRiderForm.verification_status,
+        isCoreMember: editRiderForm.is_core_member
+      });
+      setEditingRider(null);
+      fetchRiders();
+      fetchLeaderboard();
+    } catch (err) {
+      setEditRiderError(err.message || 'Failed to update driver details.');
+    } finally {
+      setIsSubmittingRiderEdit(false);
+    }
+  };
 
   // Handle Driver Suspension
   const handleConfirmSuspension = async () => {
@@ -1006,6 +1091,16 @@ export function RidersView() {
                               <button
                                 type="button"
                                 className="btn btn-secondary btn-sm"
+                                onClick={() => handleOpenEditRiderModal(r)}
+                                title="Edit Driver Details"
+                                style={{ padding: '5px 8px' }}
+                              >
+                                <Edit size={12} />
+                              </button>
+
+                              <button
+                                type="button"
+                                className="btn btn-secondary btn-sm"
                                 onClick={() => setSelectedRider(r)}
                                 title="View Driver Details"
                                 style={{ padding: '5px 8px' }}
@@ -1179,6 +1274,19 @@ export function RidersView() {
                       </td>
                       <td>
                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => handleOpenEditRiderModal(r)}
+                            title="Edit Driver Details"
+                            style={{
+                              padding: '6px 8px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                          >
+                            <Edit size={13} />
+                          </button>
                           <button
                             className="btn btn-secondary btn-sm"
                             onClick={() => setSelectedRider(r)}
@@ -1705,6 +1813,325 @@ export function RidersView() {
                 style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}
               />
             )}
+          </div>
+        </div>
+      )}
+      {/* Edit Driver Details Modal */}
+      {editingRider && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(5px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-lg)',
+            width: '100%',
+            maxWidth: '620px',
+            maxHeight: '90vh',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
+            overflow: 'hidden'
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              padding: '18px 24px',
+              borderBottom: '1px solid var(--border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: 'var(--bg-input)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  background: 'rgba(245, 158, 11, 0.15)',
+                  color: 'var(--primary)',
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <Bike size={18} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0, color: 'var(--text-main, #FFFFFF)' }}>
+                    Edit Driver Profile Details
+                  </h3>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                    Driver ID: #{editingRider.user_id || editingRider.id}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => setEditingRider(null)}
+                style={{ padding: '6px 8px' }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleSaveEditRider} style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
+              {editRiderError && (
+                <div style={{
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  border: '1px solid #EF4444',
+                  color: '#F87171',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  marginBottom: '16px'
+                }}>
+                  {editRiderError}
+                </div>
+              )}
+
+              {/* 1. Personal Details */}
+              <div style={{ marginBottom: '18px' }}>
+                <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>
+                  1. Personal & Contact Information
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '11px', fontWeight: 'bold' }}>
+                      FULL NAME *
+                    </label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={editRiderForm.name}
+                      onChange={(e) => setEditRiderForm({ ...editRiderForm, name: e.target.value })}
+                      placeholder="e.g. Priya Sharma"
+                      required
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '11px', fontWeight: 'bold' }}>
+                        PHONE NUMBER *
+                      </label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={editRiderForm.phone}
+                        onChange={(e) => setEditRiderForm({ ...editRiderForm, phone: e.target.value })}
+                        placeholder="e.g. +91 98765 43210"
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '11px', fontWeight: 'bold' }}>
+                        GENDER
+                      </label>
+                      <select
+                        className="form-select"
+                        value={editRiderForm.gender}
+                        onChange={(e) => setEditRiderForm({ ...editRiderForm, gender: e.target.value })}
+                      >
+                        <option value="MALE">Male</option>
+                        <option value="FEMALE">Female</option>
+                        <option value="OTHER">Other</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '11px', fontWeight: 'bold' }}>
+                      EMAIL ADDRESS *
+                    </label>
+                    <input
+                      type="email"
+                      className="form-input"
+                      value={editRiderForm.email}
+                      onChange={(e) => setEditRiderForm({ ...editRiderForm, email: e.target.value })}
+                      placeholder="e.g. driver@pondiuni.ac.in"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Vehicle & License Details */}
+              <div style={{ marginBottom: '18px', paddingTop: '14px', borderTop: '1px solid var(--border)' }}>
+                <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>
+                  2. Vehicle & Driving License Details
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '11px', fontWeight: 'bold' }}>
+                        VEHICLE TYPE *
+                      </label>
+                      <select
+                        className="form-select"
+                        value={editRiderForm.vehicle_type}
+                        onChange={(e) => setEditRiderForm({ ...editRiderForm, vehicle_type: e.target.value })}
+                      >
+                        <option value="BIKE">Motorcycle / Bike</option>
+                        <option value="SCOOTER">Scooter / Scooty</option>
+                        <option value="AUTO">Auto Rickshaw</option>
+                        <option value="CAB_MINI">Cab Mini</option>
+                        <option value="CAB_SEDAN">Cab Sedan</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '11px', fontWeight: 'bold' }}>
+                        VEHICLE MODEL *
+                      </label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={editRiderForm.vehicle_model}
+                        onChange={(e) => setEditRiderForm({ ...editRiderForm, vehicle_model: e.target.value })}
+                        placeholder="e.g. TVS Jupiter 125, Honda Activa 6G"
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '11px', fontWeight: 'bold' }}>
+                        LICENSE PLATE NUMBER *
+                      </label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={editRiderForm.vehicle_number}
+                        onChange={(e) => setEditRiderForm({ ...editRiderForm, vehicle_number: e.target.value })}
+                        placeholder="e.g. PY-01-SC-2002"
+                      />
+                    </div>
+
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '11px', fontWeight: 'bold' }}>
+                        DRIVING LICENSE NUMBER
+                      </label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={editRiderForm.license_number}
+                        onChange={(e) => setEditRiderForm({ ...editRiderForm, license_number: e.target.value })}
+                        placeholder="e.g. DL-PY0120220012345"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '11px', fontWeight: 'bold' }}>
+                      DRIVER UPI ID (For Payouts & Cancellation Fares)
+                    </label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={editRiderForm.upi_id}
+                      onChange={(e) => setEditRiderForm({ ...editRiderForm, upi_id: e.target.value })}
+                      placeholder="e.g. driver@oksbi or 9876543210@paytm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Administration & Verification Status */}
+              <div style={{ paddingTop: '14px', borderTop: '1px solid var(--border)' }}>
+                <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>
+                  3. Administration & KYC Status
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '11px', fontWeight: 'bold' }}>
+                      KYC STATUS
+                    </label>
+                    <select
+                      className="form-select"
+                      value={editRiderForm.verification_status}
+                      onChange={(e) => setEditRiderForm({ ...editRiderForm, verification_status: e.target.value })}
+                    >
+                      <option value="APPROVED">APPROVED (Verified)</option>
+                      <option value="PENDING">PENDING (Under Review)</option>
+                      <option value="REJECTED">REJECTED</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '11px', fontWeight: 'bold' }}>
+                      ACCOUNT ACCESS
+                    </label>
+                    <select
+                      className="form-select"
+                      value={editRiderForm.status}
+                      onChange={(e) => setEditRiderForm({ ...editRiderForm, status: e.target.value })}
+                    >
+                      <option value="ACTIVE">ACTIVE (Normal)</option>
+                      <option value="SUSPENDED">SUSPENDED (Blocked)</option>
+                      <option value="INACTIVE">INACTIVE</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '11px', fontWeight: 'bold' }}>
+                      CORE MEMBER
+                    </label>
+                    <select
+                      className="form-select"
+                      value={editRiderForm.is_core_member ? 'YES' : 'NO'}
+                      onChange={(e) => setEditRiderForm({ ...editRiderForm, is_core_member: e.target.value === 'YES' })}
+                    >
+                      <option value="YES">Yes (Core Member)</option>
+                      <option value="NO">No (Regular Driver)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setEditingRider(null)}
+                  disabled={isSubmittingRiderEdit}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={isSubmittingRiderEdit}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  {isSubmittingRiderEdit ? (
+                    <>
+                      <RefreshCw size={14} className="animate-spin" />
+                      Saving Driver Details...
+                    </>
+                  ) : (
+                    <>
+                      <Save size={14} />
+                      Save Driver Details
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
