@@ -3505,18 +3505,9 @@ export function RiderPortalView() {
 
       {/* Change Password Modal */}
       {showPasswordModal && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.75)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '20px',
-          zIndex: 1000
-        }}>
-          <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '420px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: 'min(420px, calc(100vw - 20px))', padding: '20px' }}>
+            <h3 style={{ fontSize: '17px', fontWeight: 800, marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Lock size={18} color="var(--primary)" /> Change Driver Password
             </h3>
 

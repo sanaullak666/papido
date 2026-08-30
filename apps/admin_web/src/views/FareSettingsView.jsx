@@ -168,7 +168,7 @@ export function FareSettingsView() {
             <h4 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '14px', color: 'var(--primary)' }}>
               Add New Campus Route & Pricing
             </h4>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '12px' }}>
               <div>
                 <label className="form-label" style={{ fontSize: '11px' }}>Pickup Stop / Location</label>
                 <input
@@ -236,8 +236,8 @@ export function FareSettingsView() {
         )}
 
         {/* Route Fares Table */}
-        <div style={{ overflowX: 'auto' }}>
-          <table className="table" style={{ width: '100%' }}>
+        <div className="table-container">
+          <table className="data-table">
             <thead>
               <tr>
                 <th>Pickup Stop</th>
@@ -347,7 +347,7 @@ export function FareSettingsView() {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '16px' }}>
           {fareConfigs.map((fc) => {
             const isEditing = editingConfig?.id === fc.id;
             const current = isEditing ? editingConfig : fc;
@@ -473,7 +473,7 @@ export function FareSettingsView() {
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginTop: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '16px', marginTop: '16px' }}>
           <div style={{ background: 'var(--bg-sidebar)', border: '1px solid var(--border)', borderRadius: '12px', padding: '18px' }}>
             <div style={{ display: 'inline-block', background: 'rgba(245, 158, 11, 0.15)', color: 'var(--primary)', padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 800, marginBottom: '8px' }}>
               CAMPUS & SHORT TRIPS (FARE &le; ₹80)

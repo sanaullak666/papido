@@ -386,25 +386,27 @@ export function SimulatorView() {
                   {/* Vehicle Type Selection */}
                   <div>
                     <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '4px' }}>SELECT RIDE TYPE</label>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(58px, 1fr))', gap: '6px' }}>
                       {['BIKE', 'AUTO', 'CAB_MINI', 'CAB_SEDAN'].map((v) => (
                         <button
                           key={v}
                           type="button"
                           onClick={() => setVehicleType(v)}
                           style={{
-                            padding: '8px 4px',
+                            padding: '8px 2px',
                             background: vehicleType === v ? 'rgba(245, 158, 11, 0.2)' : 'var(--bg-sidebar)',
                             border: `1px solid ${vehicleType === v ? 'var(--primary)' : 'var(--border)'}`,
                             borderRadius: '8px',
                             color: vehicleType === v ? 'var(--primary)' : 'var(--text-secondary)',
-                            fontSize: '11px',
+                            fontSize: '10.5px',
                             fontWeight: 700,
                             cursor: 'pointer',
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'center',
-                            gap: '4px'
+                            gap: '4px',
+                            minHeight: '44px',
+                            justifyContent: 'center'
                           }}
                         >
                           {v === 'BIKE' ? <Bike size={16} /> : <Car size={16} />}
