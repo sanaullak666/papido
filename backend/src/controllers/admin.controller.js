@@ -6,6 +6,7 @@ const PaymentModel = require('../models/payment.model');
 const EarningModel = require('../models/earning.model');
 const FareModel = require('../models/fare.model');
 const RideService = require('../services/ride.service');
+const AuthService = require('../services/auth.service');
 const db = require('../config/database');
 const { success, error, paginate } = require('../utils/response');
 
@@ -707,7 +708,7 @@ const AdminController = {
   async updateCustomer(req, res, next) {
     try {
       const customerUserId = req.params.id;
-      const { name, email, phone, gender, status, walletBalance, wallet_balance } = req.body;
+      const { name, email, phone, gender, status, walletBalance, wallet_balance, password, newPassword } = req.body;
 
       const user = await db.queryOne('SELECT * FROM users WHERE id = ?', [customerUserId]);
       if (!user) {
@@ -726,6 +727,15 @@ const AdminController = {
         if (existingPhone) {
           return error(res, 'Phone number is already registered with another account.', 409);
         }
+      }
+
+      const passToUpdate = (password !== undefined && password !== null && password !== '') ? password : newPassword;
+      if (passToUpdate && passToUpdate.trim()) {
+        if (passToUpdate.trim().length < 6) {
+          return error(res, 'Password must be at least 6 characters long.', 400);
+        }
+        const passwordHash = await AuthService.hashPassword(passToUpdate.trim());
+        await UserModel.updatePassword(customerUserId, passwordHash);
       }
 
       const newName = name !== undefined ? name.trim() : user.name;
@@ -768,6 +778,8 @@ const AdminController = {
         phone,
         gender,
         status,
+        password,
+        newPassword,
         vehicleType,
         vehicle_type,
         vehicleModel,
@@ -801,6 +813,15 @@ const AdminController = {
         if (existingPhone) {
           return error(res, 'Phone number is already registered with another account.', 409);
         }
+      }
+
+      const passToUpdate = (password !== undefined && password !== null && password !== '') ? password : newPassword;
+      if (passToUpdate && passToUpdate.trim()) {
+        if (passToUpdate.trim().length < 6) {
+          return error(res, 'Password must be at least 6 characters long.', 400);
+        }
+        const passwordHash = await AuthService.hashPassword(passToUpdate.trim());
+        await UserModel.updatePassword(riderUserId, passwordHash);
       }
 
       const finalIsCore = isCoreMember !== undefined ? isCoreMember : is_core_member;

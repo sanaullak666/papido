@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../api';
-import { Search, UserCheck, UserX, Star, RefreshCw, AlertTriangle, ShieldAlert, Edit, Check, X, Save, User } from 'lucide-react';
+import { Search, UserCheck, UserX, Star, RefreshCw, AlertTriangle, ShieldAlert, Edit, Check, X, Save, User, Eye, EyeOff } from 'lucide-react';
 
 export function CustomersView() {
   const [customers, setCustomers] = useState([]);
@@ -13,12 +13,14 @@ export function CustomersView() {
 
   // Edit Customer Modal State
   const [editingCustomer, setEditingCustomer] = useState(null);
+  const [showCustomerPassword, setShowCustomerPassword] = useState(false);
   const [editFormData, setEditFormData] = useState({
     name: '',
     email: '',
     phone: '',
     gender: 'OTHER',
-    status: 'ACTIVE'
+    status: 'ACTIVE',
+    password: ''
   });
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
   const [editError, setEditError] = useState(null);
@@ -48,12 +50,14 @@ export function CustomersView() {
 
   const handleOpenEditModal = (customer) => {
     setEditingCustomer(customer);
+    setShowCustomerPassword(false);
     setEditFormData({
       name: customer.name || '',
       email: customer.email || '',
       phone: customer.phone || '',
       gender: customer.gender || 'OTHER',
-      status: customer.user_status || 'ACTIVE'
+      status: customer.user_status || 'ACTIVE',
+      password: ''
     });
     setEditError(null);
   };
@@ -72,17 +76,25 @@ export function CustomersView() {
       setEditError('Phone number is required.');
       return;
     }
+    if (editFormData.password && editFormData.password.trim().length > 0 && editFormData.password.trim().length < 6) {
+      setEditError('Password must be at least 6 characters long.');
+      return;
+    }
 
     try {
       setIsSubmittingEdit(true);
       setEditError(null);
-      await apiRequest(`/admin/customers/${editingCustomer.user_id}`, 'PATCH', {
+      const payload = {
         name: editFormData.name.trim(),
         email: editFormData.email.trim(),
         phone: editFormData.phone.trim(),
         gender: editFormData.gender,
         status: editFormData.status
-      });
+      };
+      if (editFormData.password && editFormData.password.trim()) {
+        payload.password = editFormData.password.trim();
+      }
+      await apiRequest(`/admin/customers/${editingCustomer.user_id}`, 'PATCH', payload);
       setEditingCustomer(null);
       fetchCustomers();
     } catch (err) {
@@ -649,6 +661,46 @@ export function CustomersView() {
                     placeholder="e.g. student@pondiuni.ac.in"
                     required
                   />
+                </div>
+
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '11px', fontWeight: 'bold' }}>
+                    CHANGE PASSWORD (OPTIONAL)
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showCustomerPassword ? 'text' : 'password'}
+                      className="form-input"
+                      style={{ paddingRight: '36px' }}
+                      value={editFormData.password || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, password: e.target.value })}
+                      placeholder="Leave blank to keep unchanged (min. 6 chars)"
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCustomerPassword(!showCustomerPassword)}
+                      style={{
+                        position: 'absolute',
+                        right: '10px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--text-muted)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: 0
+                      }}
+                      title={showCustomerPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showCustomerPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    Admins can reset or set a new password for this customer account.
+                  </div>
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>

@@ -12,6 +12,7 @@ import {
   Car,
   RefreshCw,
   Eye,
+  EyeOff,
   ExternalLink,
   FileText,
   Trash2,
@@ -76,12 +77,14 @@ export function RidersView() {
 
   // Edit Driver Modal State
   const [editingRider, setEditingRider] = useState(null);
+  const [showRiderPassword, setShowRiderPassword] = useState(false);
   const [editRiderForm, setEditRiderForm] = useState({
     name: '',
     email: '',
     phone: '',
     gender: 'OTHER',
     status: 'ACTIVE',
+    password: '',
     vehicle_type: 'BIKE',
     vehicle_model: '',
     vehicle_number: '',
@@ -172,12 +175,14 @@ export function RidersView() {
   // Handle Edit Driver Modal Open & Save
   const handleOpenEditRiderModal = (rider) => {
     setEditingRider(rider);
+    setShowRiderPassword(false);
     setEditRiderForm({
       name: rider.name || '',
       email: rider.email || '',
       phone: rider.phone || '',
       gender: rider.gender || 'OTHER',
       status: rider.user_status || rider.status || 'ACTIVE',
+      password: '',
       vehicle_type: rider.vehicle_type || 'BIKE',
       vehicle_model: rider.vehicle_model || '',
       vehicle_number: rider.vehicle_number || '',
@@ -203,12 +208,16 @@ export function RidersView() {
       setEditRiderError('Email address is required.');
       return;
     }
+    if (editRiderForm.password && editRiderForm.password.trim().length > 0 && editRiderForm.password.trim().length < 6) {
+      setEditRiderError('Password must be at least 6 characters long.');
+      return;
+    }
 
     try {
       setIsSubmittingRiderEdit(true);
       setEditRiderError(null);
       const targetUserId = editingRider.user_id || editingRider.id;
-      await apiRequest(`/admin/riders/${targetUserId}`, 'PATCH', {
+      const payload = {
         name: editRiderForm.name.trim(),
         email: editRiderForm.email.trim(),
         phone: editRiderForm.phone.trim(),
@@ -221,7 +230,11 @@ export function RidersView() {
         upiId: editRiderForm.upi_id.trim(),
         verificationStatus: editRiderForm.verification_status,
         isCoreMember: editRiderForm.is_core_member
-      });
+      };
+      if (editRiderForm.password && editRiderForm.password.trim()) {
+        payload.password = editRiderForm.password.trim();
+      }
+      await apiRequest(`/admin/riders/${targetUserId}`, 'PATCH', payload);
       setEditingRider(null);
       fetchRiders();
       fetchLeaderboard();
@@ -1963,6 +1976,46 @@ export function RidersView() {
                       placeholder="e.g. driver@pondiuni.ac.in"
                       required
                     />
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '11px', fontWeight: 'bold' }}>
+                      CHANGE PASSWORD (OPTIONAL)
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showRiderPassword ? 'text' : 'password'}
+                        className="form-input"
+                        style={{ paddingRight: '36px' }}
+                        value={editRiderForm.password || ''}
+                        onChange={(e) => setEditRiderForm({ ...editRiderForm, password: e.target.value })}
+                        placeholder="Leave blank to keep unchanged (min. 6 chars)"
+                        autoComplete="new-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowRiderPassword(!showRiderPassword)}
+                        style={{
+                          position: 'absolute',
+                          right: '10px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--text-muted)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: 0
+                        }}
+                        title={showRiderPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showRiderPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                      Admins can reset or set a new password for this driver account.
+                    </div>
                   </div>
                 </div>
               </div>
