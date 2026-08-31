@@ -987,7 +987,7 @@ const RideService = {
 
         let riderProfile = null;
         try {
-          riderProfile = await RiderModel.getProfile(effectiveRiderId);
+          riderProfile = await RiderModel.findByUserId(effectiveRiderId);
         } catch (_) {}
         
         const riderUpi = (riderProfile?.upi_id || '').trim() || (riderUser?.phone ? `${riderUser.phone}@upi` : 'driver@upi');
@@ -1167,7 +1167,7 @@ const RideService = {
         );
         if (ride && ride.rider_id) {
           const rider = await UserModel.findById(ride.rider_id);
-          const riderProfile = await RiderModel.getProfile(ride.rider_id);
+          const riderProfile = await RiderModel.findByUserId(ride.rider_id);
           const riderUpi = (riderProfile?.upi_id || '').trim() || (rider?.phone ? `${rider.phone}@upi` : 'driver@upi');
           penalty = await PenaltyModel.create({
             rideId: ride.id,

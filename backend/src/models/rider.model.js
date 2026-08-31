@@ -2,6 +2,10 @@ const db = require('../config/database');
 const { calculateDistance } = require('../utils/geo');
 
 const RiderModel = {
+  async getProfile(userId) {
+    return this.findByUserId(userId);
+  },
+
   async findByUserId(userId) {
     const sql = `
       SELECT rp.*, u.name, u.email, u.phone, u.status as user_status, u.suspension_reason, u.profile_image, COALESCE(rp.is_core_member, u.is_core_member, 0) as is_core_member

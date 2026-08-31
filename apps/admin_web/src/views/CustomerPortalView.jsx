@@ -1429,15 +1429,15 @@ export function CustomerPortalView() {
       if (!isFreeRide && !penaltyData && wasReached) {
         try {
           const penRes = await apiRequest('/customer/pending-penalty', 'GET', null, token);
-          if (penRes?.data) {
+          if (penRes?.data && (!penRes.data.ride_id || String(penRes.data.ride_id) === String(currentActiveRide.id))) {
             penaltyData = penRes.data;
           }
         } catch (_) {}
       }
 
       if (!isFreeRide && (penaltyData || wasReached)) {
-        const fallbackUpi = penaltyData?.rider_upi || penaltyData?.rider_upi_id || (currentActiveRide.rider_phone ? `${currentActiveRide.rider_phone}@upi` : 'rider@upi');
-        const fallbackName = penaltyData?.rider_name || currentActiveRide.rider_name || 'Rider';
+        const fallbackUpi = penaltyData?.rider_upi || penaltyData?.rider_upi_id || currentActiveRide.rider_upi_id || (currentActiveRide.rider_phone ? `${currentActiveRide.rider_phone}@upi` : 'driver@upi');
+        const fallbackName = penaltyData?.rider_name || currentActiveRide.rider_name || 'Campus Driver';
         const fallbackObj = penaltyData || {
           id: penaltyData?.id || currentActiveRide.id,
           ride_id: currentActiveRide.id,
