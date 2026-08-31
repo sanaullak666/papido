@@ -1073,6 +1073,7 @@ const RideService = {
   async settlePenalty(penaltyId, customerId, paymentReference = null) {
     const PenaltyModel = require('../models/penalty.model');
     const UserModel = require('../models/user.model');
+    const RiderModel = require('../models/rider.model');
     const db = require('../config/database');
 
     let penalty = null;
@@ -1085,6 +1086,30 @@ const RideService = {
           penalty = await PenaltyModel.findByRideId(penaltyId);
         } catch (_) {}
       }
+    }
+    // If penaltyId is a specific ride or rideCode and not found in penalties table yet, create for that specific ride
+    if (!penalty && penaltyId && !['latest', 'null', 'undefined'].includes(String(penaltyId))) {
+      try {
+        const specificRide = await db.queryOne(
+          `SELECT * FROM rides WHERE (id = ? OR ride_code = ?) AND customer_id = ? AND rider_id IS NOT NULL`,
+          [penaltyId, penaltyId, customerId]
+        );
+        if (specificRide && specificRide.rider_id) {
+          const rider = await UserModel.findById(specificRide.rider_id);
+          const riderProfile = await RiderModel.findByUserId(specificRide.rider_id);
+          const riderUpi = (riderProfile?.upi_id || '').trim() || (rider?.phone ? `${rider.phone}@upi` : 'driver@upi');
+          const riderName = rider?.name || 'Campus Driver';
+          penalty = await PenaltyModel.create({
+            rideId: specificRide.id,
+            customerId: customerId,
+            riderId: specificRide.rider_id,
+            amount: 15.00,
+            riderUpiId: riderUpi,
+            riderName: riderName,
+            notes: `Cancellation compensation settled for Ride #${specificRide.ride_code || specificRide.id}`
+          });
+        }
+      } catch (_) {}
     }
     if (!penalty) {
       try {
@@ -1143,6 +1168,30 @@ const RideService = {
           penalty = await PenaltyModel.findByRideId(penaltyId);
         } catch (_) {}
       }
+    }
+    // If penaltyId is a specific ride or rideCode and not found in penalties table yet, create directly for that ride's driver
+    if (!penalty && penaltyId && !['latest', 'null', 'undefined'].includes(String(penaltyId))) {
+      try {
+        const specificRide = await db.queryOne(
+          `SELECT * FROM rides WHERE (id = ? OR ride_code = ?) AND customer_id = ? AND rider_id IS NOT NULL`,
+          [penaltyId, penaltyId, customerId]
+        );
+        if (specificRide && specificRide.rider_id) {
+          const rider = await UserModel.findById(specificRide.rider_id);
+          const riderProfile = await RiderModel.findByUserId(specificRide.rider_id);
+          const riderUpi = (riderProfile?.upi_id || '').trim() || (rider?.phone ? `${rider.phone}@upi` : 'driver@upi');
+          const riderName = rider?.name || 'Campus Driver';
+          penalty = await PenaltyModel.create({
+            rideId: specificRide.id,
+            customerId: customerId,
+            riderId: specificRide.rider_id,
+            amount: 15.00,
+            riderUpiId: riderUpi,
+            riderName: riderName,
+            notes: `Cancellation fee claimed as paid directly by passenger for Ride #${specificRide.ride_code || specificRide.id}`
+          });
+        }
+      } catch (_) {}
     }
     if (!penalty) {
       try {

@@ -1476,6 +1476,8 @@ export function CustomerPortalView() {
         setPendingPenalty(prev => ({
           ...prev,
           ...(res.data || {}),
+          rider_name: res.data?.rider_name || res.data?.rider_name_full || prev?.rider_name || 'Campus Driver',
+          rider_upi: res.data?.rider_upi || res.data?.rider_upi_id || res.data?.profile_upi_id || prev?.rider_upi,
           status: 'PENDING_DRIVER_CONFIRMATION'
         }));
         setStatusMessage('Payment notification sent to rider. Waiting for rider confirmation...');
