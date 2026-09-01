@@ -99,13 +99,13 @@ const formatRideDateTime = (dateVal) => {
   }
 };
 
-const isScheduledTimeReached = (dateVal) => {
+const isScheduledTimeReached = (dateVal, bufferMinutes = 10) => {
   if (!dateVal) return true;
   try {
     const str = String(dateVal).trim();
     const d = new Date(str.includes('T') ? str : str.replace(' ', 'T'));
     if (isNaN(d.getTime())) return true;
-    return Date.now() >= d.getTime();
+    return Date.now() >= (d.getTime() - bufferMinutes * 60 * 1000);
   } catch (_) {
     return true;
   }
@@ -654,13 +654,23 @@ export function RiderPortalView() {
 
   const handleStartScheduledTrip = async (ride) => {
     const schedTime = ride.scheduled_time_ist || ride.scheduled_time;
-    if (!isScheduledTimeReached(schedTime)) {
-      alert(`This advance pre-booking is scheduled for ${formatRideDateTime(schedTime)}. Active trip view will be enabled at the booked time.`);
+    if (!isScheduledTimeReached(schedTime, 15)) {
+      alert(`This booking is scheduled for ${formatRideDateTime(schedTime)}. Active trip view will be enabled 15 minutes before the booked pickup time.`);
       return;
     }
     try {
       setScheduledActionLoadingId(ride.id);
-      setActiveRide(ride);
+      const fare = ride.total_fare || ride.final_fare || ride.estimated_fare || 20;
+      const split = calcDriverSplit(fare);
+      setActiveRide({
+        ...ride,
+        total_fare: fare,
+        estimated_fare: fare,
+        final_fare: fare,
+        rider_earning: ride.rider_earning || split.rider,
+        company_earning: ride.company_earning || split.company,
+        controller_earning: ride.controller_earning || split.controller
+      });
       setCurrentTab('active');
       handleTabChange('active');
     } catch (err) {
@@ -1069,22 +1079,33 @@ export function RiderPortalView() {
     try {
       const res = await apiRequest(`/rider/rides/${rideId}/accept`, 'POST', {}, token);
       const r = res.data;
-      if (r) {
-        const fare = r.total_fare || r.final_fare || r.estimated_fare || 20;
-        const split = calcDriverSplit(fare);
-        setActiveRide({
-          ...r,
-          total_fare: fare,
-          estimated_fare: fare,
-          final_fare: fare,
-          rider_earning: r.rider_earning || split.rider,
-          company_earning: r.company_earning || split.company,
-          controller_earning: r.controller_earning || split.controller
-        });
+      const pickupTimeVal = r?.scheduled_time_ist || r?.scheduled_time || r?.scheduledTime;
+      const isFutureTime = pickupTimeVal && !isScheduledTimeReached(pickupTimeVal, 10);
+
+      if (isFutureTime) {
+        // Future trip: save to reserved schedule and stay on Radar for immediate rides
+        setScheduledSuccessAlert(`Trip confirmed for ${formatRideDateTime(pickupTimeVal)}! It is saved in your upcoming schedule so you can continue taking other rides on Radar.`);
+        fetchScheduledRides();
+        setIncomingRequests(prev => prev.filter(req => String(req.id) !== String(rideId)));
+        setTimeout(() => setScheduledSuccessAlert(null), 5000);
+      } else {
+        if (r) {
+          const fare = r.total_fare || r.final_fare || r.estimated_fare || 20;
+          const split = calcDriverSplit(fare);
+          setActiveRide({
+            ...r,
+            total_fare: fare,
+            estimated_fare: fare,
+            final_fare: fare,
+            rider_earning: r.rider_earning || split.rider,
+            company_earning: r.company_earning || split.company,
+            controller_earning: r.controller_earning || split.controller
+          });
+        }
+        setIncomingRequests([]);
+        setCurrentTab('active');
+        fetchActiveRide();
       }
-      setIncomingRequests([]);
-      setCurrentTab('active');
-      fetchActiveRide();
     } catch (err) {
       alert(err.message || 'Failed to accept ride. It may have been claimed by another rider.');
       setIncomingRequests(prev => prev.filter(r => String(r.id) !== String(rideId)));
@@ -1827,6 +1848,88 @@ export function RiderPortalView() {
                   </button>
                 </div>
               </div>
+
+              {/* Upcoming Confirmed Future Trips Banner on Radar */}
+              {!activeRide && reservedScheduledRides && reservedScheduledRides.length > 0 && (
+                <div style={{
+                  background: '#ECFDF5',
+                  border: '2px solid #10B981',
+                  borderRadius: '16px',
+                  padding: '16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
+                  boxShadow: '0 4px 14px rgba(16, 185, 129, 0.1)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 800, color: '#065F46' }}>
+                      <Calendar size={16} /> UPCOMING CONFIRMED TRIPS ({reservedScheduledRides.length})
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleTabChange('scheduled')}
+                      style={{ background: 'transparent', border: 'none', color: '#059669', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}
+                    >
+                      View All →
+                    </button>
+                  </div>
+                  {reservedScheduledRides.slice(0, 2).map((sr) => {
+                    const isTimeReady = isScheduledTimeReached(sr.scheduled_time_ist || sr.scheduled_time, 15);
+                    return (
+                      <div
+                        key={`radar-sr-${sr.id}`}
+                        style={{
+                          background: '#FFFFFF',
+                          border: '1px solid #A7F3D0',
+                          borderRadius: '12px',
+                          padding: '12px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '8px'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ background: '#D1FAE5', color: '#065F46', padding: '2px 6px', borderRadius: '6px', fontSize: '10px', fontWeight: 800 }}>
+                              {sr.ride_code || `PAP-${sr.id}`}
+                            </span>
+                            <span style={{ fontSize: '12px', fontWeight: 800, color: '#047857' }}>
+                              ⏰ {formatRideDateTime(sr.scheduled_time_ist || sr.scheduled_time)}
+                            </span>
+                          </div>
+                          <span style={{ fontSize: '14px', fontWeight: 900, color: '#10B981' }}>
+                            ₹{sr.total_fare || 20}
+                          </span>
+                        </div>
+
+                        <div style={{ fontSize: '12px', color: '#374151' }}>
+                          <strong>{sr.pickup_address}</strong> → {sr.destination_address}
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
+                          <span style={{ fontSize: '11px', color: '#6B7280' }}>Passenger: {sr.customer_name || 'Passenger'}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleStartScheduledTrip(sr)}
+                            style={{
+                              padding: '6px 14px',
+                              borderRadius: '8px',
+                              border: 'none',
+                              background: isTimeReady ? 'linear-gradient(135deg, #10B981, #059669)' : '#E2E8F0',
+                              color: isTimeReady ? '#FFFFFF' : '#64748B',
+                              fontSize: '11px',
+                              fontWeight: 800,
+                              cursor: isTimeReady ? 'pointer' : 'default'
+                            }}
+                          >
+                            {isTimeReady ? 'Start Trip Now' : 'Opens at Booked Time'}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
 
               {/* Incoming Requests Queue (Multiple Bookings Supported & Persistent until declined) */}
               {!activeRide && incomingRequests.length > 0 && (

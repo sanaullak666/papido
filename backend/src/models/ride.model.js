@@ -254,9 +254,12 @@ const RideModel = {
       JOIN users c ON r.customer_id = c.id
       WHERE r.rider_id = ? 
         AND (
-          (COALESCE(r.is_scheduled, 0) = 0 AND r.status IN ('ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED'))
+          (r.scheduled_time IS NULL AND r.status IN ('ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED'))
           OR
-          (r.is_scheduled = 1 AND r.status IN ('RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED'))
+          (r.scheduled_time IS NOT NULL AND (
+             r.status IN ('RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED')
+             OR (r.status = 'ACCEPTED' AND r.scheduled_time <= NOW() + INTERVAL 10 MINUTE)
+          ))
         )
       ORDER BY r.id DESC LIMIT 1
     `;
@@ -560,7 +563,7 @@ const RideModel = {
         FROM rides r
         JOIN users c ON r.customer_id = c.id
         WHERE r.rider_id = ?
-          AND r.is_scheduled = 1
+          AND (r.is_scheduled = 1 OR r.scheduled_time IS NOT NULL)
           AND r.status IN ('SCHEDULED', 'ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED')
         ORDER BY r.scheduled_time ASC, r.id DESC
       `;
