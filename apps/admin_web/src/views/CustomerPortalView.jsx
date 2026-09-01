@@ -1233,7 +1233,12 @@ export function CustomerPortalView() {
         }));
       }
       fetchActiveRide();
-      setStatusMessage('A campus rider has accepted your trip!');
+      const schedTime = rideObj?.scheduled_time || rideObj?.scheduled_time_ist;
+      if (schedTime) {
+        setStatusMessage(`Great news! A campus rider has accepted and confirmed your ride for ${formatRideDateTime(schedTime)}.`);
+      } else {
+        setStatusMessage('A campus rider has accepted your trip!');
+      }
     });
 
     socket.on('ride:reopened', () => {
@@ -3127,22 +3132,69 @@ export function CustomerPortalView() {
                     <div style={{
                       padding: '14px',
                       borderRadius: '12px',
-                      background: 'rgba(245, 158, 11, 0.15)',
-                      border: '1px solid var(--primary)',
+                      background: activeRide.status === 'ACCEPTED' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.15)',
+                      border: activeRide.status === 'ACCEPTED' ? '1.5px solid #10B981' : '1px solid var(--primary)',
                       textAlign: 'center'
                     }}>
-                      <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '1px', color: 'var(--primary)', marginBottom: '4px' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '1px', color: activeRide.status === 'ACCEPTED' ? '#065F46' : 'var(--primary)', marginBottom: '4px' }}>
                         STATUS: {activeRide.status}
                       </div>
                       <div style={{ fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                         {activeRide.status === 'PENDING_ADMIN_QUOTE' && <><Clock size={18} /> Submitted to Dispatch — Admin is setting the fare & assigning a rider.</>}
                         {activeRide.status === 'REQUESTED' && <><Search size={18} /> Searching for nearby riders...</>}
-                        {activeRide.status === 'ACCEPTED' && <><CheckCircle size={18} /> Rider accepted your trip!</>}
+                        {activeRide.status === 'ACCEPTED' && (
+                          activeRide.scheduled_time ? (
+                            <><CheckCircle size={18} color="#059669" /> Rider accepted! Confirmed for {formatRideDateTime(activeRide.scheduled_time)}</>
+                          ) : (
+                            <><CheckCircle size={18} color="#059669" /> Rider accepted your trip!</>
+                          )
+                        )}
                         {activeRide.status === 'RIDER_ARRIVING' && <><Bike size={18} /> Rider is arriving at your pickup spot.</>}
                         {activeRide.status === 'RIDER_REACHED' && <><MapPin size={18} /> Rider has reached pickup point!</>}
                         {activeRide.status === 'STARTED' && <><Navigation size={18} /> Trip in progress to destination...</>}
                       </div>
                     </div>
+
+                    {/* Time-Selected Confirmed Ride Banner */}
+                    {activeRide.status === 'ACCEPTED' && Boolean(activeRide.scheduled_time) && (
+                      <div style={{
+                        background: '#ECFDF5',
+                        border: '1.5px solid #10B981',
+                        borderRadius: '12px',
+                        padding: '12px 16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        boxShadow: '0 2px 8px rgba(16, 185, 129, 0.08)'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{
+                            background: '#10B981',
+                            color: '#FFFFFF',
+                            borderRadius: '50%',
+                            width: '32px',
+                            height: '32px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0
+                          }}>
+                            <Calendar size={16} />
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 800, fontSize: '13px', color: '#065F46' }}>
+                              Rider Confirmed for Your Selected Time
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#047857', marginTop: '2px' }}>
+                              Pickup Scheduled: <strong>{formatRideDateTime(activeRide.scheduled_time)}</strong>
+                            </div>
+                          </div>
+                        </div>
+                        <span style={{ background: '#D1FAE5', color: '#065F46', padding: '3px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 800 }}>
+                          CONFIRMED
+                        </span>
+                      </div>
+                    )}
 
                     {/* Live Rider On Waiting Alert Banner */}
                     {Boolean(activeRide.is_waiting) && (

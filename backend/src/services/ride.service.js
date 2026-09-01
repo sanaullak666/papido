@@ -642,6 +642,31 @@ const RideService = {
       throw new Error('You already have another active ride in progress.');
     }
 
+    // Enforce 15-minute minimum gap conflict protection against already confirmed upcoming rides
+    if (ride.scheduled_time) {
+      const existingReserved = await RideModel.getMyReservedScheduledRides(riderId);
+      if (existingReserved && existingReserved.length > 0) {
+        const targetTimeStr = String(ride.scheduled_time).trim();
+        const targetTimeMs = new Date(targetTimeStr.includes('T') ? targetTimeStr : targetTimeStr.replace(' ', 'T')).getTime();
+
+        if (!isNaN(targetTimeMs)) {
+          for (const existing of existingReserved) {
+            if (Number(existing.id) === Number(ride.id)) continue;
+            if (!existing.scheduled_time) continue;
+            const existTimeStr = String(existing.scheduled_time).trim();
+            const existTimeMs = new Date(existTimeStr.includes('T') ? existTimeStr : existTimeStr.replace(' ', 'T')).getTime();
+            if (isNaN(existTimeMs)) continue;
+
+            const diffMinutes = Math.abs(targetTimeMs - existTimeMs) / (1000 * 60);
+            if (diffMinutes < 15) {
+              const timeLabel = existing.scheduled_time_ist || existing.scheduled_time;
+              throw new Error(`Schedule conflict: You already have a confirmed ride #${existing.ride_code || existing.id} scheduled at ${timeLabel}. Please keep at least a 15-minute gap between pickups.`);
+            }
+          }
+        }
+      }
+    }
+
     // Verify core rider exclusivity if ride is core only
     if (ride.is_core_only && !rider.is_core_member && rider.role !== 'CORE_MEMBER') {
       throw new Error('This is an official Papido Flash Free Ride reserved exclusively for Core Team riders.');

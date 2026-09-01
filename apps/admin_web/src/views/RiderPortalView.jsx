@@ -1946,18 +1946,19 @@ export function RiderPortalView() {
                   {incomingRequests.map((req) => {
                     const split = calcDriverSplit(req.total_fare);
                     const pickupTimeVal = req.scheduled_time_ist || req.scheduled_time || req.scheduledTime;
+                    const conflict = getScheduleGapConflict(pickupTimeVal, reservedScheduledRides);
                     return (
                       <div
                         key={req.id}
                         style={{
                           background: '#FFFFFF',
-                          border: '2px solid #F97316',
+                          border: conflict ? '2px solid #EF4444' : '2px solid #F97316',
                           borderRadius: '16px',
                           padding: '18px',
                           display: 'flex',
                           flexDirection: 'column',
                           gap: '12px',
-                          boxShadow: '0 6px 20px rgba(249, 115, 22, 0.15)'
+                          boxShadow: conflict ? '0 6px 20px rgba(239, 68, 68, 0.12)' : '0 6px 20px rgba(249, 115, 22, 0.15)'
                         }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -1969,6 +1970,11 @@ export function RiderPortalView() {
                               {Boolean(req.is_double_ride) && <span style={{ background: '#FED7AA', color: '#9A3412', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Users size={11} /> Double Ride</span>}
                               {Boolean(req.is_scheduled) && <span style={{ background: '#DBEAFE', color: '#1E40AF', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Calendar size={11} /> PRE-BOOKED TRIP</span>}
                               {Boolean(pickupTimeVal) && <span style={{ background: '#FFEDD5', color: '#C2410C', border: '1px solid #FDBA74', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Clock size={11} /> PICKUP: {formatRideDateTime(pickupTimeVal)}</span>}
+                              {Boolean(conflict) && (
+                                <span style={{ background: '#FEE2E2', color: '#991B1B', border: '1px solid #FCA5A5', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  <AlertTriangle size={11} /> Conflict with {conflict.conflictingRideCode} at {formatRideDateTime(conflict.conflictingTime)}
+                                </span>
+                              )}
                               {Boolean(req.female_rider_only) && <span style={{ background: '#FCE7F3', color: '#9D174D', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><ShieldCheck size={11} /> Female Rider Only</span>}
                               {Boolean(req.is_core_only || req.is_free_ride) && <span style={{ background: '#FEF3C7', color: '#B45309', border: '1px solid #FDE68A', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Zap size={11} /> CORE FLASH FREE TRIP</span>}
                             </div>
@@ -2054,21 +2060,22 @@ export function RiderPortalView() {
                           </button>
                           <button
                             onClick={() => handleAcceptRequest(req.id)}
-                            disabled={acceptingRideId !== null || actionLoading}
+                            disabled={acceptingRideId !== null || actionLoading || Boolean(conflict)}
+                            title={conflict ? `Schedule conflict with your confirmed ride ${conflict.conflictingRideCode} at ${formatRideDateTime(conflict.conflictingTime)}. Please maintain at least a 15-minute gap.` : 'Accept Ride'}
                             style={{
                               padding: '10px',
                               fontWeight: 800,
                               fontSize: '14px',
-                              background: 'linear-gradient(135deg, #F97316, #EA580C)',
-                              color: '#FFFFFF',
-                              border: 'none',
+                              background: conflict ? '#E2E8F0' : 'linear-gradient(135deg, #F97316, #EA580C)',
+                              color: conflict ? '#64748B' : '#FFFFFF',
+                              border: conflict ? '1px solid #CBD5E1' : 'none',
                               borderRadius: '10px',
-                              boxShadow: '0 4px 14px rgba(234, 88, 12, 0.35)',
-                              cursor: (acceptingRideId !== null || actionLoading) ? 'not-allowed' : 'pointer',
+                              boxShadow: conflict ? 'none' : '0 4px 14px rgba(234, 88, 12, 0.35)',
+                              cursor: (acceptingRideId !== null || actionLoading || conflict) ? 'not-allowed' : 'pointer',
                               opacity: (acceptingRideId !== null && acceptingRideId !== req.id) ? 0.6 : 1
                             }}
                           >
-                            {acceptingRideId === req.id ? 'Accepting...' : 'Accept Ride Now'}
+                            {acceptingRideId === req.id ? 'Accepting...' : conflict ? 'Time Conflict' : 'Accept Ride Now'}
                           </button>
                         </div>
                       </div>
