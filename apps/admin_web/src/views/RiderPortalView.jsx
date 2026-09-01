@@ -1842,6 +1842,7 @@ export function RiderPortalView() {
 
                   {incomingRequests.map((req) => {
                     const split = calcDriverSplit(req.total_fare);
+                    const pickupTimeVal = req.scheduled_time_ist || req.scheduled_time || req.scheduledTime;
                     return (
                       <div
                         key={req.id}
@@ -1863,7 +1864,8 @@ export function RiderPortalView() {
                               <span style={{ background: '#FEF3C7', color: '#92400E', padding: '2px 8px', borderRadius: '6px', fontWeight: 700 }}>{req.vehicle_type || 'BIKE'}</span>
                               {Boolean(req.is_outside) && <span style={{ background: '#E0E7FF', color: '#3730A3', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 700 }}>OUTSIDE CAMPUS</span>}
                               {Boolean(req.is_double_ride) && <span style={{ background: '#FED7AA', color: '#9A3412', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Users size={11} /> Double Ride</span>}
-                              {Boolean(req.is_scheduled || req.scheduled_time) && <span style={{ background: '#DBEAFE', color: '#1E40AF', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Calendar size={11} /> PRE-BOOKED TRIP</span>}
+                              {Boolean(req.is_scheduled) && <span style={{ background: '#DBEAFE', color: '#1E40AF', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Calendar size={11} /> PRE-BOOKED TRIP</span>}
+                              {Boolean(pickupTimeVal) && <span style={{ background: '#FFEDD5', color: '#C2410C', border: '1px solid #FDBA74', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Clock size={11} /> PICKUP: {formatRideDateTime(pickupTimeVal)}</span>}
                               {Boolean(req.female_rider_only) && <span style={{ background: '#FCE7F3', color: '#9D174D', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><ShieldCheck size={11} /> Female Rider Only</span>}
                               {Boolean(req.is_core_only || req.is_free_ride) && <span style={{ background: '#FEF3C7', color: '#B45309', border: '1px solid #FDE68A', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Zap size={11} /> CORE FLASH FREE TRIP</span>}
                             </div>
@@ -1879,6 +1881,13 @@ export function RiderPortalView() {
                         </div>
 
                         <div style={{ background: '#F8F3EC', border: '1px solid #E8DCCB', padding: '12px', borderRadius: '10px', fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '8px', color: '#271E16' }}>
+                          {Boolean(pickupTimeVal) && (
+                            <div style={{ background: '#FFF7ED', border: '1px solid #FFEDD5', borderRadius: '8px', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: '6px', color: '#C2410C', fontWeight: 800, fontSize: '12px' }}>
+                              <Clock size={13} />
+                              <span>Requested Pickup Time: <strong>{formatRideDateTime(pickupTimeVal)}</strong></span>
+                            </div>
+                          )}
+
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '6px' }}>
                             <div>
                               <span style={{ color: '#059669' }}>●</span> <strong>Pickup:</strong> {req.pickup_address}
@@ -1979,6 +1988,11 @@ export function RiderPortalView() {
                   <div style={{ fontWeight: 800, fontSize: '15px', marginBottom: '8px' }}>
                     {activeRide.pickup_address} → {activeRide.destination_address}
                   </div>
+                  {Boolean(activeRide.scheduled_time || activeRide.scheduled_time_ist || activeRide.scheduledTime) && (
+                    <div style={{ fontSize: '12px', color: '#C2410C', fontWeight: 800, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Clock size={13} /> Pickup Time: {formatRideDateTime(activeRide.scheduled_time_ist || activeRide.scheduled_time || activeRide.scheduledTime)}
+                    </div>
+                  )}
                   <button
                     onClick={() => setCurrentTab('active')}
                     className="btn btn-primary btn-sm"
@@ -2149,6 +2163,13 @@ export function RiderPortalView() {
 
                 {/* Trip Route Details & Live Maps Navigation */}
                 <div style={{ background: 'var(--bg-input)', padding: '14px', borderRadius: '12px', fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {Boolean(activeRide.scheduled_time || activeRide.scheduled_time_ist || activeRide.scheduledTime) && (
+                    <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: '8px', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px', color: '#C2410C', fontWeight: 800, fontSize: '12px' }}>
+                      <Clock size={14} />
+                      <span>Requested Pickup Time: <strong>{formatRideDateTime(activeRide.scheduled_time_ist || activeRide.scheduled_time || activeRide.scheduledTime)}</strong></span>
+                    </div>
+                  )}
+
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                     <div>
                       <span style={{ color: '#10B981' }}>●</span> <strong>Pickup:</strong> {activeRide.pickup_address}

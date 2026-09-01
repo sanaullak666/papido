@@ -247,7 +247,8 @@ const RideService = {
       paymentMethod,
       femaleRiderOnly,
       isDoubleRide: Boolean(fareEstimate.isDoubleRide),
-      isOutside: false
+      isOutside: false,
+      scheduledTime: scheduledTime || null
     });
 
     // Notify customer

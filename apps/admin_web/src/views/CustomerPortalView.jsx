@@ -220,6 +220,24 @@ export function CustomerPortalView() {
   // Pre-Booking / Scheduled Ride State
   const [bookingMode, setBookingMode] = useState('NOW'); // 'NOW' or 'SCHEDULE'
   const [schedDateOption, setSchedDateOption] = useState('TODAY'); // 'TODAY', 'TOMORROW', 'CUSTOM'
+
+  // Ride Now Pickup Time Selection State
+  const [rideNowTimeOption, setRideNowTimeOption] = useState('NOW'); // 'NOW', '5MIN', '10MIN', '15MIN', 'CUSTOM'
+  const [rideNowCustomHour, setRideNowCustomHour] = useState(() => {
+    const d = new Date(Date.now() + 10 * 60 * 1000);
+    let h = d.getHours() % 12;
+    if (h === 0) h = 12;
+    return String(h).padStart(2, '0');
+  });
+  const [rideNowCustomMinute, setRideNowCustomMinute] = useState(() => {
+    const d = new Date(Date.now() + 10 * 60 * 1000);
+    const m = Math.ceil(d.getMinutes() / 5) * 5 % 60;
+    return String(m).padStart(2, '0');
+  });
+  const [rideNowCustomAmPm, setRideNowCustomAmPm] = useState(() => {
+    const d = new Date(Date.now() + 10 * 60 * 1000);
+    return d.getHours() >= 12 ? 'PM' : 'AM';
+  });
   const [scheduledDate, setScheduledDate] = useState(() => {
     return new Date().toISOString().split('T')[0];
   });
@@ -257,6 +275,55 @@ export function CustomerPortalView() {
     const d = new Date();
     d.setDate(d.getDate() + 1);
     return d.toISOString().split('T')[0];
+  };
+
+  const getComputedRideNowScheduledTime = () => {
+    if (rideNowTimeOption === 'NOW') return null;
+    const now = new Date();
+    if (rideNowTimeOption === '5MIN') {
+      const d = new Date(now.getTime() + 5 * 60 * 1000);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const hh = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd} ${hh}:${min}:00`;
+    }
+    if (rideNowTimeOption === '10MIN') {
+      const d = new Date(now.getTime() + 10 * 60 * 1000);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const hh = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd} ${hh}:${min}:00`;
+    }
+    if (rideNowTimeOption === '15MIN') {
+      const d = new Date(now.getTime() + 15 * 60 * 1000);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const hh = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd} ${hh}:${min}:00`;
+    }
+    if (rideNowTimeOption === 'CUSTOM') {
+      let h = parseInt(rideNowCustomHour, 10) || 12;
+      if (rideNowCustomAmPm === 'PM' && h < 12) h += 12;
+      if (rideNowCustomAmPm === 'AM' && h === 12) h = 0;
+      const today = getTodayDateStr();
+      return `${today} ${String(h).padStart(2, '0')}:${String(rideNowCustomMinute).padStart(2, '0')}:00`;
+    }
+    return null;
+  };
+
+  const getRideNowDisplayTime = () => {
+    if (rideNowTimeOption === 'NOW') return '⚡ Immediate (Leave Now)';
+    if (rideNowTimeOption === '5MIN') return '⏱ In ~5 minutes';
+    if (rideNowTimeOption === '10MIN') return '⏱ In ~10 minutes';
+    if (rideNowTimeOption === '15MIN') return '⏱ In ~15 minutes';
+    if (rideNowTimeOption === 'CUSTOM') return `🕒 Today at ${rideNowCustomHour}:${rideNowCustomMinute} ${rideNowCustomAmPm}`;
+    return '⚡ Immediate';
   };
 
   const getComputedScheduled24Time = () => {
@@ -1309,6 +1376,11 @@ export function CustomerPortalView() {
       if (isSched) {
         payload.isScheduled = true;
         payload.scheduledTime = schedDateTime;
+      } else {
+        const rideNowSched = overrides.scheduledTime !== undefined ? overrides.scheduledTime : getComputedRideNowScheduledTime();
+        if (rideNowSched) {
+          payload.scheduledTime = rideNowSched;
+        }
       }
 
       const res = await apiRequest('/customer/rides', 'POST', payload, token);
@@ -1320,7 +1392,8 @@ export function CustomerPortalView() {
         handleTabChange('scheduled');
       } else {
         setActiveRide(res.data);
-        setStatusMessage('Searching for available campus riders...');
+        const schedTimeChosen = overrides.scheduledTime !== undefined ? overrides.scheduledTime : getComputedRideNowScheduledTime();
+        setStatusMessage(schedTimeChosen ? `Ride requested (${getRideNowDisplayTime()}). Searching for available campus riders...` : 'Searching for available campus riders...');
       }
       setShowPreferenceModal(false);
     } catch (err) {
@@ -1991,6 +2064,193 @@ export function CustomerPortalView() {
                       <Calendar size={15} /> Pre-Book for Later
                     </button>
                   </div>
+
+                  {/* Ride Now Pickup Time Selector */}
+                  {bookingMode === 'NOW' && (
+                    <div style={{
+                      background: '#FFF7ED',
+                      border: '1.5px solid #FDBA74',
+                      borderRadius: '14px',
+                      padding: '12px 14px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '10px',
+                      boxShadow: '0 2px 8px rgba(249, 115, 22, 0.08)'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800, color: '#C2410C', fontSize: '13px' }}>
+                          <Clock size={15} /> Select Pickup Time:
+                        </div>
+                        <span style={{ fontSize: '11px', fontWeight: 800, color: '#EA580C', background: '#FFEDD5', padding: '2px 8px', borderRadius: '6px' }}>
+                          {getRideNowDisplayTime()}
+                        </span>
+                      </div>
+
+                      {/* Quick Selection Pills */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
+                        <button
+                          type="button"
+                          onClick={() => setRideNowTimeOption('NOW')}
+                          style={{
+                            padding: '8px 4px',
+                            borderRadius: '8px',
+                            border: rideNowTimeOption === 'NOW' ? '2px solid #EA580C' : '1px solid #FED7AA',
+                            background: rideNowTimeOption === 'NOW' ? '#EA580C' : '#FFFFFF',
+                            color: rideNowTimeOption === 'NOW' ? '#FFFFFF' : '#9A3412',
+                            fontWeight: 800,
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                            textAlign: 'center'
+                          }}
+                        >
+                          ⚡ Now
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setRideNowTimeOption('5MIN')}
+                          style={{
+                            padding: '8px 4px',
+                            borderRadius: '8px',
+                            border: rideNowTimeOption === '5MIN' ? '2px solid #EA580C' : '1px solid #FED7AA',
+                            background: rideNowTimeOption === '5MIN' ? '#EA580C' : '#FFFFFF',
+                            color: rideNowTimeOption === '5MIN' ? '#FFFFFF' : '#9A3412',
+                            fontWeight: 800,
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                            textAlign: 'center'
+                          }}
+                        >
+                          +5 min
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setRideNowTimeOption('10MIN')}
+                          style={{
+                            padding: '8px 4px',
+                            borderRadius: '8px',
+                            border: rideNowTimeOption === '10MIN' ? '2px solid #EA580C' : '1px solid #FED7AA',
+                            background: rideNowTimeOption === '10MIN' ? '#EA580C' : '#FFFFFF',
+                            color: rideNowTimeOption === '10MIN' ? '#FFFFFF' : '#9A3412',
+                            fontWeight: 800,
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                            textAlign: 'center'
+                          }}
+                        >
+                          +10 min
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setRideNowTimeOption('15MIN')}
+                          style={{
+                            padding: '8px 4px',
+                            borderRadius: '8px',
+                            border: rideNowTimeOption === '15MIN' ? '2px solid #EA580C' : '1px solid #FED7AA',
+                            background: rideNowTimeOption === '15MIN' ? '#EA580C' : '#FFFFFF',
+                            color: rideNowTimeOption === '15MIN' ? '#FFFFFF' : '#9A3412',
+                            fontWeight: 800,
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                            textAlign: 'center'
+                          }}
+                        >
+                          +15 min
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setRideNowTimeOption('CUSTOM')}
+                          style={{
+                            padding: '8px 4px',
+                            borderRadius: '8px',
+                            border: rideNowTimeOption === 'CUSTOM' ? '2px solid #EA580C' : '1px solid #FED7AA',
+                            background: rideNowTimeOption === 'CUSTOM' ? '#EA580C' : '#FFFFFF',
+                            color: rideNowTimeOption === 'CUSTOM' ? '#FFFFFF' : '#9A3412',
+                            fontWeight: 800,
+                            fontSize: '11px',
+                            cursor: 'pointer',
+                            textAlign: 'center'
+                          }}
+                        >
+                          🕒 Set
+                        </button>
+                      </div>
+
+                      {/* Custom Time Picker if selected */}
+                      {rideNowTimeOption === 'CUSTOM' && (
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr 1fr 1fr',
+                          gap: '6px',
+                          background: '#FFFFFF',
+                          padding: '8px',
+                          borderRadius: '10px',
+                          border: '1px solid #FDBA74'
+                        }}>
+                          <div>
+                            <label style={{ fontSize: '10px', fontWeight: 700, color: '#9A3412', display: 'block', marginBottom: '2px' }}>Hour</label>
+                            <select
+                              value={rideNowCustomHour}
+                              onChange={(e) => setRideNowCustomHour(e.target.value)}
+                              style={{ width: '100%', padding: '6px', borderRadius: '6px', border: '1px solid #FED7AA', fontWeight: 700, color: '#1C1917', fontSize: '12px' }}
+                            >
+                              {Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0')).map(h => (
+                                <option key={h} value={h}>{h}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label style={{ fontSize: '10px', fontWeight: 700, color: '#9A3412', display: 'block', marginBottom: '2px' }}>Minute</label>
+                            <select
+                              value={rideNowCustomMinute}
+                              onChange={(e) => setRideNowCustomMinute(e.target.value)}
+                              style={{ width: '100%', padding: '6px', borderRadius: '6px', border: '1px solid #FED7AA', fontWeight: 700, color: '#1C1917', fontSize: '12px' }}
+                            >
+                              {Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0')).map(m => (
+                                <option key={m} value={m}>{m}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label style={{ fontSize: '10px', fontWeight: 700, color: '#9A3412', display: 'block', marginBottom: '2px' }}>AM / PM</label>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px' }}>
+                              <button
+                                type="button"
+                                onClick={() => setRideNowCustomAmPm('AM')}
+                                style={{
+                                  padding: '6px 2px',
+                                  borderRadius: '6px',
+                                  border: rideNowCustomAmPm === 'AM' ? '1.5px solid #EA580C' : '1px solid #E5E7EB',
+                                  background: rideNowCustomAmPm === 'AM' ? '#EA580C' : '#F9FAFB',
+                                  color: rideNowCustomAmPm === 'AM' ? '#FFFFFF' : '#4B5563',
+                                  fontWeight: 800,
+                                  fontSize: '11px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                AM
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setRideNowCustomAmPm('PM')}
+                                style={{
+                                  padding: '6px 2px',
+                                  borderRadius: '6px',
+                                  border: rideNowCustomAmPm === 'PM' ? '1.5px solid #EA580C' : '1px solid #E5E7EB',
+                                  background: rideNowCustomAmPm === 'PM' ? '#EA580C' : '#F9FAFB',
+                                  color: rideNowCustomAmPm === 'PM' ? '#FFFFFF' : '#4B5563',
+                                  fontWeight: 800,
+                                  fontSize: '11px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                PM
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Pre-Booking Date & Time Selector */}
                   {bookingMode === 'SCHEDULE' && (

@@ -248,6 +248,10 @@ class SocketManager {
       customerName: ride.customer_name || 'Passenger',
       customer_name: ride.customer_name || 'Passenger',
       customerGender: ride.customer_gender || 'OTHER',
+      is_scheduled: Boolean(ride.is_scheduled || ride.isScheduled),
+      isScheduled: Boolean(ride.is_scheduled || ride.isScheduled),
+      scheduled_time: ride.scheduled_time || ride.scheduledTime || null,
+      scheduledTime: ride.scheduled_time || ride.scheduledTime || null,
       requestedAt: ride.requested_at || new Date().toISOString()
     };
 

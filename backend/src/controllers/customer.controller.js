@@ -183,7 +183,7 @@ const CustomerController = {
         isDoubleRide: !outsideTrip && (isDoubleRide === true || isDoubleRide === 'true' || isDoubleRide === 1),
         isOutside: outsideTrip,
         isScheduled: isScheduledTrip,
-        scheduledTime: isScheduledTrip ? scheduledTime : null
+        scheduledTime: scheduledTime || null
       });
 
       const responseMessage = isScheduledTrip
