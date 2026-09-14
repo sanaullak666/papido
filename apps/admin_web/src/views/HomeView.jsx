@@ -38,17 +38,17 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
 
   const infoBarItems = [
     {
-      icon: <MapPin size={24} color="#F97316" />,
+      icon: <MapPin size={24} color="#EA580C" />,
       title: 'Pay Us a Visit',
       subtitle: 'Pondicherry University, Kalapet, Puducherry 605014'
     },
     {
-      icon: <Phone size={24} color="#F97316" />,
+      icon: <Phone size={24} color="#EA580C" />,
       title: 'Give Us a Call',
       subtitle: '+91 94430 00000 / 24x7 Student Helpline'
     },
     {
-      icon: <Mail size={24} color="#F97316" />,
+      icon: <Mail size={24} color="#EA580C" />,
       title: 'Send Us a Message',
       subtitle: 'support@papido.com • Instant Campus Support'
     }
@@ -66,20 +66,14 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
     <div
       style={{
         minHeight: '100vh',
-        background: '#1A140E',
-        backgroundImage: `
-          radial-gradient(1000px 600px at 15% 10%, rgba(249, 115, 22, 0.12) 0%, transparent 60%),
-          radial-gradient(1000px 600px at 85% 30%, rgba(234, 88, 12, 0.10) 0%, transparent 60%),
-          radial-gradient(800px 500px at 50% 80%, rgba(249, 115, 22, 0.08) 0%, transparent 60%),
-          #18120C
-        `,
-        color: '#FAF5EE',
+        background: 'radial-gradient(1200px 800px at 50% -10%, #FFF7ED 0%, #FAF5EE 45%, #F5EFEB 100%)',
+        color: '#271E16',
         fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
         overflowX: 'hidden'
       }}
     >
       {/* ============================================================ */}
-      {/* 1. TOP NAVBAR (HYDRA STYLE)                                  */}
+      {/* 1. TOP NAVBAR (HYDRA LAYOUT - LIGHT WARM THEME)              */}
       {/* ============================================================ */}
       <header
         style={{
@@ -88,8 +82,8 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
           zIndex: 100,
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          background: 'rgba(26, 20, 14, 0.85)',
-          borderBottom: '1px solid rgba(249, 115, 22, 0.15)',
+          background: 'rgba(255, 255, 255, 0.92)',
+          borderBottom: '1.5px solid #EFE4D6',
           transition: 'all 0.2s ease'
         }}
       >
@@ -110,15 +104,15 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
           >
             <div
               style={{
-                width: '46px',
-                height: '46px',
-                borderRadius: '14px',
-                background: 'linear-gradient(135deg, #2A1D13, #1F150D)',
-                border: '1.5px solid rgba(249, 115, 22, 0.4)',
+                width: '44px',
+                height: '44px',
+                borderRadius: '13px',
+                background: '#FFFFFF',
+                border: '1.5px solid #F3ECE2',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 6px 20px rgba(249, 115, 22, 0.25)',
+                boxShadow: '0 4px 16px rgba(234, 88, 12, 0.2)',
                 overflow: 'hidden'
               }}
             >
@@ -137,10 +131,10 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span
                   style={{
-                    fontSize: '24px',
+                    fontSize: '22px',
                     fontWeight: 900,
-                    letterSpacing: '2px',
-                    color: '#FAF5EE',
+                    letterSpacing: '1.5px',
+                    color: '#1F1A16',
                     textTransform: 'uppercase'
                   }}
                 >
@@ -148,9 +142,9 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 </span>
                 <span
                   style={{
-                    background: 'rgba(249, 115, 22, 0.15)',
-                    color: '#FB923C',
-                    border: '1px solid rgba(249, 115, 22, 0.35)',
+                    background: '#FFF7ED',
+                    color: '#EA580C',
+                    border: '1px solid #FED7AA',
                     fontSize: '10px',
                     fontWeight: 800,
                     padding: '2px 8px',
@@ -164,9 +158,9 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
               <span
                 style={{
                   fontSize: '10.5px',
-                  color: '#A39485',
+                  color: '#796D61',
                   fontWeight: 600,
-                  letterSpacing: '1px',
+                  letterSpacing: '0.8px',
                   display: 'block',
                   textTransform: 'uppercase'
                 }}
@@ -192,14 +186,14 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 border: 'none',
                 fontSize: '13px',
                 fontWeight: 700,
-                color: '#D6C8BB',
+                color: '#57483B',
                 cursor: 'pointer',
                 letterSpacing: '1.8px',
                 textTransform: 'uppercase',
                 transition: 'color 0.15s ease'
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#F97316')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#D6C8BB')}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#EA580C')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#57483B')}
             >
               ABOUT
             </button>
@@ -210,14 +204,14 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 border: 'none',
                 fontSize: '13px',
                 fontWeight: 700,
-                color: '#D6C8BB',
+                color: '#57483B',
                 cursor: 'pointer',
                 letterSpacing: '1.8px',
                 textTransform: 'uppercase',
                 transition: 'color 0.15s ease'
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#F97316')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#D6C8BB')}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#EA580C')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#57483B')}
             >
               SERVICES
             </button>
@@ -228,14 +222,14 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 border: 'none',
                 fontSize: '13px',
                 fontWeight: 700,
-                color: '#D6C8BB',
+                color: '#57483B',
                 cursor: 'pointer',
                 letterSpacing: '1.8px',
                 textTransform: 'uppercase',
                 transition: 'color 0.15s ease'
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#F97316')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#D6C8BB')}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#EA580C')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#57483B')}
             >
               CAMPUS FARES
             </button>
@@ -246,14 +240,14 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 border: 'none',
                 fontSize: '13px',
                 fontWeight: 700,
-                color: '#D6C8BB',
+                color: '#57483B',
                 cursor: 'pointer',
                 letterSpacing: '1.8px',
                 textTransform: 'uppercase',
                 transition: 'color 0.15s ease'
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#F97316')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#D6C8BB')}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#EA580C')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#57483B')}
             >
               HOW TO
             </button>
@@ -277,7 +271,7 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                   cursor: 'pointer',
                   letterSpacing: '0.8px',
                   textTransform: 'uppercase',
-                  boxShadow: '0 6px 20px rgba(249, 115, 22, 0.4)',
+                  boxShadow: '0 6px 20px rgba(234, 88, 12, 0.3)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px'
@@ -295,9 +289,9 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                     height: '44px',
                     padding: '0 22px',
                     borderRadius: '9999px',
-                    border: '2px solid rgba(249, 115, 22, 0.5)',
-                    background: 'transparent',
-                    color: '#FAF5EE',
+                    border: '1.5px solid #E5DBD0',
+                    background: '#FFFFFF',
+                    color: '#271E16',
                     fontSize: '12.5px',
                     fontWeight: 800,
                     letterSpacing: '1.5px',
@@ -306,12 +300,14 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                     transition: 'all 0.15s ease'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = '#F97316';
-                    e.currentTarget.style.background = 'rgba(249, 115, 22, 0.1)';
+                    e.currentTarget.style.borderColor = '#EA580C';
+                    e.currentTarget.style.color = '#EA580C';
+                    e.currentTarget.style.background = '#FFF7ED';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(249, 115, 22, 0.5)';
-                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.borderColor = '#E5DBD0';
+                    e.currentTarget.style.color = '#271E16';
+                    e.currentTarget.style.background = '#FFFFFF';
                   }}
                 >
                   CONTACT US
@@ -332,7 +328,7 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                     letterSpacing: '1.5px',
                     textTransform: 'uppercase',
                     cursor: 'pointer',
-                    boxShadow: '0 6px 20px rgba(249, 115, 22, 0.4)',
+                    boxShadow: '0 6px 20px rgba(234, 88, 12, 0.3)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
@@ -352,12 +348,12 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
               onClick={() => setMobileNavOpen(!mobileNavOpen)}
               style={{
                 display: 'none',
-                background: '#2A1F16',
-                border: '1px solid rgba(249, 115, 22, 0.3)',
+                background: '#FFFFFF',
+                border: '1.5px solid #EFE4D6',
                 borderRadius: '10px',
                 padding: '8px',
                 cursor: 'pointer',
-                color: '#FAF5EE'
+                color: '#271E16'
               }}
               className="hydra-mobile-nav-toggle"
             >
@@ -371,8 +367,8 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
           <div
             style={{
               padding: '20px 28px 24px',
-              background: '#201811',
-              borderTop: '1px solid rgba(249, 115, 22, 0.2)',
+              background: '#FFFFFF',
+              borderTop: '1.5px solid #EFE4D6',
               display: 'flex',
               flexDirection: 'column',
               gap: '16px'
@@ -386,7 +382,7 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 textAlign: 'left',
                 fontSize: '14px',
                 fontWeight: 700,
-                color: '#FAF5EE',
+                color: '#271E16',
                 letterSpacing: '1px',
                 textTransform: 'uppercase'
               }}
@@ -401,7 +397,7 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 textAlign: 'left',
                 fontSize: '14px',
                 fontWeight: 700,
-                color: '#FAF5EE',
+                color: '#271E16',
                 letterSpacing: '1px',
                 textTransform: 'uppercase'
               }}
@@ -416,7 +412,7 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 textAlign: 'left',
                 fontSize: '14px',
                 fontWeight: 700,
-                color: '#FAF5EE',
+                color: '#271E16',
                 letterSpacing: '1px',
                 textTransform: 'uppercase'
               }}
@@ -431,14 +427,14 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 textAlign: 'left',
                 fontSize: '14px',
                 fontWeight: 700,
-                color: '#FAF5EE',
+                color: '#271E16',
                 letterSpacing: '1px',
                 textTransform: 'uppercase'
               }}
             >
               HOW TO
             </button>
-            <div style={{ paddingTop: '12px', borderTop: '1px solid rgba(249, 115, 22, 0.15)', display: 'flex', gap: '12px' }}>
+            <div style={{ paddingTop: '12px', borderTop: '1px solid #F0E8DD', display: 'flex', gap: '12px' }}>
               <button
                 type="button"
                 onClick={onGoToLogin}
@@ -446,9 +442,9 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                   flex: 1,
                   height: '44px',
                   borderRadius: '9999px',
-                  border: '1.5px solid rgba(249, 115, 22, 0.5)',
-                  background: 'transparent',
-                  color: '#FAF5EE',
+                  border: '1.5px solid #E5DBD0',
+                  background: '#FFFFFF',
+                  color: '#271E16',
                   fontWeight: 800,
                   fontSize: '12.5px',
                   letterSpacing: '1px'
@@ -504,15 +500,16 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
-                background: 'rgba(249, 115, 22, 0.12)',
-                border: '1px solid rgba(249, 115, 22, 0.35)',
+                background: '#FFF7ED',
+                border: '1.5px solid #FED7AA',
                 padding: '6px 16px',
                 borderRadius: '9999px',
-                marginBottom: '20px'
+                marginBottom: '20px',
+                boxShadow: '0 2px 8px rgba(234, 88, 12, 0.08)'
               }}
             >
-              <Sparkles size={14} color="#FB923C" />
-              <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#FB923C', letterSpacing: '1.2px', textTransform: 'uppercase' }}>
+              <Sparkles size={14} color="#EA580C" />
+              <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#C2410C', letterSpacing: '1.2px', textTransform: 'uppercase' }}>
                 Pondicherry University Campus Mobility
               </span>
             </div>
@@ -523,16 +520,16 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 fontWeight: 900,
                 lineHeight: 1.14,
                 letterSpacing: '-0.03em',
-                color: '#FAF5EE',
+                color: '#1F1A16',
                 margin: '0 0 20px 0'
               }}
             >
-              <span style={{ display: 'block', color: '#FAF5EE' }}>
+              <span style={{ display: 'block' }}>
                 Dive Into The Speed
               </span>
               <span
                 style={{
-                  background: 'linear-gradient(135deg, #F97316 0%, #EA580C 50%, #FED7AA 100%)',
+                  background: 'linear-gradient(135deg, #F97316 0%, #EA580C 100%)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   display: 'block'
@@ -546,13 +543,13 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
               style={{
                 fontSize: '15.5px',
                 lineHeight: 1.7,
-                color: '#C7B7A7',
+                color: '#645447',
                 maxWidth: '520px',
                 margin: '0 0 36px 0',
                 fontWeight: 500
               }}
             >
-              Affordable, reliable peer-to-peer two-wheeler mobility across all hostels, academic complexes, library, and gates at Pondicherry University. Flat <strong style={{ color: '#F97316' }}>₹20 campus rides</strong> with verified student peers.
+              Affordable, reliable peer-to-peer two-wheeler mobility across all hostels, academic complexes, library, and gates at Pondicherry University. Flat <strong style={{ color: '#EA580C' }}>₹25 campus rides</strong> with verified student peers.
             </p>
 
             {/* Hydra CTA Action Row: Pill Button + Companion Arrow Circle */}
@@ -572,7 +569,7 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                   letterSpacing: '1.5px',
                   textTransform: 'uppercase',
                   cursor: 'pointer',
-                  boxShadow: '0 8px 28px rgba(249, 115, 22, 0.45)',
+                  boxShadow: '0 10px 28px rgba(234, 88, 12, 0.35)',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '10px',
@@ -592,28 +589,29 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                   width: '54px',
                   height: '54px',
                   borderRadius: '50%',
-                  border: '2px solid rgba(249, 115, 22, 0.4)',
-                  background: 'rgba(249, 115, 22, 0.08)',
+                  border: '2px solid #FED7AA',
+                  background: '#FFF7ED',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
-                  color: '#FAF5EE',
+                  color: '#EA580C',
+                  boxShadow: '0 4px 14px rgba(234, 88, 12, 0.12)',
                   transition: 'all 0.15s ease'
                 }}
                 title="Explore Services"
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = '#F97316';
-                  e.currentTarget.style.background = 'rgba(249, 115, 22, 0.2)';
+                  e.currentTarget.style.borderColor = '#EA580C';
+                  e.currentTarget.style.background = '#FED7AA';
                   e.currentTarget.style.transform = 'translateX(4px)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(249, 115, 22, 0.4)';
-                  e.currentTarget.style.background = 'rgba(249, 115, 22, 0.08)';
+                  e.currentTarget.style.borderColor = '#FED7AA';
+                  e.currentTarget.style.background = '#FFF7ED';
                   e.currentTarget.style.transform = 'translateX(0)';
                 }}
               >
-                <ArrowRight size={20} color="#F97316" />
+                <ArrowRight size={20} color="#EA580C" />
               </button>
 
               <button
@@ -623,9 +621,9 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                   height: '54px',
                   padding: '0 26px',
                   borderRadius: '9999px',
-                  border: '2px solid rgba(249, 115, 22, 0.4)',
-                  background: 'transparent',
-                  color: '#FAF5EE',
+                  border: '1.5px solid #E5DBD0',
+                  background: '#FFFFFF',
+                  color: '#271E16',
                   fontSize: '13px',
                   fontWeight: 800,
                   letterSpacing: '1.2px',
@@ -634,24 +632,25 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '8px',
+                  boxShadow: '0 4px 14px rgba(0, 0, 0, 0.04)',
                   transition: 'all 0.15s ease'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = '#F97316';
-                  e.currentTarget.style.background = 'rgba(249, 115, 22, 0.1)';
+                  e.currentTarget.style.borderColor = '#EA580C';
+                  e.currentTarget.style.color = '#EA580C';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(249, 115, 22, 0.4)';
-                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.borderColor = '#E5DBD0';
+                  e.currentTarget.style.color = '#271E16';
                 }}
               >
-                <Bike size={17} color="#F97316" />
+                <Bike size={17} color="#EA580C" />
                 <span>EARN AS RIDER</span>
               </button>
             </div>
           </div>
 
-          {/* Right Column: Hydra Organic Asymmetric Rounded Hero Card */}
+          {/* Right Column: Hydra Organic Asymmetric Rounded Hero Card (Light Warm Theme) */}
           <div
             style={{
               display: 'flex',
@@ -660,14 +659,14 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
               position: 'relative'
             }}
           >
-            {/* Background Concentric Glowing Wireframe Arcs (Hydra Motif) */}
+            {/* Background Concentric Subtle Wireframe Arcs (Hydra Motif) */}
             <div
               style={{
                 position: 'absolute',
                 width: '460px',
                 height: '460px',
                 borderRadius: '50%',
-                border: '1.5px solid rgba(249, 115, 22, 0.2)',
+                border: '1.5px solid rgba(234, 88, 12, 0.15)',
                 pointerEvents: 'none',
                 transform: 'scale(1.15)'
               }}
@@ -678,107 +677,126 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 width: '520px',
                 height: '520px',
                 borderRadius: '50%',
-                border: '1px dashed rgba(249, 115, 22, 0.12)',
+                border: '1px dashed rgba(234, 88, 12, 0.12)',
                 pointerEvents: 'none'
               }}
             />
 
-            {/* Signature Hydra Asymmetric Pebble Container */}
+            {/* Signature Hydra Asymmetric Pebble Container - Fully Viewable & Non-Clipping */}
             <div
               style={{
                 width: '100%',
-                maxWidth: '430px',
-                height: '430px',
-                borderRadius: '100px 100px 100px 240px',
-                background: 'linear-gradient(145deg, #2D1E13 0%, #1A120B 100%)',
-                border: '2px solid rgba(249, 115, 22, 0.35)',
-                boxShadow: '0 28px 60px rgba(0, 0, 0, 0.6), 0 0 45px rgba(249, 115, 22, 0.2)',
-                overflow: 'hidden',
+                maxWidth: '420px',
+                minHeight: '440px',
+                borderRadius: '90px 90px 90px 220px',
+                background: 'linear-gradient(145deg, #FFFFFF 0%, #FFF7ED 50%, #FAF5EE 100%)',
+                border: '2px solid #FED7AA',
+                boxShadow: '0 24px 50px rgba(234, 88, 12, 0.14), 0 4px 16px rgba(0, 0, 0, 0.04)',
                 position: 'relative',
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'flex-end',
-                padding: '32px'
+                justifyContent: 'space-between',
+                padding: '36px 28px 28px',
+                boxSizing: 'border-box'
               }}
             >
-              {/* Radial backdrop inside pebble */}
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  background: 'radial-gradient(circle at 60% 30%, rgba(249, 115, 22, 0.35) 0%, rgba(26, 20, 14, 0.95) 75%)',
-                  zIndex: 1
-                }}
-              />
-
               {/* Graphical Centerpiece */}
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '18%',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  zIndex: 2,
-                  textAlign: 'center'
-                }}
-              >
+              <div style={{ textAlign: 'center', marginTop: '12px' }}>
                 <div
                   style={{
-                    width: '120px',
-                    height: '120px',
+                    width: '115px',
+                    height: '115px',
                     borderRadius: '50%',
-                    background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.3), rgba(234, 88, 12, 0.1))',
+                    background: 'linear-gradient(135deg, #FFF7ED, #FED7AA)',
                     border: '2px solid #F97316',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     margin: '0 auto 16px',
-                    boxShadow: '0 0 35px rgba(249, 115, 22, 0.5)'
+                    boxShadow: '0 8px 25px rgba(234, 88, 12, 0.25)'
                   }}
                 >
-                  <Bike size={58} color="#FAF5EE" />
+                  <Bike size={56} color="#EA580C" />
                 </div>
-                <div style={{ fontSize: '13px', fontWeight: 800, letterSpacing: '2px', color: '#FB923C', textTransform: 'uppercase' }}>
+                <div
+                  style={{
+                    fontSize: '13px',
+                    fontWeight: 900,
+                    letterSpacing: '2px',
+                    color: '#EA580C',
+                    textTransform: 'uppercase'
+                  }}
+                >
                   PEER 2-WHEELER FLEET
+                </div>
+                <div style={{ fontSize: '12px', color: '#796D61', marginTop: '4px', fontWeight: 600 }}>
+                  Verified Student Bikes & Scooters
                 </div>
               </div>
 
-              {/* Bottom Badge inside the pebble */}
+              {/* Bottom Badge inside the pebble - 100% VISIBLE WITH FULL ₹25 DISPLAY */}
               <div
                 style={{
-                  position: 'relative',
-                  zIndex: 3,
-                  background: 'rgba(26, 20, 14, 0.85)',
-                  backdropFilter: 'blur(12px)',
-                  border: '1px solid rgba(249, 115, 22, 0.3)',
+                  background: '#FFFFFF',
+                  border: '1.5px solid #FED7AA',
                   borderRadius: '20px',
-                  padding: '16px 20px',
+                  padding: '16px 22px',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'space-between'
+                  justifyContent: 'space-between',
+                  boxShadow: '0 8px 24px rgba(234, 88, 12, 0.12)',
+                  marginTop: '24px',
+                  width: '100%',
+                  boxSizing: 'border-box'
                 }}
               >
                 <div>
-                  <div style={{ fontSize: '11px', color: '#A39485', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>
+                  <div style={{ fontSize: '11px', color: '#796D61', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase' }}>
                     CAMPUS BASE FARE
                   </div>
-                  <div style={{ fontSize: '24px', fontWeight: 900, color: '#FAF5EE' }}>
-                    ₹20 <span style={{ fontSize: '12px', color: '#FB923C', fontWeight: 700 }}>Flat Rate</span>
+                  <div
+                    style={{
+                      fontSize: '28px',
+                      fontWeight: 900,
+                      color: '#1F1A16',
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      gap: '8px',
+                      lineHeight: 1.2,
+                      marginTop: '2px'
+                    }}
+                  >
+                    <span>₹25</span>
+                    <span
+                      style={{
+                        fontSize: '13px',
+                        color: '#EA580C',
+                        fontWeight: 800,
+                        background: '#FFF7ED',
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                        border: '1px solid #FED7AA'
+                      }}
+                    >
+                      Flat Rate
+                    </span>
                   </div>
                 </div>
                 <div
                   style={{
                     background: 'linear-gradient(135deg, #F97316, #EA580C)',
-                    width: '40px',
-                    height: '40px',
+                    width: '44px',
+                    height: '44px',
                     borderRadius: '50%',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#FFF'
+                    color: '#FFF',
+                    boxShadow: '0 4px 12px rgba(234, 88, 12, 0.35)',
+                    flexShrink: 0
                   }}
                 >
-                  <Zap size={20} />
+                  <Zap size={22} />
                 </div>
               </div>
             </div>
@@ -796,15 +814,15 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
           padding: '0 28px'
         }}
       >
-        {/* Desktop Dock (3 segments with vertical dividers) */}
+        {/* Desktop Dock (3 segments with vertical dividers - Light Warm Theme) */}
         <div
           className="hydra-desktop-dock"
           style={{
-            background: 'linear-gradient(135deg, #251B12 0%, #1E150E 100%)',
-            border: '1.5px solid rgba(249, 115, 22, 0.3)',
+            background: '#FFFFFF',
+            border: '1.5px solid #EFE4D6',
             borderRadius: '90px',
             padding: '24px 44px',
-            boxShadow: '0 20px 45px rgba(0, 0, 0, 0.5), 0 0 25px rgba(249, 115, 22, 0.1)',
+            boxShadow: '0 16px 36px rgba(234, 88, 12, 0.08), 0 4px 12px rgba(0, 0, 0, 0.02)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between'
@@ -817,27 +835,28 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 width: '48px',
                 height: '48px',
                 borderRadius: '50%',
-                background: 'rgba(249, 115, 22, 0.15)',
+                background: '#FFF7ED',
+                border: '1px solid #FED7AA',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0
               }}
             >
-              <MapPin size={24} color="#F97316" />
+              <MapPin size={24} color="#EA580C" />
             </div>
             <div>
-              <div style={{ fontSize: '15px', fontWeight: 800, color: '#FAF5EE', letterSpacing: '0.5px' }}>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#1F1A16', letterSpacing: '0.3px' }}>
                 Pay Us a Visit
               </div>
-              <div style={{ fontSize: '12.5px', color: '#B3A495', marginTop: '3px' }}>
+              <div style={{ fontSize: '12.5px', color: '#796D61', marginTop: '3px' }}>
                 Pondicherry University, Kalapet, Puducherry
               </div>
             </div>
           </div>
 
           {/* Divider 1 */}
-          <div style={{ width: '1.5px', height: '48px', background: 'rgba(249, 115, 22, 0.25)', margin: '0 28px' }} />
+          <div style={{ width: '1.5px', height: '48px', background: '#F0E8DD', margin: '0 28px' }} />
 
           {/* Segment 2: Phone */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '18px', flex: 1 }}>
@@ -846,27 +865,28 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 width: '48px',
                 height: '48px',
                 borderRadius: '50%',
-                background: 'rgba(249, 115, 22, 0.15)',
+                background: '#FFF7ED',
+                border: '1px solid #FED7AA',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0
               }}
             >
-              <Phone size={24} color="#F97316" />
+              <Phone size={24} color="#EA580C" />
             </div>
             <div>
-              <div style={{ fontSize: '15px', fontWeight: 800, color: '#FAF5EE', letterSpacing: '0.5px' }}>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#1F1A16', letterSpacing: '0.3px' }}>
                 Give Us a Call
               </div>
-              <div style={{ fontSize: '12.5px', color: '#B3A495', marginTop: '3px' }}>
+              <div style={{ fontSize: '12.5px', color: '#796D61', marginTop: '3px' }}>
                 +91 94430 00000 (24x7 PU Helpline)
               </div>
             </div>
           </div>
 
           {/* Divider 2 */}
-          <div style={{ width: '1.5px', height: '48px', background: 'rgba(249, 115, 22, 0.25)', margin: '0 28px' }} />
+          <div style={{ width: '1.5px', height: '48px', background: '#F0E8DD', margin: '0 28px' }} />
 
           {/* Segment 3: Email */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '18px', flex: 1 }}>
@@ -875,36 +895,37 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 width: '48px',
                 height: '48px',
                 borderRadius: '50%',
-                background: 'rgba(249, 115, 22, 0.15)',
+                background: '#FFF7ED',
+                border: '1px solid #FED7AA',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0
               }}
             >
-              <Mail size={24} color="#F97316" />
+              <Mail size={24} color="#EA580C" />
             </div>
             <div>
-              <div style={{ fontSize: '15px', fontWeight: 800, color: '#FAF5EE', letterSpacing: '0.5px' }}>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#1F1A16', letterSpacing: '0.3px' }}>
                 Send Us a Message
               </div>
-              <div style={{ fontSize: '12.5px', color: '#B3A495', marginTop: '3px' }}>
+              <div style={{ fontSize: '12.5px', color: '#796D61', marginTop: '3px' }}>
                 support@papido.com
               </div>
             </div>
           </div>
         </div>
 
-        {/* Mobile Dock Slider (Hydra Mobile with Left/Right Arrows) */}
+        {/* Mobile Dock Slider (Hydra Mobile with Left/Right Arrows - Light Warm Theme) */}
         <div
           className="hydra-mobile-dock"
           style={{
             display: 'none',
-            background: 'linear-gradient(135deg, #251B12 0%, #1E150E 100%)',
-            border: '1.5px solid rgba(249, 115, 22, 0.3)',
+            background: '#FFFFFF',
+            border: '1.5px solid #EFE4D6',
             borderRadius: '24px',
             padding: '20px',
-            boxShadow: '0 16px 36px rgba(0, 0, 0, 0.5)'
+            boxShadow: '0 12px 30px rgba(234, 88, 12, 0.08)'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -915,9 +936,9 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 width: '36px',
                 height: '36px',
                 borderRadius: '50%',
-                border: '1px solid rgba(249, 115, 22, 0.4)',
-                background: 'rgba(249, 115, 22, 0.1)',
-                color: '#FAF5EE',
+                border: '1px solid #FED7AA',
+                background: '#FFF7ED',
+                color: '#EA580C',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -932,10 +953,10 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '6px' }}>
                   {infoBarItems[activeInfoSlide].icon}
                 </div>
-                <div style={{ fontSize: '14px', fontWeight: 800, color: '#FAF5EE' }}>
+                <div style={{ fontSize: '14px', fontWeight: 800, color: '#1F1A16' }}>
                   {infoBarItems[activeInfoSlide].title}
                 </div>
-                <div style={{ fontSize: '12px', color: '#B3A495', marginTop: '2px' }}>
+                <div style={{ fontSize: '12px', color: '#796D61', marginTop: '2px' }}>
                   {infoBarItems[activeInfoSlide].subtitle}
                 </div>
               </div>
@@ -948,9 +969,9 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 width: '36px',
                 height: '36px',
                 borderRadius: '50%',
-                border: '1px solid rgba(249, 115, 22, 0.4)',
-                background: 'rgba(249, 115, 22, 0.1)',
-                color: '#FAF5EE',
+                border: '1px solid #FED7AA',
+                background: '#FFF7ED',
+                color: '#EA580C',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -985,22 +1006,22 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
           {/* Left: Title + Arrow */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             <div>
-              <div style={{ fontSize: '13px', fontWeight: 900, letterSpacing: '2px', color: '#F97316', textTransform: 'uppercase' }}>
+              <div style={{ fontSize: '13px', fontWeight: 900, letterSpacing: '2px', color: '#EA580C', textTransform: 'uppercase' }}>
                 INTRODUCTION
               </div>
-              <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 900, color: '#FAF5EE', margin: '4px 0 0 0', letterSpacing: '-0.02em' }}>
+              <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 900, color: '#1F1A16', margin: '4px 0 0 0', letterSpacing: '-0.02em' }}>
                 TO PAPIDO
               </h2>
             </div>
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', color: '#F97316' }}>
-              <div style={{ height: '2px', flex: 1, background: 'linear-gradient(90deg, #F97316, transparent)' }} />
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', color: '#EA580C' }}>
+              <div style={{ height: '2px', flex: 1, background: 'linear-gradient(90deg, #EA580C, transparent)' }} />
               <ArrowRight size={28} />
             </div>
           </div>
 
           {/* Right: Paragraph */}
           <div>
-            <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#BFAF9F', margin: 0 }}>
+            <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#645447', margin: 0 }}>
               Papido was engineered exclusively for the students and scholars of Pondicherry University. We eliminate long walks under hot weather, predatory auto-rickshaw fares, and safety concerns. By connecting student riders with fellow campus passengers heading in the same direction, everyone commutes quickly, safely, and affordably.
             </p>
           </div>
@@ -1008,7 +1029,7 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
       </section>
 
       {/* ============================================================ */}
-      {/* 5. SERVICES SECTION (HYDRA 4-CARD GRID WITH CIRCULAR ICONS)   */}
+      {/* 5. SERVICES SECTION (HYDRA 4-CARD GRID - ₹25 BASE FARE)      */}
       {/* ============================================================ */}
       <section
         id="services"
@@ -1021,15 +1042,15 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
         {/* Section Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '48px' }}>
           <div>
-            <div style={{ fontSize: '13px', fontWeight: 900, letterSpacing: '2px', color: '#F97316', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '13px', fontWeight: 900, letterSpacing: '2px', color: '#EA580C', textTransform: 'uppercase' }}>
               WHY RIDE WITH
             </div>
-            <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 900, color: '#FAF5EE', margin: '4px 0 0 0', letterSpacing: '-0.02em' }}>
+            <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 900, color: '#1F1A16', margin: '4px 0 0 0', letterSpacing: '-0.02em' }}>
               PAPIDO MOBILITY
             </h2>
           </div>
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', color: '#F97316' }}>
-            <div style={{ height: '2px', flex: 1, background: 'linear-gradient(90deg, #F97316, transparent)' }} />
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', color: '#EA580C' }}>
+            <div style={{ height: '2px', flex: 1, background: 'linear-gradient(90deg, #EA580C, transparent)' }} />
             <ArrowRight size={28} />
           </div>
         </div>
@@ -1042,27 +1063,27 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
             gap: '24px'
           }}
         >
-          {/* Card 1: Flat ₹20 */}
+          {/* Card 1: Flat ₹25 */}
           <div
             style={{
-              background: 'linear-gradient(145deg, #281D14 0%, #1C140E 100%)',
-              border: '1.5px solid rgba(249, 115, 22, 0.25)',
+              background: '#FFFFFF',
+              border: '1.5px solid #EFE4D6',
               borderRadius: '36px',
               padding: '36px 24px',
               textAlign: 'center',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              boxShadow: '0 16px 36px rgba(0, 0, 0, 0.4)',
+              boxShadow: '0 12px 30px rgba(234, 88, 12, 0.06)',
               transition: 'transform 0.2s ease, border-color 0.2s ease'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-6px)';
-              e.currentTarget.style.borderColor = '#F97316';
+              e.currentTarget.style.borderColor = '#EA580C';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.borderColor = 'rgba(249, 115, 22, 0.25)';
+              e.currentTarget.style.borderColor = '#EFE4D6';
             }}
           >
             <div
@@ -1070,24 +1091,25 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 width: '110px',
                 height: '110px',
                 borderRadius: '50%',
-                background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(234, 88, 12, 0.05))',
-                border: '2px solid rgba(249, 115, 22, 0.4)',
+                background: '#FFF7ED',
+                border: '2px solid #FED7AA',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginBottom: '20px'
+                marginBottom: '20px',
+                boxShadow: '0 6px 18px rgba(234, 88, 12, 0.15)'
               }}
             >
-              <DollarSign size={46} color="#F97316" />
+              <DollarSign size={46} color="#EA580C" />
             </div>
 
-            <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#FAF5EE', margin: '0 0 12px 0', letterSpacing: '0.5px' }}>
-              ₹20 FLAT FARE
+            <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#1F1A16', margin: '0 0 12px 0', letterSpacing: '0.5px' }}>
+              ₹25 FLAT FARE
             </h3>
 
-            <div style={{ width: '48px', height: '2px', background: 'rgba(249, 115, 22, 0.4)', marginBottom: '16px' }} />
+            <div style={{ width: '48px', height: '2px', background: '#FED7AA', marginBottom: '16px' }} />
 
-            <p style={{ fontSize: '13px', color: '#B3A495', lineHeight: 1.6, flex: 1, margin: '0 0 24px 0' }}>
+            <p style={{ fontSize: '13px', color: '#796D61', lineHeight: 1.6, flex: 1, margin: '0 0 24px 0' }}>
               Fixed transparent pricing between all Pondicherry University hostels, departments, library, and main gates. No surge pricing ever.
             </p>
 
@@ -1106,7 +1128,7 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 letterSpacing: '1.5px',
                 textTransform: 'uppercase',
                 cursor: 'pointer',
-                boxShadow: '0 6px 18px rgba(249, 115, 22, 0.35)'
+                boxShadow: '0 6px 18px rgba(234, 88, 12, 0.3)'
               }}
             >
               BOOK NOW
@@ -1116,24 +1138,24 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
           {/* Card 2: 100% Student Verified */}
           <div
             style={{
-              background: 'linear-gradient(145deg, #281D14 0%, #1C140E 100%)',
-              border: '1.5px solid rgba(249, 115, 22, 0.25)',
+              background: '#FFFFFF',
+              border: '1.5px solid #EFE4D6',
               borderRadius: '36px',
               padding: '36px 24px',
               textAlign: 'center',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              boxShadow: '0 16px 36px rgba(0, 0, 0, 0.4)',
+              boxShadow: '0 12px 30px rgba(234, 88, 12, 0.06)',
               transition: 'transform 0.2s ease, border-color 0.2s ease'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-6px)';
-              e.currentTarget.style.borderColor = '#F97316';
+              e.currentTarget.style.borderColor = '#EA580C';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.borderColor = 'rgba(249, 115, 22, 0.25)';
+              e.currentTarget.style.borderColor = '#EFE4D6';
             }}
           >
             <div
@@ -1141,24 +1163,25 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 width: '110px',
                 height: '110px',
                 borderRadius: '50%',
-                background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(234, 88, 12, 0.05))',
-                border: '2px solid rgba(249, 115, 22, 0.4)',
+                background: '#FFF7ED',
+                border: '2px solid #FED7AA',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginBottom: '20px'
+                marginBottom: '20px',
+                boxShadow: '0 6px 18px rgba(234, 88, 12, 0.15)'
               }}
             >
-              <ShieldCheck size={46} color="#F97316" />
+              <ShieldCheck size={46} color="#EA580C" />
             </div>
 
-            <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#FAF5EE', margin: '0 0 12px 0', letterSpacing: '0.5px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#1F1A16', margin: '0 0 12px 0', letterSpacing: '0.5px' }}>
               100% VERIFIED
             </h3>
 
-            <div style={{ width: '48px', height: '2px', background: 'rgba(249, 115, 22, 0.4)', marginBottom: '16px' }} />
+            <div style={{ width: '48px', height: '2px', background: '#FED7AA', marginBottom: '16px' }} />
 
-            <p style={{ fontSize: '13px', color: '#B3A495', lineHeight: 1.6, flex: 1, margin: '0 0 24px 0' }}>
+            <p style={{ fontSize: '13px', color: '#796D61', lineHeight: 1.6, flex: 1, margin: '0 0 24px 0' }}>
               Every rider uploads their official Campus ID card, government driving licence, and vehicle registration before approvals.
             </p>
 
@@ -1177,7 +1200,7 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 letterSpacing: '1.5px',
                 textTransform: 'uppercase',
                 cursor: 'pointer',
-                boxShadow: '0 6px 18px rgba(249, 115, 22, 0.35)'
+                boxShadow: '0 6px 18px rgba(234, 88, 12, 0.3)'
               }}
             >
               VERIFY KYC
@@ -1187,24 +1210,24 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
           {/* Card 3: Female Rider Protection */}
           <div
             style={{
-              background: 'linear-gradient(145deg, #281D14 0%, #1C140E 100%)',
-              border: '1.5px solid rgba(249, 115, 22, 0.25)',
+              background: '#FFFFFF',
+              border: '1.5px solid #EFE4D6',
               borderRadius: '36px',
               padding: '36px 24px',
               textAlign: 'center',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              boxShadow: '0 16px 36px rgba(0, 0, 0, 0.4)',
+              boxShadow: '0 12px 30px rgba(234, 88, 12, 0.06)',
               transition: 'transform 0.2s ease, border-color 0.2s ease'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-6px)';
-              e.currentTarget.style.borderColor = '#F97316';
+              e.currentTarget.style.borderColor = '#EA580C';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.borderColor = 'rgba(249, 115, 22, 0.25)';
+              e.currentTarget.style.borderColor = '#EFE4D6';
             }}
           >
             <div
@@ -1212,24 +1235,25 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 width: '110px',
                 height: '110px',
                 borderRadius: '50%',
-                background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(234, 88, 12, 0.05))',
-                border: '2px solid rgba(249, 115, 22, 0.4)',
+                background: '#FFF7ED',
+                border: '2px solid #FED7AA',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginBottom: '20px'
+                marginBottom: '20px',
+                boxShadow: '0 6px 18px rgba(234, 88, 12, 0.15)'
               }}
             >
-              <Heart size={46} color="#F97316" />
+              <Heart size={46} color="#EA580C" />
             </div>
 
-            <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#FAF5EE', margin: '0 0 12px 0', letterSpacing: '0.5px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#1F1A16', margin: '0 0 12px 0', letterSpacing: '0.5px' }}>
               FEMALE SAFETY
             </h3>
 
-            <div style={{ width: '48px', height: '2px', background: 'rgba(249, 115, 22, 0.4)', marginBottom: '16px' }} />
+            <div style={{ width: '48px', height: '2px', background: '#FED7AA', marginBottom: '16px' }} />
 
-            <p style={{ fontSize: '13px', color: '#B3A495', lineHeight: 1.6, flex: 1, margin: '0 0 24px 0' }}>
+            <p style={{ fontSize: '13px', color: '#796D61', lineHeight: 1.6, flex: 1, margin: '0 0 24px 0' }}>
               Female students have the safety option to request rides exclusively with verified female campus riders for maximum comfort.
             </p>
 
@@ -1248,7 +1272,7 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 letterSpacing: '1.5px',
                 textTransform: 'uppercase',
                 cursor: 'pointer',
-                boxShadow: '0 6px 18px rgba(249, 115, 22, 0.35)'
+                boxShadow: '0 6px 18px rgba(234, 88, 12, 0.3)'
               }}
             >
               LEARN MORE
@@ -1258,24 +1282,24 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
           {/* Card 4: Instant 3-Min Pickup */}
           <div
             style={{
-              background: 'linear-gradient(145deg, #281D14 0%, #1C140E 100%)',
-              border: '1.5px solid rgba(249, 115, 22, 0.25)',
+              background: '#FFFFFF',
+              border: '1.5px solid #EFE4D6',
               borderRadius: '36px',
               padding: '36px 24px',
               textAlign: 'center',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              boxShadow: '0 16px 36px rgba(0, 0, 0, 0.4)',
+              boxShadow: '0 12px 30px rgba(234, 88, 12, 0.06)',
               transition: 'transform 0.2s ease, border-color 0.2s ease'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-6px)';
-              e.currentTarget.style.borderColor = '#F97316';
+              e.currentTarget.style.borderColor = '#EA580C';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.borderColor = 'rgba(249, 115, 22, 0.25)';
+              e.currentTarget.style.borderColor = '#EFE4D6';
             }}
           >
             <div
@@ -1283,24 +1307,25 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 width: '110px',
                 height: '110px',
                 borderRadius: '50%',
-                background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(234, 88, 12, 0.05))',
-                border: '2px solid rgba(249, 115, 22, 0.4)',
+                background: '#FFF7ED',
+                border: '2px solid #FED7AA',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginBottom: '20px'
+                marginBottom: '20px',
+                boxShadow: '0 6px 18px rgba(234, 88, 12, 0.15)'
               }}
             >
-              <Clock size={46} color="#F97316" />
+              <Clock size={46} color="#EA580C" />
             </div>
 
-            <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#FAF5EE', margin: '0 0 12px 0', letterSpacing: '0.5px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#1F1A16', margin: '0 0 12px 0', letterSpacing: '0.5px' }}>
               3-MIN PICKUP
             </h3>
 
-            <div style={{ width: '48px', height: '2px', background: 'rgba(249, 115, 22, 0.4)', marginBottom: '16px' }} />
+            <div style={{ width: '48px', height: '2px', background: '#FED7AA', marginBottom: '16px' }} />
 
-            <p style={{ fontSize: '13px', color: '#B3A495', lineHeight: 1.6, flex: 1, margin: '0 0 24px 0' }}>
+            <p style={{ fontSize: '13px', color: '#796D61', lineHeight: 1.6, flex: 1, margin: '0 0 24px 0' }}>
               Active student riders on campus ensure rapid dispatch directly outside your hostel or department block in minutes.
             </p>
 
@@ -1319,7 +1344,7 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 letterSpacing: '1.5px',
                 textTransform: 'uppercase',
                 cursor: 'pointer',
-                boxShadow: '0 6px 18px rgba(249, 115, 22, 0.35)'
+                boxShadow: '0 6px 18px rgba(234, 88, 12, 0.3)'
               }}
             >
               RIDE FAST
@@ -1329,7 +1354,7 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
       </section>
 
       {/* ============================================================ */}
-      {/* 6. POPULAR CAMPUS ROUTES & FIXED FARES (CAMPUS FARES)        */}
+      {/* 6. POPULAR CAMPUS ROUTES & FIXED FARES (₹25 BASE FARES)      */}
       {/* ============================================================ */}
       <section
         id="fares"
@@ -1341,15 +1366,15 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '40px' }}>
           <div>
-            <div style={{ fontSize: '13px', fontWeight: 900, letterSpacing: '2px', color: '#F97316', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '13px', fontWeight: 900, letterSpacing: '2px', color: '#EA580C', textTransform: 'uppercase' }}>
               TRANSPARENT PRICING
             </div>
-            <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 900, color: '#FAF5EE', margin: '4px 0 0 0', letterSpacing: '-0.02em' }}>
+            <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 900, color: '#1F1A16', margin: '4px 0 0 0', letterSpacing: '-0.02em' }}>
               POPULAR PU ROUTES
             </h2>
           </div>
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', color: '#F97316' }}>
-            <div style={{ height: '2px', flex: 1, background: 'linear-gradient(90deg, #F97316, transparent)' }} />
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', color: '#EA580C' }}>
+            <div style={{ height: '2px', flex: 1, background: 'linear-gradient(90deg, #EA580C, transparent)' }} />
             <ArrowRight size={28} />
           </div>
         </div>
@@ -1361,128 +1386,132 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
             gap: '20px'
           }}
         >
-          {/* Route 1 */}
+          {/* Route 1: Gate 1 */}
           <div
             style={{
-              background: 'linear-gradient(135deg, #241A12 0%, #1A120C 100%)',
-              border: '1.5px solid rgba(249, 115, 22, 0.25)',
+              background: '#FFFFFF',
+              border: '1.5px solid #EFE4D6',
               borderRadius: '24px',
               padding: '24px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between'
+              justifyContent: 'space-between',
+              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.03)'
             }}
           >
             <div>
-              <div style={{ fontSize: '15px', fontWeight: 800, color: '#FAF5EE' }}>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#1F1A16' }}>
                 Gate 1 ↔ Science Complex
               </div>
-              <div style={{ fontSize: '12.5px', color: '#A39485', marginTop: '4px' }}>
+              <div style={{ fontSize: '12.5px', color: '#796D61', marginTop: '4px' }}>
                 Main Campus Direct Corridor
               </div>
             </div>
             <div
               style={{
-                fontSize: '18px',
+                fontSize: '19px',
                 fontWeight: 900,
-                color: '#F97316',
-                background: 'rgba(249, 115, 22, 0.15)',
-                padding: '8px 16px',
+                color: '#EA580C',
+                background: '#FFF7ED',
+                padding: '8px 18px',
                 borderRadius: '16px',
-                border: '1px solid rgba(249, 115, 22, 0.3)'
+                border: '1.5px solid #FED7AA'
               }}
             >
-              ₹20
+              ₹25
             </div>
           </div>
 
-          {/* Route 2 */}
+          {/* Route 2: Girls Hostels */}
           <div
             style={{
-              background: 'linear-gradient(135deg, #241A12 0%, #1A120C 100%)',
-              border: '1.5px solid rgba(249, 115, 22, 0.25)',
+              background: '#FFFFFF',
+              border: '1.5px solid #EFE4D6',
               borderRadius: '24px',
               padding: '24px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between'
+              justifyContent: 'space-between',
+              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.03)'
             }}
           >
             <div>
-              <div style={{ fontSize: '15px', fontWeight: 800, color: '#FAF5EE' }}>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#1F1A16' }}>
                 Girls Hostels ↔ Central Library
               </div>
-              <div style={{ fontSize: '12.5px', color: '#A39485', marginTop: '4px' }}>
+              <div style={{ fontSize: '12.5px', color: '#796D61', marginTop: '4px' }}>
                 Curie, Teresa, Ganga, Yamuna Hostels
               </div>
             </div>
             <div
               style={{
-                fontSize: '18px',
+                fontSize: '19px',
                 fontWeight: 900,
-                color: '#F97316',
-                background: 'rgba(249, 115, 22, 0.15)',
-                padding: '8px 16px',
+                color: '#EA580C',
+                background: '#FFF7ED',
+                padding: '8px 18px',
                 borderRadius: '16px',
-                border: '1px solid rgba(249, 115, 22, 0.3)'
+                border: '1.5px solid #FED7AA'
               }}
             >
-              ₹20
+              ₹25
             </div>
           </div>
 
-          {/* Route 3 */}
+          {/* Route 3: Boys Hostels */}
           <div
             style={{
-              background: 'linear-gradient(135deg, #241A12 0%, #1A120C 100%)',
-              border: '1.5px solid rgba(249, 115, 22, 0.25)',
+              background: '#FFFFFF',
+              border: '1.5px solid #EFE4D6',
               borderRadius: '24px',
               padding: '24px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between'
+              justifyContent: 'space-between',
+              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.03)'
             }}
           >
             <div>
-              <div style={{ fontSize: '15px', fontWeight: 800, color: '#FAF5EE' }}>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#1F1A16' }}>
                 Boys Hostels ↔ Silver Jubilee
               </div>
-              <div style={{ fontSize: '12.5px', color: '#A39485', marginTop: '4px' }}>
+              <div style={{ fontSize: '12.5px', color: '#796D61', marginTop: '4px' }}>
                 Tagore, Bharathi, Kamban Hostels
               </div>
             </div>
             <div
               style={{
-                fontSize: '18px',
+                fontSize: '19px',
                 fontWeight: 900,
-                color: '#F97316',
-                background: 'rgba(249, 115, 22, 0.15)',
-                padding: '8px 16px',
+                color: '#EA580C',
+                background: '#FFF7ED',
+                padding: '8px 18px',
                 borderRadius: '16px',
-                border: '1px solid rgba(249, 115, 22, 0.3)'
+                border: '1.5px solid #FED7AA'
               }}
             >
-              ₹20
+              ₹25
             </div>
           </div>
 
-          {/* Route 4 */}
+          {/* Route 4: Outside Campus */}
           <div
             style={{
-              background: 'linear-gradient(135deg, #241A12 0%, #1A120C 100%)',
-              border: '1.5px solid rgba(249, 115, 22, 0.25)',
+              background: '#FFFFFF',
+              border: '1.5px solid #EFE4D6',
               borderRadius: '24px',
               padding: '24px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between'
+              justifyContent: 'space-between',
+              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.03)'
             }}
           >
             <div>
-              <div style={{ fontSize: '15px', fontWeight: 800, color: '#FAF5EE' }}>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#1F1A16' }}>
                 PU Campus ↔ White Town / Beach
               </div>
-              <div style={{ fontSize: '12.5px', color: '#A39485', marginTop: '4px' }}>
+              <div style={{ fontSize: '12.5px', color: '#796D61', marginTop: '4px' }}>
                 Custom Outside Campus Trip Dispatch
               </div>
             </div>
@@ -1490,11 +1519,11 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
               style={{
                 fontSize: '14px',
                 fontWeight: 900,
-                color: '#FB923C',
-                background: 'rgba(249, 115, 22, 0.15)',
+                color: '#C2410C',
+                background: '#FFF7ED',
                 padding: '8px 14px',
                 borderRadius: '16px',
-                border: '1px solid rgba(249, 115, 22, 0.3)'
+                border: '1.5px solid #FED7AA'
               }}
             >
               Fair Quote
@@ -1516,15 +1545,15 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '56px' }}>
           <div>
-            <div style={{ fontSize: '13px', fontWeight: 900, letterSpacing: '2px', color: '#F97316', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '13px', fontWeight: 900, letterSpacing: '2px', color: '#EA580C', textTransform: 'uppercase' }}>
               HOW WE OPERATE
             </div>
-            <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 900, color: '#FAF5EE', margin: '4px 0 0 0', letterSpacing: '-0.02em' }}>
+            <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 900, color: '#1F1A16', margin: '4px 0 0 0', letterSpacing: '-0.02em' }}>
               HOW TO RIDE & EARN
             </h2>
           </div>
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', color: '#F97316' }}>
-            <div style={{ height: '2px', flex: 1, background: 'linear-gradient(90deg, #F97316, transparent)' }} />
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', color: '#EA580C' }}>
+            <div style={{ height: '2px', flex: 1, background: 'linear-gradient(90deg, #EA580C, transparent)' }} />
             <ArrowRight size={28} />
           </div>
         </div>
@@ -1541,12 +1570,12 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
           {/* Step 1 */}
           <div
             style={{
-              background: 'linear-gradient(145deg, #241A12 0%, #1A120C 100%)',
-              border: '1.5px solid rgba(249, 115, 22, 0.25)',
+              background: '#FFFFFF',
+              border: '1.5px solid #EFE4D6',
               borderRadius: '28px',
               padding: '36px 24px',
               textAlign: 'center',
-              position: 'relative'
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.03)'
             }}
           >
             <div
@@ -1562,15 +1591,15 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 margin: '0 auto 20px',
-                boxShadow: '0 8px 24px rgba(249, 115, 22, 0.4)'
+                boxShadow: '0 8px 24px rgba(234, 88, 12, 0.3)'
               }}
             >
               01
             </div>
-            <h3 style={{ fontSize: '16.5px', fontWeight: 800, color: '#FAF5EE', marginBottom: '10px' }}>
+            <h3 style={{ fontSize: '16.5px', fontWeight: 800, color: '#1F1A16', marginBottom: '10px' }}>
               Pick Campus Stops
             </h3>
-            <p style={{ fontSize: '13px', color: '#B3A495', lineHeight: 1.6, margin: 0 }}>
+            <p style={{ fontSize: '13px', color: '#796D61', lineHeight: 1.6, margin: 0 }}>
               Select your pickup hostel or gate and destination academic department.
             </p>
           </div>
@@ -1578,12 +1607,12 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
           {/* Step 2 */}
           <div
             style={{
-              background: 'linear-gradient(145deg, #241A12 0%, #1A120C 100%)',
-              border: '1.5px solid rgba(249, 115, 22, 0.25)',
+              background: '#FFFFFF',
+              border: '1.5px solid #EFE4D6',
               borderRadius: '28px',
               padding: '36px 24px',
               textAlign: 'center',
-              position: 'relative'
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.03)'
             }}
           >
             <div
@@ -1599,15 +1628,15 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 margin: '0 auto 20px',
-                boxShadow: '0 8px 24px rgba(249, 115, 22, 0.4)'
+                boxShadow: '0 8px 24px rgba(234, 88, 12, 0.3)'
               }}
             >
               02
             </div>
-            <h3 style={{ fontSize: '16.5px', fontWeight: 800, color: '#FAF5EE', marginBottom: '10px' }}>
+            <h3 style={{ fontSize: '16.5px', fontWeight: 800, color: '#1F1A16', marginBottom: '10px' }}>
               Instant Peer Match
             </h3>
-            <p style={{ fontSize: '13px', color: '#B3A495', lineHeight: 1.6, margin: 0 }}>
+            <p style={{ fontSize: '13px', color: '#796D61', lineHeight: 1.6, margin: 0 }}>
               Matched instantly with a verified student rider heading your way on a bike/scooter.
             </p>
           </div>
@@ -1615,12 +1644,12 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
           {/* Step 3 */}
           <div
             style={{
-              background: 'linear-gradient(145deg, #241A12 0%, #1A120C 100%)',
-              border: '1.5px solid rgba(249, 115, 22, 0.25)',
+              background: '#FFFFFF',
+              border: '1.5px solid #EFE4D6',
               borderRadius: '28px',
               padding: '36px 24px',
               textAlign: 'center',
-              position: 'relative'
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.03)'
             }}
           >
             <div
@@ -1636,15 +1665,15 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 margin: '0 auto 20px',
-                boxShadow: '0 8px 24px rgba(249, 115, 22, 0.4)'
+                boxShadow: '0 8px 24px rgba(234, 88, 12, 0.3)'
               }}
             >
               03
             </div>
-            <h3 style={{ fontSize: '16.5px', fontWeight: 800, color: '#FAF5EE', marginBottom: '10px' }}>
+            <h3 style={{ fontSize: '16.5px', fontWeight: 800, color: '#1F1A16', marginBottom: '10px' }}>
               Verify 4-Digit OTP
             </h3>
-            <p style={{ fontSize: '13px', color: '#B3A495', lineHeight: 1.6, margin: 0 }}>
+            <p style={{ fontSize: '13px', color: '#796D61', lineHeight: 1.6, margin: 0 }}>
               Share your secure ride-start code with the rider before moving for verified passenger safety.
             </p>
           </div>
@@ -1652,12 +1681,12 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
           {/* Step 4 */}
           <div
             style={{
-              background: 'linear-gradient(145deg, #241A12 0%, #1A120C 100%)',
-              border: '1.5px solid rgba(249, 115, 22, 0.25)',
+              background: '#FFFFFF',
+              border: '1.5px solid #EFE4D6',
               borderRadius: '28px',
               padding: '36px 24px',
               textAlign: 'center',
-              position: 'relative'
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.03)'
             }}
           >
             <div
@@ -1673,23 +1702,23 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 margin: '0 auto 20px',
-                boxShadow: '0 8px 24px rgba(249, 115, 22, 0.4)'
+                boxShadow: '0 8px 24px rgba(234, 88, 12, 0.3)'
               }}
             >
               04
             </div>
-            <h3 style={{ fontSize: '16.5px', fontWeight: 800, color: '#FAF5EE', marginBottom: '10px' }}>
-              Flat ₹20 Settle
+            <h3 style={{ fontSize: '16.5px', fontWeight: 800, color: '#1F1A16', marginBottom: '10px' }}>
+              Flat ₹25 Settle
             </h3>
-            <p style={{ fontSize: '13px', color: '#B3A495', lineHeight: 1.6, margin: 0 }}>
-              Reach your classroom on time. Settle the fixed ₹20 flat rate via UPI QR or cash.
+            <p style={{ fontSize: '13px', color: '#796D61', lineHeight: 1.6, margin: 0 }}>
+              Reach your classroom on time. Settle the fixed ₹25 flat rate via UPI QR or cash.
             </p>
           </div>
         </div>
       </section>
 
       {/* ============================================================ */}
-      {/* 8. JOIN PAPIDO CARD / RIDER RECRUITMENT BANNER (HYDRA FORM)   */}
+      {/* 8. JOIN PAPIDO CARD / RIDER RECRUITMENT BANNER                */}
       {/* ============================================================ */}
       <section
         style={{
@@ -1700,14 +1729,14 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
       >
         <div
           style={{
-            background: 'linear-gradient(135deg, #2A1D13 0%, #1C130B 100%)',
+            background: 'linear-gradient(135deg, #271E16 0%, #17110C 100%)',
             border: '2px solid rgba(249, 115, 22, 0.35)',
             borderRadius: '40px',
             padding: '56px 40px',
             textAlign: 'center',
             position: 'relative',
             overflow: 'hidden',
-            boxShadow: '0 24px 60px rgba(0, 0, 0, 0.6), 0 0 35px rgba(249, 115, 22, 0.15)'
+            boxShadow: '0 24px 60px rgba(0, 0, 0, 0.15)'
           }}
         >
           <div style={{ maxWidth: '640px', margin: '0 auto', position: 'relative', zIndex: 2 }}>
@@ -1760,7 +1789,7 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
                   letterSpacing: '1.5px',
                   textTransform: 'uppercase',
                   cursor: 'pointer',
-                  boxShadow: '0 8px 24px rgba(249, 115, 22, 0.4)',
+                  boxShadow: '0 8px 24px rgba(234, 88, 12, 0.4)',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '8px'
@@ -1795,12 +1824,12 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
       </section>
 
       {/* ============================================================ */}
-      {/* 9. FOOTER (HYDRA STYLE WITH PAPIDO BRAND)                    */}
+      {/* 9. FOOTER (HYDRA STYLE WITH PAPIDO LIGHT THEME)              */}
       {/* ============================================================ */}
       <footer
         style={{
-          borderTop: '1px solid rgba(249, 115, 22, 0.2)',
-          background: '#150F09',
+          borderTop: '1.5px solid #EFE4D6',
+          background: '#FFFFFF',
           padding: '56px 28px 36px'
         }}
       >
@@ -1819,30 +1848,30 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
             <img
               src="/papidologo.jpeg"
               alt="Papido Logo"
-              style={{ width: '40px', height: '40px', borderRadius: '12px', objectFit: 'contain' }}
+              style={{ width: '40px', height: '40px', borderRadius: '12px', objectFit: 'contain', border: '1.5px solid #F3ECE2' }}
             />
             <div>
-              <div style={{ fontSize: '18px', fontWeight: 900, color: '#FAF5EE', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
+              <div style={{ fontSize: '18px', fontWeight: 900, color: '#1F1A16', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
                 PAPIDO
               </div>
-              <div style={{ fontSize: '11.5px', color: '#A39485', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
+              <div style={{ fontSize: '11.5px', color: '#796D61', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
                 Pondicherry University Campus Mobility
               </div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px', fontSize: '12px', color: '#C7B7A7', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px', fontSize: '12px', color: '#57483B', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>
             <button
               type="button"
               onClick={onGoToLogin}
-              style={{ background: 'none', border: 'none', color: '#C7B7A7', cursor: 'pointer', fontSize: '12px', fontWeight: 700, letterSpacing: '1px' }}
+              style={{ background: 'none', border: 'none', color: '#57483B', cursor: 'pointer', fontSize: '12px', fontWeight: 700, letterSpacing: '1px' }}
             >
               SIGN IN
             </button>
             <button
               type="button"
               onClick={() => onGoToRegister ? onGoToRegister() : onGoToLogin()}
-              style={{ background: 'none', border: 'none', color: '#C7B7A7', cursor: 'pointer', fontSize: '12px', fontWeight: 700, letterSpacing: '1px' }}
+              style={{ background: 'none', border: 'none', color: '#57483B', cursor: 'pointer', fontSize: '12px', fontWeight: 700, letterSpacing: '1px' }}
             >
               CREATE ACCOUNT
             </button>
@@ -1850,7 +1879,7 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
               <button
                 type="button"
                 onClick={onGoToAdmin}
-                style={{ background: 'none', border: 'none', color: '#F97316', cursor: 'pointer', fontSize: '12px', fontWeight: 800, letterSpacing: '1px' }}
+                style={{ background: 'none', border: 'none', color: '#EA580C', cursor: 'pointer', fontSize: '12px', fontWeight: 800, letterSpacing: '1px' }}
               >
                 ADMIN PORTAL
               </button>
@@ -1863,10 +1892,10 @@ export function HomeView({ onGoToLogin, onGoToRegister, onGoToAdmin, user }) {
             maxWidth: '1280px',
             margin: '32px auto 0',
             paddingTop: '24px',
-            borderTop: '1px solid rgba(249, 115, 22, 0.12)',
+            borderTop: '1px solid #F0E8DD',
             textAlign: 'center',
             fontSize: '12px',
-            color: '#807062',
+            color: '#A39587',
             letterSpacing: '0.5px'
           }}
         >
