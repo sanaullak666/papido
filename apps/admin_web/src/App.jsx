@@ -3,6 +3,7 @@ import { useAuth } from './context/AuthContext';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { LoginView } from './views/LoginView';
+import { HomeView } from './views/HomeView';
 import { AdminLoginView } from './views/AdminLoginView';
 import { CustomerPortalView } from './views/CustomerPortalView';
 import { RiderPortalView } from './views/RiderPortalView';
@@ -300,32 +301,108 @@ export function App() {
     );
   }
 
+  // Extract normalized route path without query strings
+  const cleanPath = (currentPath || '').split('?')[0].toLowerCase().replace(/\/+$/, '') || '/';
+  const queryString = (currentPath || '').includes('?') ? (currentPath || '').split('?')[1] : (typeof window !== 'undefined' ? window.location.search : '');
+  const searchParams = new URLSearchParams(queryString);
+
   // ============================================================
-  // 2. AUTHENTICATION (Not Logged In)
+  // 2. EXPLICIT LOGIN & REGISTER ROUTES (/login, /register, /signin, /signup)
   // ============================================================
-  if (!user) {
+  if (cleanPath === '/login' || cleanPath === '/register' || cleanPath === '/signin' || cleanPath === '/signup') {
+    if (user) {
+      if (user.role === 'CUSTOMER') return <CustomerPortalView />;
+      if (user.role === 'RIDER') return <RiderPortalView />;
+    }
+
+    const roleParam = searchParams.get('role');
+    const initialRole = roleParam === 'RIDER' ? 'RIDER' : 'CUSTOMER';
+    const initialMode = (cleanPath === '/register' || cleanPath === '/signup') ? 'register' : 'login';
+
     return (
       <LoginView
         onGoToAdminPortal={() => navigateTo('/admin/dashboard')}
+        onGoToHome={() => navigateTo('/')}
+        initialMode={initialMode}
+        initialRole={initialRole}
       />
     );
   }
 
   // ============================================================
-  // 3. ROLE-BASED ROUTING FOR AUTHENTICATED USERS
+  // 3. PASSENGER DEDICATED PORTAL ROUTES (/passenger, /customer, /book)
   // ============================================================
-  if (user.role === 'CUSTOMER' || currentPath === '/passenger' || currentPath.startsWith('/passenger/') || currentPath === '/customer' || currentPath.startsWith('/customer/') || currentPath === '/book') {
-    return <CustomerPortalView />;
+  if (cleanPath === '/passenger' || cleanPath.startsWith('/passenger/') || cleanPath === '/customer' || cleanPath.startsWith('/customer/') || cleanPath === '/book') {
+    if (user) {
+      return <CustomerPortalView />;
+    }
+    return (
+      <LoginView
+        onGoToAdminPortal={() => navigateTo('/admin/dashboard')}
+        onGoToHome={() => navigateTo('/')}
+        initialMode="login"
+        initialRole="CUSTOMER"
+      />
+    );
   }
 
-  if (user.role === 'RIDER' || currentPath === '/driver' || currentPath.startsWith('/driver/') || currentPath === '/rider' || currentPath.startsWith('/rider/')) {
-    return <RiderPortalView />;
+  // ============================================================
+  // 4. RIDER / DRIVER DEDICATED PORTAL ROUTES (/driver, /rider)
+  // ============================================================
+  if (cleanPath === '/driver' || cleanPath.startsWith('/driver/') || cleanPath === '/rider' || cleanPath.startsWith('/rider/')) {
+    if (user) {
+      return <RiderPortalView />;
+    }
+    return (
+      <LoginView
+        onGoToAdminPortal={() => navigateTo('/admin/dashboard')}
+        onGoToHome={() => navigateTo('/')}
+        initialMode="login"
+        initialRole="RIDER"
+      />
+    );
   }
 
-  // Fallback
+  // ============================================================
+  // 5. HOME LANDING PAGE (Root / or /home)
+  // ============================================================
+  if (cleanPath === '/' || cleanPath === '/home' || !cleanPath) {
+    return (
+      <HomeView
+        user={user}
+        onGoToLogin={() => {
+          if (user) {
+            navigateTo(user.role === 'CUSTOMER' ? '/passenger' : '/driver');
+          } else {
+            navigateTo('/login');
+          }
+        }}
+        onGoToRegister={(role) => {
+          if (user) {
+            navigateTo(user.role === 'CUSTOMER' ? '/passenger' : '/driver');
+          } else {
+            navigateTo(role ? `/register?role=${role}` : '/register');
+          }
+        }}
+        onGoToAdmin={() => navigateTo('/admin')}
+      />
+    );
+  }
+
+  // ============================================================
+  // 6. DEFAULT FALLBACK
+  // ============================================================
+  if (user) {
+    if (user.role === 'CUSTOMER') return <CustomerPortalView />;
+    if (user.role === 'RIDER') return <RiderPortalView />;
+  }
+
   return (
-    <LoginView
-      onGoToAdminPortal={() => navigateTo('/admin/dashboard')}
+    <HomeView
+      user={user}
+      onGoToLogin={() => navigateTo('/login')}
+      onGoToRegister={(role) => navigateTo(role ? `/register?role=${role}` : '/register')}
+      onGoToAdmin={() => navigateTo('/admin')}
     />
   );
 }

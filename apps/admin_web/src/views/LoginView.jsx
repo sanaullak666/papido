@@ -18,10 +18,16 @@ import {
   Check,
   Eye,
   EyeOff,
-  ChevronDown
+  ChevronDown,
+  ArrowLeft
 } from 'lucide-react';
 
-export function LoginView({ onGoToAdminPortal }) {
+export function LoginView({
+  onGoToAdminPortal,
+  onGoToHome,
+  initialMode = 'login',
+  initialRole = 'CUSTOMER'
+}) {
   const {
     login,
     register,
@@ -31,7 +37,15 @@ export function LoginView({ onGoToAdminPortal }) {
     resetPassword
   } = useAuth();
 
-  const [authMode, setAuthMode] = useState('login'); // 'login', 'register', 'verify-otp', 'forgot'
+  const [authMode, setAuthMode] = useState(initialMode); // 'login', 'register', 'verify-otp', 'forgot'
+
+  useEffect(() => {
+    if (initialMode) setAuthMode(initialMode);
+  }, [initialMode]);
+
+  useEffect(() => {
+    if (initialRole) setRegRole(initialRole);
+  }, [initialRole]);
 
   // Password Visibility States
   const [showLoginPassword, setShowLoginPassword] = useState(false);
@@ -454,6 +468,45 @@ export function LoginView({ onGoToAdminPortal }) {
           position: 'relative'
         }}
       >
+        {/* Back to Home Button */}
+        {onGoToHome && (
+          <button
+            type="button"
+            onClick={onGoToHome}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              left: '22px',
+              background: '#FAF5EE',
+              border: '1.2px solid #EFE4D6',
+              borderRadius: '9999px',
+              padding: '6px 13px',
+              color: '#57483B',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.15s ease',
+              zIndex: 10
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = '#EA580C';
+              e.currentTarget.style.borderColor = '#FED7AA';
+              e.currentTarget.style.background = '#FFF7ED';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = '#57483B';
+              e.currentTarget.style.borderColor = '#EFE4D6';
+              e.currentTarget.style.background = '#FAF5EE';
+            }}
+          >
+            <ArrowLeft size={13} />
+            <span>Home</span>
+          </button>
+        )}
+
         {/* Brand Header */}
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <img
@@ -2071,28 +2124,66 @@ export function LoginView({ onGoToAdminPortal }) {
           </div>
         )}
 
-        {/* Footer Link to Admin Portal */}
-        {onGoToAdminPortal && (
-          <div style={{ textAlign: 'center', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #F0E8DD' }}>
-            <button
-              type="button"
-              onClick={onGoToAdminPortal}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#9E8F82',
-                fontSize: '11.5px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                letterSpacing: '0.3px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-            >
-              <span>Operator & Admin Portal Login</span>
-              <ArrowRight size={12} />
-            </button>
+        {/* Footer Navigation Links */}
+        {(onGoToAdminPortal || onGoToHome) && (
+          <div
+            style={{
+              textAlign: 'center',
+              marginTop: '20px',
+              paddingTop: '16px',
+              borderTop: '1px solid #F0E8DD',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '20px',
+              flexWrap: 'wrap'
+            }}
+          >
+            {onGoToHome && (
+              <button
+                type="button"
+                onClick={onGoToHome}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#8A7B6E',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = '#EA580C')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = '#8A7B6E')}
+              >
+                <ArrowLeft size={13} />
+                <span>Return to Home</span>
+              </button>
+            )}
+
+            {onGoToAdminPortal && (
+              <button
+                type="button"
+                onClick={onGoToAdminPortal}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#8A7B6E',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = '#EA580C')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = '#8A7B6E')}
+              >
+                <span>Operator & Admin Portal</span>
+                <ArrowRight size={13} />
+              </button>
+            )}
           </div>
         )}
       </div>
