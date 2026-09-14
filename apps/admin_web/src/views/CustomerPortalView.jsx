@@ -1705,10 +1705,12 @@ export function CustomerPortalView() {
 
   return (
     <div className="theme-orange-beige" style={{ minHeight: '100vh', background: '#FAF5EE', color: '#271E16', display: 'flex', flexDirection: 'column' }}>
-      {/* Top Passenger Web Navigation Header */}
+      {/* Top Passenger Web Navigation Header (Rapido Style) */}
       <header style={{
-        background: '#211A14',
-        borderBottom: '1px solid #3A2F25',
+        background: 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        borderBottom: '1.5px solid #EFE4D6',
         padding: '12px 24px',
         display: 'flex',
         alignItems: 'center',
@@ -1718,33 +1720,33 @@ export function CustomerPortalView() {
         position: 'sticky',
         top: 0,
         zIndex: 100,
-        color: '#FFFFFF'
+        color: '#1F1A16'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <img
             src="/papidologo.jpeg"
             alt="Papido Logo"
             style={{
-              width: '38px',
-              height: '38px',
+              width: '40px',
+              height: '40px',
               objectFit: 'contain',
-              borderRadius: '10px',
-              border: '1px solid #43362A',
+              borderRadius: '12px',
+              border: '1.5px solid #F3ECE2',
               background: '#FFFFFF',
               padding: '2px',
-              boxShadow: '0 4px 12px rgba(234, 88, 12, 0.4)'
+              boxShadow: '0 4px 14px rgba(234, 88, 12, 0.2)'
             }}
           />
           <div>
-            <div style={{ fontWeight: 800, fontSize: '18px', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '8px', color: '#FFFFFF' }}>
-              PAPIDO <span style={{ fontSize: '11px', background: 'rgba(249, 115, 22, 0.25)', color: '#FB923C', padding: '2px 8px', borderRadius: '4px', fontWeight: 700, border: '1px solid rgba(249, 115, 22, 0.4)' }}>PASSENGER WEB</span>
+            <div style={{ fontWeight: 900, fontSize: '18px', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '8px', color: '#1F1A16' }}>
+              PAPIDO <span style={{ fontSize: '10.5px', background: '#FFF7ED', color: '#EA580C', padding: '2px 8px', borderRadius: '9999px', fontWeight: 800, border: '1px solid #FED7AA' }}>BIKE TAXI</span>
             </div>
-            <div style={{ fontSize: '11px', color: '#A8998A' }}>Pondicherry University Campus Mobility</div>
+            <div style={{ fontSize: '11px', color: '#796D61', fontWeight: 600 }}>Pondicherry University Campus Mobility</div>
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="nav-scrollable-tabs" style={{ background: '#2D2319', borderColor: '#43362A' }}>
+        {/* Navigation Tabs (Rapido Clean Pill Navigation) */}
+        <div className="nav-scrollable-tabs" style={{ background: '#FAF5EE', border: '1px solid #EFE4D6', borderRadius: '12px', padding: '4px', display: 'flex', gap: '4px' }}>
           <a
             href="/passenger/book"
             onClick={(e) => {
@@ -1752,20 +1754,22 @@ export function CustomerPortalView() {
               handleTabChange('book');
             }}
             style={{
-              padding: '6px 14px',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 700,
+              padding: '7px 16px',
+              borderRadius: '9999px',
+              fontSize: '12.5px',
+              fontWeight: 800,
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
               background: currentTab === 'book' ? 'linear-gradient(135deg, #F97316, #EA580C)' : 'transparent',
-              color: currentTab === 'book' ? '#FFFFFF' : '#D6C7B2',
+              color: currentTab === 'book' ? '#FFFFFF' : '#57483B',
+              boxShadow: currentTab === 'book' ? '0 4px 12px rgba(234, 88, 12, 0.28)' : 'none',
               textDecoration: 'none',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
             }}
           >
-            <Bike size={16} /> Book Ride
+            <Bike size={15} /> Book Ride
           </a>
           <a
             href="/passenger/prebook"
@@ -1774,20 +1778,22 @@ export function CustomerPortalView() {
               handleTabChange('scheduled');
             }}
             style={{
-              padding: '6px 14px',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 700,
+              padding: '7px 16px',
+              borderRadius: '9999px',
+              fontSize: '12.5px',
+              fontWeight: 800,
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
               background: currentTab === 'scheduled' ? 'linear-gradient(135deg, #F97316, #EA580C)' : 'transparent',
-              color: currentTab === 'scheduled' ? '#FFFFFF' : '#D6C7B2',
+              color: currentTab === 'scheduled' ? '#FFFFFF' : '#57483B',
+              boxShadow: currentTab === 'scheduled' ? '0 4px 12px rgba(234, 88, 12, 0.28)' : 'none',
               textDecoration: 'none',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
             }}
           >
-            <Calendar size={16} /> Pre-Booked Trips {scheduledRides && scheduledRides.length > 0 && <span style={{ background: '#3B82F6', color: '#FFFFFF', padding: '1px 6px', borderRadius: '10px', fontSize: '10px', fontWeight: 900 }}>{scheduledRides.length}</span>}
+            <Calendar size={15} /> Pre-Booked {scheduledRides && scheduledRides.length > 0 && <span style={{ background: '#3B82F6', color: '#FFFFFF', padding: '1px 6px', borderRadius: '10px', fontSize: '10px', fontWeight: 900 }}>{scheduledRides.length}</span>}
           </a>
           <a
             href="/passenger/outside"
@@ -1796,20 +1802,22 @@ export function CustomerPortalView() {
               handleTabChange('outside');
             }}
             style={{
-              padding: '6px 14px',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 700,
+              padding: '7px 16px',
+              borderRadius: '9999px',
+              fontSize: '12.5px',
+              fontWeight: 800,
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
               background: currentTab === 'outside' ? 'linear-gradient(135deg, #F97316, #EA580C)' : 'transparent',
-              color: currentTab === 'outside' ? '#FFFFFF' : '#D6C7B2',
+              color: currentTab === 'outside' ? '#FFFFFF' : '#57483B',
+              boxShadow: currentTab === 'outside' ? '0 4px 12px rgba(234, 88, 12, 0.28)' : 'none',
               textDecoration: 'none',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
             }}
           >
-            <Compass size={16} /> Outside Trips
+            <Compass size={15} /> Outside Trips
           </a>
           <a
             href="/passenger/rides"
@@ -1818,20 +1826,22 @@ export function CustomerPortalView() {
               handleTabChange('history');
             }}
             style={{
-              padding: '6px 14px',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 700,
+              padding: '7px 16px',
+              borderRadius: '9999px',
+              fontSize: '12.5px',
+              fontWeight: 800,
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
               background: currentTab === 'history' ? 'linear-gradient(135deg, #F97316, #EA580C)' : 'transparent',
-              color: currentTab === 'history' ? '#FFFFFF' : '#D6C7B2',
+              color: currentTab === 'history' ? '#FFFFFF' : '#57483B',
+              boxShadow: currentTab === 'history' ? '0 4px 12px rgba(234, 88, 12, 0.28)' : 'none',
               textDecoration: 'none',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
             }}
           >
-            <History size={16} /> My Rides
+            <History size={15} /> My Rides
           </a>
           <a
             href="/passenger/profile"
@@ -1840,34 +1850,46 @@ export function CustomerPortalView() {
               handleTabChange('profile');
             }}
             style={{
-              padding: '6px 14px',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 700,
+              padding: '7px 16px',
+              borderRadius: '9999px',
+              fontSize: '12.5px',
+              fontWeight: 800,
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
               background: currentTab === 'profile' ? 'linear-gradient(135deg, #F97316, #EA580C)' : 'transparent',
-              color: currentTab === 'profile' ? '#FFFFFF' : '#D6C7B2',
+              color: currentTab === 'profile' ? '#FFFFFF' : '#57483B',
+              boxShadow: currentTab === 'profile' ? '0 4px 12px rgba(234, 88, 12, 0.28)' : 'none',
               textDecoration: 'none',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
             }}
           >
-            <User size={16} /> Profile & Security
+            <User size={15} /> Profile
           </a>
         </div>
 
         {/* User Chip & Logout */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontWeight: 700, fontSize: '13px' }}>{user?.name || 'Passenger'}</div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{user?.email}</div>
+            <div style={{ fontWeight: 800, fontSize: '13px', color: '#1F1A16' }}>{user?.name || 'Passenger'}</div>
+            <div style={{ fontSize: '11px', color: '#796D61' }}>{user?.email}</div>
           </div>
           <button
             onClick={logout}
             className="btn btn-secondary btn-sm"
             title="Sign Out"
-            style={{ padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            style={{
+              padding: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '10px',
+              background: '#FFF7ED',
+              border: '1px solid #FED7AA',
+              color: '#EA580C',
+              cursor: 'pointer'
+            }}
           >
             <LogOut size={16} />
           </button>
@@ -2737,87 +2759,199 @@ export function CustomerPortalView() {
                     </div>
                   </div>
 
-                  {/* Vehicle Type Selection */}
+                  {/* Rapido Style Vehicle Type Selection */}
                   <div>
-                    <label className="form-label" style={{ color: '#271E16', fontWeight: 700 }}>Vehicle Type Preference</label>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-                      <button
-                        type="button"
-                        onClick={() => setVehicleType('ANY')}
-                        style={{
-                          padding: '10px 6px',
-                          borderRadius: '10px',
-                          border: vehicleType === 'ANY' ? '2px solid #F97316' : '1.5px solid #E8DCCB',
-                          background: vehicleType === 'ANY' ? '#FFFFFF' : '#F8F3EC',
-                          color: vehicleType === 'ANY' ? '#EA580C' : '#796D61',
-                          boxShadow: vehicleType === 'ANY' ? '0 2px 8px rgba(249, 115, 22, 0.2)' : 'none',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          gap: '4px',
-                          fontWeight: 700,
-                          fontSize: '12px',
-                          textAlign: 'center'
-                        }}
-                      >
-                        <Zap size={20} />
-                        <span>Any (Fastest)</span>
-                      </button>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <label className="form-label" style={{ color: '#1F1A16', fontWeight: 800, fontSize: '13px', margin: 0 }}>
+                        Select Vehicle
+                      </label>
+                      <span style={{ fontSize: '11.5px', color: '#EA580C', fontWeight: 800, background: '#FFF7ED', padding: '2px 8px', borderRadius: '6px', border: '1px solid #FED7AA' }}>
+                        Base: ₹25 Flat
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                      {/* Bike Card */}
                       <button
                         type="button"
                         onClick={() => setVehicleType('BIKE')}
                         style={{
-                          padding: '10px 6px',
-                          borderRadius: '10px',
-                          border: vehicleType === 'BIKE' ? '2px solid #F97316' : '1.5px solid #E8DCCB',
-                          background: vehicleType === 'BIKE' ? '#FFFFFF' : '#F8F3EC',
-                          color: vehicleType === 'BIKE' ? '#EA580C' : '#796D61',
-                          boxShadow: vehicleType === 'BIKE' ? '0 2px 8px rgba(249, 115, 22, 0.2)' : 'none',
+                          padding: '14px 8px',
+                          borderRadius: '16px',
+                          border: vehicleType === 'BIKE' ? '2px solid #F97316' : '1.5px solid #EFE4D6',
+                          background: vehicleType === 'BIKE' ? '#FFF7ED' : '#FFFFFF',
+                          boxShadow: vehicleType === 'BIKE' ? '0 6px 18px rgba(249, 115, 22, 0.2)' : '0 2px 8px rgba(0,0,0,0.02)',
                           cursor: 'pointer',
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
-                          gap: '4px',
-                          fontWeight: 700,
-                          fontSize: '12px',
-                          textAlign: 'center'
+                          gap: '6px',
+                          textAlign: 'center',
+                          position: 'relative',
+                          transition: 'all 0.15s ease'
                         }}
                       >
-                        <Bike size={20} />
-                        <span>Bike</span>
+                        <div
+                          style={{
+                            width: '44px',
+                            height: '44px',
+                            borderRadius: '12px',
+                            background: vehicleType === 'BIKE' ? '#FED7AA' : '#FAF5EE',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#EA580C'
+                          }}
+                        >
+                          <Bike size={24} />
+                        </div>
+                        <div style={{ fontWeight: 800, fontSize: '13px', color: '#1F1A16' }}>
+                          Bike
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#796D61', fontWeight: 600 }}>
+                          Fastest • ₹25
+                        </div>
+                        {vehicleType === 'BIKE' && (
+                          <div style={{
+                            position: 'absolute',
+                            top: '-7px',
+                            right: '8px',
+                            background: '#059669',
+                            color: '#FFF',
+                            fontSize: '9px',
+                            fontWeight: 900,
+                            padding: '1px 6px',
+                            borderRadius: '9999px',
+                            letterSpacing: '0.4px'
+                          }}>
+                            SELECTED
+                          </div>
+                        )}
                       </button>
+
+                      {/* Scooter Card */}
                       <button
                         type="button"
                         onClick={() => setVehicleType('SCOOTER')}
                         style={{
-                          padding: '10px 6px',
-                          borderRadius: '10px',
-                          border: vehicleType === 'SCOOTER' ? '2px solid #F97316' : '1.5px solid #E8DCCB',
-                          background: vehicleType === 'SCOOTER' ? '#FFFFFF' : '#F8F3EC',
-                          color: vehicleType === 'SCOOTER' ? '#EA580C' : '#796D61',
-                          boxShadow: vehicleType === 'SCOOTER' ? '0 2px 8px rgba(249, 115, 22, 0.2)' : 'none',
+                          padding: '14px 8px',
+                          borderRadius: '16px',
+                          border: vehicleType === 'SCOOTER' ? '2px solid #F97316' : '1.5px solid #EFE4D6',
+                          background: vehicleType === 'SCOOTER' ? '#FFF7ED' : '#FFFFFF',
+                          boxShadow: vehicleType === 'SCOOTER' ? '0 6px 18px rgba(249, 115, 22, 0.2)' : '0 2px 8px rgba(0,0,0,0.02)',
                           cursor: 'pointer',
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
-                          gap: '4px',
-                          fontWeight: 700,
-                          fontSize: '12px',
-                          textAlign: 'center'
+                          gap: '6px',
+                          textAlign: 'center',
+                          position: 'relative',
+                          transition: 'all 0.15s ease'
                         }}
                       >
-                        <Compass size={20} />
-                        <span>Scooter</span>
+                        <div
+                          style={{
+                            width: '44px',
+                            height: '44px',
+                            borderRadius: '12px',
+                            background: vehicleType === 'SCOOTER' ? '#FED7AA' : '#FAF5EE',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#EA580C'
+                          }}
+                        >
+                          <Compass size={24} />
+                        </div>
+                        <div style={{ fontWeight: 800, fontSize: '13px', color: '#1F1A16' }}>
+                          Scooter
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#796D61', fontWeight: 600 }}>
+                          Comfort • ₹25
+                        </div>
+                        {vehicleType === 'SCOOTER' && (
+                          <div style={{
+                            position: 'absolute',
+                            top: '-7px',
+                            right: '8px',
+                            background: '#059669',
+                            color: '#FFF',
+                            fontSize: '9px',
+                            fontWeight: 900,
+                            padding: '1px 6px',
+                            borderRadius: '9999px',
+                            letterSpacing: '0.4px'
+                          }}>
+                            SELECTED
+                          </div>
+                        )}
+                      </button>
+
+                      {/* Any (Fastest) Card */}
+                      <button
+                        type="button"
+                        onClick={() => setVehicleType('ANY')}
+                        style={{
+                          padding: '14px 8px',
+                          borderRadius: '16px',
+                          border: vehicleType === 'ANY' ? '2px solid #F97316' : '1.5px solid #EFE4D6',
+                          background: vehicleType === 'ANY' ? '#FFF7ED' : '#FFFFFF',
+                          boxShadow: vehicleType === 'ANY' ? '0 6px 18px rgba(249, 115, 22, 0.2)' : '0 2px 8px rgba(0,0,0,0.02)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '6px',
+                          textAlign: 'center',
+                          position: 'relative',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: '44px',
+                            height: '44px',
+                            borderRadius: '12px',
+                            background: vehicleType === 'ANY' ? '#FED7AA' : '#FAF5EE',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#EA580C'
+                          }}
+                        >
+                          <Zap size={24} />
+                        </div>
+                        <div style={{ fontWeight: 800, fontSize: '13px', color: '#1F1A16' }}>
+                          Any 2-Wheeler
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#796D61', fontWeight: 600 }}>
+                          Instant Match
+                        </div>
+                        {vehicleType === 'ANY' && (
+                          <div style={{
+                            position: 'absolute',
+                            top: '-7px',
+                            right: '8px',
+                            background: '#EA580C',
+                            color: '#FFF',
+                            fontSize: '9px',
+                            fontWeight: 900,
+                            padding: '1px 6px',
+                            borderRadius: '9999px',
+                            letterSpacing: '0.4px'
+                          }}>
+                            POPULAR
+                          </div>
+                        )}
                       </button>
                     </div>
                   </div>
 
                   {/* Safety & Preferences Toggles */}
-                  <div style={{ background: '#F8F3EC', border: '1px solid #E8DCCB', padding: '14px', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ background: '#FAF5EE', border: '1px solid #EFE4D6', padding: '14px 16px', borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {/* Female Rider Preference: ONLY visible and accessible to FEMALE customers to prevent misuse */}
                     {(user?.gender || '').toUpperCase() === 'FEMALE' && (
-                      <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', fontSize: '13px', borderBottom: '1px solid #E8DCCB', paddingBottom: '10px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', fontSize: '13px', borderBottom: '1px solid #EFE4D6', paddingBottom: '10px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <Shield size={16} color="#EC4899" />
                           <span style={{ color: '#BE185D', fontWeight: 700 }}>Female Rider Only</span>
@@ -2849,9 +2983,9 @@ export function CustomerPortalView() {
                   <div style={{
                     background: 'linear-gradient(135deg, #FFF7ED, #FEF3C7)',
                     border: '1.5px solid #FDBA74',
-                    borderRadius: '14px',
-                    padding: '16px',
-                    boxShadow: '0 4px 12px rgba(249, 115, 22, 0.1)'
+                    borderRadius: '16px',
+                    padding: '16px 20px',
+                    boxShadow: '0 4px 14px rgba(249, 115, 22, 0.1)'
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                       <div>
@@ -2867,8 +3001,8 @@ export function CustomerPortalView() {
                           </div>
                         )}
                       </div>
-                      <span style={{ fontSize: '28px', fontWeight: 900, color: '#EA580C' }}>
-                        {estimating ? '...' : `₹${fareEstimate?.estimatedFare || (isDoubleRide ? 30 : 20)}`}
+                      <span style={{ fontSize: '30px', fontWeight: 900, color: '#EA580C', letterSpacing: '-0.02em' }}>
+                        {estimating ? '...' : `₹${fareEstimate?.estimatedFare || (isDoubleRide ? 40 : 25)}`}
                       </span>
                     </div>
 
@@ -2888,28 +3022,54 @@ export function CustomerPortalView() {
                     )}
 
                     <div style={{ fontSize: '11px', color: '#796D61', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #FED7AA', paddingTop: '8px', marginTop: '6px' }}>
-                      <span>Pricing: {fareEstimate?.isRouteBased ? `Campus Route Fare (₹${fareEstimate.singleFare || fareEstimate.estimatedFare})` : (isDoubleRide ? `(₹${fareEstimate?.singleFare || 20} × 2) - ₹10` : 'Standard Distance Fare')}</span>
-                      <span style={{ fontWeight: 700 }}>Cash on Drop</span>
+                      <span>Pricing: {fareEstimate?.isRouteBased ? `Campus Route Fare (₹${fareEstimate.singleFare || fareEstimate.estimatedFare})` : (isDoubleRide ? `(₹${fareEstimate?.singleFare || 25} × 2) - ₹10` : 'Standard Campus Flat Fare')}</span>
+                      <span style={{ fontWeight: 700, color: '#1F1A16' }}>Cash / UPI on Drop</span>
                     </div>
                   </div>
 
-                  {/* Request Button */}
+                  {/* Rapido Style Book Now Pill Button */}
                   <button
                     type="button"
                     disabled={bookingLoading || !pickupAddress || !destAddress}
                     onClick={handleRequestRide}
-                    className="btn btn-primary"
                     style={{
                       width: '100%',
-                      padding: '14px',
-                      fontWeight: 800,
-                      fontSize: '15px',
-                      background: bookingMode === 'SCHEDULE' ? 'linear-gradient(135deg, #2563EB, #1D4ED8)' : undefined
+                      height: '52px',
+                      borderRadius: '9999px',
+                      border: 'none',
+                      background: (!pickupAddress || !destAddress)
+                        ? '#D1D5DB'
+                        : (bookingMode === 'SCHEDULE'
+                            ? 'linear-gradient(135deg, #2563EB, #1D4ED8)'
+                            : 'linear-gradient(135deg, #F97316, #EA580C)'),
+                      color: '#FFFFFF',
+                      fontSize: '15.5px',
+                      fontWeight: 900,
+                      letterSpacing: '0.8px',
+                      textTransform: 'uppercase',
+                      cursor: (!pickupAddress || !destAddress || bookingLoading) ? 'not-allowed' : 'pointer',
+                      boxShadow: (!pickupAddress || !destAddress) ? 'none' : '0 8px 24px rgba(234, 88, 12, 0.35)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      transition: 'transform 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (pickupAddress && destAddress && !bookingLoading) {
+                        e.currentTarget.style.transform = 'translateY(-1px)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
                     }}
                   >
-                    {bookingLoading
-                      ? (bookingMode === 'SCHEDULE' ? 'Pre-Booking Ride...' : 'Requesting Ride...')
-                      : (bookingMode === 'SCHEDULE' ? 'Pre-Book Campus Ride Now' : 'Request Campus Ride Now')}
+                    <span>
+                      {bookingLoading
+                        ? (bookingMode === 'SCHEDULE' ? 'Pre-Booking Ride...' : 'Finding Nearest Rider...')
+                        : (bookingMode === 'SCHEDULE' ? 'Pre-Book Campus Ride' : 'Book Now')}
+                    </span>
+                    <ArrowRight size={18} />
                   </button>
 
                   {/* Pre-Booked Trips Shortcut Pill */}
