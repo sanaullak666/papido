@@ -143,6 +143,21 @@ export function AuthProvider({ children }) {
   // Register Customer / Rider
   const register = async (registerData) => {
     const res = await apiRequest('/auth/register', 'POST', registerData);
+    if (res.data?.accessToken) {
+      localStorage.setItem('papido_user_token', res.data.accessToken);
+      localStorage.setItem('papido_user', JSON.stringify(res.data.user));
+      setToken(res.data.accessToken);
+      setUser(res.data.user);
+    }
+    return res;
+  };
+
+  // Verify Registration Email OTP
+  const verifyRegistrationOtp = async (email, otp) => {
+    const res = await apiRequest('/auth/verify-registration-otp', 'POST', {
+      email,
+      otp
+    });
     const { user: userData, accessToken } = res.data;
     if (accessToken) {
       localStorage.setItem('papido_user_token', accessToken);
@@ -150,7 +165,12 @@ export function AuthProvider({ children }) {
       setToken(accessToken);
       setUser(userData);
     }
-    return res;
+    return res.data;
+  };
+
+  // Resend Registration Email OTP
+  const resendRegistrationOtp = async (email) => {
+    return apiRequest('/auth/resend-registration-otp', 'POST', { email });
   };
 
   const changePassword = async (currentPassword, newPassword) => {
@@ -222,6 +242,8 @@ export function AuthProvider({ children }) {
       login,
       adminLogin,
       register,
+      verifyRegistrationOtp,
+      resendRegistrationOtp,
       changePassword,
       forgotPassword,
       resetPassword,

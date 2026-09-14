@@ -91,7 +91,16 @@ const AuthController = {
         profileData: mergedProfileData
       });
 
-      return success(res, 'Account registered successfully.', result, 201);
+      // Send 6-digit verification OTP to user's registered email
+      const EmailService = require('../services/email.service');
+      await EmailService.createAndSendRegistrationOtp(cleanEmail, cleanName);
+
+      return success(res, 'Account created successfully! A 6-digit verification code has been sent to your email.', {
+        requiresOtp: true,
+        email: cleanEmail,
+        name: cleanName,
+        role: result.user.role
+      }, 201);
     } catch (err) {
       return error(res, err.message, 400);
     }
@@ -265,6 +274,34 @@ const AuthController = {
 
   async logout(req, res, next) {
     return success(res, 'Logged out successfully.', null, 200);
+  },
+
+  async verifyRegistrationOtp(req, res, next) {
+    try {
+      const { email, otp } = req.body;
+      if (!email || !otp) {
+        return error(res, 'Email and 6-digit OTP code are required.', 400);
+      }
+      const EmailService = require('../services/email.service');
+      const result = await EmailService.verifyRegistrationOtp(email, otp);
+      return success(res, result.message, result, 200);
+    } catch (err) {
+      return error(res, err.message, 400);
+    }
+  },
+
+  async resendRegistrationOtp(req, res, next) {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return error(res, 'Email address is required.', 400);
+      }
+      const EmailService = require('../services/email.service');
+      const result = await EmailService.resendRegistrationOtp(email);
+      return success(res, result.message, result, 200);
+    } catch (err) {
+      return error(res, err.message, 400);
+    }
   }
 };
 

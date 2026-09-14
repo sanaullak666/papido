@@ -171,6 +171,192 @@ class EmailService {
     logger.info(`Password successfully reset for user: ${cleanEmail}`);
     return { success: true, message: 'Password has been reset successfully. You can now sign in.' };
   }
+
+  /**
+   * Generates a 6-digit numeric OTP and dispatches verification email for new user registration
+   */
+  static async createAndSendRegistrationOtp(email, userName = 'Student/Driver') {
+    const cleanEmail = (email || '').trim().toLowerCase();
+    if (!cleanEmail) {
+      throw new Error('Email address is required to send verification code.');
+    }
+
+    // Generate secure 6-digit numeric OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Invalidate previous unused OTPs for this email
+    await db.query('UPDATE password_resets SET used = 1 WHERE email = ? AND used = 0', [cleanEmail]);
+
+    // Insert new OTP record with 15-minute expiration
+    await db.query(
+      'INSERT INTO password_resets (email, otp, expires_at, used) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 15 MINUTE), 0)',
+      [cleanEmail, otp]
+    );
+
+    // High visibility console log for local testing & immediate access
+    logger.info('================================================================');
+    logger.info(`📧 [REGISTRATION VERIFICATION OTP] For: ${cleanEmail}`);
+    logger.info(`🔑 Verification OTP Code: >>> ${otp} <<< (Valid for 15 minutes)`);
+    logger.info('================================================================');
+
+    // Nodemailer dispatch using configured Gmail App Password
+    const smtpUser = env.SMTP?.USER || process.env.SMTP_USER || 'pupapido@gmail.com';
+    const smtpPass = (env.SMTP?.PASS || process.env.SMTP_PASS || 'plfilaeftmkzgkzm').replace(/\s+/g, '');
+
+    if (smtpUser && smtpPass) {
+      try {
+        const nodemailer = require('nodemailer');
+        let transportConfig;
+
+        if (env.SMTP?.HOST && env.SMTP.HOST !== 'smtp.gmail.com') {
+          transportConfig = {
+            host: env.SMTP.HOST,
+            port: parseInt(env.SMTP.PORT || '587', 10),
+            secure: env.SMTP.SECURE === true,
+            auth: { user: smtpUser, pass: smtpPass }
+          };
+        } else {
+          transportConfig = {
+            service: 'gmail',
+            auth: { user: smtpUser, pass: smtpPass }
+          };
+        }
+
+        const transporter = nodemailer.createTransport(transportConfig);
+
+        await transporter.sendMail({
+          from: `"Papido Mobility" <${smtpUser}>`,
+          to: cleanEmail,
+          subject: `🔐 Verify Your Papido Account - Code: ${otp}`,
+          html: `
+            <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 520px; margin: 0 auto; background: #FAF5EE; color: #271E16; padding: 32px 24px; border-radius: 16px; border: 1.5px solid #E8DCCB;">
+              <div style="text-align: center; margin-bottom: 24px;">
+                <div style="display: inline-block; background: linear-gradient(135deg, #F97316, #EA580C); color: #FFFFFF; font-size: 28px; font-weight: 900; width: 60px; height: 60px; line-height: 60px; border-radius: 16px; margin-bottom: 12px; box-shadow: 0 4px 14px rgba(234, 88, 12, 0.3);">P</div>
+                <h2 style="color: #271E16; margin: 0; font-size: 22px; font-weight: 800;">Verify Your Account</h2>
+                <p style="color: #796D61; font-size: 13px; margin-top: 4px;">Pondicherry University Campus Mobility</p>
+              </div>
+
+              <div style="background: #FFFFFF; padding: 24px; border-radius: 12px; border: 1px solid #E8DCCB; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+                <p style="font-size: 15px; margin-top: 0;">Welcome, <strong>${userName}</strong>!</p>
+                <p style="font-size: 14px; line-height: 1.6; color: #4B3F33;">
+                  Thank you for registering with Papido. Please enter the 6-digit verification code below to verify your email and activate your account:
+                </p>
+
+                <div style="background: #FFF7ED; border: 2px dashed #EA580C; padding: 18px; text-align: center; border-radius: 12px; font-size: 32px; font-weight: 900; letter-spacing: 8px; color: #EA580C; margin: 20px 0;">
+                  ${otp}
+                </div>
+
+                <p style="font-size: 12px; color: #796D61; margin-bottom: 0; line-height: 1.5;">
+                  ⏱️ <strong>Note:</strong> This verification code will expire in <strong>15 minutes</strong>. If you did not create a Papido account, you can safely ignore this email.
+                </p>
+              </div>
+
+              <div style="text-align: center; margin-top: 24px; font-size: 11px; color: #A89B8C;">
+                &copy; ${new Date().getFullYear()} Papido Campus Mobility &bull; Secure Account Verification
+              </div>
+            </div>
+          `
+        });
+        logger.info(`✅ [EMAIL SENT] Registration OTP sent successfully via Gmail from ${smtpUser} to: ${cleanEmail}`);
+      } catch (mailErr) {
+        logger.error(`❌ [EMAIL ERROR] Failed to send registration email via SMTP: ${mailErr.message}`);
+      }
+    } else {
+      logger.warn('⚠️ [EMAIL NOTICE] SMTP configuration missing. Real email not dispatched.');
+    }
+
+    return {
+      success: true,
+      message: `Verification code sent to ${cleanEmail}. Please check your email inbox.`
+    };
+  }
+
+  /**
+   * Verifies registration OTP, activates account, and returns authenticated session
+   */
+  static async verifyRegistrationOtp(email, otp) {
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const cleanOtp = (otp || '').trim();
+
+    if (!cleanEmail || !cleanOtp) {
+      throw new Error('Email and 6-digit OTP code are required.');
+    }
+
+    const record = await db.queryOne(
+      'SELECT * FROM password_resets WHERE email = ? AND otp = ? AND used = 0 ORDER BY id DESC LIMIT 1',
+      [cleanEmail, cleanOtp]
+    );
+
+    if (!record) {
+      throw new Error('Invalid OTP verification code. Please check and try again.');
+    }
+
+    const validRecord = await db.queryOne(
+      'SELECT id FROM password_resets WHERE id = ? AND expires_at >= NOW()',
+      [record.id]
+    );
+
+    if (!validRecord) {
+      throw new Error('This OTP code has expired. Please request a new code.');
+    }
+
+    // Mark OTP as used
+    await db.query('UPDATE password_resets SET used = 1 WHERE id = ?', [record.id]);
+
+    // Activate user
+    const user = await UserModel.findByEmail(cleanEmail);
+    if (!user) {
+      throw new Error('User account not found.');
+    }
+
+    await db.query("UPDATE users SET status = 'ACTIVE' WHERE id = ?", [user.id]);
+
+    const AuthService = require('./auth.service');
+    const accessToken = AuthService.generateAccessToken(user);
+    const refreshToken = AuthService.generateRefreshToken(user);
+
+    let profile = null;
+    if (user.role === 'RIDER') {
+      const RiderModel = require('../models/rider.model');
+      profile = await RiderModel.findByUserId(user.id);
+    } else if (user.role === 'CUSTOMER') {
+      const CustomerModel = require('../models/customer.model');
+      profile = await CustomerModel.findByUserId(user.id);
+    }
+
+    logger.info(`✅ [REGISTRATION VERIFIED] User ${cleanEmail} (${user.role}) activated successfully.`);
+
+    return {
+      success: true,
+      message: 'Account verified successfully! Welcome to Papido.',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        gender: user.gender,
+        role: user.role,
+        status: 'ACTIVE',
+        profileImage: user.profile_image
+      },
+      profile,
+      accessToken,
+      refreshToken
+    };
+  }
+
+  /**
+   * Resends registration OTP
+   */
+  static async resendRegistrationOtp(email) {
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const user = await UserModel.findByEmail(cleanEmail);
+    if (!user) {
+      throw new Error('No registered account found for this email address.');
+    }
+
+    return await this.createAndSendRegistrationOtp(cleanEmail, user.name);
+  }
 }
 
 module.exports = EmailService;

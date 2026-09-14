@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest, uploadFile } from '../api';
 import {
@@ -22,8 +22,16 @@ import {
 } from 'lucide-react';
 
 export function LoginView({ onGoToAdminPortal }) {
-  const { login, register, forgotPassword, resetPassword } = useAuth();
-  const [authMode, setAuthMode] = useState('login'); // 'login', 'register', 'forgot'
+  const {
+    login,
+    register,
+    verifyRegistrationOtp,
+    resendRegistrationOtp,
+    forgotPassword,
+    resetPassword
+  } = useAuth();
+
+  const [authMode, setAuthMode] = useState('login'); // 'login', 'register', 'verify-otp', 'forgot'
 
   // Password Visibility States
   const [showLoginPassword, setShowLoginPassword] = useState(false);
@@ -50,6 +58,20 @@ export function LoginView({ onGoToAdminPortal }) {
   const [regVehicleNumber, setRegVehicleNumber] = useState('');
   const [regLicenseNumber, setRegLicenseNumber] = useState('');
   const [regCollegeIdNumber, setRegCollegeIdNumber] = useState('');
+
+  // Registration OTP Verification State
+  const [verifyEmail, setVerifyEmail] = useState('');
+  const [regOtp, setRegOtp] = useState(['', '', '', '', '', '']);
+  const [regOtpCooldown, setRegOtpCooldown] = useState(0);
+
+  // Countdown timer for OTP resend
+  useEffect(() => {
+    if (regOtpCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setRegOtpCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [regOtpCooldown]);
 
   // Rider KYC Document Files (Max 150 KB, PDF / JPG / PNG)
   const MAX_DOC_SIZE_BYTES = 150 * 1024; // 150 KB limit
@@ -109,7 +131,19 @@ export function LoginView({ onGoToAdminPortal }) {
     try {
       await login(email, password);
     } catch (err) {
-      setError(err.message || 'Login failed. Please verify credentials.');
+      if (err.code === 'EMAIL_NOT_VERIFIED' || err.message?.toLowerCase().includes('not verified')) {
+        const target = email.trim().toLowerCase();
+        setVerifyEmail(target);
+        setRegOtp(['', '', '', '', '', '']);
+        setRegOtpCooldown(60);
+        setAuthMode('verify-otp');
+        setError('Please verify your email OTP to activate your account.');
+        try {
+          await resendRegistrationOtp(target);
+        } catch (_) {}
+      } else {
+        setError(err.message || 'Login failed. Please verify credentials.');
+      }
     } finally {
       setLoading(false);
     }
@@ -231,9 +265,11 @@ export function LoginView({ onGoToAdminPortal }) {
         setUploadStatus('SUBMITTING DRIVER REGISTRATION...');
       }
 
+      const cleanEmailTarget = regEmail.trim().toLowerCase();
+
       await register({
         name: regName.trim().toUpperCase(),
-        email: regEmail.trim().toLowerCase(),
+        email: cleanEmailTarget,
         phone: regPhone.trim(),
         gender: regGender,
         password: regPassword,
@@ -247,12 +283,98 @@ export function LoginView({ onGoToAdminPortal }) {
         licenseDocUrl: regRole === 'RIDER' ? licenseDocUrl : undefined,
         rcDocUrl: regRole === 'RIDER' ? rcDocUrl : undefined
       });
-      setSuccessMsg('ACCOUNT REGISTERED SUCCESSFULLY! LOGGING YOU IN...');
+
+      // Transition to OTP verification screen
+      setVerifyEmail(cleanEmailTarget);
+      setRegOtp(['', '', '', '', '', '']);
+      setRegOtpCooldown(60);
+      setAuthMode('verify-otp');
+      setSuccessMsg(`Registration submitted! A 6-digit verification code has been sent to ${cleanEmailTarget}.`);
     } catch (err) {
       setError(err.message || 'REGISTRATION FAILED.');
     } finally {
       setLoading(false);
       setUploadStatus('');
+    }
+  };
+
+  // OTP Box Change and Navigation Handlers
+  const handleOtpBoxChange = (index, value) => {
+    const digit = value.replace(/\D/g, '').slice(-1);
+    const updated = [...regOtp];
+    updated[index] = digit;
+    setRegOtp(updated);
+
+    if (digit && index < 5) {
+      const nextInput = document.getElementById(`otp-input-${index + 1}`);
+      if (nextInput) nextInput.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === 'Backspace' && !regOtp[index] && index > 0) {
+      const prevInput = document.getElementById(`otp-input-${index - 1}`);
+      if (prevInput) {
+        prevInput.focus();
+        const updated = [...regOtp];
+        updated[index - 1] = '';
+        setRegOtp(updated);
+      }
+    }
+  };
+
+  const handleOtpPaste = (e) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (pasted) {
+      const updated = ['', '', '', '', '', ''];
+      for (let i = 0; i < pasted.length; i++) {
+        updated[i] = pasted[i];
+      }
+      setRegOtp(updated);
+      const focusIdx = Math.min(pasted.length, 5);
+      const target = document.getElementById(`otp-input-${focusIdx}`);
+      if (target) target.focus();
+    }
+  };
+
+  const handleVerifyOtpSubmit = async (e) => {
+    e.preventDefault();
+    const fullOtp = regOtp.join('');
+    if (fullOtp.length !== 6) {
+      setError('Please enter all 6 digits of the verification code.');
+      return;
+    }
+
+    setError('');
+    setSuccessMsg('');
+    setLoading(true);
+    try {
+      await verifyRegistrationOtp(verifyEmail, fullOtp);
+      setSuccessMsg('Account verified successfully! Logging you in...');
+    } catch (err) {
+      setError(err.message || 'Invalid or expired OTP verification code.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendRegistrationOtp = async () => {
+    if (regOtpCooldown > 0 || !verifyEmail) return;
+    setError('');
+    setSuccessMsg('');
+    setLoading(true);
+    try {
+      await resendRegistrationOtp(verifyEmail);
+      setSuccessMsg(`A new verification code has been dispatched to ${verifyEmail}.`);
+      setRegOtpCooldown(60);
+      setRegOtp(['', '', '', '', '', '']);
+      const firstInput = document.getElementById('otp-input-0');
+      if (firstInput) firstInput.focus();
+    } catch (err) {
+      setError(err.message || 'Failed to resend verification code.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -359,19 +481,27 @@ export function LoginView({ onGoToAdminPortal }) {
               margin: '0 0 4px 0'
             }}
           >
-            {authMode === 'login' ? 'Login' : authMode === 'register' ? 'Register' : 'Reset Password'}
+            {authMode === 'login'
+              ? 'Login'
+              : authMode === 'register'
+              ? 'Register'
+              : authMode === 'verify-otp'
+              ? 'Verify Email'
+              : 'Reset Password'}
           </h2>
           <p style={{ fontSize: '13px', color: '#796D61', margin: 0, fontWeight: 500 }}>
             {authMode === 'login'
               ? 'Sign in to access campus mobility'
               : authMode === 'register'
               ? 'Join as a verified campus passenger or rider'
+              : authMode === 'verify-otp'
+              ? 'Enter the 6-digit code sent to your email'
               : 'Recover your account password'}
           </p>
         </div>
 
-        {/* Tab Switcher (Sign In / Register) */}
-        {authMode !== 'forgot' && (
+        {/* Tab Switcher (Sign In / Register) - Hidden in OTP & Forgot modes */}
+        {authMode !== 'forgot' && authMode !== 'verify-otp' && (
           <div
             style={{
               display: 'grid',
@@ -979,7 +1109,6 @@ export function LoginView({ onGoToAdminPortal }) {
                     letterSpacing: '1px'
                   }}
                 />
-                {/* Right side check icon when valid, just like Figma */}
                 {regPhone.trim().length === 10 && (
                   <div style={{ paddingRight: '14px', color: '#059669', display: 'flex', alignItems: 'center' }}>
                     <CheckCircle2 size={18} />
@@ -1458,7 +1587,7 @@ export function LoginView({ onGoToAdminPortal }) {
               }}
             >
               {loading ? (
-                uploadStatus || 'Processing Registration...'
+                uploadStatus || 'Sending Verification Code...'
               ) : (
                 <>
                   Sign Up <ArrowRight size={16} />
@@ -1493,7 +1622,170 @@ export function LoginView({ onGoToAdminPortal }) {
         )}
 
         {/* ============================================================ */}
-        {/* VIEW 3: FORGOT PASSWORD (FIGMA MATCHING STYLE) */}
+        {/* VIEW 3: VERIFY REGISTRATION OTP (FIGMA STYLE) */}
+        {/* ============================================================ */}
+        {authMode === 'verify-otp' && (
+          <form onSubmit={handleVerifyOtpSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ fontSize: '13.5px', color: '#57483B', lineHeight: '1.6', margin: '0 0 4px 0' }}>
+                We sent a 6-digit verification code to:
+              </p>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#EA580C', letterSpacing: '-0.01em' }}>
+                {verifyEmail}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('register');
+                  setError('');
+                  setSuccessMsg('');
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#796D61',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                  marginTop: '4px'
+                }}
+              >
+                Wrong email address? Change details
+              </button>
+            </div>
+
+            {/* 6-Digit Figma Split Input Boxes */}
+            <div>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  marginTop: '6px'
+                }}
+                onPaste={handleOtpPaste}
+              >
+                {regOtp.map((digit, idx) => (
+                  <input
+                    key={idx}
+                    id={`otp-input-${idx}`}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleOtpBoxChange(idx, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                    autoFocus={idx === 0}
+                    style={{
+                      width: '46px',
+                      height: '52px',
+                      textAlign: 'center',
+                      fontSize: '22px',
+                      fontWeight: 800,
+                      borderRadius: '14px',
+                      border: digit ? '2px solid #EA580C' : '1.5px solid #E5DBD0',
+                      background: digit ? '#FFF7ED' : '#FAFAF8',
+                      color: '#271E16',
+                      outline: 'none',
+                      transition: 'all 0.15s ease'
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Resend OTP Timer / Button */}
+            <div style={{ textAlign: 'center', fontSize: '13px', color: '#796D61' }}>
+              Didn't receive the code?{' '}
+              {regOtpCooldown > 0 ? (
+                <span style={{ fontWeight: 700, color: '#EA580C' }}>
+                  Resend in 00:{regOtpCooldown < 10 ? `0${regOtpCooldown}` : regOtpCooldown}s
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleResendRegistrationOtp}
+                  disabled={loading}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#EA580C',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    padding: 0,
+                    fontSize: '13px'
+                  }}
+                >
+                  Resend OTP Code
+                </button>
+              )}
+            </div>
+
+            {/* Pill Action Button */}
+            <button
+              type="submit"
+              disabled={loading || regOtp.join('').length !== 6}
+              style={{
+                width: '100%',
+                height: '48px',
+                borderRadius: '9999px',
+                border: 'none',
+                background:
+                  regOtp.join('').length === 6
+                    ? 'linear-gradient(135deg, #F97316, #EA580C)'
+                    : '#E8DFD5',
+                color: regOtp.join('').length === 6 ? '#FFFFFF' : '#9E8F82',
+                fontSize: '15px',
+                fontWeight: 700,
+                cursor: regOtp.join('').length === 6 ? 'pointer' : 'not-allowed',
+                boxShadow:
+                  regOtp.join('').length === 6 ? '0 8px 22px rgba(234, 88, 12, 0.32)' : 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                marginTop: '4px',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              {loading ? (
+                'Verifying Code...'
+              ) : (
+                <>
+                  Verify & Activate Account <ArrowRight size={16} />
+                </>
+              )}
+            </button>
+
+            {/* Back to Sign In Link */}
+            <div style={{ textAlign: 'center', fontSize: '13px', color: '#796D61', marginTop: '2px' }}>
+              Already activated?{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('login');
+                  setError('');
+                  setSuccessMsg('');
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#EA580C',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  padding: 0,
+                  fontSize: '13px'
+                }}
+              >
+                Sign In
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* ============================================================ */}
+        {/* VIEW 4: FORGOT PASSWORD (FIGMA MATCHING STYLE) */}
         {/* ============================================================ */}
         {authMode === 'forgot' && (
           <div>
