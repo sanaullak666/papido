@@ -1310,10 +1310,11 @@ export function RiderPortalView() {
 
   return (
     <div className="theme-orange-beige" style={{ minHeight: '100vh', background: '#FAF5EE', color: '#271E16', display: 'flex', flexDirection: 'column' }}>
-      {/* Top Driver Navigation Header */}
+      {/* Top Driver / Captain Navigation Header (Rapido Glassmorphic Clean Bar) */}
       <header style={{
-        background: '#211A14',
-        borderBottom: '1px solid #3A2F25',
+        background: 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(10px)',
+        borderBottom: '1px solid #EFE4D6',
         padding: '12px 24px',
         display: 'flex',
         alignItems: 'center',
@@ -1323,73 +1324,81 @@ export function RiderPortalView() {
         position: 'sticky',
         top: 0,
         zIndex: 100,
-        color: '#FFFFFF'
+        boxShadow: '0 2px 10px rgba(0,0,0,0.03)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <img
             src="/papidologo.jpeg"
             alt="Papido Logo"
             style={{
-              width: '38px',
-              height: '38px',
+              width: '40px',
+              height: '40px',
               objectFit: 'contain',
-              borderRadius: '10px',
-              border: '1px solid #43362A',
+              borderRadius: '12px',
+              border: '1.5px solid #FED7AA',
               background: '#FFFFFF',
               padding: '2px',
-              boxShadow: '0 4px 12px rgba(234, 88, 12, 0.4)'
+              boxShadow: '0 4px 12px rgba(234, 88, 12, 0.15)'
             }}
           />
           <div>
-            <div style={{ fontWeight: 800, fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px', color: '#FFFFFF' }}>
-              PAPIDO <span style={{ fontSize: '11px', background: 'rgba(249, 115, 22, 0.25)', color: '#FB923C', padding: '2px 8px', borderRadius: '4px', fontWeight: 700, border: '1px solid rgba(249, 115, 22, 0.4)' }}>DRIVER WEB</span>
+            <div style={{ fontWeight: 900, fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px', color: '#1F1A16', letterSpacing: '-0.02em' }}>
+              PAPIDO <span style={{ fontSize: '10.5px', background: '#FFF7ED', color: '#EA580C', padding: '2px 8px', borderRadius: '9999px', fontWeight: 800, border: '1px solid #FED7AA' }}>CAPTAIN</span>
             </div>
-            <div style={{ fontSize: '11px', color: '#A8998A' }}>Campus Driver Fleet Operations</div>
+            <div style={{ fontSize: '11px', color: '#796D61', fontWeight: 600 }}>Pondicherry University Fleet Operations</div>
           </div>
         </div>
 
         {/* Online / Offline Toggle & Shift Earnings */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {/* Online Toggle */}
           <button
             onClick={handleToggleOnline}
             style={{
-              padding: '6px 14px',
-              borderRadius: '20px',
-              border: isOnline ? '1.5px solid #10B981' : '1.5px solid #EF4444',
-              background: isOnline ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-              color: isOnline ? '#34D399' : '#F87171',
+              padding: '7px 16px',
+              borderRadius: '9999px',
+              border: isOnline ? '1.5px solid #10B981' : '1.5px solid #FCA5A5',
+              background: isOnline ? '#ECFDF5' : '#FEF2F2',
+              color: isOnline ? '#047857' : '#DC2626',
               fontWeight: 800,
-              fontSize: '13px',
+              fontSize: '12.5px',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              cursor: 'pointer'
+              gap: '8px',
+              cursor: 'pointer',
+              boxShadow: isOnline ? '0 2px 8px rgba(16, 185, 129, 0.15)' : 'none',
+              transition: 'all 0.15s ease'
             }}
           >
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: isOnline ? '#10B981' : '#EF4444' }} />
+            <span style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              background: isOnline ? '#10B981' : '#EF4444',
+              boxShadow: isOnline ? '0 0 6px #10B981' : 'none'
+            }} />
             {isOnline ? 'ONLINE' : 'OFFLINE'}
           </button>
 
           {/* Today Earnings Chip */}
           <div style={{
-            background: '#2D2319',
-            border: '1px solid #43362A',
-            padding: '6px 12px',
-            borderRadius: '8px',
-            fontSize: '13px',
-            fontWeight: 700,
+            background: '#FFF7ED',
+            border: '1px solid #FED7AA',
+            padding: '6px 14px',
+            borderRadius: '9999px',
+            fontSize: '12.5px',
+            fontWeight: 800,
             display: 'flex',
             alignItems: 'center',
             gap: '6px'
           }}>
-            <span style={{ color: '#A8998A', fontSize: '11px' }}>TODAY:</span>
-            <span style={{ color: '#FB923C', fontWeight: 900 }}>₹{todayNetEarning}</span>
+            <span style={{ color: '#796D61', fontSize: '11px' }}>TODAY:</span>
+            <span style={{ color: '#EA580C', fontWeight: 900 }}>₹{todayNetEarning}</span>
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="nav-scrollable-tabs" style={{ background: '#2D2319', borderColor: '#43362A' }}>
+        {/* Navigation Tabs (Rapido Clean Pill Tabs) */}
+        <div className="nav-scrollable-tabs" style={{ background: '#FAF5EE', border: '1px solid #EFE4D6', borderRadius: '12px', padding: '4px', display: 'flex', gap: '4px' }}>
           <a
             href="/driver/radar"
             onClick={(e) => {
@@ -1397,20 +1406,22 @@ export function RiderPortalView() {
               handleTabChange('radar');
             }}
             style={{
-              padding: '6px 14px',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 700,
+              padding: '7px 16px',
+              borderRadius: '9999px',
+              fontSize: '12.5px',
+              fontWeight: 800,
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
               background: currentTab === 'radar' ? 'linear-gradient(135deg, #F97316, #EA580C)' : 'transparent',
-              color: currentTab === 'radar' ? '#FFFFFF' : '#D6C7B2',
+              color: currentTab === 'radar' ? '#FFFFFF' : '#57483B',
+              boxShadow: currentTab === 'radar' ? '0 4px 12px rgba(234, 88, 12, 0.28)' : 'none',
               textDecoration: 'none',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
             }}
           >
-            <Radio size={16} /> Radar & Requests {incomingRequests.length > 0 && <span style={{ background: '#FFFFFF', color: '#EA580C', padding: '1px 6px', borderRadius: '10px', fontSize: '10px', fontWeight: 900 }}>{incomingRequests.length}</span>}
+            <Radio size={15} /> Radar {incomingRequests.length > 0 && <span style={{ background: '#FFFFFF', color: '#EA580C', padding: '1px 6px', borderRadius: '9999px', fontSize: '10px', fontWeight: 900 }}>{incomingRequests.length}</span>}
           </a>
           <a
             href="/driver/active"
@@ -1419,20 +1430,22 @@ export function RiderPortalView() {
               handleTabChange('active');
             }}
             style={{
-              padding: '6px 14px',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 700,
+              padding: '7px 16px',
+              borderRadius: '9999px',
+              fontSize: '12.5px',
+              fontWeight: 800,
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
               background: currentTab === 'active' ? 'linear-gradient(135deg, #F97316, #EA580C)' : 'transparent',
-              color: currentTab === 'active' ? '#FFFFFF' : '#D6C7B2',
+              color: currentTab === 'active' ? '#FFFFFF' : '#57483B',
+              boxShadow: currentTab === 'active' ? '0 4px 12px rgba(234, 88, 12, 0.28)' : 'none',
               textDecoration: 'none',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
             }}
           >
-            <Bike size={16} /> Active Trip {activeRide && '●'}
+            <Bike size={15} /> Active Trip {activeRide && '●'}
           </a>
           <a
             href="/driver/advance"
@@ -1441,20 +1454,22 @@ export function RiderPortalView() {
               handleTabChange('scheduled');
             }}
             style={{
-              padding: '6px 14px',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 700,
+              padding: '7px 16px',
+              borderRadius: '9999px',
+              fontSize: '12.5px',
+              fontWeight: 800,
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
               background: currentTab === 'scheduled' ? 'linear-gradient(135deg, #F97316, #EA580C)' : 'transparent',
-              color: currentTab === 'scheduled' ? '#FFFFFF' : '#D6C7B2',
+              color: currentTab === 'scheduled' ? '#FFFFFF' : '#57483B',
+              boxShadow: currentTab === 'scheduled' ? '0 4px 12px rgba(234, 88, 12, 0.28)' : 'none',
               textDecoration: 'none',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
             }}
           >
-            <Calendar size={16} /> Advance Bookings {availableScheduledRides.length > 0 && <span style={{ background: '#3B82F6', color: '#FFFFFF', padding: '1px 6px', borderRadius: '10px', fontSize: '10px', fontWeight: 900 }}>{availableScheduledRides.length} OPEN</span>}
+            <Calendar size={15} /> Advance {availableScheduledRides.length > 0 && <span style={{ background: '#3B82F6', color: '#FFFFFF', padding: '1px 6px', borderRadius: '9999px', fontSize: '10px', fontWeight: 900 }}>{availableScheduledRides.length}</span>}
           </a>
           <a
             href="/driver/earnings"
@@ -1463,20 +1478,22 @@ export function RiderPortalView() {
               handleTabChange('earnings');
             }}
             style={{
-              padding: '6px 14px',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 700,
+              padding: '7px 16px',
+              borderRadius: '9999px',
+              fontSize: '12.5px',
+              fontWeight: 800,
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
               background: currentTab === 'earnings' ? 'linear-gradient(135deg, #F97316, #EA580C)' : 'transparent',
-              color: currentTab === 'earnings' ? '#FFFFFF' : '#D6C7B2',
+              color: currentTab === 'earnings' ? '#FFFFFF' : '#57483B',
+              boxShadow: currentTab === 'earnings' ? '0 4px 12px rgba(234, 88, 12, 0.28)' : 'none',
               textDecoration: 'none',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
             }}
           >
-            <DollarSign size={16} /> Shift Earnings
+            <DollarSign size={15} /> Earnings
           </a>
           <a
             href="/driver/settlements"
@@ -1485,20 +1502,22 @@ export function RiderPortalView() {
               handleTabChange('settlements');
             }}
             style={{
-              padding: '6px 14px',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 700,
+              padding: '7px 16px',
+              borderRadius: '9999px',
+              fontSize: '12.5px',
+              fontWeight: 800,
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
               background: currentTab === 'settlements' ? 'linear-gradient(135deg, #F97316, #EA580C)' : 'transparent',
-              color: currentTab === 'settlements' ? '#FFFFFF' : '#D6C7B2',
+              color: currentTab === 'settlements' ? '#FFFFFF' : '#57483B',
+              boxShadow: currentTab === 'settlements' ? '0 4px 12px rgba(234, 88, 12, 0.28)' : 'none',
               textDecoration: 'none',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
             }}
           >
-            <CreditCard size={16} /> Daily Settlements {pendingShiftsList.length > 0 && <span style={{ background: '#F59E0B', color: '#000000', padding: '1px 6px', borderRadius: '10px', fontSize: '10px', fontWeight: 900 }}>{pendingShiftsList.length} PENDING</span>}
+            <CreditCard size={15} /> Settlements {pendingShiftsList.length > 0 && <span style={{ background: '#F59E0B', color: '#000000', padding: '1px 6px', borderRadius: '9999px', fontSize: '10px', fontWeight: 900 }}>{pendingShiftsList.length}</span>}
           </a>
           <a
             href="/driver/kyc"
@@ -1507,20 +1526,22 @@ export function RiderPortalView() {
               handleTabChange('kyc');
             }}
             style={{
-              padding: '6px 14px',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 700,
+              padding: '7px 16px',
+              borderRadius: '9999px',
+              fontSize: '12.5px',
+              fontWeight: 800,
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
               background: currentTab === 'kyc' ? 'linear-gradient(135deg, #F97316, #EA580C)' : 'transparent',
-              color: currentTab === 'kyc' ? '#FFFFFF' : '#D6C7B2',
+              color: currentTab === 'kyc' ? '#FFFFFF' : '#57483B',
+              boxShadow: currentTab === 'kyc' ? '0 4px 12px rgba(234, 88, 12, 0.28)' : 'none',
               textDecoration: 'none',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
             }}
           >
-            <FileText size={16} /> KYC & Vehicle
+            <FileText size={15} /> KYC &amp; Vehicle
           </a>
           <a
             href="/driver/profile"
@@ -1529,34 +1550,45 @@ export function RiderPortalView() {
               handleTabChange('profile');
             }}
             style={{
-              padding: '6px 14px',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: 700,
+              padding: '7px 16px',
+              borderRadius: '9999px',
+              fontSize: '12.5px',
+              fontWeight: 800,
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
               background: currentTab === 'profile' ? 'linear-gradient(135deg, #F97316, #EA580C)' : 'transparent',
-              color: currentTab === 'profile' ? '#FFFFFF' : '#D6C7B2',
+              color: currentTab === 'profile' ? '#FFFFFF' : '#57483B',
+              boxShadow: currentTab === 'profile' ? '0 4px 12px rgba(234, 88, 12, 0.28)' : 'none',
               textDecoration: 'none',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
             }}
           >
-            <User size={16} /> Profile
+            <User size={15} /> Profile
           </a>
         </div>
 
         {/* User Info & Logout */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontWeight: 700, fontSize: '13px' }}>{user?.name || 'Driver'}</div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{user?.email}</div>
+            <div style={{ fontWeight: 800, fontSize: '13px', color: '#1F1A16' }}>{user?.name || 'Captain'}</div>
+            <div style={{ fontSize: '11px', color: '#796D61' }}>{user?.email}</div>
           </div>
           <button
             onClick={logout}
-            className="btn btn-secondary btn-sm"
             title="Sign Out"
-            style={{ padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            style={{
+              padding: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '10px',
+              background: '#FFF7ED',
+              border: '1px solid #FED7AA',
+              color: '#EA580C',
+              cursor: 'pointer'
+            }}
           >
             <LogOut size={16} />
           </button>
@@ -1568,21 +1600,21 @@ export function RiderPortalView() {
         {/* Pending Shift Commission Alert Notice */}
         {pendingShiftsList.length > 0 && (
           <div style={{
-            background: 'linear-gradient(135deg, #2D1B00, #451A03)',
+            background: 'linear-gradient(135deg, #FFFBEB, #FEF3C7)',
             borderBottom: '2px solid #F59E0B',
-            color: '#FFFFFF',
-            padding: '14px 20px',
+            color: '#92400E',
+            padding: '14px 24px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
             gap: '12px',
-            boxShadow: '0 4px 15px rgba(245, 158, 11, 0.2)'
+            boxShadow: '0 4px 15px rgba(245, 158, 11, 0.1)'
           }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', flex: 1, minWidth: '280px' }}>
               <div style={{
                 background: '#F59E0B',
-                color: '#000000',
+                color: '#FFFFFF',
                 borderRadius: '50%',
                 width: '36px',
                 height: '36px',
@@ -1595,30 +1627,30 @@ export function RiderPortalView() {
                 <AlertTriangle size={20} />
               </div>
               <div>
-                <div style={{ fontWeight: 800, fontSize: '14px', color: '#FDE68A' }}>
+                <div style={{ fontWeight: 800, fontSize: '14px', color: '#92400E' }}>
                   Pending Platform Fees Notice - Total Due: Rs. {totalPendingCommissionDues}
                 </div>
-                <div style={{ fontSize: '12px', color: '#FEF3C7', marginTop: '3px', lineHeight: 1.4 }}>
+                <div style={{ fontSize: '12px', color: '#B45309', marginTop: '3px', lineHeight: 1.4 }}>
                   You have pending shift commission on the following date(s):
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '6px' }}>
                     {pendingShiftsList.map((ps) => (
                       <span
                         key={`pending-pill-${ps.date}`}
                         style={{
-                          background: 'rgba(0, 0, 0, 0.4)',
-                          border: '1px solid #D97706',
+                          background: '#FFFFFF',
+                          border: '1px solid #FCD34D',
                           borderRadius: '6px',
                           padding: '2px 8px',
                           fontSize: '11px',
                           fontWeight: 700,
-                          color: '#FDE68A'
+                          color: '#B45309'
                         }}
                       >
                         {ps.date}: Rs. {Number(ps.totalCommissionDue || 0).toFixed(2)} ({ps.status === 'PENDING_APPROVAL' ? 'In Verification' : ps.status === 'REJECTED' ? 'Rejected' : 'Unsettled'})
                       </span>
                     ))}
                   </div>
-                  <span style={{ fontSize: '11px', color: '#D1D5DB', display: 'block', marginTop: '4px' }}>
+                  <span style={{ fontSize: '11px', color: '#78350F', display: 'block', marginTop: '4px' }}>
                     You can continue driving and take rides freely. You may pay anytime via UPI in the Daily Settlements tab.
                   </span>
                 </div>
@@ -1632,8 +1664,21 @@ export function RiderPortalView() {
                 }
                 setCurrentTab('settlements');
               }}
-              className="btn btn-primary btn-sm"
-              style={{ fontWeight: 800, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px' }}
+              style={{
+                background: 'linear-gradient(135deg, #F97316, #EA580C)',
+                color: '#FFFFFF',
+                border: 'none',
+                borderRadius: '9999px',
+                padding: '9px 18px',
+                fontSize: '12.5px',
+                fontWeight: 800,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 4px 12px rgba(234, 88, 12, 0.28)'
+              }}
             >
               <CreditCard size={14} /> View &amp; Settle Dues
             </button>
@@ -1643,49 +1688,56 @@ export function RiderPortalView() {
         {/* Driver ₹15 Compensation Payment Verification Alerts */}
         {pendingPenaltiesToVerify && pendingPenaltiesToVerify.length > 0 && (
           <div style={{
-            background: 'linear-gradient(135deg, #451A03, #78350F)',
+            background: '#FFFBEB',
             borderBottom: '2px solid #F59E0B',
-            color: '#FFFFFF',
+            color: '#92400E',
             padding: '14px 20px',
             display: 'flex',
             flexDirection: 'column',
             gap: '10px',
-            boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
+            boxShadow: '0 4px 15px rgba(245, 158, 11, 0.1)'
           }}>
-            {pendingPenaltiesToVerify.map(p => (
-              <div key={`pen-ver-${p.id}`} style={{
-                background: 'rgba(0,0,0,0.35)',
-                border: '1px solid #D97706',
-                borderRadius: '12px',
-                padding: '14px 16px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '12px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, fontSize: '14px', color: '#92400E' }}>
+              <ShieldCheck size={18} color="#D97706" />
+              <span>DRIVER ACTION REQUIRED: Passanger Sent ₹15 Compensation</span>
+            </div>
+            {pendingPenaltiesToVerify.map((p) => (
+              <div
+                key={`penalty-verify-${p.id}`}
+                style={{
+                  background: '#FFFFFF',
+                  borderRadius: '10px',
+                  padding: '12px 16px',
+                  border: '1px solid #FCD34D',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '12px'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <div style={{
-                    background: '#F59E0B',
-                    color: '#451A03',
+                    width: '32px',
+                    height: '32px',
                     borderRadius: '50%',
-                    width: '40px',
-                    height: '40px',
+                    background: '#FEF3C7',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    color: '#D97706',
                     flexShrink: 0
                   }}>
-                    <DollarSign size={22} />
+                    <Zap size={16} />
                   </div>
                   <div>
-                    <div style={{ fontSize: '14px', fontWeight: 800, color: '#FEF3C7' }}>
+                    <div style={{ fontSize: '14px', fontWeight: 800, color: '#92400E' }}>
                       ₹15 Cancellation Compensation Verification Needed
                     </div>
-                    <div style={{ fontSize: '12px', color: '#FDE68A', marginTop: '2px' }}>
+                    <div style={{ fontSize: '12px', color: '#78350F', marginTop: '2px' }}>
                       Passenger <strong>{p.customer_name || 'Passenger'}</strong> {p.customer_phone ? `(${p.customer_phone})` : ''} claims to have paid ₹15 to your UPI for cancelled Ride <strong>#{p.ride_code || ''}</strong>.
                     </div>
-                    <div style={{ fontSize: '11px', color: '#FCD34D', marginTop: '2px', fontWeight: 600 }}>
+                    <div style={{ fontSize: '11px', color: '#B45309', marginTop: '2px', fontWeight: 700 }}>
                       Did you receive ₹15 in your UPI/Bank app?
                     </div>
                   </div>
@@ -1716,9 +1768,9 @@ export function RiderPortalView() {
                     onClick={() => handleConfirmPenalty(p.id, false)}
                     className="btn btn-secondary btn-sm"
                     style={{
-                      background: 'rgba(239, 68, 68, 0.2)',
+                      background: 'rgba(239, 68, 68, 0.1)',
                       border: '1px solid #EF4444',
-                      color: '#FCA5A5',
+                      color: '#DC2626',
                       fontWeight: 700,
                       fontSize: '13px',
                       padding: '9px 14px',
@@ -2050,32 +2102,49 @@ export function RiderPortalView() {
                           </div>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px', marginTop: '4px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px', marginTop: '6px' }}>
                           <button
+                            type="button"
                             onClick={() => handleDeclineRequest(req.id)}
-                            className="btn btn-secondary"
-                            style={{ padding: '10px', fontWeight: 700, background: '#F3ECE2', border: '1px solid #E8DCCB', color: '#796D61' }}
+                            style={{
+                              padding: '11px',
+                              fontWeight: 800,
+                              background: '#FAF5EE',
+                              border: '1.5px solid #EFE4D6',
+                              color: '#796D61',
+                              borderRadius: '9999px',
+                              cursor: 'pointer',
+                              fontSize: '13px'
+                            }}
                           >
                             Decline
                           </button>
                           <button
+                            type="button"
                             onClick={() => handleAcceptRequest(req.id)}
                             disabled={acceptingRideId !== null || actionLoading || Boolean(conflict)}
                             title={conflict ? `Schedule conflict with your confirmed ride ${conflict.conflictingRideCode} at ${formatRideDateTime(conflict.conflictingTime)}. Please maintain at least a 15-minute gap.` : 'Accept Ride'}
                             style={{
-                              padding: '10px',
-                              fontWeight: 800,
+                              padding: '11px',
+                              fontWeight: 900,
                               fontSize: '14px',
+                              letterSpacing: '0.5px',
+                              textTransform: 'uppercase',
                               background: conflict ? '#E2E8F0' : 'linear-gradient(135deg, #F97316, #EA580C)',
                               color: conflict ? '#64748B' : '#FFFFFF',
                               border: conflict ? '1px solid #CBD5E1' : 'none',
-                              borderRadius: '10px',
-                              boxShadow: conflict ? 'none' : '0 4px 14px rgba(234, 88, 12, 0.35)',
+                              borderRadius: '9999px',
+                              boxShadow: conflict ? 'none' : '0 4px 16px rgba(234, 88, 12, 0.35)',
                               cursor: (acceptingRideId !== null || actionLoading || conflict) ? 'not-allowed' : 'pointer',
-                              opacity: (acceptingRideId !== null && acceptingRideId !== req.id) ? 0.6 : 1
+                              opacity: (acceptingRideId !== null && acceptingRideId !== req.id) ? 0.6 : 1,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '6px'
                             }}
                           >
-                            {acceptingRideId === req.id ? 'Accepting...' : conflict ? 'Time Conflict' : 'Accept Ride Now'}
+                            <span>{acceptingRideId === req.id ? 'Accepting...' : conflict ? 'Time Conflict' : 'Accept Ride'}</span>
+                            <ArrowRight size={16} />
                           </button>
                         </div>
                       </div>
@@ -2087,28 +2156,47 @@ export function RiderPortalView() {
               {/* If Active Ride Exists */}
               {activeRide && (
                 <div style={{
-                  background: 'var(--bg-input)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '12px',
-                  padding: '16px'
+                  background: 'linear-gradient(135deg, #FFF7ED, #FEF3C7)',
+                  border: '1.5px solid #FDBA74',
+                  borderRadius: '16px',
+                  padding: '18px 20px',
+                  boxShadow: '0 4px 14px rgba(249, 115, 22, 0.1)'
                 }}>
-                  <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--primary)', marginBottom: '6px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 900, color: '#C2410C', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '4px' }}>
                     ACTIVE TRIP IN PROGRESS:
                   </div>
-                  <div style={{ fontWeight: 800, fontSize: '15px', marginBottom: '8px' }}>
+                  <div style={{ fontWeight: 900, fontSize: '16px', color: '#1F1A16', marginBottom: '8px' }}>
                     {activeRide.pickup_address} → {activeRide.destination_address}
                   </div>
                   {Boolean(activeRide.scheduled_time || activeRide.scheduled_time_ist || activeRide.scheduledTime) && (
-                    <div style={{ fontSize: '12px', color: '#C2410C', fontWeight: 800, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div style={{ fontSize: '12px', color: '#C2410C', fontWeight: 800, marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <Clock size={13} /> Pickup Time: {formatRideDateTime(activeRide.scheduled_time_ist || activeRide.scheduled_time || activeRide.scheduledTime)}
                     </div>
                   )}
                   <button
+                    type="button"
                     onClick={() => setCurrentTab('active')}
-                    className="btn btn-primary btn-sm"
-                    style={{ width: '100%' }}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      borderRadius: '9999px',
+                      border: 'none',
+                      background: 'linear-gradient(135deg, #F97316, #EA580C)',
+                      color: '#FFFFFF',
+                      fontWeight: 900,
+                      fontSize: '14px',
+                      letterSpacing: '0.5px',
+                      textTransform: 'uppercase',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 14px rgba(234, 88, 12, 0.35)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
                   >
-                    Open Active Trip Workflow
+                    <span>Open Active Trip Workflow</span>
+                    <ArrowRight size={16} />
                   </button>
                 </div>
               )}
@@ -2129,36 +2217,64 @@ export function RiderPortalView() {
         )}
 
         {/* ============================================================ */}
-        {/* TAB 2: ACTIVE TRIP WORKFLOW */}
+        {/* TAB 2: ACTIVE TRIP WORKFLOW (Rapido Captain UI) */}
         {/* ============================================================ */}
         {currentTab === 'active' && (
-          <div className="content-body" style={{ maxWidth: '650px', margin: '0 auto', width: '100%' }}>
+          <div className="content-body" style={{ maxWidth: '680px', margin: '0 auto', width: '100%', padding: '24px 16px' }}>
             {!activeRide ? (
-              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '16px', padding: '40px', textAlign: 'center' }}>
-                <Bike size={48} color="var(--border)" style={{ margin: '0 auto 12px' }} />
-                <h3 style={{ fontSize: '18px', fontWeight: 800 }}>No Active Trip</h3>
-                <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px', marginBottom: '20px' }}>
-                  You do not have an ongoing trip right now. Go to Radar to accept new ride requests.
+              <div style={{ background: '#FFFFFF', border: '1.5px solid #E8DCCB', borderRadius: '20px', padding: '48px 24px', textAlign: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.03)' }}>
+                <div style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '50%',
+                  background: '#FFF7ED',
+                  border: '2px solid #FED7AA',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#EA580C',
+                  margin: '0 auto 16px'
+                }}>
+                  <Bike size={32} />
+                </div>
+                <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#1F1A16' }}>No Active Trip Right Now</h3>
+                <p style={{ fontSize: '13px', color: '#796D61', marginTop: '6px', marginBottom: '24px' }}>
+                  You are currently available. Check Dispatch Radar to accept live student ride requests.
                 </p>
-                <button onClick={() => setCurrentTab('radar')} className="btn btn-primary">
+                <button
+                  onClick={() => setCurrentTab('radar')}
+                  style={{
+                    padding: '12px 28px',
+                    borderRadius: '9999px',
+                    border: 'none',
+                    background: 'linear-gradient(135deg, #F97316, #EA580C)',
+                    color: '#FFFFFF',
+                    fontWeight: 800,
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 14px rgba(234, 88, 12, 0.3)'
+                  }}
+                >
                   Go to Dispatch Radar
                 </button>
               </div>
             ) : (
-              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ background: '#FFFFFF', border: '1.5px solid #E8DCCB', borderRadius: '20px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px', boxShadow: '0 10px 30px rgba(234, 88, 12, 0.08)' }}>
+                {/* Cash To Collect Banner (Rapido Golden/Orange Card) */}
                 <div style={{
-                  background: 'var(--bg-sidebar)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '12px',
-                  padding: '14px 18px',
+                  background: 'linear-gradient(135deg, #FFF7ED, #FEF3C7)',
+                  border: '1.5px solid #FDBA74',
+                  borderRadius: '16px',
+                  padding: '18px 20px',
                   display: 'flex',
                   justifyContent: 'space-between',
-                  alignItems: 'center'
+                  alignItems: 'center',
+                  boxShadow: '0 4px 14px rgba(249, 115, 22, 0.1)'
                 }}>
                   <div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>CASH TO COLLECT AT DROP:</div>
-                    <div style={{ fontSize: '26px', fontWeight: 900, color: 'var(--primary)' }}>
-                      ₹{activeRide.total_fare || activeRide.final_fare || activeRide.estimated_fare || 20}
+                    <div style={{ fontSize: '11px', color: '#9A3412', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>CASH TO COLLECT AT DROP:</div>
+                    <div style={{ fontSize: '30px', fontWeight: 900, color: '#EA580C', letterSpacing: '-0.02em' }}>
+                      ₹{activeRide.total_fare || activeRide.final_fare || activeRide.estimated_fare || 25}
                     </div>
                     {Boolean(activeRide.waiting_fare > 0) && (
                       <div style={{ fontSize: '11px', color: '#EA580C', fontWeight: 700, marginTop: '2px' }}>
@@ -2167,27 +2283,55 @@ export function RiderPortalView() {
                     )}
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '13px', fontWeight: 800, color: '#10B981' }}>
-                      Net Pay: ₹{activeRide.rider_earning || calcDriverSplit(activeRide.total_fare).rider}
+                    <div style={{ fontSize: '14px', fontWeight: 900, color: '#059669' }}>
+                      Your Net Pay: ₹{activeRide.rider_earning || calcDriverSplit(activeRide.total_fare || 25).rider}
                     </div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                      Platform Fee: ₹{activeRide.company_earning || calcDriverSplit(activeRide.total_fare).company}
-                      {calcDriverSplit(activeRide.total_fare).controller > 0 && ` + ₹${calcDriverSplit(activeRide.total_fare).controller} Ctrl`}
+                    <div style={{ fontSize: '11px', color: '#796D61', marginTop: '2px' }}>
+                      Platform Fee: ₹{activeRide.company_earning || calcDriverSplit(activeRide.total_fare || 25).company}
+                      {calcDriverSplit(activeRide.total_fare || 25).controller > 0 && ` + ₹${calcDriverSplit(activeRide.total_fare || 25).controller} Ctrl`}
                     </div>
                   </div>
                 </div>
 
                 {/* Passenger Info Card */}
-                <div style={{ background: 'var(--bg-sidebar)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontWeight: 800, fontSize: '16px' }}>{activeRide.customer_name || 'Passenger'}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Passenger</div>
+                <div style={{ background: '#FAF5EE', border: '1.5px solid #EFE4D6', borderRadius: '16px', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{
+                      width: '42px',
+                      height: '42px',
+                      borderRadius: '50%',
+                      background: '#FED7AA',
+                      color: '#EA580C',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 900,
+                      fontSize: '16px'
+                    }}>
+                      <User size={20} />
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: '16px', color: '#1F1A16' }}>{activeRide.customer_name || 'Passenger'}</div>
+                      <div style={{ fontSize: '11.5px', color: '#796D61' }}>Pondicherry University Passenger</div>
+                    </div>
                   </div>
                   {activeRide.customer_phone && (
                     <a
                       href={`tel:${activeRide.customer_phone}`}
-                      className="btn btn-secondary btn-sm"
-                      style={{ display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        textDecoration: 'none',
+                        background: '#ECFDF5',
+                        border: '1.5px solid #A7F3D0',
+                        color: '#047857',
+                        padding: '8px 16px',
+                        borderRadius: '9999px',
+                        fontSize: '12.5px',
+                        fontWeight: 800,
+                        cursor: 'pointer'
+                      }}
                     >
                       <Phone size={14} /> Call Passenger
                     </a>
@@ -2197,10 +2341,10 @@ export function RiderPortalView() {
                 {/* Driver Waiting Timer & Control Action Card (Only available AFTER trip has STARTED) */}
                 {activeRide.status === 'STARTED' && (
                   <div style={{
-                    background: activeRide.is_waiting ? 'rgba(234, 88, 12, 0.12)' : '#F8F3EC',
-                    border: activeRide.is_waiting ? '2px solid #EA580C' : '1.5px dashed #E8DCCB',
-                    borderRadius: '14px',
-                    padding: '16px',
+                    background: activeRide.is_waiting ? '#FFF7ED' : '#FAF5EE',
+                    border: activeRide.is_waiting ? '2px solid #EA580C' : '1.5px dashed #EFE4D6',
+                    borderRadius: '16px',
+                    padding: '16px 20px',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '12px'
@@ -2221,7 +2365,7 @@ export function RiderPortalView() {
                           <Clock size={16} />
                         </div>
                         <div>
-                          <div style={{ fontWeight: 800, fontSize: '14px', color: activeRide.is_waiting ? '#EA580C' : '#271E16' }}>
+                          <div style={{ fontWeight: 800, fontSize: '14px', color: activeRide.is_waiting ? '#EA580C' : '#1F1A16' }}>
                             {activeRide.is_waiting ? 'DRIVER ON WAITING MODE' : 'Trip Waiting Controls'}
                           </div>
                           <div style={{ fontSize: '11px', color: '#796D61' }}>
@@ -2231,13 +2375,13 @@ export function RiderPortalView() {
                       </div>
 
                       {Boolean(activeRide.is_waiting) && (
-                        <span className="badge badge-warning" style={{ fontSize: '11px', fontWeight: 900 }}>
+                        <span style={{ background: '#EA580C', color: '#FFFFFF', fontSize: '10px', fontWeight: 900, padding: '2px 8px', borderRadius: '9999px' }}>
                           ON WAITING
                         </span>
                       )}
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FFFFFF', padding: '10px 14px', borderRadius: '10px', border: '1px solid #E8DCCB' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FFFFFF', padding: '12px 16px', borderRadius: '12px', border: '1px solid #FED7AA' }}>
                       <div>
                         <div style={{ fontSize: '11px', color: '#796D61', fontWeight: 600 }}>Total Waiting Recorded:</div>
                         <div style={{ fontSize: '16px', fontWeight: 800, color: '#EA580C' }}>
@@ -2251,10 +2395,10 @@ export function RiderPortalView() {
                         disabled={waitingLoading}
                         style={{
                           padding: '9px 18px',
-                          borderRadius: '8px',
+                          borderRadius: '9999px',
                           border: 'none',
                           fontWeight: 800,
-                          fontSize: '13px',
+                          fontSize: '12.5px',
                           cursor: 'pointer',
                           background: activeRide.is_waiting ? '#DC2626' : '#EA580C',
                           color: '#FFFFFF',
@@ -2272,7 +2416,7 @@ export function RiderPortalView() {
                 )}
 
                 {/* Trip Route Details & Live Maps Navigation */}
-                <div style={{ background: 'var(--bg-input)', padding: '14px', borderRadius: '12px', fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ background: '#FAF5EE', border: '1.5px solid #EFE4D6', padding: '16px 20px', borderRadius: '16px', fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {Boolean(activeRide.scheduled_time || activeRide.scheduled_time_ist || activeRide.scheduledTime) && (
                     <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: '8px', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px', color: '#C2410C', fontWeight: 800, fontSize: '12px' }}>
                       <Clock size={14} />
@@ -2282,14 +2426,13 @@ export function RiderPortalView() {
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                     <div>
-                      <span style={{ color: '#10B981' }}>●</span> <strong>Pickup:</strong> {activeRide.pickup_address}
+                      <span style={{ color: '#10B981', fontSize: '16px' }}>●</span> <strong style={{ color: '#1F1A16' }}>Pickup:</strong> <span style={{ color: '#1F1A16' }}>{activeRide.pickup_address}</span>
                     </div>
                     <a
                       href={getMapLink(activeRide.pickup_address, activeRide.pickup_latitude, activeRide.pickup_longitude)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="btn btn-secondary btn-sm"
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', fontSize: '11px', fontWeight: 800, textDecoration: 'none', background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#047857', flexShrink: 0 }}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 12px', fontSize: '11.5px', fontWeight: 800, textDecoration: 'none', background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#047857', borderRadius: '9999px', flexShrink: 0 }}
                     >
                       <ExternalLink size={12} /> Navigate Pickup
                     </a>
@@ -2298,14 +2441,13 @@ export function RiderPortalView() {
                   {activeRide.via_address && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                       <div>
-                        <span style={{ color: '#F59E0B' }}>●</span> <strong>Via Stop:</strong> {activeRide.via_address}
+                        <span style={{ color: '#F59E0B', fontSize: '16px' }}>●</span> <strong style={{ color: '#1F1A16' }}>Via Stop:</strong> <span style={{ color: '#1F1A16' }}>{activeRide.via_address}</span>
                       </div>
                       <a
                         href={getMapLink(activeRide.via_address, activeRide.via_latitude, activeRide.via_longitude)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="btn btn-secondary btn-sm"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', fontSize: '11px', fontWeight: 800, textDecoration: 'none', background: '#FEF3C7', border: '1px solid #FCD34D', color: '#B45309', flexShrink: 0 }}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 12px', fontSize: '11.5px', fontWeight: 800, textDecoration: 'none', background: '#FEF3C7', border: '1px solid #FCD34D', color: '#B45309', borderRadius: '9999px', flexShrink: 0 }}
                       >
                         <ExternalLink size={12} /> Navigate Via Stop
                       </a>
@@ -2314,14 +2456,13 @@ export function RiderPortalView() {
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                     <div>
-                      <span style={{ color: '#EA580C' }}>●</span> <strong>Drop:</strong> {activeRide.destination_address}
+                      <span style={{ color: '#EA580C', fontSize: '16px' }}>●</span> <strong style={{ color: '#1F1A16' }}>Drop:</strong> <span style={{ color: '#1F1A16' }}>{activeRide.destination_address}</span>
                     </div>
                     <a
                       href={getMapLink(activeRide.destination_address, activeRide.destination_latitude, activeRide.destination_longitude)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="btn btn-secondary btn-sm"
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', fontSize: '11px', fontWeight: 800, textDecoration: 'none', background: '#FFF7ED', border: '1px solid #FDBA74', color: '#EA580C', flexShrink: 0 }}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '5px 12px', fontSize: '11.5px', fontWeight: 800, textDecoration: 'none', background: '#FFF7ED', border: '1px solid #FDBA74', color: '#EA580C', borderRadius: '9999px', flexShrink: 0 }}
                     >
                       <ExternalLink size={12} /> Navigate Drop
                     </a>
@@ -2330,20 +2471,37 @@ export function RiderPortalView() {
 
                 {/* Error Banner */}
                 {otpError && (
-                  <div style={{ padding: '10px', background: 'rgba(244,63,94,0.15)', border: '1px solid #F43F5E', color: '#F43F5E', borderRadius: '8px', fontSize: '12px' }}>
+                  <div style={{ padding: '12px 16px', background: '#FEF2F2', border: '1.5px solid #FCA5A5', color: '#DC2626', borderRadius: '12px', fontSize: '12.5px', fontWeight: 700 }}>
                     {otpError}
                   </div>
                 )}
 
-                {/* Step-by-Step Action Progression */}
+                {/* Step-by-Step Rapido Progression Action Buttons */}
                 {activeRide.status === 'ACCEPTED' && (
                   <button
                     onClick={() => handleStatusChange('RIDER_ARRIVING')}
                     disabled={actionLoading}
-                    className="btn btn-primary"
-                    style={{ width: '100%', padding: '14px', fontWeight: 800, fontSize: '15px' }}
+                    style={{
+                      width: '100%',
+                      height: '52px',
+                      borderRadius: '9999px',
+                      border: 'none',
+                      background: 'linear-gradient(135deg, #F97316, #EA580C)',
+                      color: '#FFFFFF',
+                      fontSize: '15px',
+                      fontWeight: 900,
+                      letterSpacing: '0.6px',
+                      textTransform: 'uppercase',
+                      cursor: actionLoading ? 'not-allowed' : 'pointer',
+                      boxShadow: '0 6px 20px rgba(234, 88, 12, 0.35)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
                   >
-                    {actionLoading ? 'Updating...' : '1. I am On The Way (Arriving)'}
+                    <span>{actionLoading ? 'Updating...' : '1. I am On The Way (Arriving)'}</span>
+                    <ArrowRight size={18} />
                   </button>
                 )}
 
@@ -2351,18 +2509,74 @@ export function RiderPortalView() {
                   <button
                     onClick={() => handleStatusChange('RIDER_REACHED')}
                     disabled={actionLoading}
-                    className="btn btn-primary"
-                    style={{ width: '100%', padding: '14px', fontWeight: 800, fontSize: '15px' }}
+                    style={{
+                      width: '100%',
+                      height: '52px',
+                      borderRadius: '9999px',
+                      border: 'none',
+                      background: 'linear-gradient(135deg, #F97316, #EA580C)',
+                      color: '#FFFFFF',
+                      fontSize: '15px',
+                      fontWeight: 900,
+                      letterSpacing: '0.6px',
+                      textTransform: 'uppercase',
+                      cursor: actionLoading ? 'not-allowed' : 'pointer',
+                      boxShadow: '0 6px 20px rgba(234, 88, 12, 0.35)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
                   >
-                    {actionLoading ? 'Updating...' : '2. Reached Pickup Location'}
+                    <span>{actionLoading ? 'Updating...' : '2. Reached Pickup Location'}</span>
+                    <MapPin size={18} />
                   </button>
                 )}
 
+                {/* Rapido 4-Digit OTP Entry Screen for Captain */}
                 {activeRide.status === 'RIDER_REACHED' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <label className="form-label" style={{ fontWeight: 700 }}>
-                      Ask Passenger for 4-Digit Ride OTP:
+                  <div style={{
+                    background: '#FFF7ED',
+                    border: '2px dashed #F97316',
+                    borderRadius: '16px',
+                    padding: '20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '14px'
+                  }}>
+                    <label style={{ fontWeight: 800, fontSize: '13px', color: '#9A3412', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                      Enter Passenger&apos;s 4-Digit Ride OTP to Start:
                     </label>
+
+                    {/* 4 Digit Box Display */}
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      {[0, 1, 2, 3].map((idx) => {
+                        const digit = enteredOtp[idx] || '';
+                        return (
+                          <div
+                            key={`otp-box-${idx}`}
+                            style={{
+                              width: '52px',
+                              height: '60px',
+                              borderRadius: '14px',
+                              background: '#FFFFFF',
+                              border: digit ? '2.5px solid #EA580C' : '1.5px solid #FDBA74',
+                              boxShadow: digit ? '0 4px 12px rgba(234, 88, 12, 0.2)' : 'none',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '28px',
+                              fontWeight: 900,
+                              color: '#1F1A16'
+                            }}
+                          >
+                            {digit || '•'}
+                          </div>
+                        );
+                      })}
+                    </div>
+
                     <input
                       type="text"
                       inputMode="numeric"
@@ -2374,19 +2588,37 @@ export function RiderPortalView() {
                       spellCheck="false"
                       name={`ride_otp_${activeRide.id}`}
                       id={`ride_otp_${activeRide.id}`}
-                      placeholder="••••"
+                      placeholder="Type 4-digit OTP here"
                       className="form-input"
-                      style={{ textAlign: 'center', fontSize: '24px', letterSpacing: '8px', fontWeight: 900 }}
+                      style={{ textAlign: 'center', fontSize: '16px', fontWeight: 800, maxWidth: '240px', background: '#FFFFFF', border: '1.5px solid #FDBA74' }}
                       value={enteredOtp}
                       onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
                     />
+
                     <button
                       onClick={() => handleStatusChange('STARTED')}
                       disabled={actionLoading || enteredOtp.length !== 4}
-                      className="btn btn-success"
-                      style={{ width: '100%', padding: '14px', fontWeight: 800, fontSize: '15px' }}
+                      style={{
+                        width: '100%',
+                        height: '52px',
+                        borderRadius: '9999px',
+                        border: 'none',
+                        background: (enteredOtp.length === 4 && !actionLoading) ? 'linear-gradient(135deg, #10B981, #059669)' : '#D1D5DB',
+                        color: '#FFFFFF',
+                        fontSize: '15px',
+                        fontWeight: 900,
+                        letterSpacing: '0.6px',
+                        textTransform: 'uppercase',
+                        cursor: (enteredOtp.length === 4 && !actionLoading) ? 'pointer' : 'not-allowed',
+                        boxShadow: enteredOtp.length === 4 ? '0 6px 20px rgba(16, 185, 129, 0.35)' : 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px'
+                      }}
                     >
-                      {actionLoading ? 'Verifying...' : '3. Verify OTP & Start Trip'}
+                      <span>{actionLoading ? 'Verifying OTP...' : '3. Verify OTP & Start Trip'}</span>
+                      <CheckCircle size={18} />
                     </button>
                   </div>
                 )}
@@ -2395,25 +2627,42 @@ export function RiderPortalView() {
                   <button
                     onClick={() => handleStatusChange('COMPLETED')}
                     disabled={actionLoading}
-                    className="btn btn-success"
-                    style={{ width: '100%', padding: '14px', fontWeight: 800, fontSize: '15px' }}
+                    style={{
+                      width: '100%',
+                      height: '52px',
+                      borderRadius: '9999px',
+                      border: 'none',
+                      background: 'linear-gradient(135deg, #10B981, #059669)',
+                      color: '#FFFFFF',
+                      fontSize: '15px',
+                      fontWeight: 900,
+                      letterSpacing: '0.6px',
+                      textTransform: 'uppercase',
+                      cursor: actionLoading ? 'not-allowed' : 'pointer',
+                      boxShadow: '0 6px 20px rgba(16, 185, 129, 0.35)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
                   >
-                    {actionLoading ? 'Completing...' : '4. Reached Destination & Complete Trip'}
+                    <span>{actionLoading ? 'Completing Trip...' : '4. Reached Destination & Complete Trip'}</span>
+                    <CheckCircle2 size={18} />
                   </button>
                 )}
 
                 {activeRide.status === 'COMPLETED' && (
-                  <div style={{ textAlign: 'center', padding: '24px', background: 'rgba(16,185,129,0.15)', border: '1px solid #10B981', borderRadius: '16px' }}>
-                    <CheckCircle size={44} color="#10B981" style={{ margin: '0 auto 10px' }} />
-                    <h3 style={{ color: '#10B981', fontWeight: 800, fontSize: '20px' }}>Trip Completed & Settled!</h3>
+                  <div style={{ textAlign: 'center', padding: '32px 20px', background: '#FFFFFF', border: '2px solid #10B981', borderRadius: '20px', boxShadow: '0 8px 30px rgba(16, 185, 129, 0.12)' }}>
+                    <CheckCircle size={52} color="#10B981" style={{ margin: '0 auto 12px' }} />
+                    <h3 style={{ color: '#047857', fontWeight: 900, fontSize: '22px' }}>Trip Completed &amp; Settled!</h3>
                     
-                    <div style={{ margin: '16px 0', padding: '14px', background: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>CASH TO COLLECT FROM PASSENGER:</div>
-                      <div style={{ fontSize: '32px', fontWeight: 900, color: 'var(--primary)', margin: '4px 0' }}>
-                        ₹{activeRide.final_fare || activeRide.total_fare || activeRide.estimated_fare || 20}
+                    <div style={{ margin: '20px 0', padding: '18px 20px', background: 'linear-gradient(135deg, #FFF7ED, #FEF3C7)', borderRadius: '16px', border: '1.5px solid #FDBA74' }}>
+                      <div style={{ fontSize: '11px', color: '#9A3412', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>CASH TO COLLECT FROM PASSENGER:</div>
+                      <div style={{ fontSize: '36px', fontWeight: 900, color: '#EA580C', margin: '4px 0', letterSpacing: '-0.02em' }}>
+                        ₹{activeRide.final_fare || activeRide.total_fare || activeRide.estimated_fare || 25}
                       </div>
-                      <div style={{ fontSize: '13px', color: '#10B981', fontWeight: 700, marginTop: '6px' }}>
-                        Your Net Take-Home: ₹{activeRide.rider_earning || calcDriverSplit(activeRide.final_fare || activeRide.total_fare || 20).rider}
+                      <div style={{ fontSize: '14px', color: '#059669', fontWeight: 800, marginTop: '4px' }}>
+                        Your Net Take-Home: ₹{activeRide.rider_earning || calcDriverSplit(activeRide.final_fare || activeRide.total_fare || 25).rider}
                       </div>
                     </div>
 
@@ -2423,8 +2672,20 @@ export function RiderPortalView() {
                         setEnteredOtp('');
                         setCurrentTab('radar');
                       }}
-                      className="btn btn-primary"
-                      style={{ width: '100%', padding: '12px', fontWeight: 800 }}
+                      style={{
+                        width: '100%',
+                        height: '52px',
+                        borderRadius: '9999px',
+                        border: 'none',
+                        background: 'linear-gradient(135deg, #F97316, #EA580C)',
+                        color: '#FFFFFF',
+                        fontSize: '15px',
+                        fontWeight: 900,
+                        letterSpacing: '0.6px',
+                        textTransform: 'uppercase',
+                        cursor: 'pointer',
+                        boxShadow: '0 6px 20px rgba(234, 88, 12, 0.35)'
+                      }}
                     >
                       Return to Radar for Next Trip
                     </button>
@@ -2436,8 +2697,17 @@ export function RiderPortalView() {
                   <button
                     onClick={handleCancelActiveTrip}
                     disabled={actionLoading}
-                    className="btn btn-danger btn-sm"
-                    style={{ width: '100%', padding: '10px' }}
+                    style={{
+                      width: '100%',
+                      padding: '11px',
+                      borderRadius: '9999px',
+                      border: '1px solid #FCA5A5',
+                      background: '#FEF2F2',
+                      color: '#DC2626',
+                      fontWeight: 800,
+                      fontSize: '12.5px',
+                      cursor: 'pointer'
+                    }}
                   >
                     Cancel Trip (Driver Emergency)
                   </button>

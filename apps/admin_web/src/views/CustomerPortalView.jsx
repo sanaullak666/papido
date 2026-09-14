@@ -2759,191 +2759,235 @@ export function CustomerPortalView() {
                     </div>
                   </div>
 
-                  {/* Rapido Style Vehicle Type Selection */}
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                      <label className="form-label" style={{ color: '#1F1A16', fontWeight: 800, fontSize: '13px', margin: 0 }}>
-                        Select Vehicle
-                      </label>
-                      <span style={{ fontSize: '11.5px', color: '#EA580C', fontWeight: 800, background: '#FFF7ED', padding: '2px 8px', borderRadius: '6px', border: '1px solid #FED7AA' }}>
-                        Base: ₹25 Flat
+                  {/* Rapido Style Service Options List */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 800, color: '#1F1A16' }}>Select Ride Option</span>
+                      <span style={{ fontSize: '11px', color: '#EA580C', fontWeight: 800, background: '#FFF7ED', padding: '2px 8px', borderRadius: '6px', border: '1px solid #FED7AA' }}>
+                        Flat ₹25 across campus
                       </span>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-                      {/* Bike Card */}
-                      <button
-                        type="button"
-                        onClick={() => setVehicleType('BIKE')}
-                        style={{
-                          padding: '14px 8px',
-                          borderRadius: '16px',
-                          border: vehicleType === 'BIKE' ? '2px solid #F97316' : '1.5px solid #EFE4D6',
-                          background: vehicleType === 'BIKE' ? '#FFF7ED' : '#FFFFFF',
-                          boxShadow: vehicleType === 'BIKE' ? '0 6px 18px rgba(249, 115, 22, 0.2)' : '0 2px 8px rgba(0,0,0,0.02)',
-                          cursor: 'pointer',
+                    {/* 1. Bike Option */}
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setVehicleType('BIKE')}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setVehicleType('BIKE'); }}
+                      style={{
+                        padding: '12px 16px',
+                        borderRadius: '16px',
+                        border: vehicleType === 'BIKE' ? '2px solid #F97316' : '1.5px solid #EFE4D6',
+                        background: vehicleType === 'BIKE' ? '#FFF7ED' : '#FFFFFF',
+                        boxShadow: vehicleType === 'BIKE' ? '0 4px 14px rgba(249, 115, 22, 0.15)' : '0 1px 3px rgba(0,0,0,0.03)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                        <div style={{
+                          width: '46px',
+                          height: '46px',
+                          borderRadius: '12px',
+                          background: vehicleType === 'BIKE' ? '#FED7AA' : '#FAF5EE',
                           display: 'flex',
-                          flexDirection: 'column',
                           alignItems: 'center',
-                          gap: '6px',
-                          textAlign: 'center',
-                          position: 'relative',
-                          transition: 'all 0.15s ease'
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: '44px',
-                            height: '44px',
-                            borderRadius: '12px',
-                            background: vehicleType === 'BIKE' ? '#FED7AA' : '#FAF5EE',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: '#EA580C'
-                          }}
-                        >
+                          justifyContent: 'center',
+                          color: '#EA580C',
+                          flexShrink: 0
+                        }}>
                           <Bike size={24} />
                         </div>
-                        <div style={{ fontWeight: 800, fontSize: '13px', color: '#1F1A16' }}>
-                          Bike
-                        </div>
-                        <div style={{ fontSize: '11px', color: '#796D61', fontWeight: 600 }}>
-                          Fastest • ₹25
-                        </div>
-                        {vehicleType === 'BIKE' && (
-                          <div style={{
-                            position: 'absolute',
-                            top: '-7px',
-                            right: '8px',
-                            background: '#059669',
-                            color: '#FFF',
-                            fontSize: '9px',
-                            fontWeight: 900,
-                            padding: '1px 6px',
-                            borderRadius: '9999px',
-                            letterSpacing: '0.4px'
-                          }}>
-                            SELECTED
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: '15px', color: '#1F1A16', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span>Bike</span>
+                            {vehicleType === 'BIKE' && (
+                              <span style={{ background: '#059669', color: '#FFFFFF', fontSize: '9px', fontWeight: 900, padding: '1px 6px', borderRadius: '9999px' }}>
+                                SELECTED
+                              </span>
+                            )}
                           </div>
-                        )}
-                      </button>
+                          <div style={{ fontSize: '12px', color: '#796D61', fontWeight: 600, marginTop: '2px' }}>
+                            2 min away • Fastest campus pickup
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '20px', fontWeight: 900, color: '#1F1A16' }}>
+                          ₹{fareEstimate?.estimatedFare || (isDoubleRide ? 40 : 25)}
+                        </div>
+                      </div>
+                    </div>
 
-                      {/* Scooter Card */}
-                      <button
-                        type="button"
-                        onClick={() => setVehicleType('SCOOTER')}
-                        style={{
-                          padding: '14px 8px',
-                          borderRadius: '16px',
-                          border: vehicleType === 'SCOOTER' ? '2px solid #F97316' : '1.5px solid #EFE4D6',
-                          background: vehicleType === 'SCOOTER' ? '#FFF7ED' : '#FFFFFF',
-                          boxShadow: vehicleType === 'SCOOTER' ? '0 6px 18px rgba(249, 115, 22, 0.2)' : '0 2px 8px rgba(0,0,0,0.02)',
-                          cursor: 'pointer',
+                    {/* 2. Scooter Option */}
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setVehicleType('SCOOTER')}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setVehicleType('SCOOTER'); }}
+                      style={{
+                        padding: '12px 16px',
+                        borderRadius: '16px',
+                        border: vehicleType === 'SCOOTER' ? '2px solid #F97316' : '1.5px solid #EFE4D6',
+                        background: vehicleType === 'SCOOTER' ? '#FFF7ED' : '#FFFFFF',
+                        boxShadow: vehicleType === 'SCOOTER' ? '0 4px 14px rgba(249, 115, 22, 0.15)' : '0 1px 3px rgba(0,0,0,0.03)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                        <div style={{
+                          width: '46px',
+                          height: '46px',
+                          borderRadius: '12px',
+                          background: vehicleType === 'SCOOTER' ? '#FED7AA' : '#FAF5EE',
                           display: 'flex',
-                          flexDirection: 'column',
                           alignItems: 'center',
-                          gap: '6px',
-                          textAlign: 'center',
-                          position: 'relative',
-                          transition: 'all 0.15s ease'
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: '44px',
-                            height: '44px',
-                            borderRadius: '12px',
-                            background: vehicleType === 'SCOOTER' ? '#FED7AA' : '#FAF5EE',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: '#EA580C'
-                          }}
-                        >
+                          justifyContent: 'center',
+                          color: '#EA580C',
+                          flexShrink: 0
+                        }}>
                           <Compass size={24} />
                         </div>
-                        <div style={{ fontWeight: 800, fontSize: '13px', color: '#1F1A16' }}>
-                          Scooter
-                        </div>
-                        <div style={{ fontSize: '11px', color: '#796D61', fontWeight: 600 }}>
-                          Comfort • ₹25
-                        </div>
-                        {vehicleType === 'SCOOTER' && (
-                          <div style={{
-                            position: 'absolute',
-                            top: '-7px',
-                            right: '8px',
-                            background: '#059669',
-                            color: '#FFF',
-                            fontSize: '9px',
-                            fontWeight: 900,
-                            padding: '1px 6px',
-                            borderRadius: '9999px',
-                            letterSpacing: '0.4px'
-                          }}>
-                            SELECTED
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: '15px', color: '#1F1A16', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span>Scooter</span>
+                            {vehicleType === 'SCOOTER' && (
+                              <span style={{ background: '#059669', color: '#FFFFFF', fontSize: '9px', fontWeight: 900, padding: '1px 6px', borderRadius: '9999px' }}>
+                                SELECTED
+                              </span>
+                            )}
                           </div>
-                        )}
-                      </button>
+                          <div style={{ fontSize: '12px', color: '#796D61', fontWeight: 600, marginTop: '2px' }}>
+                            3 min away • Smooth &amp; comfortable ride
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '20px', fontWeight: 900, color: '#1F1A16' }}>
+                          ₹{fareEstimate?.estimatedFare || (isDoubleRide ? 40 : 25)}
+                        </div>
+                      </div>
+                    </div>
 
-                      {/* Any (Fastest) Card */}
-                      <button
-                        type="button"
-                        onClick={() => setVehicleType('ANY')}
-                        style={{
-                          padding: '14px 8px',
-                          borderRadius: '16px',
-                          border: vehicleType === 'ANY' ? '2px solid #F97316' : '1.5px solid #EFE4D6',
-                          background: vehicleType === 'ANY' ? '#FFF7ED' : '#FFFFFF',
-                          boxShadow: vehicleType === 'ANY' ? '0 6px 18px rgba(249, 115, 22, 0.2)' : '0 2px 8px rgba(0,0,0,0.02)',
-                          cursor: 'pointer',
+                    {/* 3. Any 2-Wheeler / Peer Match (from Figma!) */}
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setVehicleType('ANY')}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setVehicleType('ANY'); }}
+                      style={{
+                        padding: '12px 16px',
+                        borderRadius: '16px',
+                        border: vehicleType === 'ANY' ? '2px solid #F97316' : '1.5px solid #EFE4D6',
+                        background: vehicleType === 'ANY' ? '#FFF7ED' : '#FFFFFF',
+                        boxShadow: vehicleType === 'ANY' ? '0 4px 14px rgba(249, 115, 22, 0.15)' : '0 1px 3px rgba(0,0,0,0.03)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                        <div style={{
+                          width: '46px',
+                          height: '46px',
+                          borderRadius: '12px',
+                          background: vehicleType === 'ANY' ? '#FED7AA' : '#FAF5EE',
                           display: 'flex',
-                          flexDirection: 'column',
                           alignItems: 'center',
-                          gap: '6px',
-                          textAlign: 'center',
-                          position: 'relative',
-                          transition: 'all 0.15s ease'
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: '44px',
-                            height: '44px',
-                            borderRadius: '12px',
-                            background: vehicleType === 'ANY' ? '#FED7AA' : '#FAF5EE',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: '#EA580C'
-                          }}
-                        >
+                          justifyContent: 'center',
+                          color: '#EA580C',
+                          flexShrink: 0
+                        }}>
                           <Zap size={24} />
                         </div>
-                        <div style={{ fontWeight: 800, fontSize: '13px', color: '#1F1A16' }}>
-                          Any 2-Wheeler
-                        </div>
-                        <div style={{ fontSize: '11px', color: '#796D61', fontWeight: 600 }}>
-                          Instant Match
-                        </div>
-                        {vehicleType === 'ANY' && (
-                          <div style={{
-                            position: 'absolute',
-                            top: '-7px',
-                            right: '8px',
-                            background: '#EA580C',
-                            color: '#FFF',
-                            fontSize: '9px',
-                            fontWeight: 900,
-                            padding: '1px 6px',
-                            borderRadius: '9999px',
-                            letterSpacing: '0.4px'
-                          }}>
-                            POPULAR
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: '15px', color: '#1F1A16', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span>Any 2-Wheeler</span>
+                            <span style={{ background: '#EA580C', color: '#FFFFFF', fontSize: '9px', fontWeight: 900, padding: '1px 6px', borderRadius: '9999px' }}>
+                              FAST MATCH
+                            </span>
                           </div>
-                        )}
-                      </button>
+                          <div style={{ fontSize: '12px', color: '#796D61', fontWeight: 600, marginTop: '2px' }}>
+                            Instant match • Nearest active rider
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '20px', fontWeight: 900, color: '#1F1A16' }}>
+                          ₹{fareEstimate?.estimatedFare || (isDoubleRide ? 40 : 25)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Rapido Style Unlimited Discounts / Campus Pass Ribbon */}
+                  <div style={{
+                    background: 'linear-gradient(90deg, #FFF7ED 0%, #FEF3C7 100%)',
+                    border: '1.5px solid #FDBA74',
+                    borderRadius: '14px',
+                    padding: '10px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Zap size={16} color="#EA580C" />
+                      <span style={{ fontSize: '12px', fontWeight: 800, color: '#9A3412' }}>
+                        <strong>UNLIMITED</strong> Discounts! Campus Flat Fare: ₹25 across PU
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#EA580C' }}>
+                      Active &gt;
+                    </span>
+                  </div>
+
+                  {/* Rapido Style Payment & Offers Row */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div style={{
+                      background: '#FAF5EE',
+                      border: '1.5px solid #EFE4D6',
+                      borderRadius: '12px',
+                      padding: '10px 14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      fontSize: '12.5px',
+                      fontWeight: 700,
+                      color: '#1F1A16'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <CreditCard size={15} color="#059669" />
+                        <span>Cash / UPI</span>
+                      </div>
+                      <span style={{ color: '#796D61', fontSize: '11px' }}>&gt;</span>
+                    </div>
+
+                    <div style={{
+                      background: '#FAF5EE',
+                      border: '1.5px solid #EFE4D6',
+                      borderRadius: '12px',
+                      padding: '10px 14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      fontSize: '12.5px',
+                      fontWeight: 700,
+                      color: '#1F1A16'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Tag size={15} color="#EA580C" />
+                        <span>Offers &amp; Perks</span>
+                      </div>
+                      <span style={{ color: '#796D61', fontSize: '11px' }}>&gt;</span>
                     </div>
                   </div>
 
@@ -3396,20 +3440,21 @@ export function CustomerPortalView() {
                       </div>
                     )}
 
-                    {/* Customer Fare Card */}
+                    {/* Customer Fare Card (Rapido Clean Style) */}
                     <div style={{
-                      background: 'var(--bg-sidebar)',
-                      border: '1px solid var(--border)',
-                      borderRadius: '12px',
-                      padding: '14px 18px',
+                      background: 'linear-gradient(135deg, #FFF7ED, #FEF3C7)',
+                      border: '1.5px solid #FDBA74',
+                      borderRadius: '16px',
+                      padding: '16px 20px',
                       display: 'flex',
                       justifyContent: 'space-between',
-                      alignItems: 'center'
+                      alignItems: 'center',
+                      boxShadow: '0 4px 14px rgba(249, 115, 22, 0.08)'
                     }}>
                       <div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>FARE TO PAY RIDER:</div>
-                        <div style={{ fontSize: '24px', fontWeight: 900, color: 'var(--primary)' }}>
-                          ₹{activeRide.total_fare || activeRide.final_fare || activeRide.estimated_fare || 20}
+                        <div style={{ fontSize: '11px', color: '#9A3412', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>FARE TO PAY AT DROP:</div>
+                        <div style={{ fontSize: '28px', fontWeight: 900, color: '#EA580C', letterSpacing: '-0.02em' }}>
+                          ₹{activeRide.total_fare || activeRide.final_fare || activeRide.estimated_fare || 25}
                         </div>
                         {Boolean(activeRide.waiting_fare > 0) && (
                           <div style={{ fontSize: '11px', color: '#EA580C', fontWeight: 700, marginTop: '2px' }}>
@@ -3418,63 +3463,95 @@ export function CustomerPortalView() {
                         )}
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <span className="badge badge-warning" style={{ fontSize: '11px' }}>
-                          {activeRide.payment_method || 'CASH'} ON DROP
+                        <span style={{
+                          background: '#FFFFFF',
+                          border: '1px solid #FED7AA',
+                          color: '#EA580C',
+                          padding: '4px 10px',
+                          borderRadius: '9999px',
+                          fontSize: '11.5px',
+                          fontWeight: 800
+                        }}>
+                          {activeRide.payment_method || 'CASH / UPI'} ON DROP
                         </span>
                         {activeRide.is_double_ride ? (
-                          <div style={{ fontSize: '11px', color: 'var(--primary)', marginTop: '4px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <Users size={12} /> Double Ride
+                          <div style={{ fontSize: '11px', color: '#059669', marginTop: '6px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                            <Users size={12} /> Double Ride (Discounted)
                           </div>
                         ) : null}
                       </div>
                     </div>
 
-                    {/* 4-Digit Ride OTP Highlight (Crucial for passenger when rider reaches) */}
+                    {/* Rapido 4-Digit Ride OTP Highlight (4 Separate Digit Boxes) */}
                     {['ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED'].includes(activeRide.status) && (activeRide.otp || activeRide.otp_code) && (
                       <div style={{
-                        background: 'var(--bg-sidebar)',
-                        border: '2px dashed var(--primary)',
-                        borderRadius: '12px',
-                        padding: '16px',
-                        textAlign: 'center'
+                        background: '#FFF7ED',
+                        border: '2px dashed #F97316',
+                        borderRadius: '16px',
+                        padding: '18px 16px',
+                        textAlign: 'center',
+                        boxShadow: '0 4px 16px rgba(249, 115, 22, 0.1)'
                       }}>
-                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                          Share this 4-digit Ride OTP with your rider:
+                        <div style={{ fontSize: '11.5px', fontWeight: 900, color: '#C2410C', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>
+                          START OTP • Share with Captain Upon Arrival
                         </div>
-                        <div style={{ fontSize: '32px', fontWeight: 900, letterSpacing: '8px', color: 'var(--primary)' }}>
-                          {activeRide.otp || activeRide.otp_code}
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', margin: '8px 0' }}>
+                          {String(activeRide.otp || activeRide.otp_code || '----').padEnd(4, '-').slice(0, 4).split('').map((digit, idx) => (
+                            <div key={idx} style={{
+                              width: '52px',
+                              height: '60px',
+                              borderRadius: '14px',
+                              background: '#FFFFFF',
+                              border: '2px solid #F97316',
+                              boxShadow: '0 4px 12px rgba(249, 115, 22, 0.15)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '28px',
+                              fontWeight: 900,
+                              color: '#EA580C'
+                            }}>
+                              {digit}
+                            </div>
+                          ))}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#796D61', fontWeight: 600, marginTop: '6px' }}>
+                          Only share after meeting your rider and verifying the vehicle
                         </div>
                       </div>
                     )}
 
-                    {/* Assigned Rider Card (If accepted) */}
+                    {/* Assigned Rider / Captain Card (Rapido Style) */}
                     {activeRide.rider_name && (
                       <div style={{
-                        background: 'var(--bg-input)',
-                        border: '1px solid var(--border)',
-                        borderRadius: '12px',
-                        padding: '16px',
+                        background: '#FFFFFF',
+                        border: '1.5px solid #EFE4D6',
+                        borderRadius: '16px',
+                        padding: '18px',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '12px'
+                        gap: '12px',
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.03)'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <div style={{
-                              width: '44px',
-                              height: '44px',
-                              background: '#06B6D4',
+                              width: '48px',
+                              height: '48px',
+                              background: 'linear-gradient(135deg, #FFF7ED, #FED7AA)',
+                              border: '2px solid #F97316',
                               borderRadius: '50%',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              fontWeight: 800
+                              color: '#EA580C',
+                              flexShrink: 0
                             }}>
-                              <Bike size={22} color="#FFFFFF" />
+                              <Bike size={24} />
                             </div>
                             <div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                <div style={{ fontWeight: 800, fontSize: '15px' }}>{activeRide.rider_name}</div>
+                                <div style={{ fontWeight: 800, fontSize: '16px', color: '#1F1A16' }}>{activeRide.rider_name}</div>
                                 {Boolean(activeRide.rider_rating) && (
                                   <span style={{
                                     display: 'inline-flex',
@@ -3485,7 +3562,7 @@ export function CustomerPortalView() {
                                     padding: '2px 8px',
                                     borderRadius: '9999px',
                                     fontSize: '11px',
-                                    fontWeight: 700
+                                    fontWeight: 800
                                   }}>
                                     <Star size={11} fill="#D97706" color="#D97706" />
                                     {Number(activeRide.rider_rating).toFixed(1)}
@@ -3498,8 +3575,21 @@ export function CustomerPortalView() {
                                 )}
                               </div>
                               {!(activeRide.rider_is_core || activeRide.is_core_member) && (
-                                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                                  {activeRide.rider_vehicle_model || activeRide.vehicle_model || 'Honda Activa 6G'} • {activeRide.rider_vehicle_number || activeRide.vehicle_number || 'PY 01 AB 1234'}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px' }}>
+                                  <span style={{
+                                    background: '#FAF5EE',
+                                    border: '1px solid #FED7AA',
+                                    color: '#1F1A16',
+                                    padding: '1px 6px',
+                                    borderRadius: '6px',
+                                    fontSize: '11px',
+                                    fontWeight: 800
+                                  }}>
+                                    {activeRide.rider_vehicle_number || activeRide.vehicle_number || 'PY 01 AB 1234'}
+                                  </span>
+                                  <span style={{ fontSize: '11.5px', color: '#796D61' }}>
+                                    {activeRide.rider_vehicle_model || activeRide.vehicle_model || 'Campus 2-Wheeler'}
+                                  </span>
                                 </div>
                               )}
                             </div>
@@ -3507,10 +3597,23 @@ export function CustomerPortalView() {
                           {activeRide.rider_phone && (
                             <a
                               href={`tel:${activeRide.rider_phone}`}
-                              className="btn btn-secondary btn-sm"
-                              style={{ display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                textDecoration: 'none',
+                                background: '#ECFDF5',
+                                border: '1.5px solid #A7F3D0',
+                                color: '#047857',
+                                padding: '8px 14px',
+                                borderRadius: '9999px',
+                                fontSize: '12.5px',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease'
+                              }}
                             >
-                              <Phone size={14} /> Call
+                              <Phone size={14} /> Call Captain
                             </a>
                           )}
                         </div>
