@@ -1,7 +1,25 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest, uploadFile } from '../api';
-import { Shield, Lock, Mail, Phone, ArrowRight, UserPlus, KeyRound, Bike, User, Sparkles, ShieldCheck, Zap, Upload, FileText, CheckCircle2, AlertCircle, Check, Eye, EyeOff } from 'lucide-react';
+import {
+  Lock,
+  Mail,
+  Phone,
+  ArrowRight,
+  KeyRound,
+  Bike,
+  User,
+  Sparkles,
+  ShieldCheck,
+  Zap,
+  Upload,
+  CheckCircle2,
+  AlertCircle,
+  Check,
+  Eye,
+  EyeOff,
+  ChevronDown
+} from 'lucide-react';
 
 export function LoginView({ onGoToAdminPortal }) {
   const { login, register, forgotPassword, resetPassword } = useAuth();
@@ -137,7 +155,6 @@ export function LoginView({ onGoToAdminPortal }) {
     setSuccessMsg('');
     setUploadStatus('');
 
-    // Trigger validation on all fields
     const errors = {
       name: validateRegField('name', regName),
       email: validateRegField('email', regEmail),
@@ -287,233 +304,521 @@ export function LoginView({ onGoToAdminPortal }) {
     setPassword(uPass);
     setAuthMode('login');
     setError('');
+    setSuccessMsg('');
   };
 
   return (
-    <div className="theme-orange-beige" style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'radial-gradient(circle at top right, #F5EFEB, #FAF5EE)',
-      padding: '24px 16px',
-      color: '#271E16'
-    }}>
-      <div className="auth-card-container" style={{
-        background: '#FFFFFF',
-        border: '1.5px solid #E8DCCB',
-        borderRadius: '20px',
-        padding: '36px',
-        width: '100%',
-        maxWidth: '480px',
-        boxShadow: '0 16px 40px rgba(234, 88, 12, 0.08), 0 4px 12px rgba(0,0,0,0.03)'
-      }}>
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'radial-gradient(1000px 700px at 50% 0%, #FFF7ED 0%, #FAF5EE 50%, #F5EFEB 100%)',
+        padding: '28px 16px',
+        color: '#271E16',
+        fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+      }}
+    >
+      <div
+        style={{
+          background: '#FFFFFF',
+          border: '1.5px solid #EFE4D6',
+          borderRadius: '28px',
+          padding: '36px 32px',
+          width: '100%',
+          maxWidth: '460px',
+          boxShadow: '0 24px 50px -12px rgba(234, 88, 12, 0.12), 0 4px 16px rgba(0, 0, 0, 0.03)',
+          position: 'relative'
+        }}
+      >
         {/* Brand Header */}
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <img
             src="/papidologo.jpeg"
             alt="Papido Logo"
             style={{
-              width: '84px',
-              height: '84px',
+              width: '68px',
+              height: '68px',
               objectFit: 'contain',
-              borderRadius: '20px',
-              margin: '0 auto 12px',
-              boxShadow: '0 8px 24px rgba(234, 88, 12, 0.25)',
-              border: '2px solid #E8DCCB',
+              borderRadius: '18px',
+              margin: '0 auto 10px',
+              boxShadow: '0 8px 20px rgba(234, 88, 12, 0.2)',
+              border: '2px solid #F3ECE2',
               background: '#FFFFFF',
-              padding: '4px',
+              padding: '3px',
               display: 'block'
             }}
           />
-          <h1 style={{ fontSize: '26px', fontWeight: 900, letterSpacing: '-0.02em', color: '#271E16' }}>PAPIDO</h1>
-          <p style={{ fontSize: '13px', color: '#796D61', marginTop: '4px' }}>
-            Pondicherry University Campus Mobility Platform
+          <h2
+            style={{
+              fontSize: '28px',
+              fontWeight: 800,
+              letterSpacing: '-0.03em',
+              color: '#1F1A16',
+              margin: '0 0 4px 0'
+            }}
+          >
+            {authMode === 'login' ? 'Login' : authMode === 'register' ? 'Register' : 'Reset Password'}
+          </h2>
+          <p style={{ fontSize: '13px', color: '#796D61', margin: 0, fontWeight: 500 }}>
+            {authMode === 'login'
+              ? 'Sign in to access campus mobility'
+              : authMode === 'register'
+              ? 'Join as a verified campus passenger or rider'
+              : 'Recover your account password'}
           </p>
         </div>
 
-        {/* Auth Mode Tabs (Sign In / Register) */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          background: '#F3ECE2',
-          border: '1px solid #E8DCCB',
-          padding: '4px',
-          borderRadius: '10px',
-          marginBottom: '20px'
-        }}>
-          <button
-            type="button"
-            onClick={() => { setAuthMode('login'); setError(''); setSuccessMsg(''); }}
+        {/* Tab Switcher (Sign In / Register) */}
+        {authMode !== 'forgot' && (
+          <div
             style={{
-              padding: '8px',
-              borderRadius: '8px',
-              border: 'none',
-              background: authMode === 'login' ? 'linear-gradient(135deg, #F97316, #EA580C)' : 'transparent',
-              color: authMode === 'login' ? '#FFFFFF' : '#796D61',
-              fontWeight: 700,
-              fontSize: '13px',
-              cursor: 'pointer',
-              boxShadow: authMode === 'login' ? '0 2px 8px rgba(234, 88, 12, 0.3)' : 'none'
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              background: '#F7F2EB',
+              border: '1px solid #EBE1D4',
+              padding: '4px',
+              borderRadius: '9999px',
+              marginBottom: '24px'
             }}
           >
-            Sign In
-          </button>
-          <button
-            type="button"
-            onClick={() => { setAuthMode('register'); setError(''); setSuccessMsg(''); }}
-            style={{
-              padding: '8px',
-              borderRadius: '8px',
-              border: 'none',
-              background: authMode === 'register' ? 'linear-gradient(135deg, #F97316, #EA580C)' : 'transparent',
-              color: authMode === 'register' ? '#FFFFFF' : '#796D61',
-              fontWeight: 700,
-              fontSize: '13px',
-              cursor: 'pointer',
-              boxShadow: authMode === 'register' ? '0 2px 8px rgba(234, 88, 12, 0.3)' : 'none'
-            }}
-          >
-            Create Account
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMode('login');
+                setError('');
+                setSuccessMsg('');
+              }}
+              style={{
+                padding: '9px 12px',
+                borderRadius: '9999px',
+                border: 'none',
+                background: authMode === 'login' ? 'linear-gradient(135deg, #F97316, #EA580C)' : 'transparent',
+                color: authMode === 'login' ? '#FFFFFF' : '#796D61',
+                fontWeight: 700,
+                fontSize: '13px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: authMode === 'login' ? '0 3px 10px rgba(234, 88, 12, 0.3)' : 'none'
+              }}
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMode('register');
+                setError('');
+                setSuccessMsg('');
+              }}
+              style={{
+                padding: '9px 12px',
+                borderRadius: '9999px',
+                border: 'none',
+                background: authMode === 'register' ? 'linear-gradient(135deg, #F97316, #EA580C)' : 'transparent',
+                color: authMode === 'register' ? '#FFFFFF' : '#796D61',
+                fontWeight: 700,
+                fontSize: '13px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: authMode === 'register' ? '0 3px 10px rgba(234, 88, 12, 0.3)' : 'none'
+              }}
+            >
+              Create Account
+            </button>
+          </div>
+        )}
 
         {/* Feedback Alert Banners */}
         {error && (
-          <div style={{
-            padding: '12px 14px',
-            background: '#FEE2E2',
-            border: '1px solid #FCA5A5',
-            borderRadius: '8px',
-            color: '#B91C1C',
-            fontSize: '13px',
-            marginBottom: '16px'
-          }}>
-            {error}
+          <div
+            style={{
+              padding: '12px 14px',
+              background: '#FEF2F2',
+              border: '1px solid #FCA5A5',
+              borderRadius: '14px',
+              color: '#B91C1C',
+              fontSize: '12.5px',
+              fontWeight: 600,
+              marginBottom: '18px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <AlertCircle size={16} color="#DC2626" style={{ flexShrink: 0 }} />
+            <span>{error}</span>
           </div>
         )}
 
         {successMsg && (
-          <div style={{
-            padding: '12px 14px',
-            background: '#D1FAE5',
-            border: '1px solid #6EE7B7',
-            borderRadius: '8px',
-            color: '#047857',
-            fontSize: '13px',
-            marginBottom: '16px'
-          }}>
-            {successMsg}
+          <div
+            style={{
+              padding: '12px 14px',
+              background: '#ECFDF5',
+              border: '1px solid #6EE7B7',
+              borderRadius: '14px',
+              color: '#047857',
+              fontSize: '12.5px',
+              fontWeight: 600,
+              marginBottom: '18px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <CheckCircle2 size={16} color="#059669" style={{ flexShrink: 0 }} />
+            <span>{successMsg}</span>
           </div>
         )}
 
         {/* ============================================================ */}
-        {/* VIEW 1: SIGN IN */}
+        {/* VIEW 1: SIGN IN (FIGMA STYLE) */}
         {/* ============================================================ */}
         {authMode === 'login' && (
-          <form onSubmit={handleLoginSubmit}>
-            <div className="form-group">
-              <label className="form-label" style={{ color: '#271E16', fontWeight: 700 }}>Email Address</label>
-              <div style={{ position: 'relative' }}>
-                <Mail size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: '#A39587' }} />
+          <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Email input */}
+            <div>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: '#4A3E31',
+                  marginBottom: '6px'
+                }}
+              >
+                Enter your Email
+              </label>
+              <div
+                style={{
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: '#FFFFFF',
+                  border: '1.5px solid #E5DBD0',
+                  borderRadius: '14px',
+                  transition: 'border-color 0.2s ease',
+                  overflow: 'hidden'
+                }}
+              >
+                <div style={{ paddingLeft: '14px', display: 'flex', alignItems: 'center', color: '#9E8F82' }}>
+                  <Mail size={18} />
+                </div>
                 <input
                   type="email"
                   required
-                  className="form-input"
-                  style={{ paddingLeft: '38px', width: '100%', background: '#F8F3EC', border: '1.5px solid #E8DCCB', color: '#271E16' }}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@papido.com"
+                  style={{
+                    width: '100%',
+                    padding: '13px 14px',
+                    border: 'none',
+                    outline: 'none',
+                    background: 'transparent',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    color: '#271E16'
+                  }}
                 />
               </div>
             </div>
 
-            <div className="form-group">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                <label className="form-label" style={{ margin: 0, color: '#271E16', fontWeight: 700 }}>Password</label>
-                <button
-                  type="button"
-                  onClick={() => { setAuthMode('forgot'); setForgotEmail(email); setError(''); setSuccessMsg(''); }}
-                  style={{ background: 'none', border: 'none', color: '#EA580C', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
-                >
-                  Forgot Password?
-                </button>
-              </div>
-              <div style={{ position: 'relative' }}>
-                <Lock size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: '#A39587' }} />
+            {/* Password input with eye toggle & forgot password link */}
+            <div>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: '#4A3E31',
+                  marginBottom: '6px'
+                }}
+              >
+                Enter your password
+              </label>
+              <div
+                style={{
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: '#FFFFFF',
+                  border: '1.5px solid #E5DBD0',
+                  borderRadius: '14px',
+                  overflow: 'hidden'
+                }}
+              >
+                <div style={{ paddingLeft: '14px', display: 'flex', alignItems: 'center', color: '#9E8F82' }}>
+                  <Lock size={18} />
+                </div>
                 <input
                   type={showLoginPassword ? 'text' : 'password'}
                   required
-                  className="form-input"
-                  style={{ paddingLeft: '38px', paddingRight: '40px', width: '100%', background: '#F8F3EC', border: '1.5px solid #E8DCCB', color: '#271E16' }}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="••••••••••••"
+                  style={{
+                    width: '100%',
+                    padding: '13px 14px',
+                    paddingRight: '40px',
+                    border: 'none',
+                    outline: 'none',
+                    background: 'transparent',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    color: '#271E16'
+                  }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowLoginPassword(!showLoginPassword)}
                   style={{
                     position: 'absolute',
-                    right: '10px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
+                    right: '12px',
                     background: 'none',
                     border: 'none',
                     cursor: 'pointer',
-                    color: '#796D61',
+                    color: '#9E8F82',
+                    padding: '4px',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '4px'
+                    justifyContent: 'center'
                   }}
                   title={showLoginPassword ? 'Hide password' : 'Show password'}
                 >
                   {showLoginPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+
+              {/* Forgot Password Link */}
+              <div style={{ textAlign: 'right', marginTop: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode('forgot');
+                    setForgotEmail(email);
+                    setError('');
+                    setSuccessMsg('');
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#EA580C',
+                    fontSize: '12.5px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    padding: 0
+                  }}
+                >
+                  forget password?
+                </button>
+              </div>
             </div>
 
+            {/* Pill Action Button (Matches Figma Design) */}
             <button
               type="submit"
-              className="btn btn-primary"
-              style={{ width: '100%', padding: '12px', marginTop: '12px', fontWeight: 800, fontSize: '14px', background: 'linear-gradient(135deg, #F97316, #EA580C)', color: '#FFFFFF', border: 'none', borderRadius: '10px', boxShadow: '0 4px 14px rgba(234, 88, 12, 0.35)', cursor: 'pointer' }}
               disabled={loading}
+              style={{
+                width: '100%',
+                height: '48px',
+                borderRadius: '9999px',
+                border: 'none',
+                background: 'linear-gradient(135deg, #F97316, #EA580C)',
+                color: '#FFFFFF',
+                fontSize: '15px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 8px 22px rgba(234, 88, 12, 0.32)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                marginTop: '4px'
+              }}
             >
-              {loading ? 'Authenticating...' : (
+              {loading ? (
+                'Signing in...'
+              ) : (
                 <>
-                  Sign In to Account <ArrowRight size={16} />
+                  Login <ArrowRight size={16} />
                 </>
               )}
             </button>
+
+            {/* Figma Switch to Sign Up */}
+            <div style={{ textAlign: 'center', fontSize: '13px', color: '#796D61', marginTop: '2px' }}>
+              Don't have an account?{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('register');
+                  setError('');
+                  setSuccessMsg('');
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#EA580C',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  padding: 0,
+                  fontSize: '13px'
+                }}
+              >
+                Sign Up
+              </button>
+            </div>
+
+            {/* "or" separator like in Figma */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                margin: '8px 0 4px 0',
+                gap: '12px'
+              }}
+            >
+              <div style={{ flex: 1, height: '1px', background: '#E8DCCB' }} />
+              <span style={{ fontSize: '12px', fontWeight: 600, color: '#A39587' }}>or</span>
+              <div style={{ flex: 1, height: '1px', background: '#E8DCCB' }} />
+            </div>
+
+            {/* 1-Tap Demo Switcher Styled as Figma Pill Buttons */}
+            <div>
+              <div
+                style={{
+                  fontSize: '11.5px',
+                  fontWeight: 700,
+                  color: '#EA580C',
+                  letterSpacing: '0.5px',
+                  marginBottom: '8px',
+                  textAlign: 'center',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Sparkles size={13} /> 1-TAP DEMO TEST ACCOUNTS
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => quickFill('customer.ananya@papido.com', 'Password@123')}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: '12px',
+                    border: '1.5px solid #FCE7F3',
+                    background: '#FFF5F8',
+                    color: '#BE185D',
+                    fontSize: '11.5px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <ShieldCheck size={14} /> Passenger (Ananya)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => quickFill('customer.rohan@papido.com', 'Password@123')}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: '12px',
+                    border: '1.5px solid #EBE1D4',
+                    background: '#FAFAF8',
+                    color: '#271E16',
+                    fontSize: '11.5px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <User size={14} /> Passenger (Rohan)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => quickFill('rider.rahul@papido.com', 'Password@123')}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: '12px',
+                    border: '1.5px solid #EBE1D4',
+                    background: '#FAFAF8',
+                    color: '#271E16',
+                    fontSize: '11.5px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <Bike size={14} /> Bike Rider (Rahul)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => quickFill('sanaullak294@gmail.com', 'Password@123')}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: '12px',
+                    border: '1.5px solid #EBE1D4',
+                    background: '#FAFAF8',
+                    color: '#271E16',
+                    fontSize: '11.5px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <Zap size={14} /> Scooter Rider (Sanaulla)
+                </button>
+              </div>
+            </div>
           </form>
         )}
 
         {/* ============================================================ */}
-        {/* VIEW 2: REGISTER (PASSENGER / DRIVER) */}
+        {/* VIEW 2: REGISTER (FIGMA STYLE) */}
         {/* ============================================================ */}
         {authMode === 'register' && (
-          <form onSubmit={handleRegisterSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <form onSubmit={handleRegisterSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {/* Join As Role Selection */}
             <div>
-              <label className="form-label" style={{ color: '#271E16', fontWeight: 700 }}>I want to join as:</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#4A3E31', marginBottom: '6px' }}>
+                I want to join as:
+              </label>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <button
                   type="button"
                   onClick={() => setRegRole('CUSTOMER')}
                   style={{
                     padding: '10px',
-                    borderRadius: '8px',
-                    border: regRole === 'CUSTOMER' ? '2px solid #F97316' : '1.5px solid #E8DCCB',
-                    background: regRole === 'CUSTOMER' ? '#FFFFFF' : '#F8F3EC',
+                    borderRadius: '14px',
+                    border: regRole === 'CUSTOMER' ? '2px solid #EA580C' : '1.5px solid #E5DBD0',
+                    background: regRole === 'CUSTOMER' ? '#FFF7ED' : '#FAFAF8',
                     color: regRole === 'CUSTOMER' ? '#EA580C' : '#796D61',
-                    boxShadow: regRole === 'CUSTOMER' ? '0 2px 8px rgba(249, 115, 22, 0.2)' : 'none',
                     fontWeight: 700,
                     fontSize: '13px',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '6px'
+                    gap: '6px',
+                    transition: 'all 0.2s ease'
                   }}
                 >
                   <User size={16} /> Passenger
@@ -523,18 +828,18 @@ export function LoginView({ onGoToAdminPortal }) {
                   onClick={() => setRegRole('RIDER')}
                   style={{
                     padding: '10px',
-                    borderRadius: '8px',
-                    border: regRole === 'RIDER' ? '2px solid #F97316' : '1.5px solid #E8DCCB',
-                    background: regRole === 'RIDER' ? '#FFFFFF' : '#F8F3EC',
+                    borderRadius: '14px',
+                    border: regRole === 'RIDER' ? '2px solid #EA580C' : '1.5px solid #E5DBD0',
+                    background: regRole === 'RIDER' ? '#FFF7ED' : '#FAFAF8',
                     color: regRole === 'RIDER' ? '#EA580C' : '#796D61',
-                    boxShadow: regRole === 'RIDER' ? '0 2px 8px rgba(249, 115, 22, 0.2)' : 'none',
                     fontWeight: 700,
                     fontSize: '13px',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '6px'
+                    gap: '6px',
+                    transition: 'all 0.2s ease'
                   }}
                 >
                   <Bike size={16} /> Rider (Driver)
@@ -542,179 +847,239 @@ export function LoginView({ onGoToAdminPortal }) {
               </div>
             </div>
 
-            <div className="form-group">
-              <label className="form-label" style={{ color: '#271E16', fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>FULL NAME <span style={{ color: '#EA580C' }}>*</span></span>
+            {/* Full Name */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 600, color: '#4A3E31', margin: 0 }}>
+                  Enter your Full Name <span style={{ color: '#EA580C' }}>*</span>
+                </label>
                 {regTouched.name && !regFieldErrors.name && regName.trim() && (
-                  <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 700 }}>
                     <Check size={12} /> VALID
                   </span>
                 )}
-              </label>
-              <div style={{ position: 'relative', width: '100%' }}>
-                <User size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#A39587', pointerEvents: 'none' }} />
+              </div>
+              <div
+                style={{
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: '#FFFFFF',
+                  border: regTouched.name && regFieldErrors.name ? '1.5px solid #EF4444' : regTouched.name && regName.trim() ? '1.5px solid #10B981' : '1.5px solid #E5DBD0',
+                  borderRadius: '14px',
+                  overflow: 'hidden'
+                }}
+              >
+                <div style={{ paddingLeft: '14px', display: 'flex', alignItems: 'center', color: '#9E8F82' }}>
+                  <User size={18} />
+                </div>
                 <input
                   type="text"
                   required
-                  className="form-input"
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    paddingLeft: '38px',
-                    paddingRight: '12px',
-                    background: '#F8F3EC',
-                    border: regTouched.name && regFieldErrors.name ? '1.5px solid #EF4444' : (regTouched.name && regName.trim() ? '1.5px solid #10B981' : '1.5px solid #E8DCCB'),
-                    color: '#271E16',
-                    textTransform: 'uppercase',
-                    fontWeight: 600,
-                    height: '42px',
-                    borderRadius: '8px'
-                  }}
-                  placeholder="ANANYA SEN"
                   value={regName}
                   onChange={(e) => {
                     const upper = e.target.value.toUpperCase();
                     setRegName(upper);
                     if (regTouched.name) {
-                      setRegFieldErrors(prev => ({ ...prev, name: validateRegField('name', upper) }));
+                      setRegFieldErrors((prev) => ({ ...prev, name: validateRegField('name', upper) }));
                     }
                   }}
                   onBlur={() => {
-                    setRegTouched(prev => ({ ...prev, name: true }));
-                    setRegFieldErrors(prev => ({ ...prev, name: validateRegField('name', regName) }));
+                    setRegTouched((prev) => ({ ...prev, name: true }));
+                    setRegFieldErrors((prev) => ({ ...prev, name: validateRegField('name', regName) }));
+                  }}
+                  placeholder="ANANYA SEN"
+                  style={{
+                    width: '100%',
+                    padding: '12px 14px',
+                    border: 'none',
+                    outline: 'none',
+                    background: 'transparent',
+                    fontSize: '13.5px',
+                    fontWeight: 600,
+                    color: '#271E16',
+                    textTransform: 'uppercase'
                   }}
                 />
               </div>
               {regTouched.name && regFieldErrors.name && (
-                <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 700, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 600, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <AlertCircle size={12} /> {regFieldErrors.name}
                 </div>
               )}
             </div>
 
-            <div className="form-group">
-              <label className="form-label" style={{ color: '#271E16', fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>CAMPUS EMAIL <span style={{ color: '#EA580C' }}>*</span></span>
-                {regTouched.email && !regFieldErrors.email && regEmail.trim() && (
-                  <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                    <Check size={12} /> VALID
-                  </span>
-                )}
-              </label>
-              <div style={{ position: 'relative', width: '100%' }}>
-                <Mail size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#A39587', pointerEvents: 'none' }} />
-                <input
-                  type="email"
-                  required
-                  className="form-input"
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    paddingLeft: '38px',
-                    paddingRight: '12px',
-                    background: '#F8F3EC',
-                    border: regTouched.email && regFieldErrors.email ? '1.5px solid #EF4444' : (regTouched.email && regEmail.trim() ? '1.5px solid #10B981' : '1.5px solid #E8DCCB'),
-                    color: '#271E16',
-                    height: '42px',
-                    borderRadius: '8px'
-                  }}
-                  placeholder="student@pondiuni.ac.in"
-                  value={regEmail}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setRegEmail(val);
-                    if (regTouched.email) {
-                      setRegFieldErrors(prev => ({ ...prev, email: validateRegField('email', val) }));
-                    }
-                  }}
-                  onBlur={() => {
-                    setRegTouched(prev => ({ ...prev, email: true }));
-                    setRegFieldErrors(prev => ({ ...prev, email: validateRegField('email', regEmail) }));
-                  }}
-                />
-              </div>
-              {regTouched.email && regFieldErrors.email && (
-                <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 700, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <AlertCircle size={12} /> {regFieldErrors.email}
-                </div>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" style={{ color: '#271E16', fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>PHONE NUMBER (10 DIGITS) <span style={{ color: '#EA580C' }}>*</span></span>
+            {/* Mobile Number with Country Code (+91 ⌵) Exactly like Figma design */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 600, color: '#4A3E31', margin: 0 }}>
+                  Enter your mobile number <span style={{ color: '#EA580C' }}>*</span>
+                </label>
                 {regTouched.phone && !regFieldErrors.phone && regPhone.trim().length === 10 && (
-                  <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 700 }}>
                     <Check size={12} /> VALID
                   </span>
                 )}
-              </label>
-              <div style={{ position: 'relative', width: '100%' }}>
-                <Phone size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#A39587', pointerEvents: 'none' }} />
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: '#FFFFFF',
+                  border: regTouched.phone && regFieldErrors.phone ? '1.5px solid #EF4444' : regTouched.phone && regPhone.trim().length === 10 ? '1.5px solid #10B981' : '1.5px solid #E5DBD0',
+                  borderRadius: '14px',
+                  overflow: 'hidden'
+                }}
+              >
+                {/* Figma Country Selector Badge (+91 ⌵) */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '0 12px 0 14px',
+                    background: '#F8F4EE',
+                    borderRight: '1px solid #E5DBD0',
+                    height: '46px',
+                    fontSize: '13.5px',
+                    fontWeight: 700,
+                    color: '#3A2E23',
+                    userSelect: 'none'
+                  }}
+                >
+                  <span>+91</span>
+                  <ChevronDown size={14} color="#796D61" />
+                </div>
                 <input
                   type="tel"
                   required
                   maxLength={10}
-                  className="form-input"
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    paddingLeft: '38px',
-                    paddingRight: '12px',
-                    background: '#F8F3EC',
-                    border: regTouched.phone && regFieldErrors.phone ? '1.5px solid #EF4444' : (regTouched.phone && regPhone.trim().length === 10 ? '1.5px solid #10B981' : '1.5px solid #E8DCCB'),
-                    color: '#271E16',
-                    letterSpacing: '1px',
-                    fontWeight: 600,
-                    height: '42px',
-                    borderRadius: '8px'
-                  }}
-                  placeholder="9876543210"
                   value={regPhone}
                   onChange={(e) => {
                     const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
                     setRegPhone(digits);
                     if (regTouched.phone) {
-                      setRegFieldErrors(prev => ({ ...prev, phone: validateRegField('phone', digits) }));
+                      setRegFieldErrors((prev) => ({ ...prev, phone: validateRegField('phone', digits) }));
                     }
                   }}
                   onBlur={() => {
-                    setRegTouched(prev => ({ ...prev, phone: true }));
-                    setRegFieldErrors(prev => ({ ...prev, phone: validateRegField('phone', regPhone) }));
+                    setRegTouched((prev) => ({ ...prev, phone: true }));
+                    setRegFieldErrors((prev) => ({ ...prev, phone: validateRegField('phone', regPhone) }));
+                  }}
+                  placeholder="9876543210"
+                  style={{
+                    width: '100%',
+                    padding: '12px 14px',
+                    border: 'none',
+                    outline: 'none',
+                    background: 'transparent',
+                    fontSize: '13.5px',
+                    fontWeight: 600,
+                    color: '#271E16',
+                    letterSpacing: '1px'
                   }}
                 />
+                {/* Right side check icon when valid, just like Figma */}
+                {regPhone.trim().length === 10 && (
+                  <div style={{ paddingRight: '14px', color: '#059669', display: 'flex', alignItems: 'center' }}>
+                    <CheckCircle2 size={18} />
+                  </div>
+                )}
               </div>
               {regTouched.phone && regFieldErrors.phone && (
-                <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 700, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 600, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <AlertCircle size={12} /> {regFieldErrors.phone}
                 </div>
               )}
             </div>
 
-            <div className="form-group">
-              <label className="form-label" style={{ color: '#271E16', fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>GENDER <span style={{ color: '#EA580C' }}>*</span></span>
+            {/* Campus Email */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 600, color: '#4A3E31', margin: 0 }}>
+                  Enter your Email <span style={{ color: '#EA580C' }}>*</span>
+                </label>
+                {regTouched.email && !regFieldErrors.email && regEmail.trim() && (
+                  <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 700 }}>
+                    <Check size={12} /> VALID
+                  </span>
+                )}
+              </div>
+              <div
+                style={{
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: '#FFFFFF',
+                  border: regTouched.email && regFieldErrors.email ? '1.5px solid #EF4444' : regTouched.email && regEmail.trim() ? '1.5px solid #10B981' : '1.5px solid #E5DBD0',
+                  borderRadius: '14px',
+                  overflow: 'hidden'
+                }}
+              >
+                <div style={{ paddingLeft: '14px', display: 'flex', alignItems: 'center', color: '#9E8F82' }}>
+                  <Mail size={18} />
+                </div>
+                <input
+                  type="email"
+                  required
+                  value={regEmail}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setRegEmail(val);
+                    if (regTouched.email) {
+                      setRegFieldErrors((prev) => ({ ...prev, email: validateRegField('email', val) }));
+                    }
+                  }}
+                  onBlur={() => {
+                    setRegTouched((prev) => ({ ...prev, email: true }));
+                    setRegFieldErrors((prev) => ({ ...prev, email: validateRegField('email', regEmail) }));
+                  }}
+                  placeholder="student@pondiuni.ac.in"
+                  style={{
+                    width: '100%',
+                    padding: '12px 14px',
+                    border: 'none',
+                    outline: 'none',
+                    background: 'transparent',
+                    fontSize: '13.5px',
+                    fontWeight: 500,
+                    color: '#271E16'
+                  }}
+                />
+              </div>
+              {regTouched.email && regFieldErrors.email && (
+                <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 600, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <AlertCircle size={12} /> {regFieldErrors.email}
+                </div>
+              )}
+            </div>
+
+            {/* Gender Selection */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 600, color: '#4A3E31', margin: 0 }}>
+                  Gender <span style={{ color: '#EA580C' }}>*</span>
+                </label>
                 {regGender && (
-                  <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 700 }}>
                     <Check size={12} /> {regGender} SELECTED
                   </span>
                 )}
-              </label>
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <button
                   type="button"
                   onClick={() => {
                     setRegGender('MALE');
-                    setRegTouched(prev => ({ ...prev, gender: true }));
-                    setRegFieldErrors(prev => ({ ...prev, gender: '' }));
+                    setRegTouched((prev) => ({ ...prev, gender: true }));
+                    setRegFieldErrors((prev) => ({ ...prev, gender: '' }));
                   }}
                   style={{
-                    padding: '10px 4px',
-                    borderRadius: '8px',
-                    border: regGender === 'MALE' ? '2px solid #F97316' : (regTouched.gender && regFieldErrors.gender ? '1.5px solid #EF4444' : '1.5px solid #E8DCCB'),
-                    background: regGender === 'MALE' ? '#FFFFFF' : '#F8F3EC',
+                    padding: '9px',
+                    borderRadius: '12px',
+                    border: regGender === 'MALE' ? '2px solid #EA580C' : '1.5px solid #E5DBD0',
+                    background: regGender === 'MALE' ? '#FFF7ED' : '#FAFAF8',
                     color: regGender === 'MALE' ? '#EA580C' : '#796D61',
-                    boxShadow: regGender === 'MALE' ? '0 2px 8px rgba(249, 115, 22, 0.2)' : 'none',
                     fontWeight: 700,
                     fontSize: '13px',
                     cursor: 'pointer',
@@ -724,22 +1089,21 @@ export function LoginView({ onGoToAdminPortal }) {
                     gap: '6px'
                   }}
                 >
-                  <User size={16} /> MALE
+                  <User size={15} /> MALE
                 </button>
                 <button
                   type="button"
                   onClick={() => {
                     setRegGender('FEMALE');
-                    setRegTouched(prev => ({ ...prev, gender: true }));
-                    setRegFieldErrors(prev => ({ ...prev, gender: '' }));
+                    setRegTouched((prev) => ({ ...prev, gender: true }));
+                    setRegFieldErrors((prev) => ({ ...prev, gender: '' }));
                   }}
                   style={{
-                    padding: '10px 4px',
-                    borderRadius: '8px',
-                    border: regGender === 'FEMALE' ? '2px solid #EC4899' : (regTouched.gender && regFieldErrors.gender ? '1.5px solid #EF4444' : '1.5px solid #E8DCCB'),
-                    background: regGender === 'FEMALE' ? '#FFFFFF' : '#F8F3EC',
+                    padding: '9px',
+                    borderRadius: '12px',
+                    border: regGender === 'FEMALE' ? '2px solid #EC4899' : '1.5px solid #E5DBD0',
+                    background: regGender === 'FEMALE' ? '#FDF2F8' : '#FAFAF8',
                     color: regGender === 'FEMALE' ? '#BE185D' : '#796D61',
-                    boxShadow: regGender === 'FEMALE' ? '0 2px 8px rgba(236, 72, 153, 0.2)' : 'none',
                     fontWeight: 700,
                     fontSize: '13px',
                     cursor: 'pointer',
@@ -749,28 +1113,35 @@ export function LoginView({ onGoToAdminPortal }) {
                     gap: '6px'
                   }}
                 >
-                  <ShieldCheck size={16} /> FEMALE
+                  <ShieldCheck size={15} /> FEMALE
                 </button>
               </div>
               {regTouched.gender && regFieldErrors.gender && (
-                <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 700, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 600, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <AlertCircle size={12} /> {regFieldErrors.gender}
                 </div>
               )}
             </div>
 
-            {/* Rider Specific Mandatory Verification Details */}
+            {/* Rider Specific Details & KYC Uploads */}
             {regRole === 'RIDER' && (
-              <div style={{ background: '#F8F3EC', padding: '16px', borderRadius: '14px', display: 'flex', flexDirection: 'column', gap: '14px', border: '1.5px solid #E8DCCB' }}>
+              <div
+                style={{
+                  background: '#FBF8F4',
+                  padding: '16px',
+                  borderRadius: '18px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  border: '1.5px solid #EFE4D6'
+                }}
+              >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 800, color: '#EA580C' }}>
                   <ShieldCheck size={16} /> MANDATORY DRIVER VEHICLE & DOCUMENTS
                 </div>
-                <div style={{ fontSize: '11px', color: '#796D61', marginTop: '-8px' }}>
-                  TYPE YOUR VEHICLE MODEL IN CAPITAL AND UPLOAD 3 MANDATORY DOCUMENTS (MAX 150 KB EACH, PDF / JPG).
-                </div>
 
                 {/* Vehicle Type & Model */}
-                <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '10px', border: '1px solid #E8DCCB', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '12px', border: '1px solid #EBE1D4', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <label style={{ fontSize: '12px', fontWeight: 700, color: '#271E16', margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span>VEHICLE TYPE & MODEL <span style={{ color: '#EA580C' }}>*</span></span>
                     {regTouched.vehicleModel && !regFieldErrors.vehicleModel && regVehicleModel.trim() && (
@@ -779,7 +1150,7 @@ export function LoginView({ onGoToAdminPortal }) {
                       </span>
                     )}
                   </label>
-                  
+
                   {/* Two-Wheeler Type */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                     <button
@@ -787,9 +1158,9 @@ export function LoginView({ onGoToAdminPortal }) {
                       onClick={() => setRegVehicleType('BIKE')}
                       style={{
                         padding: '8px',
-                        borderRadius: '6px',
-                        border: regVehicleType === 'BIKE' ? '2px solid #F97316' : '1px solid #E8DCCB',
-                        background: regVehicleType === 'BIKE' ? '#FFF7ED' : '#F8F3EC',
+                        borderRadius: '8px',
+                        border: regVehicleType === 'BIKE' ? '2px solid #EA580C' : '1px solid #E5DBD0',
+                        background: regVehicleType === 'BIKE' ? '#FFF7ED' : '#FAFAF8',
                         color: regVehicleType === 'BIKE' ? '#EA580C' : '#796D61',
                         cursor: 'pointer',
                         display: 'flex',
@@ -807,9 +1178,9 @@ export function LoginView({ onGoToAdminPortal }) {
                       onClick={() => setRegVehicleType('SCOOTER')}
                       style={{
                         padding: '8px',
-                        borderRadius: '6px',
-                        border: regVehicleType === 'SCOOTER' ? '2px solid #F97316' : '1px solid #E8DCCB',
-                        background: regVehicleType === 'SCOOTER' ? '#FFF7ED' : '#F8F3EC',
+                        borderRadius: '8px',
+                        border: regVehicleType === 'SCOOTER' ? '2px solid #EA580C' : '1px solid #E5DBD0',
+                        background: regVehicleType === 'SCOOTER' ? '#FFF7ED' : '#FAFAF8',
                         color: regVehicleType === 'SCOOTER' ? '#EA580C' : '#796D61',
                         cursor: 'pointer',
                         display: 'flex',
@@ -827,66 +1198,69 @@ export function LoginView({ onGoToAdminPortal }) {
                   <input
                     type="text"
                     required
-                    className="form-input"
-                    style={{
-                      background: '#F8F3EC',
-                      border: regTouched.vehicleModel && regFieldErrors.vehicleModel ? '1.5px solid #EF4444' : (regTouched.vehicleModel && regVehicleModel.trim() ? '1.5px solid #10B981' : '1.5px solid #E8DCCB'),
-                      color: '#271E16',
-                      fontSize: '13px',
-                      textTransform: 'uppercase',
-                      fontWeight: 600
-                    }}
-                    placeholder="E.G. HONDA ACTIVA 6G / HERO SPLENDOR / TVS NTORQ"
                     value={regVehicleModel}
                     onChange={(e) => {
                       const upper = e.target.value.toUpperCase();
                       setRegVehicleModel(upper);
                       if (regTouched.vehicleModel) {
-                        setRegFieldErrors(prev => ({ ...prev, vehicleModel: validateRegField('vehicleModel', upper) }));
+                        setRegFieldErrors((prev) => ({ ...prev, vehicleModel: validateRegField('vehicleModel', upper) }));
                       }
                     }}
                     onBlur={() => {
-                      setRegTouched(prev => ({ ...prev, vehicleModel: true }));
-                      setRegFieldErrors(prev => ({ ...prev, vehicleModel: validateRegField('vehicleModel', regVehicleModel) }));
+                      setRegTouched((prev) => ({ ...prev, vehicleModel: true }));
+                      setRegFieldErrors((prev) => ({ ...prev, vehicleModel: validateRegField('vehicleModel', regVehicleModel) }));
+                    }}
+                    placeholder="E.G. HONDA ACTIVA 6G / HERO SPLENDOR"
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: regTouched.vehicleModel && regFieldErrors.vehicleModel ? '1.5px solid #EF4444' : regTouched.vehicleModel && regVehicleModel.trim() ? '1.5px solid #10B981' : '1.5px solid #E5DBD0',
+                      background: '#FAFAF8',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      color: '#271E16',
+                      outline: 'none',
+                      textTransform: 'uppercase'
                     }}
                   />
                   {regTouched.vehicleModel && regFieldErrors.vehicleModel && (
-                    <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 700, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 600, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <AlertCircle size={12} /> {regFieldErrors.vehicleModel}
                     </div>
                   )}
                 </div>
 
                 {/* 1. College / Campus ID Upload */}
-                <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '10px', border: '1px solid #E8DCCB', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '12px', border: '1px solid #EBE1D4', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <label style={{ fontSize: '12px', fontWeight: 700, color: '#271E16', margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span>1. CAMPUS / COLLEGE ID CARD <span style={{ color: '#EA580C' }}>*</span></span>
                     {collegeIdFile ? (
                       <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 700 }}>
-                        <CheckCircle2 size={12} /> {(collegeIdFile.size / 1024).toFixed(1)} KB (READY)
+                        <CheckCircle2 size={12} /> {(collegeIdFile.size / 1024).toFixed(1)} KB
                       </span>
                     ) : (
-                      <span style={{ fontSize: '11px', color: '#EA580C', fontWeight: 700 }}>
-                        MAX: 150 KB (PDF / JPG)
-                      </span>
+                      <span style={{ fontSize: '11px', color: '#EA580C', fontWeight: 700 }}>MAX 150 KB</span>
                     )}
                   </label>
-                  <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    padding: '10px',
-                    borderRadius: '8px',
-                    border: collegeIdFile ? '1.5px solid #10B981' : '1.5px dashed #EA580C',
-                    background: collegeIdFile ? '#ECFDF5' : '#FFF7ED',
-                    color: collegeIdFile ? '#047857' : '#EA580C',
-                    cursor: 'pointer',
-                    fontSize: '12px',
-                    fontWeight: 700
-                  }}>
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      padding: '10px',
+                      borderRadius: '10px',
+                      border: collegeIdFile ? '1.5px solid #10B981' : '1.5px dashed #EA580C',
+                      background: collegeIdFile ? '#ECFDF5' : '#FFF7ED',
+                      color: collegeIdFile ? '#047857' : '#EA580C',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      fontWeight: 700
+                    }}
+                  >
                     <Upload size={14} />
-                    <span>{collegeIdFile ? collegeIdFile.name.toUpperCase() : 'UPLOAD CAMPUS ID CARD (PDF OR JPG, ≤ 150 KB)'}</span>
+                    <span>{collegeIdFile ? collegeIdFile.name.toUpperCase() : 'UPLOAD ID CARD (PDF/JPG ≤ 150 KB)'}</span>
                     <input
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
@@ -898,35 +1272,35 @@ export function LoginView({ onGoToAdminPortal }) {
                 </div>
 
                 {/* 2. Driving Licence Upload */}
-                <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '10px', border: '1px solid #E8DCCB', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '12px', border: '1px solid #EBE1D4', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <label style={{ fontSize: '12px', fontWeight: 700, color: '#271E16', margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span>2. DRIVING LICENCE (DL) <span style={{ color: '#EA580C' }}>*</span></span>
                     {licenseFile ? (
                       <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 700 }}>
-                        <CheckCircle2 size={12} /> {(licenseFile.size / 1024).toFixed(1)} KB (READY)
+                        <CheckCircle2 size={12} /> {(licenseFile.size / 1024).toFixed(1)} KB
                       </span>
                     ) : (
-                      <span style={{ fontSize: '11px', color: '#EA580C', fontWeight: 700 }}>
-                        MAX: 150 KB (PDF / JPG)
-                      </span>
+                      <span style={{ fontSize: '11px', color: '#EA580C', fontWeight: 700 }}>MAX 150 KB</span>
                     )}
                   </label>
-                  <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    padding: '10px',
-                    borderRadius: '8px',
-                    border: licenseFile ? '1.5px solid #10B981' : '1.5px dashed #EA580C',
-                    background: licenseFile ? '#ECFDF5' : '#FFF7ED',
-                    color: licenseFile ? '#047857' : '#EA580C',
-                    cursor: 'pointer',
-                    fontSize: '12px',
-                    fontWeight: 700
-                  }}>
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      padding: '10px',
+                      borderRadius: '10px',
+                      border: licenseFile ? '1.5px solid #10B981' : '1.5px dashed #EA580C',
+                      background: licenseFile ? '#ECFDF5' : '#FFF7ED',
+                      color: licenseFile ? '#047857' : '#EA580C',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      fontWeight: 700
+                    }}
+                  >
                     <Upload size={14} />
-                    <span>{licenseFile ? licenseFile.name.toUpperCase() : 'UPLOAD DRIVING LICENCE (PDF OR JPG, ≤ 150 KB)'}</span>
+                    <span>{licenseFile ? licenseFile.name.toUpperCase() : 'UPLOAD DRIVING LICENCE (≤ 150 KB)'}</span>
                     <input
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
@@ -938,35 +1312,35 @@ export function LoginView({ onGoToAdminPortal }) {
                 </div>
 
                 {/* 3. Vehicle RC Document Upload */}
-                <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '10px', border: '1px solid #E8DCCB', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ background: '#FFFFFF', padding: '12px', borderRadius: '12px', border: '1px solid #EBE1D4', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <label style={{ fontSize: '12px', fontWeight: 700, color: '#271E16', margin: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span>3. VEHICLE RC DOCUMENT <span style={{ color: '#EA580C' }}>*</span></span>
                     {rcFile ? (
                       <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 700 }}>
-                        <CheckCircle2 size={12} /> {(rcFile.size / 1024).toFixed(1)} KB (READY)
+                        <CheckCircle2 size={12} /> {(rcFile.size / 1024).toFixed(1)} KB
                       </span>
                     ) : (
-                      <span style={{ fontSize: '11px', color: '#EA580C', fontWeight: 700 }}>
-                        MAX: 150 KB (PDF / JPG)
-                      </span>
+                      <span style={{ fontSize: '11px', color: '#EA580C', fontWeight: 700 }}>MAX 150 KB</span>
                     )}
                   </label>
-                  <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    padding: '10px',
-                    borderRadius: '8px',
-                    border: rcFile ? '1.5px solid #10B981' : '1.5px dashed #EA580C',
-                    background: rcFile ? '#ECFDF5' : '#FFF7ED',
-                    color: rcFile ? '#047857' : '#EA580C',
-                    cursor: 'pointer',
-                    fontSize: '12px',
-                    fontWeight: 700
-                  }}>
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      padding: '10px',
+                      borderRadius: '10px',
+                      border: rcFile ? '1.5px solid #10B981' : '1.5px dashed #EA580C',
+                      background: rcFile ? '#ECFDF5' : '#FFF7ED',
+                      color: rcFile ? '#047857' : '#EA580C',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      fontWeight: 700
+                    }}
+                  >
                     <Upload size={14} />
-                    <span>{rcFile ? rcFile.name.toUpperCase() : 'UPLOAD VEHICLE RC CARD (PDF OR JPG, ≤ 150 KB)'}</span>
+                    <span>{rcFile ? rcFile.name.toUpperCase() : 'UPLOAD RC DOCUMENT (≤ 150 KB)'}</span>
                     <input
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
@@ -979,44 +1353,58 @@ export function LoginView({ onGoToAdminPortal }) {
               </div>
             )}
 
-            <div className="form-group">
-              <label className="form-label" style={{ color: '#271E16', fontWeight: 700, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>PASSWORD (MIN 6 CHARS) <span style={{ color: '#EA580C' }}>*</span></span>
+            {/* Password */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 600, color: '#4A3E31', margin: 0 }}>
+                  Enter your password <span style={{ color: '#EA580C' }}>*</span>
+                </label>
                 {regTouched.password && !regFieldErrors.password && regPassword && regPassword.length >= 6 && (
-                  <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <span style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 700 }}>
                     <Check size={12} /> VALID
                   </span>
                 )}
-              </label>
-              <div style={{ position: 'relative', width: '100%' }}>
-                <Lock size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#A39587', pointerEvents: 'none' }} />
+              </div>
+              <div
+                style={{
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: '#FFFFFF',
+                  border: regTouched.password && regFieldErrors.password ? '1.5px solid #EF4444' : regTouched.password && regPassword.length >= 6 ? '1.5px solid #10B981' : '1.5px solid #E5DBD0',
+                  borderRadius: '14px',
+                  overflow: 'hidden'
+                }}
+              >
+                <div style={{ paddingLeft: '14px', display: 'flex', alignItems: 'center', color: '#9E8F82' }}>
+                  <Lock size={18} />
+                </div>
                 <input
                   type={showRegPassword ? 'text' : 'password'}
                   required
-                  className="form-input"
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    paddingLeft: '38px',
-                    paddingRight: '42px',
-                    height: '42px',
-                    borderRadius: '8px',
-                    background: '#F8F3EC',
-                    border: regTouched.password && regFieldErrors.password ? '1.5px solid #EF4444' : (regTouched.password && regPassword && regPassword.length >= 6 ? '1.5px solid #10B981' : '1.5px solid #E8DCCB'),
-                    color: '#271E16'
-                  }}
-                  placeholder="••••••••"
                   value={regPassword}
                   onChange={(e) => {
                     const val = e.target.value;
                     setRegPassword(val);
                     if (regTouched.password) {
-                      setRegFieldErrors(prev => ({ ...prev, password: validateRegField('password', val) }));
+                      setRegFieldErrors((prev) => ({ ...prev, password: validateRegField('password', val) }));
                     }
                   }}
                   onBlur={() => {
-                    setRegTouched(prev => ({ ...prev, password: true }));
-                    setRegFieldErrors(prev => ({ ...prev, password: validateRegField('password', regPassword) }));
+                    setRegTouched((prev) => ({ ...prev, password: true }));
+                    setRegFieldErrors((prev) => ({ ...prev, password: validateRegField('password', regPassword) }));
+                  }}
+                  placeholder="••••••••••••"
+                  style={{
+                    width: '100%',
+                    padding: '12px 14px',
+                    paddingRight: '40px',
+                    border: 'none',
+                    outline: 'none',
+                    background: 'transparent',
+                    fontSize: '13.5px',
+                    fontWeight: 500,
+                    color: '#271E16'
                   }}
                 />
                 <button
@@ -1025,19 +1413,14 @@ export function LoginView({ onGoToAdminPortal }) {
                   style={{
                     position: 'absolute',
                     right: '12px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
                     background: 'none',
                     border: 'none',
                     cursor: 'pointer',
-                    color: '#796D61',
+                    color: '#9E8F82',
+                    padding: '4px',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '0',
-                    width: '24px',
-                    height: '24px',
-                    zIndex: 2
+                    justifyContent: 'center'
                   }}
                   title={showRegPassword ? 'Hide password' : 'Show password'}
                 >
@@ -1045,156 +1428,309 @@ export function LoginView({ onGoToAdminPortal }) {
                 </button>
               </div>
               {regTouched.password && regFieldErrors.password && (
-                <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 700, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ fontSize: '11px', color: '#EF4444', fontWeight: 600, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <AlertCircle size={12} /> {regFieldErrors.password}
                 </div>
               )}
             </div>
 
+            {/* Pill Action Button */}
             <button
               type="submit"
-              className="btn btn-primary"
-              style={{ width: '100%', padding: '12px', marginTop: '12px', fontWeight: 800, fontSize: '14px', background: 'linear-gradient(135deg, #F97316, #EA580C)', color: '#FFFFFF', border: 'none', borderRadius: '10px', boxShadow: '0 4px 14px rgba(234, 88, 12, 0.35)', cursor: 'pointer' }}
               disabled={loading}
+              style={{
+                width: '100%',
+                height: '48px',
+                borderRadius: '9999px',
+                border: 'none',
+                background: 'linear-gradient(135deg, #F97316, #EA580C)',
+                color: '#FFFFFF',
+                fontSize: '15px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 8px 22px rgba(234, 88, 12, 0.32)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                marginTop: '6px',
+                transition: 'all 0.15s ease'
+              }}
             >
-              {loading ? (uploadStatus || 'PROCESSING REGISTRATION...') : (
+              {loading ? (
+                uploadStatus || 'Processing Registration...'
+              ) : (
                 <>
-                  CREATE ACCOUNT <ArrowRight size={16} />
+                  Sign Up <ArrowRight size={16} />
                 </>
               )}
             </button>
+
+            {/* Switch to Sign In */}
+            <div style={{ textAlign: 'center', fontSize: '13px', color: '#796D61', marginTop: '4px' }}>
+              Already have an account?{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('login');
+                  setError('');
+                  setSuccessMsg('');
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#EA580C',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  padding: 0,
+                  fontSize: '13px'
+                }}
+              >
+                Sign In
+              </button>
+            </div>
           </form>
         )}
 
         {/* ============================================================ */}
-        {/* VIEW 3: FORGOT PASSWORD (EMAIL OTP) */}
+        {/* VIEW 3: FORGOT PASSWORD (FIGMA MATCHING STYLE) */}
         {/* ============================================================ */}
         {authMode === 'forgot' && (
           <div>
-            <h3 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px', color: '#271E16' }}>
+            <h3
+              style={{
+                fontSize: '18px',
+                fontWeight: 800,
+                marginBottom: '6px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                color: '#271E16'
+              }}
+            >
               <KeyRound size={20} color="#EA580C" /> Reset Account Password
             </h3>
-            <p style={{ fontSize: '13px', color: '#796D61', marginBottom: '16px' }}>
+            <p style={{ fontSize: '13px', color: '#796D61', marginBottom: '18px' }}>
               {forgotStep === 1
                 ? 'Enter your registered email. We will send a 6-digit verification code.'
                 : `Enter the 6-digit verification code sent to ${forgotEmail}.`}
             </p>
 
             {forgotStep === 1 ? (
-              <form onSubmit={handleForgotSendOtp} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <div className="form-group">
-                  <label className="form-label" style={{ color: '#271E16', fontWeight: 700 }}>Registered Email</label>
-                  <input
-                    type="email"
-                    required
-                    className="form-input"
-                    style={{ background: '#F8F3EC', border: '1.5px solid #E8DCCB', color: '#271E16' }}
-                    placeholder="name@example.com"
-                    value={forgotEmail}
-                    onChange={(e) => setForgotEmail(e.target.value)}
-                  />
+              <form onSubmit={handleForgotSendOtp} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#4A3E31', marginBottom: '6px' }}>
+                    Enter your Email
+                  </label>
+                  <div
+                    style={{
+                      position: 'relative',
+                      display: 'flex',
+                      alignItems: 'center',
+                      background: '#FFFFFF',
+                      border: '1.5px solid #E5DBD0',
+                      borderRadius: '14px',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    <div style={{ paddingLeft: '14px', display: 'flex', alignItems: 'center', color: '#9E8F82' }}>
+                      <Mail size={18} />
+                    </div>
+                    <input
+                      type="email"
+                      required
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      placeholder="name@example.com"
+                      style={{
+                        width: '100%',
+                        padding: '13px 14px',
+                        border: 'none',
+                        outline: 'none',
+                        background: 'transparent',
+                        fontSize: '14px',
+                        fontWeight: 500,
+                        color: '#271E16'
+                      }}
+                    />
+                  </div>
                 </div>
+
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button
                     type="button"
                     onClick={() => setAuthMode('login')}
-                    className="btn btn-secondary"
-                    style={{ flex: 1, background: '#F3ECE2', border: '1px solid #E8DCCB', color: '#796D61' }}
+                    style={{
+                      flex: 1,
+                      height: '46px',
+                      borderRadius: '9999px',
+                      border: '1px solid #E5DBD0',
+                      background: '#F8F4EE',
+                      color: '#796D61',
+                      fontWeight: 700,
+                      fontSize: '13px',
+                      cursor: 'pointer'
+                    }}
                   >
                     Back to Sign In
                   </button>
                   <button
                     type="submit"
                     disabled={loading}
-                    className="btn btn-primary"
-                    style={{ flex: 1, fontWeight: 700, background: 'linear-gradient(135deg, #F97316, #EA580C)', color: '#FFFFFF' }}
+                    style={{
+                      flex: 1,
+                      height: '46px',
+                      borderRadius: '9999px',
+                      border: 'none',
+                      background: 'linear-gradient(135deg, #F97316, #EA580C)',
+                      color: '#FFFFFF',
+                      fontWeight: 700,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      boxShadow: '0 6px 18px rgba(234, 88, 12, 0.28)'
+                    }}
                   >
-                    {loading ? 'Sending...' : 'Send OTP Code'}
+                    {loading ? 'Sending OTP...' : 'Send OTP Code'}
                   </button>
                 </div>
               </form>
             ) : (
-              <form onSubmit={handleForgotResetSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div className="form-group">
-                  <label className="form-label" style={{ color: '#271E16', fontWeight: 700 }}>6-Digit Email OTP</label>
+              <form onSubmit={handleForgotResetSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#4A3E31', marginBottom: '6px' }}>
+                    6-Digit Email OTP
+                  </label>
                   <input
                     type="text"
                     required
                     maxLength={6}
-                    className="form-input"
-                    style={{ textAlign: 'center', fontSize: '20px', letterSpacing: '6px', fontWeight: 900, background: '#F8F3EC', border: '1.5px solid #E8DCCB', color: '#271E16' }}
-                    placeholder="123456"
                     value={forgotOtp}
                     onChange={(e) => setForgotOtp(e.target.value)}
+                    placeholder="123456"
+                    style={{
+                      width: '100%',
+                      textAlign: 'center',
+                      fontSize: '20px',
+                      letterSpacing: '6px',
+                      fontWeight: 800,
+                      padding: '12px',
+                      borderRadius: '14px',
+                      border: '1.5px solid #E5DBD0',
+                      background: '#FFFFFF',
+                      color: '#271E16',
+                      outline: 'none'
+                    }}
                   />
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label" style={{ color: '#271E16', fontWeight: 700 }}>New Password (min 6 chars)</label>
-                  <div style={{ position: 'relative' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#4A3E31', marginBottom: '6px' }}>
+                    Enter new password
+                  </label>
+                  <div
+                    style={{
+                      position: 'relative',
+                      display: 'flex',
+                      alignItems: 'center',
+                      background: '#FFFFFF',
+                      border: '1.5px solid #E5DBD0',
+                      borderRadius: '14px',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    <div style={{ paddingLeft: '14px', display: 'flex', alignItems: 'center', color: '#9E8F82' }}>
+                      <Lock size={18} />
+                    </div>
                     <input
                       type={showForgotNewPass ? 'text' : 'password'}
                       required
-                      className="form-input"
-                      style={{ background: '#F8F3EC', border: '1.5px solid #E8DCCB', color: '#271E16', paddingRight: '40px' }}
-                      placeholder="••••••••"
                       value={forgotNewPass}
                       onChange={(e) => setForgotNewPass(e.target.value)}
+                      placeholder="••••••••••••"
+                      style={{
+                        width: '100%',
+                        padding: '12px 14px',
+                        paddingRight: '40px',
+                        border: 'none',
+                        outline: 'none',
+                        background: 'transparent',
+                        fontSize: '13.5px',
+                        fontWeight: 500,
+                        color: '#271E16'
+                      }}
                     />
                     <button
                       type="button"
                       onClick={() => setShowForgotNewPass(!showForgotNewPass)}
                       style={{
                         position: 'absolute',
-                        right: '10px',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
+                        right: '12px',
                         background: 'none',
                         border: 'none',
                         cursor: 'pointer',
-                        color: '#796D61',
+                        color: '#9E8F82',
+                        padding: '4px',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: '4px'
+                        justifyContent: 'center'
                       }}
-                      title={showForgotNewPass ? 'Hide password' : 'Show password'}
                     >
                       {showForgotNewPass ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label" style={{ color: '#271E16', fontWeight: 700 }}>Confirm New Password</label>
-                  <div style={{ position: 'relative' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#4A3E31', marginBottom: '6px' }}>
+                    Re-Enter your password
+                  </label>
+                  <div
+                    style={{
+                      position: 'relative',
+                      display: 'flex',
+                      alignItems: 'center',
+                      background: '#FFFFFF',
+                      border: '1.5px solid #E5DBD0',
+                      borderRadius: '14px',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    <div style={{ paddingLeft: '14px', display: 'flex', alignItems: 'center', color: '#9E8F82' }}>
+                      <Lock size={18} />
+                    </div>
                     <input
                       type={showForgotConfirmPass ? 'text' : 'password'}
                       required
-                      className="form-input"
-                      style={{ background: '#F8F3EC', border: '1.5px solid #E8DCCB', color: '#271E16', paddingRight: '40px' }}
-                      placeholder="••••••••"
                       value={forgotConfirmPass}
                       onChange={(e) => setForgotConfirmPass(e.target.value)}
+                      placeholder="••••••••••••"
+                      style={{
+                        width: '100%',
+                        padding: '12px 14px',
+                        paddingRight: '40px',
+                        border: 'none',
+                        outline: 'none',
+                        background: 'transparent',
+                        fontSize: '13.5px',
+                        fontWeight: 500,
+                        color: '#271E16'
+                      }}
                     />
                     <button
                       type="button"
                       onClick={() => setShowForgotConfirmPass(!showForgotConfirmPass)}
                       style={{
                         position: 'absolute',
-                        right: '10px',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
+                        right: '12px',
                         background: 'none',
                         border: 'none',
                         cursor: 'pointer',
-                        color: '#796D61',
+                        color: '#9E8F82',
+                        padding: '4px',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: '4px'
+                        justifyContent: 'center'
                       }}
-                      title={showForgotConfirmPass ? 'Hide password' : 'Show password'}
                     >
                       {showForgotConfirmPass ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
@@ -1205,16 +1741,35 @@ export function LoginView({ onGoToAdminPortal }) {
                   <button
                     type="button"
                     onClick={() => setForgotStep(1)}
-                    className="btn btn-secondary"
-                    style={{ flex: 1, background: '#F3ECE2', border: '1px solid #E8DCCB', color: '#796D61' }}
+                    style={{
+                      flex: 1,
+                      height: '46px',
+                      borderRadius: '9999px',
+                      border: '1px solid #E5DBD0',
+                      background: '#F8F4EE',
+                      color: '#796D61',
+                      fontWeight: 700,
+                      fontSize: '13px',
+                      cursor: 'pointer'
+                    }}
                   >
                     Back
                   </button>
                   <button
                     type="submit"
                     disabled={loading}
-                    className="btn btn-primary"
-                    style={{ flex: 1, fontWeight: 700, background: 'linear-gradient(135deg, #F97316, #EA580C)', color: '#FFFFFF' }}
+                    style={{
+                      flex: 1,
+                      height: '46px',
+                      borderRadius: '9999px',
+                      border: 'none',
+                      background: 'linear-gradient(135deg, #F97316, #EA580C)',
+                      color: '#FFFFFF',
+                      fontWeight: 700,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      boxShadow: '0 6px 18px rgba(234, 88, 12, 0.28)'
+                    }}
                   >
                     {loading ? 'Resetting...' : 'Reset Password'}
                   </button>
@@ -1224,65 +1779,30 @@ export function LoginView({ onGoToAdminPortal }) {
           </div>
         )}
 
-        {/* 1-Tap Quick Demo Account Switcher for Students & Drivers */}
-        <div style={{
-          marginTop: '24px',
-          padding: '16px',
-          background: '#F8F3EC',
-          borderRadius: '12px',
-          border: '1px solid #E8DCCB'
-        }}>
-          <div style={{ fontSize: '11px', fontWeight: 800, color: '#EA580C', letterSpacing: '0.8px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Sparkles size={14} /> 1-TAP DEMO ACCOUNT TEST
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+        {/* Footer Link to Admin Portal */}
+        {onGoToAdminPortal && (
+          <div style={{ textAlign: 'center', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #F0E8DD' }}>
             <button
               type="button"
-              onClick={() => quickFill('customer.ananya@papido.com', 'Password@123')}
-              className="btn btn-secondary btn-sm"
-              style={{ fontSize: '11px', justifyContent: 'flex-start', padding: '8px 10px', border: '1px solid #FBCFE8', background: '#FFFFFF', color: '#BE185D', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}
+              onClick={onGoToAdminPortal}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#9E8F82',
+                fontSize: '11.5px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                letterSpacing: '0.3px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
             >
-              <ShieldCheck size={14} /> Passenger (Ananya)
-            </button>
-
-            <button
-              type="button"
-              onClick={() => quickFill('customer.rohan@papido.com', 'Password@123')}
-              className="btn btn-secondary btn-sm"
-              style={{ fontSize: '11px', justifyContent: 'flex-start', padding: '8px 10px', border: '1px solid #E8DCCB', background: '#FFFFFF', color: '#271E16', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}
-            >
-              <User size={14} /> Passenger (Rohan)
-            </button>
-
-            <button
-              type="button"
-              onClick={() => quickFill('rider.rahul@papido.com', 'Password@123')}
-              className="btn btn-secondary btn-sm"
-              style={{ fontSize: '11px', justifyContent: 'flex-start', padding: '8px 10px', border: '1px solid #E8DCCB', background: '#FFFFFF', color: '#271E16', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}
-            >
-              <Bike size={14} /> Bike Driver (Rahul)
-            </button>
-
-            <button
-              type="button"
-              onClick={() => quickFill('sanaullak294@gmail.com', 'Password@123')}
-              className="btn btn-secondary btn-sm"
-              style={{ fontSize: '11px', justifyContent: 'flex-start', padding: '8px 10px', border: '1px solid #E8DCCB', background: '#FFFFFF', color: '#271E16', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}
-            >
-              <Zap size={14} /> Scooter Rider (Sanaulla)
-            </button>
-
-            <button
-              type="button"
-              onClick={() => quickFill('rider.priya@papido.com', 'Password@123')}
-              className="btn btn-secondary btn-sm"
-              style={{ fontSize: '11px', justifyContent: 'flex-start', padding: '8px 10px', gridColumn: 'span 2', border: '1px solid #FBCFE8', background: '#FFF1F2', color: '#BE185D', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}
-            >
-              <ShieldCheck size={14} /> Female Rider (Priya)
+              <span>Operator & Admin Portal Login</span>
+              <ArrowRight size={12} />
             </button>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
