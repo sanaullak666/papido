@@ -16,8 +16,10 @@ import {
   Sparkles,
   Award
 } from 'lucide-react';
+import { PapidoLoader } from '../components/PapidoLoader';
 
 export function DashboardView() {
+
   const { socket } = useSocket();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -127,8 +129,13 @@ export function DashboardView() {
 
   if (loading && !data) {
     return (
-      <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-        Loading real-time overview metrics...
+      <div style={{ padding: '60px 20px', display: 'flex', justifyContent: 'center' }}>
+        <PapidoLoader
+          card
+          size="lg"
+          text="Loading Platform Overview..."
+          subtext="Fetching real-time metrics, fleet activity, and dispatch statistics"
+        />
       </div>
     );
   }

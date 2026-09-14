@@ -42,6 +42,8 @@ import {
   ThumbsUp,
   Calendar
 } from 'lucide-react';
+import { PapidoLoader } from '../components/PapidoLoader';
+
 
 const DEFAULT_GROUPED_CAMPUS_STOPS = [
   {
@@ -1705,7 +1707,18 @@ export function CustomerPortalView() {
 
   return (
     <div className="theme-orange-beige" style={{ minHeight: '100vh', background: '#FAF5EE', color: '#271E16', display: 'flex', flexDirection: 'column' }}>
+      {/* Fullscreen Papido Loader during booking creation */}
+      {bookingLoading && (
+        <PapidoLoader
+          fullScreen
+          size="lg"
+          text={bookingMode === 'SCHEDULE' ? 'Pre-Booking Your Campus Ride...' : 'Connecting to Nearby Campus Captains...'}
+          subtext="Broadcasting your flat ₹25 request to active riders across Pondicherry University"
+        />
+      )}
+
       {/* Top Passenger Web Navigation Header (Rapido Style) */}
+
       <header style={{
         background: 'rgba(255, 255, 255, 0.95)',
         backdropFilter: 'blur(16px)',
@@ -3359,7 +3372,43 @@ export function CustomerPortalView() {
                       </div>
                     </div>
 
+                    {/* Animated Brand Loader while searching or waiting for admin quote */}
+                    {activeRide.status === 'REQUESTED' && (
+                      <div style={{
+                        background: '#FFFFFF',
+                        border: '1.5px solid #FED7AA',
+                        borderRadius: '18px',
+                        padding: '24px 20px',
+                        textAlign: 'center',
+                        boxShadow: '0 8px 24px rgba(234, 88, 12, 0.08)'
+                      }}>
+                        <PapidoLoader
+                          size="md"
+                          text="Connecting to Nearest Campus Captain..."
+                          subtext="Captains across Pondicherry University are receiving your flat ₹25 ride request in real time"
+                        />
+                      </div>
+                    )}
+
+                    {activeRide.status === 'PENDING_ADMIN_QUOTE' && (
+                      <div style={{
+                        background: '#FFFFFF',
+                        border: '1.5px solid #FED7AA',
+                        borderRadius: '18px',
+                        padding: '24px 20px',
+                        textAlign: 'center',
+                        boxShadow: '0 8px 24px rgba(234, 88, 12, 0.08)'
+                      }}>
+                        <PapidoLoader
+                          size="md"
+                          text="Dispatch Review in Progress..."
+                          subtext="Admin dispatchers are reviewing your outside-campus route and assigning a verified driver"
+                        />
+                      </div>
+                    )}
+
                     {/* Time-Selected Confirmed Ride Banner */}
+
                     {activeRide.status === 'ACCEPTED' && Boolean(activeRide.scheduled_time) && (
                       <div style={{
                         background: '#ECFDF5',
@@ -4496,7 +4545,9 @@ export function CustomerPortalView() {
           <div className="content-body" style={{ maxWidth: '900px', margin: '0 auto', width: '100%' }}>
             <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '16px' }}>My Campus Ride History</h2>
             {loadingHistory ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading past rides...</div>
+              <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+                <PapidoLoader size="sm" text="Loading past rides..." />
+              </div>
             ) : pastRides.length === 0 ? (
               <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border)' }}>
                 No past rides found. Book your first campus bike ride today!

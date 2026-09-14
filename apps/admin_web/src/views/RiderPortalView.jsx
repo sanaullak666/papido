@@ -40,7 +40,9 @@ import {
   Calendar,
   RefreshCw
 } from 'lucide-react';
+import { PapidoLoader } from '../components/PapidoLoader';
 import { alertManager } from '../utils/alertManager';
+
 
 const getTodayDateString = () => {
   try {
@@ -1310,7 +1312,18 @@ export function RiderPortalView() {
 
   return (
     <div className="theme-orange-beige" style={{ minHeight: '100vh', background: '#FAF5EE', color: '#271E16', display: 'flex', flexDirection: 'column' }}>
+      {/* Fullscreen Papido Loader during action state transitions */}
+      {actionLoading && (
+        <PapidoLoader
+          fullScreen
+          size="lg"
+          text="Updating Trip Status..."
+          subtext="Synchronizing live ride state with Papido Dispatch and passenger"
+        />
+      )}
+
       {/* Top Driver / Captain Navigation Header (Rapido Glassmorphic Clean Bar) */}
+
       <header style={{
         background: 'rgba(255, 255, 255, 0.95)',
         backdropFilter: 'blur(10px)',
@@ -2202,14 +2215,31 @@ export function RiderPortalView() {
               )}
 
               {!activeRide && incomingRequests.length === 0 && (
-                <div style={{ textAlign: 'center', padding: '40px 10px', color: 'var(--text-muted)' }}>
-                  <Bike size={44} color="var(--border)" style={{ margin: '0 auto 12px' }} />
-                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-secondary)' }}>
-                    {isOnline ? 'Radar Active & Scanning...' : 'Driver is Offline'}
-                  </div>
-                  <div style={{ fontSize: '12px', marginTop: '4px' }}>
-                    {isOnline ? 'New ride requests within Pondicherry University will appear here in real-time.' : 'Turn toggle online to receive rides.'}
-                  </div>
+                <div style={{
+                  textAlign: 'center',
+                  padding: '36px 20px',
+                  background: '#FFFFFF',
+                  borderRadius: '18px',
+                  border: '1.5px solid #EFE4D6',
+                  boxShadow: '0 6px 20px rgba(0,0,0,0.03)'
+                }}>
+                  {isOnline ? (
+                    <PapidoLoader
+                      size="md"
+                      text="Radar Active & Scanning Campus..."
+                      subtext="Listening for student ride requests across Pondicherry University in real time"
+                    />
+                  ) : (
+                    <div>
+                      <Bike size={44} color="#D1D5DB" style={{ margin: '0 auto 12px' }} />
+                      <div style={{ fontSize: '16px', fontWeight: 800, color: '#1F1A16' }}>
+                        Captain is Currently Offline
+                      </div>
+                      <div style={{ fontSize: '13px', color: '#78716C', marginTop: '4px' }}>
+                        Switch the toggle in the top bar to Online to start receiving campus rides.
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

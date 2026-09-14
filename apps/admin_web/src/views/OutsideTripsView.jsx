@@ -20,8 +20,10 @@ import {
   Radio,
   XCircle
 } from 'lucide-react';
+import { PapidoLoader } from '../components/PapidoLoader';
 
 export function OutsideTripsView() {
+
   const [activeTab, setActiveTab] = useState('pending'); // 'pending' or 'history'
   const [pendingRides, setPendingRides] = useState([]);
   const [allOutsideRides, setAllOutsideRides] = useState([]);
@@ -295,7 +297,16 @@ export function OutsideTripsView() {
       {/* TAB 1: PENDING DISPATCH QUEUE */}
       {activeTab === 'pending' && (
         <>
-          {pendingRides.length === 0 ? (
+          {loading && pendingRides.length === 0 ? (
+            <div style={{ padding: '60px 20px', display: 'flex', justifyContent: 'center' }}>
+              <PapidoLoader
+                card
+                size="md"
+                text="Loading Dispatch Queue..."
+                subtext="Checking pending outside-campus ride requests"
+              />
+            </div>
+          ) : pendingRides.length === 0 ? (
             <div style={{
               background: 'var(--card-bg)',
               border: '1px solid var(--border)',

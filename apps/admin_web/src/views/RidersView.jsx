@@ -29,8 +29,10 @@ import {
   Save,
   User
 } from 'lucide-react';
+import { PapidoLoader } from '../components/PapidoLoader';
 
 const MONTH_NAMES = [
+
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
@@ -1204,8 +1206,8 @@ export function RidersView() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
-                      Loading riders...
+                    <td colSpan="7" style={{ textAlign: 'center', padding: '36px 20px' }}>
+                      <PapidoLoader size="sm" text="Loading riders..." />
                     </td>
                   </tr>
                 ) : riders.length === 0 ? (

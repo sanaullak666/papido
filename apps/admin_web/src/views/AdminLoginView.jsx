@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ShieldCheck, Lock, Mail, ArrowRight, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { PapidoLoader } from '../components/PapidoLoader';
 
 export function AdminLoginView({ onGoToUserPortal }) {
+
   const { adminLogin } = useAuth();
   const [email, setEmail] = useState('admin@papido.com');
   const [password, setPassword] = useState('Password@123');
@@ -32,7 +34,18 @@ export function AdminLoginView({ onGoToUserPortal }) {
       background: 'radial-gradient(circle at top, #1E1B4B 0%, #0B0F19 70%)',
       padding: '20px'
     }}>
+      {/* Fullscreen Papido Loader during admin authentication */}
+      {loading && (
+        <PapidoLoader
+          fullScreen
+          size="lg"
+          text="Authenticating Administrator..."
+          subtext="Validating dispatch and security credentials"
+        />
+      )}
+
       <div className="auth-card-container" style={{
+
         background: 'var(--bg-card)',
         border: '1px solid var(--border)',
         borderRadius: '24px',

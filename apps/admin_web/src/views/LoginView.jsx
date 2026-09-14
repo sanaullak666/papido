@@ -21,6 +21,8 @@ import {
   ChevronDown,
   ArrowLeft
 } from 'lucide-react';
+import { PapidoLoader } from '../components/PapidoLoader';
+
 
 export function LoginView({
   onGoToAdminPortal,
@@ -456,7 +458,18 @@ export function LoginView({
         fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
       }}
     >
+      {/* Fullscreen Papido Loader during login / registration / upload */}
+      {loading && (
+        <PapidoLoader
+          fullScreen
+          size="lg"
+          text={uploadStatus || (authMode === 'login' ? 'Signing in to Papido...' : 'Processing Campus Verification...')}
+          subtext="Verifying credentials with Pondicherry University campus network"
+        />
+      )}
+
       <div
+
         style={{
           background: '#FFFFFF',
           border: '1.5px solid #EFE4D6',

@@ -23,6 +23,8 @@ import {
   AlertTriangle,
   ShieldAlert
 } from 'lucide-react';
+import { PapidoLoader } from '../components/PapidoLoader';
+
 
 export function RidesView() {
   const [activeTab, setActiveTab] = useState('rides'); // 'rides' | 'penalties'
@@ -426,8 +428,8 @@ export function RidesView() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="9" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
-                    Loading rides and booking history...
+                  <td colSpan="9" style={{ textAlign: 'center', padding: '36px 20px' }}>
+                    <PapidoLoader size="sm" text="Loading rides and booking history..." />
                   </td>
                 </tr>
               ) : rides.length === 0 ? (

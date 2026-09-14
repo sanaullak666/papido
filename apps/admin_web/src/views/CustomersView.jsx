@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../api';
 import { Search, UserCheck, UserX, Star, RefreshCw, AlertTriangle, ShieldAlert, Edit, Check, X, Save, User, Eye, EyeOff } from 'lucide-react';
+import { PapidoLoader } from '../components/PapidoLoader';
 
 export function CustomersView() {
+
   const [customers, setCustomers] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -204,8 +206,8 @@ export function CustomersView() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
-                    Loading customer accounts...
+                  <td colSpan="6" style={{ textAlign: 'center', padding: '36px 20px' }}>
+                    <PapidoLoader size="sm" text="Loading customer accounts..." />
                   </td>
                 </tr>
               ) : customers.length === 0 ? (

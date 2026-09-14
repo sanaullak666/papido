@@ -26,8 +26,10 @@ import {
   Mail,
   Shield
 } from 'lucide-react';
+import { PapidoLoader } from '../components/PapidoLoader';
 
 const getTodayDateString = () => {
+
   try {
     return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
   } catch (_) {
@@ -787,8 +789,8 @@ export function DailySettlementsView() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="9" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
-                    Loading daily driver settlements...
+                  <td colSpan="9" style={{ textAlign: 'center', padding: '36px 20px' }}>
+                    <PapidoLoader size="sm" text="Loading daily driver settlements..." />
                   </td>
                 </tr>
               ) : riders.length === 0 ? (

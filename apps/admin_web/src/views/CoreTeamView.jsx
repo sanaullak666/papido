@@ -15,8 +15,10 @@ import {
   Award,
   Sparkles
 } from 'lucide-react';
+import { PapidoLoader } from '../components/PapidoLoader';
 
 export function CoreTeamView() {
+
   const { adminToken } = useAuth();
   const [coreMembers, setCoreMembers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -235,8 +237,13 @@ export function CoreTeamView() {
         </div>
 
         {loading ? (
-          <div style={{ padding: '50px', textAlign: 'center', color: 'var(--text-muted)' }}>
-            Loading Core Team directory...
+          <div style={{ padding: '40px 20px', display: 'flex', justifyContent: 'center' }}>
+            <PapidoLoader
+              card
+              size="md"
+              text="Loading Core Team Directory..."
+              subtext="Retrieving core organizers and driver assignments"
+            />
           </div>
         ) : filteredMembers.length === 0 ? (
           <div style={{ padding: '50px', textAlign: 'center', color: 'var(--text-muted)' }}>
