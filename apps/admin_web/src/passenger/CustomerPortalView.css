@@ -2104,16 +2104,21 @@
 
 .cp-upi-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   margin-bottom: 12px;
+}
+@media (max-width: 400px) {
+  .cp-upi-actions {
+    grid-template-columns: 1fr;
+  }
 }
 .cp-upi-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 14px;
+  padding: 10px 10px;
   border-radius: 10px;
   font-size: 12px;
   font-weight: 700;
@@ -2133,6 +2138,13 @@
 }
 .cp-upi-action--phonepe:hover {
   background: #5B21B6;
+}
+.cp-upi-action--generic {
+  background: #059669;
+  color: #FFFFFF;
+}
+.cp-upi-action--generic:hover {
+  background: #047857;
 }
 .cp-upi-action--green {
   background: #059669;

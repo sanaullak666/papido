@@ -14,7 +14,8 @@ import {
   QrCode,
   Smartphone,
   Zap,
-  Send
+  Send,
+  ExternalLink
 } from 'lucide-react';
 
 export function DailySettlementsPage() {
@@ -229,20 +230,45 @@ export function DailySettlementsPage() {
           ) : (
             <>
               {/* 1-Tap UPI Apps */}
-              <div className="rp-settle-pay-btns">
-                <a
-                  href={shiftSettlement?.adminUpi?.upiPayUrl || `upi://pay?pa=${encodeURIComponent(shiftSettlement?.adminUpi?.upiId || 'papido.admin@okaxis')}&pn=${encodeURIComponent(shiftSettlement?.adminUpi?.receiverName || 'Papido Admin')}&am=${Number(shiftSettlement?.totalCommissionDue || 0).toFixed(2)}&tn=Papido_Shift_${shiftSettlement?.date || selectedSettlementDate}&cu=INR`}
-                  className="rp-btn rp-btn--block rp-btn--success"
-                >
-                  <Smartphone size={15} /> 1-Tap Google Pay (₹{Number(shiftSettlement?.totalCommissionDue || 0).toFixed(2)})
-                </a>
-                <a
-                  href={shiftSettlement?.adminUpi?.upiPayUrl || `upi://pay?pa=${encodeURIComponent(shiftSettlement?.adminUpi?.upiId || 'papido.admin@okaxis')}&pn=${encodeURIComponent(shiftSettlement?.adminUpi?.receiverName || 'Papido Admin')}&am=${Number(shiftSettlement?.totalCommissionDue || 0).toFixed(2)}&tn=Papido_Shift_${shiftSettlement?.date || selectedSettlementDate}&cu=INR`}
-                  className="rp-btn rp-btn--block rp-btn--phonepe"
-                >
-                  <Zap size={15} /> 1-Tap PhonePe / Any UPI
-                </a>
-              </div>
+              {(() => {
+                const adminUpiId = shiftSettlement?.adminUpi?.upiId || 'papido.admin@okaxis';
+                const adminReceiverName = shiftSettlement?.adminUpi?.receiverName || 'Papido Operations';
+                const dueAmount = Number(shiftSettlement?.totalCommissionDue || 0).toFixed(2);
+                const shiftDate = shiftSettlement?.date || selectedSettlementDate;
+                const txRef = `SHIFT_${shiftDate}`;
+                const txNote = `Papido_Shift_${shiftDate}`;
+
+                const gpaySettleUrl = `gpay://upi/pay?pa=${encodeURIComponent(adminUpiId)}&pn=${encodeURIComponent(adminReceiverName)}&tr=${encodeURIComponent(txRef)}&am=${dueAmount}&tn=${encodeURIComponent(txNote)}&cu=INR`;
+                const phonepeSettleUrl = `phonepe://pay?pa=${encodeURIComponent(adminUpiId)}&pn=${encodeURIComponent(adminReceiverName)}&tr=${encodeURIComponent(txRef)}&am=${dueAmount}&tn=${encodeURIComponent(txNote)}&cu=INR`;
+                const upiSettleUrl = `upi://pay?pa=${encodeURIComponent(adminUpiId)}&pn=${encodeURIComponent(adminReceiverName)}&tr=${encodeURIComponent(txRef)}&am=${dueAmount}&tn=${encodeURIComponent(txNote)}&cu=INR`;
+
+                return (
+                  <div className="rp-settle-pay-btns">
+                    <a
+                      href={gpaySettleUrl}
+                      className="rp-btn rp-btn--block rp-btn--success"
+                      rel="noopener noreferrer"
+                    >
+                      <Smartphone size={15} /> 1-Tap Google Pay (₹{dueAmount})
+                    </a>
+                    <a
+                      href={phonepeSettleUrl}
+                      className="rp-btn rp-btn--block rp-btn--phonepe"
+                      rel="noopener noreferrer"
+                    >
+                      <Zap size={15} /> 1-Tap PhonePe (₹{dueAmount})
+                    </a>
+                    <a
+                      href={upiSettleUrl}
+                      className="rp-btn rp-btn--block rp-btn--ghost"
+                      style={{ border: '1px solid #10B981', color: '#047857' }}
+                      rel="noopener noreferrer"
+                    >
+                      <ExternalLink size={15} /> Any UPI App
+                    </a>
+                  </div>
+                );
+              })()}
 
               {/* UPI Copy */}
               <div className="rp-upi-copy-row">

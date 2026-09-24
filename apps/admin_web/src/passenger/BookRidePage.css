@@ -1188,12 +1188,17 @@
 }
 .ps-upi-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   margin-bottom: 12px;
 }
+@media (max-width: 400px) {
+  .ps-upi-actions {
+    grid-template-columns: 1fr;
+  }
+}
 .ps-upi-action {
-  padding: 10px;
+  padding: 10px 6px;
   border-radius: 10px;
   font-size: 12px;
   font-weight: 800;
@@ -1203,9 +1208,14 @@
   justify-content: center;
   gap: 6px;
   color: #FFFFFF;
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+.ps-upi-action:hover {
+  filter: brightness(1.08);
 }
 .ps-upi-action--gpay { background: linear-gradient(135deg, #2563EB, #1D4ED8); }
 .ps-upi-action--phonepe { background: linear-gradient(135deg, #7C3AED, #6D28D9); }
+.ps-upi-action--generic { background: linear-gradient(135deg, #059669, #047857); }
 
 .ps-upi-copy-row {
   background: var(--ps-surface, #FAF5EE);

@@ -2476,7 +2476,12 @@ export function CustomerPortalView() {
                         const driverFare = parseFloat(activeRide.final_fare || activeRide.total_fare || activeRide.estimated_fare || 20).toFixed(2);
                         const driverUpi = (activeRide.rider_upi_id || '').trim() || (activeRide.rider_phone ? `${activeRide.rider_phone}@upi` : 'driver@upi');
                         const driverName = activeRide.rider_name || 'Campus Driver';
-                        const upiPayUrl = `upi://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${driverFare}&tn=Papido_Ride_${activeRide.ride_code || activeRide.id}&cu=INR`;
+                        const txRef = String(activeRide.ride_code || activeRide.rideCode || `PAP-${activeRide.id || Date.now()}`).trim();
+                        const txNote = `Papido_${txRef}`;
+
+                        const gpayUrl = `gpay://upi/pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&tr=${encodeURIComponent(txRef)}&am=${driverFare}&tn=${encodeURIComponent(txNote)}&cu=INR`;
+                        const phonepeUrl = `phonepe://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&tr=${encodeURIComponent(txRef)}&am=${driverFare}&tn=${encodeURIComponent(txNote)}&cu=INR`;
+                        const upiPayUrl = `upi://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&tr=${encodeURIComponent(txRef)}&am=${driverFare}&tn=${encodeURIComponent(txNote)}&cu=INR`;
                         const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiPayUrl)}`;
 
                         return (
@@ -2496,11 +2501,14 @@ export function CustomerPortalView() {
                             </div>
 
                             <div className="cp-upi-actions">
-                              <a href={upiPayUrl} className="cp-upi-action cp-upi-action--gpay">
-                                <Smartphone size={15} /> Pay with GPay
+                              <a href={gpayUrl} className="cp-upi-action cp-upi-action--gpay" rel="noopener noreferrer">
+                                <Smartphone size={15} /> GPay
                               </a>
-                              <a href={upiPayUrl} className="cp-upi-action cp-upi-action--phonepe">
-                                <Zap size={15} /> PhonePe / Any UPI
+                              <a href={phonepeUrl} className="cp-upi-action cp-upi-action--phonepe" rel="noopener noreferrer">
+                                <Zap size={15} /> PhonePe
+                              </a>
+                              <a href={upiPayUrl} className="cp-upi-action cp-upi-action--generic" rel="noopener noreferrer">
+                                <ExternalLink size={14} /> Any UPI
                               </a>
                             </div>
 
