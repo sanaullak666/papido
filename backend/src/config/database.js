@@ -727,14 +727,6 @@ async function ensureDefaultDemoAccounts(targetPool) {
         isCoreMember: 0
       },
       {
-        name: 'ANANYA SEN',
-        email: 'ananyasen@papido.com',
-        phone: '+919876543212',
-        gender: 'FEMALE',
-        role: 'CUSTOMER',
-        isCoreMember: 0
-      },
-      {
         name: 'ROHAN MEHTA',
         email: 'customer.rohan@papido.com',
         phone: '+919876543213',

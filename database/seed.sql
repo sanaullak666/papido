@@ -9,26 +9,26 @@ USE `papido_db`;
 
 -- 1. USERS (Admin, Riders, Customers)
 -- Password for all test users is Password@123
-INSERT IGNORE INTO `users` (`id`, `name`, `email`, `phone`, `password_hash`, `role`, `status`, `profile_image`) VALUES
-(1, 'Papido Master Admin', 'admin@papido.com', '+919876543210', '$2b$10$q.ljOgbNllNSXlYi0tm7wOBBg8pJ3dy8FLd23UARyPmjDSB1DCJ06', 'ADMIN', 'ACTIVE', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'),
-(2, 'Rahul Sharma (Rider)', 'rider.rahul@papido.com', '+919876543211', '$2b$10$q.ljOgbNllNSXlYi0tm7wOBBg8pJ3dy8FLd23UARyPmjDSB1DCJ06', 'RIDER', 'ACTIVE', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150'),
-(3, 'Amit Verma (Rider)', 'rider.amit@papido.com', '+919876543212', '$2b$10$q.ljOgbNllNSXlYi0tm7wOBBg8pJ3dy8FLd23UARyPmjDSB1DCJ06', 'RIDER', 'ACTIVE', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150'),
-(4, 'Vikram Singh (Rider - Pending KYC)', 'rider.vikram@papido.com', '+919876543213', '$2b$10$q.ljOgbNllNSXlYi0tm7wOBBg8pJ3dy8FLd23UARyPmjDSB1DCJ06', 'RIDER', 'PENDING_VERIFICATION', 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150'),
-(5, 'Ananya Sen (Customer)', 'customer.ananya@papido.com', '+919876543220', '$2b$10$q.ljOgbNllNSXlYi0tm7wOBBg8pJ3dy8FLd23UARyPmjDSB1DCJ06', 'CUSTOMER', 'ACTIVE', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150'),
-(6, 'Rohan Mehta (Customer)', 'customer.rohan@papido.com', '+919876543221', '$2b$10$q.ljOgbNllNSXlYi0tm7wOBBg8pJ3dy8FLd23UARyPmjDSB1DCJ06', 'CUSTOMER', 'ACTIVE', 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150')
+INSERT IGNORE INTO `users` (`id`, `name`, `email`, `phone`, `password_hash`, `role`, `status`, `profile_image`, `is_core_member`) VALUES
+(1, 'Papido Master Admin', 'admin@papido.com', '+919876543210', '$2b$10$q.ljOgbNllNSXlYi0tm7wOBBg8pJ3dy8FLd23UARyPmjDSB1DCJ06', 'ADMIN', 'ACTIVE', NULL, 1),
+(2, 'ANANYA SEN', 'customer.ananya@papido.com', '+919876543211', '$2b$10$q.ljOgbNllNSXlYi0tm7wOBBg8pJ3dy8FLd23UARyPmjDSB1DCJ06', 'CUSTOMER', 'ACTIVE', NULL, 0),
+(3, 'ROHAN MEHTA', 'customer.rohan@papido.com', '+919876543213', '$2b$10$q.ljOgbNllNSXlYi0tm7wOBBg8pJ3dy8FLd23UARyPmjDSB1DCJ06', 'CUSTOMER', 'ACTIVE', NULL, 0),
+(4, 'RAHUL SHARMA', 'rider.rahul@papido.com', '+919876543214', '$2b$10$q.ljOgbNllNSXlYi0tm7wOBBg8pJ3dy8FLd23UARyPmjDSB1DCJ06', 'RIDER', 'ACTIVE', NULL, 1),
+(5, 'SANAULLA K', 'sanaullak294@gmail.com', '+919876543215', '$2b$10$q.ljOgbNllNSXlYi0tm7wOBBg8pJ3dy8FLd23UARyPmjDSB1DCJ06', 'RIDER', 'ACTIVE', NULL, 1),
+(6, 'PRIYA SHARMA', 'rider.priya@papido.com', '+919876543216', '$2b$10$q.ljOgbNllNSXlYi0tm7wOBBg8pJ3dy8FLd23UARyPmjDSB1DCJ06', 'RIDER', 'ACTIVE', NULL, 1)
 ON DUPLICATE KEY UPDATE `name`=VALUES(`name`);
 
 -- 2. RIDER PROFILES
-INSERT IGNORE INTO `rider_profiles` (`id`, `user_id`, `vehicle_type`, `vehicle_number`, `vehicle_model`, `license_number`, `verification_status`, `rating`, `total_ratings_count`, `total_rides`, `is_online`, `current_latitude`, `current_longitude`, `last_location_update`) VALUES
-(1, 2, 'BIKE', 'KA-01-EQ-1024', 'Honda Activa 6G (Matte Black)', 'DL-0420190012345', 'APPROVED', 4.90, 48, 126, TRUE, 12.971598, 77.594566, NOW()),
-(2, 3, 'AUTO', 'KA-05-MB-8890', 'Bajaj Compact RE (Yellow-Green)', 'DL-0420180098765', 'APPROVED', 4.75, 32, 94, TRUE, 12.978369, 77.640835, NOW()),
-(3, 4, 'CAB_MINI', 'KA-03-NZ-4411', 'Maruti Suzuki WagonR', 'DL-0420220055443', 'PENDING', 5.00, 0, 0, FALSE, 12.935242, 77.624461, NOW())
+INSERT IGNORE INTO `rider_profiles` (`id`, `user_id`, `vehicle_type`, `vehicle_number`, `vehicle_model`, `license_number`, `verification_status`, `rating`, `total_ratings_count`, `total_rides`, `is_online`, `is_core_member`, `upi_id`) VALUES
+(1, 4, 'BIKE', 'PY-01-BK-1001', 'Hero Splendor Plus', 'DL-PY-DM-4', 'APPROVED', 5.00, 0, 0, TRUE, 1, '+919876543214@upi'),
+(2, 5, 'SCOOTER', 'PY-01-SC-2002', 'Honda Activa 6G', 'DL-PY-DM-5', 'APPROVED', 5.00, 0, 0, TRUE, 1, '+919876543215@upi'),
+(3, 6, 'SCOOTER', 'PY-01-FM-3003', 'TVS Jupiter 125', 'DL-PY-DM-6', 'APPROVED', 5.00, 0, 0, TRUE, 1, '+919876543216@upi')
 ON DUPLICATE KEY UPDATE `vehicle_number`=VALUES(`vehicle_number`);
 
 -- 3. CUSTOMER PROFILES
 INSERT IGNORE INTO `customer_profiles` (`id`, `user_id`, `rating`, `total_ratings_count`, `total_rides`, `wallet_balance`) VALUES
-(1, 5, 4.95, 20, 24, 250.00),
-(2, 6, 4.80, 15, 18, 120.00);
+(1, 2, 5.00, 0, 0, 100.00),
+(2, 3, 5.00, 0, 0, 100.00);
 
 -- 4. FARE CONFIGURATIONS
 INSERT IGNORE INTO `fare_configurations` (`vehicle_type`, `base_fare`, `base_distance_km`, `per_km_fare`, `per_minute_fare`, `minimum_fare`, `cancellation_fee`, `is_active`) VALUES
