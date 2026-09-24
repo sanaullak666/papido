@@ -45,10 +45,11 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
   const txNote = `Papido_${txRef}`;
 
   // App-specific intent URIs & universal generic fallback
-  const gpayUrl = `gpay://upi/pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&tr=${encodeURIComponent(txRef)}&am=${formattedFare}&tn=${encodeURIComponent(txNote)}&cu=INR`;
-  const phonepeUrl = `phonepe://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&tr=${encodeURIComponent(txRef)}&am=${formattedFare}&tn=${encodeURIComponent(txNote)}&cu=INR`;
-  const upiPayUrl = `upi://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&tr=${encodeURIComponent(txRef)}&am=${formattedFare}&tn=${encodeURIComponent(txNote)}&cu=INR`;
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiPayUrl)}`;
+  // Note: We omit 'tr' (merchant-only Transaction Reference) to avoid bank switch P2M limit errors on personal savings VPAs
+  const gpayUrl = `gpay://upi/pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${formattedFare}&tn=${encodeURIComponent(txNote)}&cu=INR`;
+  const phonepeUrl = `phonepe://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${formattedFare}&tn=${encodeURIComponent(txNote)}&cu=INR`;
+  const upiPayUrl = `upi://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${formattedFare}&tn=${encodeURIComponent(txNote)}&cu=INR`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(upiPayUrl)}`;
 
   return (
     <div className="ps-live-trip ps-fade-up">
@@ -237,13 +238,40 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
           </div>
 
           <div className="ps-upi-actions">
-            <a href={gpayUrl} className="ps-upi-action ps-upi-action--gpay" rel="noopener noreferrer">
+            <a
+              href={gpayUrl}
+              onClick={() => {
+                navigator.clipboard?.writeText(driverUpi);
+                setCopiedUpi(true);
+                setTimeout(() => setCopiedUpi(false), 3000);
+              }}
+              className="ps-upi-action ps-upi-action--gpay"
+              rel="noopener noreferrer"
+            >
               <Smartphone size={15} /> GPay
             </a>
-            <a href={phonepeUrl} className="ps-upi-action ps-upi-action--phonepe" rel="noopener noreferrer">
+            <a
+              href={phonepeUrl}
+              onClick={() => {
+                navigator.clipboard?.writeText(driverUpi);
+                setCopiedUpi(true);
+                setTimeout(() => setCopiedUpi(false), 3000);
+              }}
+              className="ps-upi-action ps-upi-action--phonepe"
+              rel="noopener noreferrer"
+            >
               <Zap size={15} /> PhonePe
             </a>
-            <a href={upiPayUrl} className="ps-upi-action ps-upi-action--generic" rel="noopener noreferrer">
+            <a
+              href={upiPayUrl}
+              onClick={() => {
+                navigator.clipboard?.writeText(driverUpi);
+                setCopiedUpi(true);
+                setTimeout(() => setCopiedUpi(false), 3000);
+              }}
+              className="ps-upi-action ps-upi-action--generic"
+              rel="noopener noreferrer"
+            >
               <ExternalLink size={14} /> Any UPI
             </a>
           </div>
@@ -265,6 +293,10 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
               {copiedUpi ? <Check size={12} /> : <Copy size={12} />}
               {copiedUpi ? 'Copied' : 'Copy'}
             </button>
+          </div>
+
+          <div className="ps-upi-help-tip">
+            💡 <strong>Tip:</strong> If your bank displays <em>"exceeded bank limit"</em> on web links, tap <strong>{copiedUpi ? 'Copied!' : 'Copy'}</strong> above, open Google Pay, and paste into <strong>Pay UPI ID</strong> (or scan the <strong>Payment QR</strong> below).
           </div>
 
           <div className="ps-qr-toggle-wrap">

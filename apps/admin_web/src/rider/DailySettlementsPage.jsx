@@ -238,14 +238,15 @@ export function DailySettlementsPage() {
                 const txRef = `SHIFT_${shiftDate}`;
                 const txNote = `Papido_Shift_${shiftDate}`;
 
-                const gpaySettleUrl = `gpay://upi/pay?pa=${encodeURIComponent(adminUpiId)}&pn=${encodeURIComponent(adminReceiverName)}&tr=${encodeURIComponent(txRef)}&am=${dueAmount}&tn=${encodeURIComponent(txNote)}&cu=INR`;
-                const phonepeSettleUrl = `phonepe://pay?pa=${encodeURIComponent(adminUpiId)}&pn=${encodeURIComponent(adminReceiverName)}&tr=${encodeURIComponent(txRef)}&am=${dueAmount}&tn=${encodeURIComponent(txNote)}&cu=INR`;
-                const upiSettleUrl = `upi://pay?pa=${encodeURIComponent(adminUpiId)}&pn=${encodeURIComponent(adminReceiverName)}&tr=${encodeURIComponent(txRef)}&am=${dueAmount}&tn=${encodeURIComponent(txNote)}&cu=INR`;
+                const gpaySettleUrl = `gpay://upi/pay?pa=${encodeURIComponent(adminUpiId)}&pn=${encodeURIComponent(adminReceiverName)}&am=${dueAmount}&tn=${encodeURIComponent(txNote)}&cu=INR`;
+                const phonepeSettleUrl = `phonepe://pay?pa=${encodeURIComponent(adminUpiId)}&pn=${encodeURIComponent(adminReceiverName)}&am=${dueAmount}&tn=${encodeURIComponent(txNote)}&cu=INR`;
+                const upiSettleUrl = `upi://pay?pa=${encodeURIComponent(adminUpiId)}&pn=${encodeURIComponent(adminReceiverName)}&am=${dueAmount}&tn=${encodeURIComponent(txNote)}&cu=INR`;
 
                 return (
                   <div className="rp-settle-pay-btns">
                     <a
                       href={gpaySettleUrl}
+                      onClick={() => navigator.clipboard?.writeText(adminUpiId)}
                       className="rp-btn rp-btn--block rp-btn--success"
                       rel="noopener noreferrer"
                     >
@@ -253,6 +254,7 @@ export function DailySettlementsPage() {
                     </a>
                     <a
                       href={phonepeSettleUrl}
+                      onClick={() => navigator.clipboard?.writeText(adminUpiId)}
                       className="rp-btn rp-btn--block rp-btn--phonepe"
                       rel="noopener noreferrer"
                     >
@@ -260,6 +262,7 @@ export function DailySettlementsPage() {
                     </a>
                     <a
                       href={upiSettleUrl}
+                      onClick={() => navigator.clipboard?.writeText(adminUpiId)}
                       className="rp-btn rp-btn--block rp-btn--ghost"
                       style={{ border: '1px solid #10B981', color: '#047857' }}
                       rel="noopener noreferrer"

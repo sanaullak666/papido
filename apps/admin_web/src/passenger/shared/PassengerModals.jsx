@@ -37,9 +37,9 @@ export function PenaltyPaymentModal({ penalty, onClose }) {
   const txRef = String(penalty.ride_code || penalty.penalty_id || penalty.id || Date.now()).trim();
   const txNote = `Papido_Comp_${txRef}`;
 
-  const gpayUri = `gpay://upi/pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&tr=${encodeURIComponent(txRef)}&am=15.00&tn=${encodeURIComponent(txNote)}&cu=INR`;
-  const phonepeUri = `phonepe://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&tr=${encodeURIComponent(txRef)}&am=15.00&tn=${encodeURIComponent(txNote)}&cu=INR`;
-  const upiUri = penalty.upiPayUrl || `upi://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&tr=${encodeURIComponent(txRef)}&am=15.00&tn=${encodeURIComponent(txNote)}&cu=INR`;
+  const gpayUri = `gpay://upi/pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&tn=${encodeURIComponent(txNote)}&cu=INR`;
+  const phonepeUri = `phonepe://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&tn=${encodeURIComponent(txNote)}&cu=INR`;
+  const upiUri = penalty.upiPayUrl || `upi://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&tn=${encodeURIComponent(txNote)}&cu=INR`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(upiUri)}`;
 
   const handleSettle = async () => {
@@ -133,13 +133,28 @@ export function PenaltyPaymentModal({ penalty, onClose }) {
 
             {payMode === 'APPS' && (
               <div className="ps-pay-apps ps-fade-up" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <a href={gpayUri} className="ps-upi-action ps-upi-action--gpay" rel="noopener noreferrer">
+                <a
+                  href={gpayUri}
+                  onClick={() => navigator.clipboard?.writeText(riderUpi)}
+                  className="ps-upi-action ps-upi-action--gpay"
+                  rel="noopener noreferrer"
+                >
                   <Smartphone size={16} /> Pay ₹15 via Google Pay
                 </a>
-                <a href={phonepeUri} className="ps-upi-action ps-upi-action--phonepe" rel="noopener noreferrer">
+                <a
+                  href={phonepeUri}
+                  onClick={() => navigator.clipboard?.writeText(riderUpi)}
+                  className="ps-upi-action ps-upi-action--phonepe"
+                  rel="noopener noreferrer"
+                >
                   <Zap size={16} /> Pay ₹15 via PhonePe
                 </a>
-                <a href={upiUri} className="ps-upi-action ps-upi-action--generic" rel="noopener noreferrer">
+                <a
+                  href={upiUri}
+                  onClick={() => navigator.clipboard?.writeText(riderUpi)}
+                  className="ps-upi-action ps-upi-action--generic"
+                  rel="noopener noreferrer"
+                >
                   <ExternalLink size={16} /> Pay ₹15 with Any UPI App
                 </a>
               </div>

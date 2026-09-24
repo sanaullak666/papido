@@ -2479,10 +2479,10 @@ export function CustomerPortalView() {
                         const txRef = String(activeRide.ride_code || activeRide.rideCode || `PAP-${activeRide.id || Date.now()}`).trim();
                         const txNote = `Papido_${txRef}`;
 
-                        const gpayUrl = `gpay://upi/pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&tr=${encodeURIComponent(txRef)}&am=${driverFare}&tn=${encodeURIComponent(txNote)}&cu=INR`;
-                        const phonepeUrl = `phonepe://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&tr=${encodeURIComponent(txRef)}&am=${driverFare}&tn=${encodeURIComponent(txNote)}&cu=INR`;
-                        const upiPayUrl = `upi://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&tr=${encodeURIComponent(txRef)}&am=${driverFare}&tn=${encodeURIComponent(txNote)}&cu=INR`;
-                        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiPayUrl)}`;
+                        const gpayUrl = `gpay://upi/pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${driverFare}&tn=${encodeURIComponent(txNote)}&cu=INR`;
+                        const phonepeUrl = `phonepe://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${driverFare}&tn=${encodeURIComponent(txNote)}&cu=INR`;
+                        const upiPayUrl = `upi://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${driverFare}&tn=${encodeURIComponent(txNote)}&cu=INR`;
+                        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(upiPayUrl)}`;
 
                         return (
                           <div className="cp-upi-card cp-fade-up">
@@ -2501,13 +2501,40 @@ export function CustomerPortalView() {
                             </div>
 
                             <div className="cp-upi-actions">
-                              <a href={gpayUrl} className="cp-upi-action cp-upi-action--gpay" rel="noopener noreferrer">
+                              <a
+                                href={gpayUrl}
+                                onClick={() => {
+                                  navigator.clipboard?.writeText(driverUpi);
+                                  setCopiedUpi(true);
+                                  setTimeout(() => setCopiedUpi(false), 3000);
+                                }}
+                                className="cp-upi-action cp-upi-action--gpay"
+                                rel="noopener noreferrer"
+                              >
                                 <Smartphone size={15} /> GPay
                               </a>
-                              <a href={phonepeUrl} className="cp-upi-action cp-upi-action--phonepe" rel="noopener noreferrer">
+                              <a
+                                href={phonepeUrl}
+                                onClick={() => {
+                                  navigator.clipboard?.writeText(driverUpi);
+                                  setCopiedUpi(true);
+                                  setTimeout(() => setCopiedUpi(false), 3000);
+                                }}
+                                className="cp-upi-action cp-upi-action--phonepe"
+                                rel="noopener noreferrer"
+                              >
                                 <Zap size={15} /> PhonePe
                               </a>
-                              <a href={upiPayUrl} className="cp-upi-action cp-upi-action--generic" rel="noopener noreferrer">
+                              <a
+                                href={upiPayUrl}
+                                onClick={() => {
+                                  navigator.clipboard?.writeText(driverUpi);
+                                  setCopiedUpi(true);
+                                  setTimeout(() => setCopiedUpi(false), 3000);
+                                }}
+                                className="cp-upi-action cp-upi-action--generic"
+                                rel="noopener noreferrer"
+                              >
                                 <ExternalLink size={14} /> Any UPI
                               </a>
                             </div>
@@ -2529,6 +2556,10 @@ export function CustomerPortalView() {
                                 {copiedUpi ? <Check size={12} /> : <Copy size={12} />}
                                 {copiedUpi ? 'Copied' : 'Copy'}
                               </button>
+                            </div>
+
+                            <div className="cp-upi-help-tip">
+                              💡 <strong>Tip:</strong> If Google Pay shows <em>"bank limit exceeded"</em>, your bank blocks web checkouts to personal UPI accounts. Tap <strong>{copiedUpi ? 'Copied!' : 'Copy'}</strong> above, open GPay, and paste into <strong>Pay UPI ID</strong> (or scan the <strong>Payment QR</strong> below).
                             </div>
 
                             <div className="cp-qr-toggle-wrap">

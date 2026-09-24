@@ -2200,6 +2200,18 @@
   background: #059669;
 }
 
+.cp-upi-help-tip {
+  margin-bottom: 12px;
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #92400E;
+  text-align: left;
+}
+
 .cp-qr-toggle-wrap {
   text-align: center;
 }
