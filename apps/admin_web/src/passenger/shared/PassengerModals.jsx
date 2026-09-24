@@ -34,11 +34,9 @@ export function PenaltyPaymentModal({ penalty, onClose }) {
 
   const riderUpi = penalty.rider_upi || penalty.rider_upi_id || `${penalty.rider_phone || 'driver'}@upi`;
   const riderName = penalty.rider_name || penalty.rider_name_full || 'Driver';
-  const txNote = 'Papido';
-
-  const gpayUri = `gpay://upi/pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&tn=${encodeURIComponent(txNote)}&cu=INR`;
-  const phonepeUri = `phonepe://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&tn=${encodeURIComponent(txNote)}&cu=INR`;
-  const upiUri = penalty.upiPayUrl || `upi://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&tn=${encodeURIComponent(txNote)}&cu=INR`;
+  const gpayUri = `gpay://upi/pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&cu=INR`;
+  const phonepeUri = `phonepe://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&cu=INR`;
+  const upiUri = penalty.upiPayUrl || `upi://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&cu=INR`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(upiUri)}`;
 
   const handleSettle = async () => {

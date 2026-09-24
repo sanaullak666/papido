@@ -634,7 +634,7 @@ const EarningModel = {
 
     const effectiveStatus = shiftRecord?.status || riderData.settlementStatus || 'UNSETTLED';
 
-    const upiPayUrl = `upi://pay?pa=${encodeURIComponent(settings.adminUpiId)}&pn=${encodeURIComponent(settings.adminName)}&am=${riderData.totalDeductionDue.toFixed(2)}&tn=Papido_Shift_Settlement_${targetDate}&cu=INR`;
+    const upiPayUrl = `upi://pay?pa=${encodeURIComponent(settings.adminUpiId)}&pn=${encodeURIComponent(settings.adminName)}&am=${riderData.totalDeductionDue.toFixed(2)}&cu=INR`;
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=8&data=${encodeURIComponent(upiPayUrl)}`;
 
     return {

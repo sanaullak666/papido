@@ -234,11 +234,9 @@ export function DailySettlementsPage() {
                 const adminUpiId = shiftSettlement?.adminUpi?.upiId || 'papido.admin@okaxis';
                 const adminReceiverName = shiftSettlement?.adminUpi?.receiverName || 'Papido Operations';
                 const dueAmount = Number(shiftSettlement?.totalCommissionDue || 0).toFixed(2);
-                const txNote = 'Papido';
-
-                const gpaySettleUrl = `gpay://upi/pay?pa=${encodeURIComponent(adminUpiId)}&pn=${encodeURIComponent(adminReceiverName)}&am=${dueAmount}&tn=${encodeURIComponent(txNote)}&cu=INR`;
-                const phonepeSettleUrl = `phonepe://pay?pa=${encodeURIComponent(adminUpiId)}&pn=${encodeURIComponent(adminReceiverName)}&am=${dueAmount}&tn=${encodeURIComponent(txNote)}&cu=INR`;
-                const upiSettleUrl = `upi://pay?pa=${encodeURIComponent(adminUpiId)}&pn=${encodeURIComponent(adminReceiverName)}&am=${dueAmount}&tn=${encodeURIComponent(txNote)}&cu=INR`;
+                const gpaySettleUrl = `gpay://upi/pay?pa=${encodeURIComponent(adminUpiId)}&pn=${encodeURIComponent(adminReceiverName)}&am=${dueAmount}&cu=INR`;
+                const phonepeSettleUrl = `phonepe://pay?pa=${encodeURIComponent(adminUpiId)}&pn=${encodeURIComponent(adminReceiverName)}&am=${dueAmount}&cu=INR`;
+                const upiSettleUrl = `upi://pay?pa=${encodeURIComponent(adminUpiId)}&pn=${encodeURIComponent(adminReceiverName)}&am=${dueAmount}&cu=INR`;
 
                 return (
                   <div className="rp-settle-pay-btns">

@@ -41,13 +41,12 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
   const driverName = activeRide.rider_name || 'Campus Driver';
   const rawFare = activeRide.total_fare || activeRide.final_fare || activeRide.estimated_fare || (standardCampusFare || 25);
   const formattedFare = Number(rawFare).toFixed(2);
-  const txNote = 'Papido';
 
   // App-specific intent URIs & universal generic fallback
-  // Note: Omit merchant 'tr' and ride code from note to keep clean P2P intent
-  const gpayUrl = `gpay://upi/pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${formattedFare}&tn=${encodeURIComponent(txNote)}&cu=INR`;
-  const phonepeUrl = `phonepe://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${formattedFare}&tn=${encodeURIComponent(txNote)}&cu=INR`;
-  const upiPayUrl = `upi://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${formattedFare}&tn=${encodeURIComponent(txNote)}&cu=INR`;
+  // Pure amount update only: pa, pn, am, cu (no tn note, no tr ref)
+  const gpayUrl = `gpay://upi/pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${formattedFare}&cu=INR`;
+  const phonepeUrl = `phonepe://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${formattedFare}&cu=INR`;
+  const upiPayUrl = `upi://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${formattedFare}&cu=INR`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(upiPayUrl)}`;
 
   return (
