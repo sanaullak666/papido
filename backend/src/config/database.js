@@ -419,6 +419,20 @@ async function bootstrapMysqlSchema(targetPool) {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
 
+    await targetPool.query(`
+      CREATE TABLE IF NOT EXISTS login_otps (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        phone VARCHAR(20) NOT NULL,
+        email VARCHAR(150) NOT NULL,
+        otp VARCHAR(10) NOT NULL,
+        expires_at DATETIME NOT NULL,
+        used BOOLEAN DEFAULT FALSE,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_login_otps_phone (phone, used),
+        INDEX idx_login_otps_email (email, used)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+
     // Check if master admin exists
     const [rows] = await targetPool.query('SELECT COUNT(*) as count FROM users');
     if (rows[0].count === 0) {
@@ -511,6 +525,23 @@ async function ensureDatabaseSchemaMigrations(targetPool) {
       await targetPool.query(sql);
     } catch (_) {}
   }
+
+  // Ensure login_otps table exists unconditionally for mobile/email OTP authentication
+  try {
+    await targetPool.query(`
+      CREATE TABLE IF NOT EXISTS login_otps (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        phone VARCHAR(20) NOT NULL,
+        email VARCHAR(150) NOT NULL,
+        otp VARCHAR(10) NOT NULL,
+        expires_at DATETIME NOT NULL,
+        used BOOLEAN DEFAULT FALSE,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_login_otps_phone (phone, used),
+        INDEX idx_login_otps_email (email, used)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+  } catch (_) {}
 
   // Ensure standard 25 campus base fare and default SJC route exceptions are initialized
   try {
