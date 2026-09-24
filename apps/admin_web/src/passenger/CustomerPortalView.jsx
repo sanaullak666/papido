@@ -43,7 +43,8 @@ import {
   ThumbsUp,
   Calendar,
   MapPinned,
-  Hourglass
+  Hourglass,
+  Download
 } from 'lucide-react';
 import { BottomNavigation } from '../components/layout/BottomNavigation';
 import { RatingControl } from '../components/passenger/RatingControl';
@@ -433,6 +434,24 @@ export function CustomerPortalView() {
   const [flashClaimMsg, setFlashClaimMsg] = useState(null);
 
   const [showTripQr, setShowTripQr] = useState(false);
+  const [tripPayMode, setTripPayMode] = useState('QR');
+
+  const handleDownloadTripQr = async (qrUrl, dName, fareAmt) => {
+    try {
+      const response = await fetch(qrUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Papido_QR_${(dName || 'Driver').replace(/\s+/g, '_')}_Rs${fareAmt}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (_) {
+      window.open(qrUrl, '_blank');
+    }
+  };
 
   const getLocationHint = (stopName) => {
     if (!stopName) return null;
@@ -2498,87 +2517,125 @@ export function CustomerPortalView() {
                               </div>
                             </div>
 
-                            <div className="cp-upi-actions">
-                              <a
-                                href={gpayUrl}
-                                onClick={() => {
-                                  navigator.clipboard?.writeText(driverUpi);
-                                  setCopiedUpi(true);
-                                  setTimeout(() => setCopiedUpi(false), 3000);
-                                }}
-                                className="cp-upi-action cp-upi-action--gpay"
-                                rel="noopener noreferrer"
-                              >
-                                <Smartphone size={15} /> GPay
-                              </a>
-                              <a
-                                href={phonepeUrl}
-                                onClick={() => {
-                                  navigator.clipboard?.writeText(driverUpi);
-                                  setCopiedUpi(true);
-                                  setTimeout(() => setCopiedUpi(false), 3000);
-                                }}
-                                className="cp-upi-action cp-upi-action--phonepe"
-                                rel="noopener noreferrer"
-                              >
-                                <Zap size={15} /> PhonePe
-                              </a>
-                              <a
-                                href={upiPayUrl}
-                                onClick={() => {
-                                  navigator.clipboard?.writeText(driverUpi);
-                                  setCopiedUpi(true);
-                                  setTimeout(() => setCopiedUpi(false), 3000);
-                                }}
-                                className="cp-upi-action cp-upi-action--generic"
-                                rel="noopener noreferrer"
-                              >
-                                <ExternalLink size={14} /> Any UPI
-                              </a>
-                            </div>
-
-                            <div className="cp-upi-copy-row">
-                              <div>
-                                <div className="cp-upi-copy-label">Driver UPI ID (KYC Verified)</div>
-                                <div className="cp-upi-copy-value">{driverUpi}</div>
-                              </div>
+                            {/* Payment Tabs: QR (Default, 100% Works) vs 1-Tap UPI Apps */}
+                            <div className="cp-pay-tabs" style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: '14px' }}>
                               <button
                                 type="button"
-                                onClick={() => {
-                                  navigator.clipboard?.writeText(driverUpi);
-                                  setCopiedUpi(true);
-                                  setTimeout(() => setCopiedUpi(false), 3000);
-                                }}
-                                className={`cp-upi-copy-btn ${copiedUpi ? 'is-copied' : ''}`}
+                                onClick={() => setTripPayMode('QR')}
+                                className={`cp-pay-tab ${tripPayMode === 'QR' ? 'is-active' : ''}`}
                               >
-                                {copiedUpi ? <Check size={12} /> : <Copy size={12} />}
-                                {copiedUpi ? 'Copied' : 'Copy'}
+                                <QrCode size={14} /> Scan QR (100% Works)
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setTripPayMode('APPS')}
+                                className={`cp-pay-tab ${tripPayMode === 'APPS' ? 'is-active' : ''}`}
+                              >
+                                <Smartphone size={14} /> 1-Tap UPI Apps
                               </button>
                             </div>
 
-                            <div className="cp-upi-help-tip">
-                              💡 <strong>Tip:</strong> If Google Pay shows <em>"bank limit exceeded"</em>, your bank blocks web checkouts to personal UPI accounts. Tap <strong>{copiedUpi ? 'Copied!' : 'Copy'}</strong> above, open GPay, and paste into <strong>Pay UPI ID</strong> (or scan the <strong>Payment QR</strong> below).
-                            </div>
-
-                            <div className="cp-qr-toggle-wrap">
-                              <button
-                                type="button"
-                                onClick={() => setShowTripQr(!showTripQr)}
-                                className="cp-qr-toggle"
-                              >
-                                <QrCode size={14} /> {showTripQr ? 'Hide Driver Payment QR Code' : 'Show Driver Payment QR Code (Scan to Pay)'}
-                              </button>
-                              {showTripQr && (
-                                <div className="cp-qr-box cp-fade-up">
-                                  <div className="cp-qr-inner">
-                                    <img src={qrCodeUrl} alt="Driver Payment QR" className="cp-qr-img" />
-                                  </div>
-                                  <div className="cp-qr-note">
-                                    Scan using Google Pay, PhonePe, Paytm, or BHIM
-                                  </div>
+                            {tripPayMode === 'QR' ? (
+                              <div className="cp-fade-up" style={{ textAlign: 'center' }}>
+                                <div className="cp-pay-qr-box" style={{ margin: '0 auto 10px auto' }}>
+                                  <img src={qrCodeUrl} alt="Driver Payment QR" className="cp-pay-qr-img" />
                                 </div>
-                              )}
-                            </div>
+                                <div style={{ color: '#059669', fontSize: '11px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginBottom: '10px' }}>
+                                  <ShieldCheck size={14} /> 100% Bank Approved: Scan with GPay, PhonePe, Paytm
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '12px' }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDownloadTripQr(qrCodeUrl, driverName, driverFare)}
+                                    className="cp-upi-copy-btn"
+                                    style={{ background: '#FFF7ED', borderColor: '#FDBA74', color: '#EA580C', fontWeight: 700 }}
+                                  >
+                                    <Download size={13} /> Save QR Image
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      navigator.clipboard?.writeText(driverUpi);
+                                      setCopiedUpi(true);
+                                      setTimeout(() => setCopiedUpi(false), 2500);
+                                    }}
+                                    className={`cp-upi-copy-btn ${copiedUpi ? 'is-copied' : ''}`}
+                                  >
+                                    {copiedUpi ? <Check size={12} /> : <Copy size={12} />}
+                                    {copiedUpi ? 'UPI ID Copied' : 'Copy UPI ID'}
+                                  </button>
+                                </div>
+
+                                <div className="cp-upi-help-tip" style={{ textAlign: 'center', fontSize: '11px' }}>
+                                  📸 <strong>Single Phone?</strong> Tap <strong>Save QR Image</strong> above, open Google Pay, tap the <strong>Scan QR</strong> icon, then tap the gallery icon to select this image!
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="cp-fade-up">
+                                <div className="cp-upi-actions">
+                                  <a
+                                    href={gpayUrl}
+                                    onClick={() => {
+                                      navigator.clipboard?.writeText(driverUpi);
+                                      setCopiedUpi(true);
+                                      setTimeout(() => setCopiedUpi(false), 3000);
+                                    }}
+                                    className="cp-upi-action cp-upi-action--gpay"
+                                    rel="noopener noreferrer"
+                                  >
+                                    <Smartphone size={15} /> GPay
+                                  </a>
+                                  <a
+                                    href={phonepeUrl}
+                                    onClick={() => {
+                                      navigator.clipboard?.writeText(driverUpi);
+                                      setCopiedUpi(true);
+                                      setTimeout(() => setCopiedUpi(false), 3000);
+                                    }}
+                                    className="cp-upi-action cp-upi-action--phonepe"
+                                    rel="noopener noreferrer"
+                                  >
+                                    <Zap size={15} /> PhonePe
+                                  </a>
+                                  <a
+                                    href={upiPayUrl}
+                                    onClick={() => {
+                                      navigator.clipboard?.writeText(driverUpi);
+                                      setCopiedUpi(true);
+                                      setTimeout(() => setCopiedUpi(false), 3000);
+                                    }}
+                                    className="cp-upi-action cp-upi-action--generic"
+                                    rel="noopener noreferrer"
+                                  >
+                                    <ExternalLink size={14} /> Any UPI
+                                  </a>
+                                </div>
+
+                                <div className="cp-upi-copy-row">
+                                  <div>
+                                    <div className="cp-upi-copy-label">Driver UPI ID (KYC Verified)</div>
+                                    <div className="cp-upi-copy-value">{driverUpi}</div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      navigator.clipboard?.writeText(driverUpi);
+                                      setCopiedUpi(true);
+                                      setTimeout(() => setCopiedUpi(false), 3000);
+                                    }}
+                                    className={`cp-upi-copy-btn ${copiedUpi ? 'is-copied' : ''}`}
+                                  >
+                                    {copiedUpi ? <Check size={12} /> : <Copy size={12} />}
+                                    {copiedUpi ? 'Copied' : 'Copy'}
+                                  </button>
+                                </div>
+
+                                <div className="cp-upi-help-tip">
+                                  ⚠️ <strong>Bank Note:</strong> If your bank shows <em>"bank limit exceeded"</em> on the GPay link, it is because banks restrict web-initiated links to personal UPI. Tap <strong>Copy</strong> above, open Google Pay &gt; <strong>Pay UPI ID</strong> to pay directly, or switch to the <strong>Scan QR</strong> tab.
+                                </div>
+                              </div>
+                            )}
                           </div>
                         );
                       })()

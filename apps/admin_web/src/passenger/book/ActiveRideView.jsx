@@ -6,12 +6,12 @@ import { openCancelWarning } from '../shared/PassengerModals';
 import {
   Bike, MapPin, Clock, Phone, Search, CheckCircle, Navigation,
   ExternalLink, Star, Award, Sparkles, ShieldCheck, ThumbsUp,
-  QrCode, Copy, Smartphone, CreditCard, Check, Calendar, Users, Zap
+  QrCode, Copy, Smartphone, CreditCard, Check, Calendar, Users, Zap, Download
 } from 'lucide-react';
 
 export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
   const { socketRef, standardCampusFare } = usePassenger();
-  const [showTripQr, setShowTripQr] = useState(false);
+  const [payMode, setPayMode] = useState('QR'); // 'QR' or 'APPS'
   const [copiedUpi, setCopiedUpi] = useState(false);
 
   const handleCancelClick = () => {
@@ -48,6 +48,23 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
   const phonepeUrl = `phonepe://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${formattedFare}&cu=INR`;
   const upiPayUrl = `upi://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${formattedFare}&cu=INR`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(upiPayUrl)}`;
+
+  const handleDownloadQr = async () => {
+    try {
+      const response = await fetch(qrCodeUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Papido_QR_${driverName.replace(/\s+/g, '_')}_Rs${formattedFare}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (_) {
+      window.open(qrCodeUrl, '_blank');
+    }
+  };
 
   return (
     <div className="ps-live-trip ps-fade-up">
@@ -235,85 +252,127 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
             </div>
           </div>
 
-          <div className="ps-upi-actions">
-            <a
-              href={gpayUrl}
-              onClick={() => {
-                navigator.clipboard?.writeText(driverUpi);
-                setCopiedUpi(true);
-                setTimeout(() => setCopiedUpi(false), 3000);
-              }}
-              className="ps-upi-action ps-upi-action--gpay"
-              rel="noopener noreferrer"
-            >
-              <Smartphone size={15} /> GPay
-            </a>
-            <a
-              href={phonepeUrl}
-              onClick={() => {
-                navigator.clipboard?.writeText(driverUpi);
-                setCopiedUpi(true);
-                setTimeout(() => setCopiedUpi(false), 3000);
-              }}
-              className="ps-upi-action ps-upi-action--phonepe"
-              rel="noopener noreferrer"
-            >
-              <Zap size={15} /> PhonePe
-            </a>
-            <a
-              href={upiPayUrl}
-              onClick={() => {
-                navigator.clipboard?.writeText(driverUpi);
-                setCopiedUpi(true);
-                setTimeout(() => setCopiedUpi(false), 3000);
-              }}
-              className="ps-upi-action ps-upi-action--generic"
-              rel="noopener noreferrer"
-            >
-              <ExternalLink size={14} /> Any UPI
-            </a>
-          </div>
-
-          <div className="ps-upi-copy-row">
-            <div>
-              <div className="ps-upi-copy-label">Driver UPI</div>
-              <div className="ps-upi-copy-value">{driverUpi}</div>
-            </div>
+          {/* Payment Tabs: QR (Default, 100% Works) vs 1-Tap UPI Apps */}
+          <div className="ps-pay-tabs">
             <button
               type="button"
-              onClick={() => {
-                navigator.clipboard?.writeText(driverUpi);
-                setCopiedUpi(true);
-                setTimeout(() => setCopiedUpi(false), 2500);
-              }}
-              className={`ps-upi-copy-btn ${copiedUpi ? 'is-copied' : ''}`}
+              onClick={() => setPayMode('QR')}
+              className={`ps-pay-tab ${payMode === 'QR' ? 'is-active' : ''}`}
             >
-              {copiedUpi ? <Check size={12} /> : <Copy size={12} />}
-              {copiedUpi ? 'Copied' : 'Copy'}
+              <QrCode size={14} /> Scan QR (100% Works)
+            </button>
+            <button
+              type="button"
+              onClick={() => setPayMode('APPS')}
+              className={`ps-pay-tab ${payMode === 'APPS' ? 'is-active' : ''}`}
+            >
+              <Smartphone size={14} /> 1-Tap UPI Apps
             </button>
           </div>
 
-          <div className="ps-upi-help-tip">
-            💡 <strong>Tip:</strong> If your bank displays <em>"exceeded bank limit"</em> on web links, tap <strong>{copiedUpi ? 'Copied!' : 'Copy'}</strong> above, open Google Pay, and paste into <strong>Pay UPI ID</strong> (or scan the <strong>Payment QR</strong> below).
-          </div>
-
-          <div className="ps-qr-toggle-wrap">
-            <button
-              type="button"
-              onClick={() => setShowTripQr(!showTripQr)}
-              className="ps-qr-toggle"
-            >
-              <QrCode size={14} />
-              {showTripQr ? 'Hide QR' : 'Show Payment QR'}
-            </button>
-            {showTripQr && (
-              <div className="ps-qr-box ps-fade-up">
+          {payMode === 'QR' ? (
+            <div className="ps-fade-up" style={{ textAlign: 'center' }}>
+              <div className="ps-qr-box" style={{ marginTop: '0', marginBottom: '10px' }}>
                 <div className="ps-qr-inner">
                   <img src={qrCodeUrl} alt="Payment QR" className="ps-qr-img" />
                 </div>
+                <div className="ps-qr-note" style={{ color: '#059669', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginTop: '8px' }}>
+                  <ShieldCheck size={14} /> 100% Bank Approved: Scan with GPay, PhonePe, Paytm
+                </div>
               </div>
-            )}
-          </div>
+
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '12px' }}>
+                <button
+                  type="button"
+                  onClick={handleDownloadQr}
+                  className="ps-upi-copy-btn"
+                  style={{ background: '#FFF7ED', borderColor: '#FDBA74', color: '#EA580C', fontWeight: 700 }}
+                >
+                  <Download size={13} /> Save QR Image
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(driverUpi);
+                    setCopiedUpi(true);
+                    setTimeout(() => setCopiedUpi(false), 2500);
+                  }}
+                  className={`ps-upi-copy-btn ${copiedUpi ? 'is-copied' : ''}`}
+                >
+                  {copiedUpi ? <Check size={12} /> : <Copy size={12} />}
+                  {copiedUpi ? 'UPI ID Copied' : 'Copy UPI ID'}
+                </button>
+              </div>
+
+              <div className="ps-upi-help-tip" style={{ textAlign: 'center', fontSize: '11px' }}>
+                📸 <strong>Single Phone?</strong> Tap <strong>Save QR Image</strong> above, open Google Pay, tap the <strong>Scan QR</strong> icon, then tap the gallery icon to select this image!
+              </div>
+            </div>
+          ) : (
+            <div className="ps-fade-up">
+              <div className="ps-upi-actions">
+                <a
+                  href={gpayUrl}
+                  onClick={() => {
+                    navigator.clipboard?.writeText(driverUpi);
+                    setCopiedUpi(true);
+                    setTimeout(() => setCopiedUpi(false), 3000);
+                  }}
+                  className="ps-upi-action ps-upi-action--gpay"
+                  rel="noopener noreferrer"
+                >
+                  <Smartphone size={15} /> GPay
+                </a>
+                <a
+                  href={phonepeUrl}
+                  onClick={() => {
+                    navigator.clipboard?.writeText(driverUpi);
+                    setCopiedUpi(true);
+                    setTimeout(() => setCopiedUpi(false), 3000);
+                  }}
+                  className="ps-upi-action ps-upi-action--phonepe"
+                  rel="noopener noreferrer"
+                >
+                  <Zap size={15} /> PhonePe
+                </a>
+                <a
+                  href={upiPayUrl}
+                  onClick={() => {
+                    navigator.clipboard?.writeText(driverUpi);
+                    setCopiedUpi(true);
+                    setTimeout(() => setCopiedUpi(false), 3000);
+                  }}
+                  className="ps-upi-action ps-upi-action--generic"
+                  rel="noopener noreferrer"
+                >
+                  <ExternalLink size={14} /> Any UPI
+                </a>
+              </div>
+
+              <div className="ps-upi-copy-row">
+                <div>
+                  <div className="ps-upi-copy-label">Driver UPI (KYC Verified)</div>
+                  <div className="ps-upi-copy-value">{driverUpi}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(driverUpi);
+                    setCopiedUpi(true);
+                    setTimeout(() => setCopiedUpi(false), 2500);
+                  }}
+                  className={`ps-upi-copy-btn ${copiedUpi ? 'is-copied' : ''}`}
+                >
+                  {copiedUpi ? <Check size={12} /> : <Copy size={12} />}
+                  {copiedUpi ? 'Copied' : 'Copy'}
+                </button>
+              </div>
+
+              <div className="ps-upi-help-tip">
+                ⚠️ <strong>Bank Note:</strong> If your bank shows <em>"exceeded bank limit"</em> on the GPay link, it is because banks restrict web-initiated links to personal accounts. Tap <strong>Copy</strong> above, open Google Pay &gt; <strong>Pay UPI ID</strong> to pay directly, or switch to the <strong>Scan QR</strong> tab.
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -1248,6 +1248,37 @@
 }
 .ps-upi-copy-btn.is-copied { color: #059669; border-color: #059669; }
 
+.ps-pay-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  background: var(--ps-surface, #FAF5EE);
+  border: 1px solid var(--ps-border, #E8DCCB);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 14px;
+}
+.ps-pay-tab {
+  border: none;
+  background: transparent;
+  color: var(--ps-text-muted, #796D61);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+.ps-pay-tab.is-active {
+  background: #FFFFFF;
+  color: var(--ps-amber, #EA580C);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
 .ps-upi-help-tip {
   margin-bottom: 12px;
   background: #FFFBEB;
