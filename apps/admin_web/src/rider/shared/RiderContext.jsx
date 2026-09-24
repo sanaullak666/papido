@@ -100,6 +100,7 @@ export function RiderProvider({ children, onNavigateTab }) {
   const locationWatchIdRef = useRef(null);
   const lastLocationEmitRef = useRef({ timestamp: 0, lat: null, lng: null });
   const socketRef = useRef(null);
+  const prevRequestIdsRef = useRef(new Set());
 
   useEffect(() => {
     if (user?.profile) {
@@ -344,10 +345,23 @@ export function RiderProvider({ children, onNavigateTab }) {
             is_outside: Boolean(r.isOutside || r.is_outside)
           };
         });
+
+        // Trigger ringtone/sound alert if new requests appeared via polling
+        const newRides = mapped.filter(r => !prevRequestIdsRef.current.has(String(r.id)));
+        if (newRides.length > 0 && soundEnabled && prevRequestIdsRef.current.size > 0) {
+          const topRide = newRides[0];
+          alertManager.triggerRideAlert({
+            title: `New Ride Request: ₹${topRide.total_fare}`,
+            body: `Pickup: ${topRide.pickup_address} → Drop: ${topRide.destination_address}`,
+            repeat: true
+          });
+        }
+        prevRequestIdsRef.current = new Set(mapped.map(r => String(r.id)));
+
         setIncomingRequests(mapped);
       }
     } catch (_) {}
-  }, [token, isOnline, activeRide, declinedRideIds, user, vehicleType]);
+  }, [token, isOnline, activeRide, declinedRideIds, user, vehicleType, soundEnabled]);
 
   const fetchScheduledRides = useCallback(async () => {
     if (!token) return;
@@ -640,16 +654,17 @@ export function RiderProvider({ children, onNavigateTab }) {
     };
   }, [token, isOnline, declinedRideIds, activeRide, user, vehicleType, soundEnabled, fetchShiftSettlement, fetchEarnings, fetchPendingPenalties, fetchScheduledRides, fetchAvailableRequests, onNavigateTab]);
 
-  /* Polling loop for active ride / requests */
+  /* Polling loop for active ride / requests (1.8s for incoming requests, 2s for active trip) */
   useEffect(() => {
     if (!isOnline) return;
+    const intervalMs = activeRide ? 2000 : 1800;
     const interval = setInterval(() => {
       if (activeRide) {
         fetchActiveRide();
       } else {
         fetchAvailableRequests();
       }
-    }, 3000);
+    }, intervalMs);
     return () => clearInterval(interval);
   }, [isOnline, activeRide, fetchActiveRide, fetchAvailableRequests]);
 
@@ -731,8 +746,15 @@ export function RiderProvider({ children, onNavigateTab }) {
 
   const handleStatusChange = async (newStatus) => {
     if (!activeRide) return;
+    const previousRideState = activeRide;
     setActionLoading(true);
     setOtpError(null);
+
+    // Optimistic UI transition for instant feedback
+    if (newStatus === 'RIDER_ARRIVING' || newStatus === 'RIDER_REACHED') {
+      setActiveRide(prev => (prev ? { ...prev, status: newStatus } : null));
+    }
+
     try {
       let res;
       if (newStatus === 'RIDER_ARRIVING') {
@@ -771,6 +793,8 @@ export function RiderProvider({ children, onNavigateTab }) {
         });
       }
     } catch (err) {
+      // Rollback on network failure
+      setActiveRide(previousRideState);
       setOtpError(err.message || `Failed to update status to ${newStatus}`);
     } finally {
       setActionLoading(false);

@@ -95,12 +95,9 @@ const RiderController = {
 
   async getAvailableRequests(req, res, next) {
     try {
-      const UserModel = require('../models/user.model');
-      const [user, profile] = await Promise.all([
-        UserModel.findById(req.user.id),
-        RiderModel.findByUserId(req.user.id)
-      ]);
-      const riderGender = (user?.gender || req.user.gender || 'OTHER').toUpperCase();
+      const user = req.user;
+      const profile = await RiderModel.findByUserId(req.user.id);
+      const riderGender = (user?.gender || 'OTHER').toUpperCase();
       const riderVehicleType = req.query.vehicleType || profile?.vehicle_type || 'BIKE';
       const isCoreMember = Boolean(user?.is_core_member || profile?.is_core_member || user?.role === 'CORE_MEMBER');
 

@@ -1,8 +1,33 @@
 const db = require('../config/database');
 
+const userCache = new Map();
+const USER_CACHE_TTL = 8000; // 8-second fast memory cache to eliminate redundant TiDB queries
+
+function getCachedUser(id) {
+  const item = userCache.get(Number(id));
+  if (item && Date.now() < item.expiresAt) {
+    return item.user;
+  }
+  return null;
+}
+
+function setCachedUser(id, user) {
+  if (!id || !user) return;
+  if (userCache.size > 2000) userCache.clear();
+  userCache.set(Number(id), { user, expiresAt: Date.now() + USER_CACHE_TTL });
+}
+
+function invalidateCachedUser(id) {
+  if (id) userCache.delete(Number(id));
+}
+
 const UserModel = {
   async findById(id) {
-    return db.queryOne('SELECT id, name, email, phone, gender, role, status, suspension_reason, profile_image, is_core_member, created_at, updated_at FROM users WHERE id = ?', [id]);
+    const cached = getCachedUser(id);
+    if (cached) return cached;
+    const user = await db.queryOne('SELECT id, name, email, phone, gender, role, status, suspension_reason, profile_image, is_core_member, created_at, updated_at FROM users WHERE id = ?', [id]);
+    if (user) setCachedUser(id, user);
+    return user;
   },
 
   async findByEmail(email) {
@@ -22,6 +47,7 @@ const UserModel = {
   },
 
   async updateStatus(id, status, suspensionReason = null) {
+    invalidateCachedUser(id);
     await db.query(
       'UPDATE users SET status = ?, suspension_reason = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
       [status, suspensionReason, id]
@@ -30,6 +56,7 @@ const UserModel = {
   },
 
   async updateProfile(id, { name, phone, gender, profileImage }) {
+    invalidateCachedUser(id);
     await db.query(
       'UPDATE users SET name = COALESCE(?, name), phone = COALESCE(?, phone), gender = COALESCE(?, gender), profile_image = COALESCE(?, profile_image), updated_at = CURRENT_TIMESTAMP WHERE id = ?',
       [name || null, phone || null, gender || null, profileImage || null, id]
@@ -38,11 +65,13 @@ const UserModel = {
   },
 
   async updatePassword(id, passwordHash) {
+    invalidateCachedUser(id);
     await db.query('UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [passwordHash, id]);
     return this.findById(id);
   },
 
   async setCoreMemberStatus(id, isCoreMember) {
+    invalidateCachedUser(id);
     await db.query('UPDATE users SET is_core_member = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [isCoreMember ? 1 : 0, id]);
     await db.query('UPDATE rider_profiles SET is_core_member = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?', [isCoreMember ? 1 : 0, id]);
     return this.findById(id);
@@ -138,6 +167,7 @@ const UserModel = {
     } catch (_) {}
 
     // 2. Permanently delete from users table
+    invalidateCachedUser(id);
     const result = await db.query('DELETE FROM users WHERE id = ?', [id]);
     return result;
   }

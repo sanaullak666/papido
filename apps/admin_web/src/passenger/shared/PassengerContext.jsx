@@ -97,22 +97,38 @@ export function PassengerProvider({ children }) {
     }
   };
 
-  /* ---------- Initial load + polling ---------- */
+  /* ---------- Fetch fare configs once on mount ---------- */
   useEffect(() => {
     fetchFareConfigs();
+  }, [token]);
+
+  /* ---------- Dynamic fast polling for active ride status (1.8s active, 6s idle) ---------- */
+  useEffect(() => {
     if (!token) return;
     fetchActiveRide(false);
+
+    const hasActiveTrip = activeRide && ['PENDING_ADMIN_QUOTE', 'REQUESTED', 'SEARCHING', 'ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED', 'IN_PROGRESS'].includes(activeRide.status);
+    const pollInterval = hasActiveTrip ? 1800 : 6000;
+
+    const interval = setInterval(() => {
+      fetchActiveRide(true);
+    }, pollInterval);
+
+    return () => clearInterval(interval);
+  }, [token, activeRide?.id, activeRide?.status]);
+
+  /* ---------- Background polling for secondary data (every 25s) ---------- */
+  useEffect(() => {
+    if (!token) return;
     fetchScheduledRides();
     fetchPendingPenalty();
     fetchFlashFreeRide();
 
     const interval = setInterval(() => {
-      fetchFareConfigs();
-      fetchActiveRide(true);
-      fetchFlashFreeRide();
       fetchScheduledRides();
       fetchPendingPenalty();
-    }, 10000);
+      fetchFlashFreeRide();
+    }, 25000);
 
     return () => clearInterval(interval);
   }, [token]);

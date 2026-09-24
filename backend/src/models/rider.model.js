@@ -1,19 +1,42 @@
 const db = require('../config/database');
 const { calculateDistance } = require('../utils/geo');
 
+const riderCache = new Map();
+const RIDER_CACHE_TTL = 8000; // 8 seconds TTL
+
+function getCachedRider(userId) {
+  const item = riderCache.get(Number(userId));
+  if (item && Date.now() < item.expiresAt) return item.rider;
+  return null;
+}
+
+function setCachedRider(userId, rider) {
+  if (!userId || !rider) return;
+  if (riderCache.size > 2000) riderCache.clear();
+  riderCache.set(Number(userId), { rider, expiresAt: Date.now() + RIDER_CACHE_TTL });
+}
+
+function invalidateCachedRider(userId) {
+  if (userId) riderCache.delete(Number(userId));
+}
+
 const RiderModel = {
   async getProfile(userId) {
     return this.findByUserId(userId);
   },
 
   async findByUserId(userId) {
+    const cached = getCachedRider(userId);
+    if (cached) return cached;
     const sql = `
       SELECT rp.*, u.name, u.email, u.phone, u.status as user_status, u.suspension_reason, u.profile_image, COALESCE(rp.is_core_member, u.is_core_member, 0) as is_core_member
       FROM rider_profiles rp
       JOIN users u ON rp.user_id = u.id
       WHERE rp.user_id = ?
     `;
-    return db.queryOne(sql, [userId]);
+    const res = await db.queryOne(sql, [userId]);
+    if (res) setCachedRider(userId, res);
+    return res;
   },
 
   async findById(profileId) {
@@ -39,6 +62,7 @@ const RiderModel = {
     verificationStatus = 'PENDING',
     isCoreMember = false
   }) {
+    invalidateCachedRider(userId);
     const result = await db.query(
       `INSERT INTO rider_profiles 
        (user_id, vehicle_type, vehicle_number, vehicle_model, license_number, license_doc_url, rc_doc_url, college_id_doc_url, verification_status, is_core_member) 
@@ -49,6 +73,7 @@ const RiderModel = {
   },
 
   async updateOnlineStatus(userId, isOnline) {
+    invalidateCachedRider(userId);
     await db.query(
       'UPDATE rider_profiles SET is_online = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?',
       [isOnline ? 1 : 0, userId]
@@ -57,6 +82,7 @@ const RiderModel = {
   },
 
   async updateLocation(userId, latitude, longitude) {
+    invalidateCachedRider(userId);
     await db.query(
       `UPDATE rider_profiles 
        SET current_latitude = ?, current_longitude = ?, last_location_update = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP 
@@ -67,6 +93,7 @@ const RiderModel = {
   },
 
   async updateVerificationStatus(userId, status) {
+    invalidateCachedRider(userId);
     await db.query(
       'UPDATE rider_profiles SET verification_status = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?',
       [status, userId]
@@ -75,6 +102,7 @@ const RiderModel = {
   },
 
   async updateDocuments(userId, { licenseDocUrl, rcDocUrl, collegeIdDocUrl }) {
+    invalidateCachedRider(userId);
     await db.query(
       `UPDATE rider_profiles 
        SET license_doc_url = COALESCE(?, license_doc_url),
@@ -89,6 +117,7 @@ const RiderModel = {
   },
 
   async updateVehicleDetails(userId, { vehicleType, vehicleModel, vehicleNumber, licenseNumber, upiId, upi_id }) {
+    invalidateCachedRider(userId);
     const finalUpi = upiId !== undefined ? upiId : upi_id;
     await db.query(
       `UPDATE rider_profiles 

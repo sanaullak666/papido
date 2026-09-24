@@ -1,12 +1,24 @@
 const db = require('../config/database');
 
+let configsCache = null;
+let configsCacheExpiry = 0;
+let routeFaresCache = null;
+let routeFaresCacheExpiry = 0;
+const FARE_CACHE_TTL = 60000; // 60 seconds TTL
+
 const FareModel = {
   async getFareConfiguration(vehicleType) {
     return db.queryOne('SELECT * FROM fare_configurations WHERE vehicle_type = ? AND is_active = 1', [vehicleType]);
   },
 
   async getAllConfigurations() {
-    return db.query('SELECT * FROM fare_configurations ORDER BY id ASC');
+    if (configsCache && Date.now() < configsCacheExpiry) {
+      return configsCache;
+    }
+    const rows = await db.query('SELECT * FROM fare_configurations ORDER BY id ASC');
+    configsCache = rows;
+    configsCacheExpiry = Date.now() + FARE_CACHE_TTL;
+    return rows;
   },
 
   async updateConfiguration(vehicleType, {
@@ -18,6 +30,7 @@ const FareModel = {
     cancellationFee,
     isActive
   }) {
+    configsCache = null; // Invalidate cache
     await db.query(
       `UPDATE fare_configurations 
        SET base_fare = COALESCE(?, base_fare),
@@ -39,7 +52,13 @@ const FareModel = {
   // ==========================================
 
   async getAllRouteFares() {
-    return db.query('SELECT * FROM route_fares ORDER BY pickup_stop ASC, destination_stop ASC');
+    if (routeFaresCache && Date.now() < routeFaresCacheExpiry) {
+      return routeFaresCache;
+    }
+    const rows = await db.query('SELECT * FROM route_fares ORDER BY pickup_stop ASC, destination_stop ASC');
+    routeFaresCache = rows;
+    routeFaresCacheExpiry = Date.now() + FARE_CACHE_TTL;
+    return rows;
   },
 
   async findRouteFare(pickupStop, destinationStop) {
@@ -170,6 +189,7 @@ const FareModel = {
       }
     };
 
+    routeFaresCache = null;
     await upsertSingle(p, d);
     if (isBidirectional) {
       await upsertSingle(d, p);
@@ -179,6 +199,7 @@ const FareModel = {
   },
 
   async updateRouteFareById(id, { fareAmount, distanceKm, isActive }) {
+    routeFaresCache = null;
     const target = await db.queryOne('SELECT * FROM route_fares WHERE id = ?', [id]);
     if (!target) return null;
 
@@ -207,6 +228,7 @@ const FareModel = {
   },
 
   async deleteRouteFare(id) {
+    routeFaresCache = null;
     const target = await db.queryOne('SELECT * FROM route_fares WHERE id = ?', [id]);
     if (target && target.pickup_stop && target.destination_stop) {
       await db.query(

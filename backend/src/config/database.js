@@ -4,6 +4,35 @@ const env = require('./environment');
 let pool = null;
 let dbEngine = 'none';
 
+let schemaInitialized = false;
+let schemaInitPromise = null;
+
+async function runSchemaChecks(targetPool) {
+  if (schemaInitialized) return;
+  try {
+    let usersExist = false;
+    try {
+      await targetPool.query('SELECT 1 FROM users LIMIT 1');
+      usersExist = true;
+    } catch (_) {
+      usersExist = false;
+    }
+
+    if (!usersExist) {
+      await bootstrapMysqlSchema(targetPool);
+    }
+    await ensureDatabaseSchemaMigrations(targetPool);
+    await ensureDatabaseIndexes(targetPool);
+    await ensureFlashFreeRidesSchema(targetPool);
+    await ensureSettlementsSchema(targetPool);
+    await ensureMasterAdmin(targetPool);
+    schemaInitialized = true;
+    console.log('[Database] ⚡ Schema verification & background migrations completed.');
+  } catch (err) {
+    console.warn('[Database] Schema background check notice:', err.message);
+  }
+}
+
 /**
  * Initializes the database connection exclusively with TiDB Cloud (MySQL)
  */
@@ -49,18 +78,30 @@ async function initializeDatabase() {
       pool = testPool;
       dbEngine = 'mysql';
       console.log(`[Database] 🔒 Connected successfully to Permanent TiDB Cloud Database: ${env.DB.NAME} on ${env.DB.HOST}:${env.DB.PORT}`);
-      
-      // Auto-bootstrap schema in MySQL/TiDB if missing and ensure migrations run unconditionally
+
+      // Fast check: verify if users table exists.
+      // If table exists, immediately return the pool to serve API traffic at maximum speed (<100ms)
+      // and run any pending background migrations asynchronously.
+      let needsBlockingBootstrap = false;
       try {
         await testPool.query('SELECT 1 FROM users LIMIT 1');
       } catch (_) {
-        await bootstrapMysqlSchema(testPool);
+        needsBlockingBootstrap = true;
       }
-      await ensureDatabaseSchemaMigrations(testPool);
-      await ensureDatabaseIndexes(testPool);
-      await ensureFlashFreeRidesSchema(testPool);
-      await ensureSettlementsSchema(testPool);
-      await ensureMasterAdmin(testPool);
+
+      if (needsBlockingBootstrap) {
+        console.log('[Database] Fresh database detected. Bootstrapping schema synchronously...');
+        await bootstrapMysqlSchema(testPool);
+        await ensureDatabaseSchemaMigrations(testPool);
+        await ensureDatabaseIndexes(testPool);
+        await ensureFlashFreeRidesSchema(testPool);
+        await ensureSettlementsSchema(testPool);
+        await ensureMasterAdmin(testPool);
+        schemaInitialized = true;
+      } else if (!schemaInitialized && !schemaInitPromise) {
+        // Run migration/index verification non-blockingly in the background
+        schemaInitPromise = runSchemaChecks(testPool);
+      }
 
       return { engine: 'mysql', pool };
     } catch (mysqlErr) {
@@ -579,6 +620,11 @@ async function ensureDatabaseIndexes(targetPool) {
     { table: 'rides', name: 'idx_rides_vehicle_type', cols: 'vehicle_type' },
     { table: 'rides', name: 'idx_rides_code', cols: 'ride_code' },
     { table: 'rides', name: 'idx_rides_status_created', cols: 'status, created_at' },
+    { table: 'rides', name: 'idx_rides_cust_status', cols: 'customer_id, status' },
+    { table: 'rides', name: 'idx_rides_rider_status', cols: 'rider_id, status' },
+    { table: 'rides', name: 'idx_rides_status_rider', cols: 'status, rider_id' },
+    { table: 'rides', name: 'idx_rides_sched_disp', cols: 'is_scheduled, is_dispatched, status' },
+    { table: 'ride_declines', name: 'idx_declines_rider', cols: 'rider_id, ride_id' },
 
     { table: 'rider_earnings', name: 'idx_re_rider_id', cols: 'rider_id' },
     { table: 'rider_earnings', name: 'idx_re_ride_id', cols: 'ride_id' },
