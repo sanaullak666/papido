@@ -1,0 +1,258 @@
+/* ============================================================
+   PAPIDO — PaymentsView Styles
+   Theme: Dark Operations Console (LOCKED)
+   Prefix: pv-
+   ============================================================ */
+
+/* ---------- Keyframes ---------- */
+@keyframes pvFadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pvSlideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pvLivePulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22); }
+  50%      { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.05); }
+}
+
+/* ---------- Page shell ---------- */
+.pv-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: #F8FAFC;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+.pv-page *,
+.pv-page *::before,
+.pv-page *::after { box-sizing: border-box; }
+
+.pv-fade-up    { animation: pvFadeUp 320ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.pv-slide-down { animation: pvSlideDown 260ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* ============================================================
+   TOOLBAR
+   ============================================================ */
+.pv-toolbar {
+  background: #131D31;
+  border: 1px solid #23314E;
+  border-radius: 10px;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+.pv-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 240px;
+}
+.pv-toolbar-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: rgba(245, 158, 11, 0.15);
+  color: #F59E0B;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.pv-toolbar-title {
+  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+  color: #F8FAFC;
+  letter-spacing: -0.01em;
+}
+.pv-toolbar-sub {
+  font-size: 12px;
+  color: #64748B;
+  margin: 4px 0 0 0;
+  line-height: 1.5;
+}
+.pv-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Select */
+.pv-select {
+  height: 38px;
+  padding: 0 12px;
+  background: #1E293B;
+  color: #F8FAFC;
+  border: 1px solid #23314E;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+.pv-select:hover { border-color: #334155; }
+.pv-select:focus-visible {
+  border-color: #F59E0B;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+
+/* ============================================================
+   TABLE CARD
+   ============================================================ */
+.pv-table-card {
+  background: #131D31;
+  border: 1px solid #23314E;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+.pv-table-card-head {
+  padding: 16px 20px;
+  border-bottom: 1px solid #23314E;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.pv-table-card-title {
+  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+  color: #F8FAFC;
+  letter-spacing: -0.01em;
+}
+.pv-table-card-sub {
+  font-size: 12px;
+  color: #64748B;
+  margin: 4px 0 0 0;
+}
+.pv-table-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #10B981;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 4px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.4px;
+}
+.pv-table-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10B981;
+  animation: pvLivePulse 1.8s ease-in-out infinite;
+}
+
+/* ============================================================
+   TABLE CELL HELPERS
+   ============================================================ */
+.pv-table-mono {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: #94A3B8;
+}
+.pv-table-code {
+  color: #F59E0B;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-weight: 700;
+  font-size: 13px;
+}
+.pv-table-name {
+  font-weight: 600;
+  color: #F8FAFC;
+}
+.pv-table-name--emerald { color: #10B981; }
+.pv-table-unassigned {
+  color: #64748B;
+  font-style: italic;
+}
+.pv-table-amount {
+  color: #10B981;
+  font-size: 15px;
+  font-weight: 800;
+}
+.pv-table-time {
+  font-size: 12px;
+  color: #64748B;
+}
+
+.pv-method-chip {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #94A3B8;
+  letter-spacing: 0.3px;
+}
+
+/* ============================================================
+   RESPONSIVE — Laptop & below (<1024px)
+   ============================================================ */
+@media (max-width: 1023px) {
+  .pv-toolbar { flex-direction: column; align-items: stretch; }
+  .pv-toolbar-right { justify-content: flex-start; }
+}
+
+/* Tablet & below (<768px) */
+@media (max-width: 767px) {
+  .pv-toolbar { padding: 14px 16px; }
+  .pv-toolbar-title { font-size: 15px; }
+  .pv-toolbar-sub { font-size: 11px; }
+  .pv-table-card-head { padding: 14px 16px; }
+  .pv-table-card-title { font-size: 15px; }
+  .pv-table-card-sub { font-size: 11px; }
+}
+
+/* Mobile (<480px) */
+@media (max-width: 479px) {
+  .pv-page { gap: 16px; }
+  .pv-toolbar { padding: 12px; }
+  .pv-toolbar-icon { width: 38px; height: 38px; }
+  .pv-toolbar-right {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .pv-select { height: 44px; font-size: 14px; width: 100%; }
+  .pv-toolbar-right .btn,
+  .pv-toolbar-right button { width: 100%; }
+
+  .pv-table-card-head { padding: 12px 14px; }
+  .pv-table-card-title { font-size: 14px; }
+
+  .pv-table th, .pv-table td { padding: 10px 12px; font-size: 12px; }
+  .pv-table-amount { font-size: 13px; }
+  .pv-table-mono, .pv-table-code { font-size: 12px; }
+}
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .pv-fade-up,
+  .pv-slide-down,
+  .pv-table-live-dot {
+    animation: none !important;
+  }
+  .pv-select { transition: none !important; }
+}

@@ -250,6 +250,16 @@ const AdminController = {
     try {
       const vehicleType = req.params.vehicleType;
       const updated = await FareModel.updateConfiguration(vehicleType, req.body);
+
+      // Broadcast fare update event to all connected passenger and home portals
+      const socketManager = req.app.get('socketManager');
+      if (socketManager) {
+        socketManager.io.emit('fare:settings_updated', {
+          vehicleType,
+          updated
+        });
+      }
+
       return success(res, `Fare configuration for ${vehicleType} updated.`, updated);
     } catch (err) {
       next(err);

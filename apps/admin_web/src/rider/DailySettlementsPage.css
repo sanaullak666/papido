@@ -1,0 +1,314 @@
+/* ============================================================
+   PAPIDO — Daily Settlements Page (Soft Glass)
+   ============================================================ */
+
+.rp-settle-date-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--rp-surface, rgba(255, 255, 255, 0.75));
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  border: 1px solid var(--rp-border, rgba(234, 88, 12, 0.12));
+  border-radius: 12px;
+  padding: 4px 6px;
+  flex-wrap: wrap;
+}
+.rp-settle-date-input {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: #FFFFFF;
+  border: 1px solid var(--rp-border, rgba(234, 88, 12, 0.15));
+  font-size: 12px;
+  color: var(--rp-text, #1E293B);
+}
+.rp-settle-date-input input {
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--rp-text, #1E293B);
+  outline: none;
+}
+
+/* Settle Card */
+.rp-settle-card {
+  background: var(--rp-surface, rgba(255, 255, 255, 0.8));
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  border: 1px solid var(--rp-border, rgba(234, 88, 12, 0.14));
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: var(--rp-shadow-1);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+.rp-settle-card.is-rejected {
+  border-color: #FECACA;
+  background: #FFFBFB;
+}
+
+.rp-settle-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.rp-settle-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.rp-settle-card-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--rp-text, #1E293B);
+  margin: 0;
+}
+.rp-settle-card-sub {
+  font-size: 13px;
+  color: var(--rp-text-muted, #64748B);
+  margin-top: 4px;
+}
+
+/* Info Messages */
+.rp-settle-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.rp-settle-info--blue {
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  color: #1E40AF;
+}
+.rp-settle-info--green {
+  background: #ECFDF5;
+  border: 1px solid #A7F3D0;
+  color: #065F46;
+}
+.rp-settle-info--rose {
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  color: #991B1B;
+}
+.rp-settle-info--neutral {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  color: #64748B;
+}
+
+/* Dues Breakdown */
+.rp-settle-breakdown {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  background: rgba(249, 115, 22, 0.04);
+  border: 1px solid rgba(234, 88, 12, 0.1);
+  border-radius: 16px;
+  padding: 18px 20px;
+}
+.rp-settle-breakdown-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--rp-text-muted, #64748B);
+  letter-spacing: 0.05em;
+}
+.rp-settle-breakdown-value {
+  font-family: 'Outfit', sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--rp-text, #1E293B);
+  margin-top: 2px;
+}
+.rp-settle-breakdown-value--emerald {
+  color: #059669;
+}
+.rp-settle-breakdown-due {
+  background: #FFFFFF;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(234, 88, 12, 0.18);
+  box-shadow: var(--rp-shadow-1);
+}
+.rp-settle-breakdown-due-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: #EA580C;
+  letter-spacing: 0.05em;
+}
+.rp-settle-breakdown-due-value {
+  font-family: 'Outfit', sans-serif;
+  font-size: 26px;
+  font-weight: 900;
+  color: #EA580C;
+  margin-top: 2px;
+}
+.rp-settle-breakdown-due-note {
+  font-size: 11px;
+  color: var(--rp-text-muted, #64748B);
+  margin-top: 4px;
+}
+
+/* Payment Direct Deeplinks */
+.rp-settle-pay-btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.rp-btn--phonepe {
+  background: linear-gradient(135deg, #5F259F 0%, #4A154B 100%);
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(95, 37, 159, 0.3);
+}
+.rp-btn--phonepe:hover {
+  background: linear-gradient(135deg, #7432BE 0%, #4A154B 100%);
+  transform: translateY(-1px);
+}
+
+/* UPI Copy Row */
+.rp-upi-copy-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #FFFFFF;
+  border: 1px solid var(--rp-border, rgba(234, 88, 12, 0.15));
+  border-radius: 14px;
+  padding: 12px 18px;
+}
+.rp-upi-copy-label {
+  font-size: 11px;
+  color: var(--rp-text-muted, #64748B);
+  font-weight: 600;
+}
+.rp-upi-copy-value {
+  font-family: monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: #EA580C;
+  margin-top: 2px;
+}
+.rp-upi-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid var(--rp-border, rgba(234, 88, 12, 0.2));
+  background: rgba(249, 115, 22, 0.08);
+  color: #EA580C;
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+.rp-upi-copy-btn:hover {
+  background: #EA580C;
+  color: #FFFFFF;
+}
+.rp-upi-copy-btn.is-copied {
+  background: #DCFCE7;
+  color: #15803D;
+  border-color: #86EFAC;
+}
+
+/* QR Accordion */
+.rp-qr-toggle-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.rp-qr-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid var(--rp-border, rgba(234, 88, 12, 0.15));
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--rp-text, #1E293B);
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+.rp-qr-toggle:hover {
+  background: #FFFFFF;
+  border-color: #F97316;
+}
+.rp-qr-box {
+  background: #FFFFFF;
+  border: 1px solid var(--rp-border, rgba(234, 88, 12, 0.15));
+  border-radius: 18px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--rp-shadow-2);
+}
+.rp-qr-inner {
+  padding: 8px;
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+.rp-qr-img {
+  width: 200px;
+  height: 200px;
+  display: block;
+}
+.rp-qr-note {
+  font-size: 12px;
+  color: var(--rp-text-muted, #64748B);
+  text-align: center;
+}
+
+/* UTR Form */
+.rp-utr-form {
+  background: #FFFFFF;
+  border: 1px solid var(--rp-border, rgba(234, 88, 12, 0.18));
+  border-radius: 16px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rp-utr-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--rp-text, #1E293B);
+}
+.rp-utr-input-row {
+  display: flex;
+  gap: 10px;
+}
+.rp-input--mono {
+  font-family: monospace;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+}
+.rp-utr-note {
+  font-size: 11px;
+  color: var(--rp-text-muted, #64748B);
+}
+
+@media (max-width: 640px) {
+  .rp-settle-pay-btns { grid-template-columns: 1fr; }
+  .rp-utr-input-row { flex-direction: column; }
+}

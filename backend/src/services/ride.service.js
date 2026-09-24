@@ -53,7 +53,13 @@ const RideService = {
     isScheduled = false,
     scheduledTime = null
   }) {
-    const isScheduledTrip = isScheduled === true || isScheduled === 'true' || isScheduled === 1;
+    const isScheduledTrip = Boolean(
+      isScheduled === true || isScheduled === 'true' || isScheduled === 1 ||
+      (scheduledTime && String(scheduledTime).trim().length > 0)
+    );
+    const normalizedScheduledTime = (isScheduledTrip && scheduledTime)
+      ? String(scheduledTime).trim().replace('T', ' ')
+      : null;
 
     // Check if customer already has an active ride in progress (only for instant rides)
     if (!isScheduledTrip) {
@@ -165,7 +171,7 @@ const RideService = {
     const otp = this.generateOTP();
 
     // Check if this is a pre-booked scheduled trip
-    if (isScheduledTrip && scheduledTime) {
+    if (isScheduledTrip && normalizedScheduledTime) {
       const ride = await RideModel.create({
         rideCode,
         customerId,
@@ -189,16 +195,16 @@ const RideService = {
         isDoubleRide: Boolean(fareEstimate.isDoubleRide),
         isOutside: false,
         isScheduled: true,
-        scheduledTime
+        scheduledTime: normalizedScheduledTime
       });
 
       // Notify customer
       await NotificationModel.create({
         userId: customerId,
         title: 'Ride Pre-Booked',
-        message: `Your ride ${rideCode} has been scheduled for ${scheduledTime}. Nearby riders will be matched 15 minutes before departure.`,
+        message: `Your ride ${rideCode} has been scheduled for ${normalizedScheduledTime}. Nearby riders will be matched 15 minutes before departure.`,
         type: 'RIDE_SCHEDULED',
-        data: { rideId: ride.id, rideCode, scheduledTime, femaleRiderOnly, isDoubleRide }
+        data: { rideId: ride.id, rideCode, scheduledTime: normalizedScheduledTime, femaleRiderOnly, isDoubleRide }
       });
 
       await AuditModel.log({
@@ -206,7 +212,7 @@ const RideService = {
         action: 'RIDE_SCHEDULED',
         entityType: 'RIDE',
         entityId: ride.id,
-        details: { rideCode, scheduledTime, estimatedFare: fareEstimate.estimatedFare, isDoubleRide }
+        details: { rideCode, scheduledTime: normalizedScheduledTime, estimatedFare: fareEstimate.estimatedFare, isDoubleRide }
       });
 
       // Broadcast new pre-booking to all eligible riders
@@ -672,6 +678,22 @@ const RideService = {
       throw new Error('This is an official Papido Flash Free Ride reserved exclusively for Core Team riders.');
     }
 
+    // Verify female rider only preference
+    if (ride.female_rider_only) {
+      if ((rider.gender || '').toUpperCase() !== 'FEMALE') {
+        throw new Error('This ride was requested specifically for female riders.');
+      }
+    }
+
+    // Verify vehicle type preference
+    if (ride.vehicle_type && ride.vehicle_type.toUpperCase() !== 'ANY') {
+      const requiredVehicle = ride.vehicle_type.toUpperCase();
+      const riderVehicle = (rider.vehicle_type || 'BIKE').toUpperCase();
+      if (riderVehicle !== requiredVehicle) {
+        throw new Error(`This ride requires a ${requiredVehicle.toLowerCase()}, but your vehicle is registered as a ${riderVehicle.toLowerCase()}.`);
+      }
+    }
+
     const updatedRide = await RideModel.assignRider(rideId, riderId);
 
     // Notify customer & rider
@@ -835,6 +857,19 @@ const RideService = {
     const ride = await RideModel.findById(rideId);
     if (!ride) throw new Error('Ride not found.');
     if (ride.rider_id !== riderId) throw new Error('Unauthorized rider.');
+
+    // If ride is already marked COMPLETED (e.g. from network retry or prior step), return gracefully
+    if (ride.status === RIDE_STATUS.COMPLETED) {
+      const split = await FareService.calculateFareSplit(parseFloat(ride.final_fare || 0));
+      const payment = await PaymentModel.findByRideId(rideId);
+      return {
+        ride,
+        split,
+        payment,
+        alreadyCompleted: true
+      };
+    }
+
     if (ride.status !== RIDE_STATUS.STARTED) {
       throw new Error(`Cannot complete ride with status ${ride.status}. Must be STARTED first.`);
     }
@@ -859,26 +894,34 @@ const RideService = {
       paymentStatus: 'PAID'
     });
 
-    // 3. Record payment ledger entry
-    const payment = await PaymentModel.create({
-      rideId,
-      customerId: ride.customer_id,
-      amount: finalFare,
-      paymentMethod: ride.payment_method || 'CASH',
-      paymentStatus: 'COMPLETED',
-      transactionReference: `TXN-${Date.now()}-${ride.ride_code}`
-    });
+    // 3. Record payment ledger entry (reuse if already recorded)
+    let payment = await PaymentModel.findByRideId(rideId);
+    if (!payment) {
+      payment = await PaymentModel.create({
+        rideId,
+        customerId: ride.customer_id,
+        amount: finalFare,
+        paymentMethod: ride.payment_method || 'CASH',
+        paymentStatus: 'COMPLETED',
+        transactionReference: `TXN-${Date.now()}-${ride.ride_code}`
+      });
+    }
 
     // 4. Record rider earnings ledger entry
-    const earning = await EarningModel.recordEarning({
-      riderId,
-      rideId,
-      totalFare: finalFare,
-      riderEarning: split.riderEarning,
-      companyEarning: split.companyEarning,
-      controllerEarning: split.controllerEarning,
-      appliedRuleDescription: split.appliedRuleDescription
-    });
+    let earning = null;
+    try {
+      earning = await EarningModel.recordEarning({
+        riderId,
+        rideId,
+        totalFare: finalFare,
+        riderEarning: split.riderEarning,
+        companyEarning: split.companyEarning,
+        controllerEarning: split.controllerEarning,
+        appliedRuleDescription: split.appliedRuleDescription
+      });
+    } catch (err) {
+      console.warn('[RideService] Notice recording earning:', err.message);
+    }
 
     // 5. Update user statistics
     await Promise.all([
@@ -995,7 +1038,10 @@ const RideService = {
     const isCustomerRole = String(cancelledByRole || '').toUpperCase() === 'CUSTOMER' || String(cancelledByUserId) === String(ride.customer_id);
     const isStatusReached = String(ride.status || '').toUpperCase() === 'RIDER_REACHED';
     const effectiveRiderId = ride.rider_id || ride.assigned_rider_id;
-    const isFreeRide = Boolean(ride.is_free_ride || ride.is_core_only || parseFloat(ride.estimated_fare || 0) === 0 || parseFloat(ride.final_fare || 0) === 0);
+    const isFreeRide = Boolean(
+      ride.is_free_ride === 1 || ride.is_free_ride === true ||
+      ride.is_core_only === 1 || ride.is_core_only === true
+    );
 
     // If Customer cancels AFTER the driver has already REACHED pickup location:
     // Apply ₹15 driver compensation fee directed to driver's UPI

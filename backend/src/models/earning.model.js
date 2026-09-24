@@ -39,16 +39,31 @@ const EarningModel = {
     controllerEarning = 0.00,
     appliedRuleDescription = null
   }) {
-    const result = await db.query(
-      `INSERT INTO rider_earnings 
-       (rider_id, ride_id, total_fare, rider_earning, company_earning, controller_earning, applied_rule_description, gross_fare, platform_fee, controller_fee, net_earning) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        riderId, rideId, totalFare, riderEarning, companyEarning, controllerEarning, appliedRuleDescription,
-        totalFare, companyEarning, controllerEarning, riderEarning
-      ]
-    );
-    return db.queryOne('SELECT * FROM rider_earnings WHERE id = ?', [result.insertId]);
+    try {
+      const result = await db.query(
+        `INSERT INTO rider_earnings 
+         (rider_id, ride_id, total_fare, rider_earning, company_earning, controller_earning, applied_rule_description, gross_fare, platform_fee, controller_fee, net_earning) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          riderId, rideId, totalFare, riderEarning, companyEarning, controllerEarning, appliedRuleDescription,
+          totalFare, companyEarning, controllerEarning, riderEarning
+        ]
+      );
+      return db.queryOne('SELECT * FROM rider_earnings WHERE id = ?', [result.insertId]);
+    } catch (err) {
+      if (err.message && (err.message.includes('gross_fare') || err.message.includes('Unknown column'))) {
+        const fallbackResult = await db.query(
+          `INSERT INTO rider_earnings 
+           (rider_id, ride_id, total_fare, rider_earning, company_earning, controller_earning, applied_rule_description) 
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [
+            riderId, rideId, totalFare, riderEarning, companyEarning, controllerEarning, appliedRuleDescription
+          ]
+        );
+        return db.queryOne('SELECT * FROM rider_earnings WHERE id = ?', [fallbackResult.insertId]);
+      }
+      throw err;
+    }
   },
 
   async getRiderEarningsSummary(riderId) {

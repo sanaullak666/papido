@@ -1,0 +1,429 @@
+/* ============================================================
+   PAPIDO — Passenger Profile Page
+   Prefix: ps-
+   ============================================================ */
+
+/* ---------- Shell ---------- */
+.ps-profile-page {
+  padding: 24px 16px 80px;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.ps-profile-container {
+  width: 100%;
+  max-width: 620px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ---------- Avatar card ---------- */
+.ps-avatar-card {
+  padding: 22px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.ps-avatar-circle {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  box-shadow:
+    0 8px 24px rgba(234, 88, 12, 0.18),
+    inset 0 -3px 8px rgba(0, 0, 0, 0.06);
+}
+.ps-avatar-circle--amber {
+  background: linear-gradient(135deg, #FB923C, #EA580C);
+}
+.ps-avatar-circle--pink {
+  background: linear-gradient(135deg, #F472B6, #DB2777);
+}
+.ps-avatar-circle--neutral {
+  background: linear-gradient(135deg, #94A3B8, #475569);
+}
+
+.ps-avatar-initials {
+  font-family: 'Outfit', sans-serif;
+  font-size: 26px;
+  font-weight: 900;
+  color: #FFFFFF;
+  letter-spacing: -0.02em;
+}
+
+.ps-avatar-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ps-avatar-name {
+  font-family: 'Outfit', sans-serif;
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--ps-text);
+  letter-spacing: -0.02em;
+}
+
+.ps-avatar-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--ps-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ps-avatar-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.ps-avatar-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+}
+.ps-avatar-chip--green {
+  background: #ECFDF5;
+  color: #047857;
+  border: 1px solid #A7F3D0;
+}
+.ps-avatar-chip--blue {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
+}
+.ps-avatar-chip--neutral {
+  background: var(--ps-surface);
+  color: var(--ps-text-muted);
+  border: 1px solid var(--ps-border);
+}
+
+/* ---------- Profile card ---------- */
+.ps-profile-card {
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ps-profile-card-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ps-profile-card-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ps-text);
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.ps-profile-card-sub {
+  font-size: 11px;
+  color: var(--ps-text-muted);
+  margin: 0;
+}
+
+/* ---------- Form ---------- */
+.ps-profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ps-profile-form .ps-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 0;
+}
+
+.ps-profile-form .ps-field-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ps-text, #271E16);
+  letter-spacing: 0.01em;
+  margin-bottom: 2px;
+  min-height: 20px;
+}
+
+.ps-field-label-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.ps-field-label-left svg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ps-input--readonly {
+  background: var(--ps-surface);
+  color: var(--ps-text-muted);
+  cursor: not-allowed;
+}
+
+/* Locked badge next to label */
+.ps-field-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--ps-text-muted, #796D61);
+  background: var(--ps-surface, #FAF5EE);
+  border: 1px solid var(--ps-border, #E8DCCB);
+  padding: 2px 7px;
+  border-radius: 5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ps-field-lock svg {
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* ---------- Gender pills ---------- */
+.ps-gender-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  background: var(--ps-surface);
+  padding: 4px;
+  border: 1px solid var(--ps-border);
+  border-radius: 12px;
+}
+
+.ps-gender-pill {
+  padding: 9px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ps-text-muted);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 180ms ease,
+              color 180ms ease,
+              box-shadow 180ms ease;
+}
+.ps-gender-pill:hover:not(.is-active) {
+  background: rgba(234, 88, 12, 0.06);
+  color: var(--ps-amber);
+}
+.ps-gender-pill.is-active {
+  background: linear-gradient(135deg, #F97316, #EA580C);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.28);
+}
+
+/* ---------- Security rows ---------- */
+.ps-security-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 4px;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--ps-border);
+  cursor: pointer;
+  text-align: left;
+  transition: background 160ms ease,
+              transform 160ms ease;
+}
+.ps-security-row:first-of-type {
+  border-top: none;
+  padding-top: 4px;
+}
+.ps-security-row:hover {
+  transform: translateX(2px);
+}
+
+.ps-security-row-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ps-security-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ps-security-icon--amber {
+  background: var(--ps-amber-soft);
+  color: var(--ps-amber);
+}
+.ps-security-icon--red {
+  background: #FEF2F2;
+  color: #DC2626;
+}
+
+.ps-security-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ps-text);
+}
+.ps-security-title--danger { color: #DC2626; }
+
+.ps-security-sub {
+  font-size: 11px;
+  color: var(--ps-text-muted);
+  margin-top: 1px;
+}
+
+/* ---------- Password strength meter ---------- */
+.ps-pw-strength {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.ps-pw-strength-track {
+  flex: 1;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--ps-surface);
+  overflow: hidden;
+  position: relative;
+}
+
+.ps-pw-strength-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 320ms var(--ease-out-soft, cubic-bezier(0.16, 1, 0.3, 1)),
+              background 320ms ease;
+}
+.ps-pw-strength-fill--weak   { background: #EF4444; }
+.ps-pw-strength-fill--fair   { background: #F59E0B; }
+.ps-pw-strength-fill--good   { background: #10B981; }
+.ps-pw-strength-fill--strong { background: linear-gradient(90deg, #10B981, #059669); }
+
+.ps-pw-strength-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ps-text-muted);
+  min-width: 60px;
+  text-align: right;
+}
+
+/* ---------- Modal error row ---------- */
+.ps-modal-error {
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: #991B1B;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+/* ---------- Input wrapper (shared) ---------- */
+.ps-input-wrap {
+  position: relative;
+  width: 100%;
+}
+.ps-input-wrap .ps-input {
+  width: 100%;
+}
+.ps-input-trail-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  color: var(--ps-text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.ps-input-trail-btn:hover {
+  background: rgba(234, 88, 12, 0.08);
+  color: var(--ps-amber);
+}
+
+/* ---------- Inline status (shared) ---------- */
+.ps-inline-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 6px;
+}
+.ps-inline-status--amber { color: #EA580C; }
+.ps-inline-status--green { color: #059669; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 520px) {
+  .ps-avatar-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 14px;
+  }
+  .ps-avatar-info { text-align: center; }
+  .ps-avatar-row { justify-content: center; }
+  .ps-avatar-chips { justify-content: center; }
+}
+
+@media (max-width: 380px) {
+  .ps-gender-row { gap: 4px; padding: 3px; }
+  .ps-gender-pill { font-size: 11px; padding: 8px 6px; }
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .ps-avatar-card,
+  .ps-gender-pill,
+  .ps-security-row,
+  .ps-pw-strength-fill {
+    transition: none !important;
+    animation: none !important;
+  }
+}

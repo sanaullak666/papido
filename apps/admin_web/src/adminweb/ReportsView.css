@@ -1,0 +1,274 @@
+/* ============================================================
+   PAPIDO — ReportsView Styles
+   Theme: Dark Operations Console (LOCKED)
+   Prefix: rr-
+   ============================================================ */
+
+/* ---------- Keyframes ---------- */
+@keyframes rrFadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes rrSlideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes rrLivePulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22); }
+  50%      { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.05); }
+}
+
+/* ---------- Page shell ---------- */
+.rr-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  color: #F8FAFC;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+.rr-page *,
+.rr-page *::before,
+.rr-page *::after { box-sizing: border-box; }
+
+.rr-fade-up    { animation: rrFadeUp 320ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.rr-slide-down { animation: rrSlideDown 260ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* ============================================================
+   KPI GRID
+   ============================================================ */
+.rr-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+/* ============================================================
+   TOOLBAR
+   ============================================================ */
+.rr-toolbar {
+  background: #131D31;
+  border: 1px solid #23314E;
+  border-radius: 10px;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+.rr-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 240px;
+}
+.rr-toolbar-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38BDF8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+.rr-toolbar-title {
+  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+  color: #F8FAFC;
+  letter-spacing: -0.01em;
+}
+.rr-toolbar-sub {
+  font-size: 12px;
+  color: #64748B;
+  margin: 4px 0 0 0;
+  line-height: 1.5;
+}
+.rr-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Period switch (daily / weekly / monthly) */
+.rr-period-switch {
+  display: inline-flex;
+  background: #1E293B;
+  border-radius: 6px;
+  padding: 2px;
+  border: 1px solid #23314E;
+}
+.rr-period-btn {
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: #94A3B8;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  text-transform: capitalize;
+  transition: background 180ms ease, color 180ms ease;
+  min-height: 32px;
+}
+.rr-period-btn:hover { color: #F8FAFC; }
+.rr-period-btn.is-active {
+  background: #F59E0B;
+  color: #0F172A;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.35);
+}
+.rr-period-btn:focus-visible {
+  outline: 2px solid #F59E0B;
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   TABLE CARD
+   ============================================================ */
+.rr-table-card {
+  background: #131D31;
+  border: 1px solid #23314E;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+.rr-table-card-head {
+  padding: 16px 20px;
+  border-bottom: 1px solid #23314E;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.rr-table-card-title {
+  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+  color: #F8FAFC;
+  letter-spacing: -0.01em;
+}
+.rr-table-card-sub {
+  font-size: 12px;
+  color: #64748B;
+  margin: 4px 0 0 0;
+  line-height: 1.5;
+}
+.rr-table-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #10B981;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 4px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.4px;
+}
+.rr-table-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10B981;
+  animation: rrLivePulse 1.8s ease-in-out infinite;
+}
+
+/* ============================================================
+   TABLE CELL HELPERS
+   ============================================================ */
+.rr-table-date {
+  color: #F8FAFC;
+  font-weight: 700;
+  font-size: 13px;
+}
+.rr-table-emerald {
+  color: #10B981;
+  font-weight: 600;
+}
+.rr-table-rose {
+  color: #F43F5E;
+  font-weight: 600;
+}
+.rr-table-gross {
+  color: #F8FAFC;
+  font-weight: 800;
+}
+.rr-table-amber {
+  color: #F59E0B;
+  font-weight: 600;
+}
+.rr-table-emerald-strong {
+  color: #10B981;
+  font-weight: 700;
+}
+
+/* ============================================================
+   RESPONSIVE — Laptop & below (<1024px)
+   ============================================================ */
+@media (max-width: 1023px) {
+  .rr-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .rr-toolbar { flex-direction: column; align-items: stretch; }
+  .rr-toolbar-right { justify-content: flex-start; }
+}
+
+/* Tablet & below (<768px) */
+@media (max-width: 767px) {
+  .rr-page { gap: 20px; }
+  .rr-kpi-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .rr-toolbar { padding: 14px 16px; }
+  .rr-toolbar-title { font-size: 15px; }
+  .rr-toolbar-sub { font-size: 11px; }
+  .rr-table-card-head { padding: 14px 16px; }
+  .rr-table-card-title { font-size: 15px; }
+}
+
+/* Mobile (<480px) */
+@media (max-width: 479px) {
+  .rr-page { gap: 16px; }
+  .rr-kpi-grid { grid-template-columns: 1fr; gap: 10px; }
+  .rr-toolbar { padding: 12px; }
+  .rr-toolbar-icon { width: 38px; height: 38px; }
+  .rr-toolbar-right {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .rr-period-switch { width: 100%; }
+  .rr-period-btn { flex: 1; min-height: 40px; }
+  .rr-toolbar-right .btn,
+  .rr-toolbar-right button { width: 100%; }
+
+  .rr-table-card-head { padding: 12px 14px; }
+  .rr-table-card-title { font-size: 14px; }
+
+  .rr-table th, .rr-table td { padding: 10px 12px; font-size: 12px; }
+}
+
+/* Large desktop (>=1280px) */
+@media (min-width: 1280px) {
+  .rr-kpi-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .rr-fade-up,
+  .rr-slide-down,
+  .rr-table-live-dot {
+    animation: none !important;
+  }
+  .rr-period-btn { transition: none !important; }
+}

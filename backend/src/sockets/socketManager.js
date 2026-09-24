@@ -107,11 +107,41 @@ class SocketManager {
         }
       });
 
-      // Join a specific ride room for real-time tracking
-      socket.on('join_ride', (rideId) => {
-        if (rideId) {
-          socket.join(`ride_${rideId}`);
-          logger.debug(`Socket ${socket.id} joined ride room ride_${rideId}`);
+      // Join a specific ride room for real-time tracking with security validation
+      socket.on('join_ride', async (rideId) => {
+        if (!rideId) return;
+        try {
+          // If socket is authenticated, enforce strict room authorization
+          if (socket.user) {
+            const userRole = (socket.user.role || '').toUpperCase();
+            if (userRole === 'ADMIN' || userRole === ROLES.ADMIN) {
+              socket.join(`ride_${rideId}`);
+              logger.debug(`Admin ${socket.user.id} joined ride room ride_${rideId}`);
+              return;
+            }
+
+            const ride = await RideModel.findById(rideId);
+            if (!ride) {
+              socket.emit('error', { message: 'Ride not found' });
+              return;
+            }
+
+            const isCustomer = Number(ride.customer_id) === Number(socket.user.id);
+            const isAssignedRider = Number(ride.rider_id) === Number(socket.user.id);
+
+            if (isCustomer || isAssignedRider) {
+              socket.join(`ride_${rideId}`);
+              logger.debug(`User ${socket.user.id} (${socket.user.role}) joined ride room ride_${rideId}`);
+            } else {
+              logger.warn(`Unauthorized attempt to join ride room ride_${rideId} by user ${socket.user.id}`);
+              socket.emit('error', { message: 'Unauthorized ride room access' });
+            }
+          } else {
+            // Guest or simulator fallback
+            socket.join(`ride_${rideId}`);
+          }
+        } catch (err) {
+          logger.error('Error in join_ride authorization', { error: err.message, rideId });
         }
       });
 
@@ -121,22 +151,39 @@ class SocketManager {
         }
       });
 
-      // Rider live location update (GPS ping)
+      // Rider live location update (GPS ping) with coordinate and role validation
       socket.on(SOCKET_EVENTS.RIDER_LOCATION_UPDATE, async (data) => {
         try {
           const riderId = socket.user?.id || data.riderId;
-          const { latitude, longitude, rideId } = data;
+          const lat = parseFloat(data.latitude);
+          const lng = parseFloat(data.longitude);
+          const rideId = data.rideId;
 
-          if (riderId && latitude && longitude) {
-            // Update database
-            await RiderModel.updateLocation(riderId, latitude, longitude);
+          // Coordinate boundary validation (-90 to 90 lat, -180 to 180 lng)
+          if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+            logger.warn(`Rejected invalid coordinates from rider ${riderId}: (${data.latitude}, ${data.longitude})`);
+            return;
+          }
+
+          // Verify rider role if authenticated
+          if (socket.user && socket.user.role && socket.user.role !== 'RIDER') {
+            logger.warn(`Non-rider user ${socket.user.id} attempted to publish rider location`);
+            return;
+          }
+
+          if (riderId) {
+            // Update database coordinates
+            await RiderModel.updateLocation(riderId, lat, lng);
 
             const payload = {
               riderId,
-              latitude,
-              longitude,
-              heading: data.heading || 0,
-              speed: data.speed || 0,
+              rideId: rideId || null,
+              latitude: lat,
+              longitude: lng,
+              heading: typeof data.heading === 'number' ? data.heading : 0,
+              speed: typeof data.speed === 'number' ? data.speed : 0,
+              accuracy: typeof data.accuracy === 'number' ? data.accuracy : 10,
+              recordedAt: data.recordedAt || new Date().toISOString(),
               timestamp: new Date().toISOString()
             };
 
@@ -225,6 +272,7 @@ class SocketManager {
       id: ride.id,
       rideId: ride.id,
       rideCode: ride.ride_code || ride.rideCode,
+      ride_code: ride.ride_code || ride.rideCode,
       vehicleType: ride.vehicle_type || ride.vehicleType || 'BIKE',
       pickupAddress: ride.pickup_address || ride.pickupAddress,
       pickup_address: ride.pickup_address || ride.pickupAddress,
@@ -256,13 +304,21 @@ class SocketManager {
     };
 
     const isFemaleOnly = Boolean(ride.female_rider_only || ride.femaleRiderOnly);
+    const vehicleType = (ride.vehicle_type || ride.vehicleType || 'ANY').toUpperCase();
+    const hasVehiclePref = vehicleType !== 'ANY';
+    const hasStrictPreference = isFemaleOnly || hasVehiclePref;
 
-    // If specific nearby riders found, emit to their individual rooms (filtered if female only)
-    if (nearbyRiders && nearbyRiders.length > 0) {
-      const targetRiders = isFemaleOnly
-        ? nearbyRiders.filter(r => (r.gender || '').toUpperCase() === 'FEMALE')
-        : nearbyRiders;
+    // Filter target riders strictly matching user's preferences
+    let targetRiders = Array.isArray(nearbyRiders) ? [...nearbyRiders] : [];
+    if (isFemaleOnly) {
+      targetRiders = targetRiders.filter(r => (r.gender || '').toUpperCase() === 'FEMALE');
+    }
+    if (hasVehiclePref) {
+      targetRiders = targetRiders.filter(r => (r.vehicle_type || r.vehicleType || 'BIKE').toUpperCase() === vehicleType);
+    }
 
+    // If specific matching riders found, emit strictly to their individual private socket rooms
+    if (targetRiders.length > 0) {
       targetRiders.forEach(rider => {
         this.io.to(`user_${rider.user_id}`).emit(SOCKET_EVENTS.NEW_RIDE_REQUEST, {
           ...payload,
@@ -271,13 +327,18 @@ class SocketManager {
       });
     }
 
-    // Broadcast to all online riders and admin
-    this.io.to('role_RIDER').emit(SOCKET_EVENTS.NEW_RIDE_REQUEST, payload);
+    // Only broadcast to general role_RIDER room if NO strict preference was requested
+    // If preference is given (e.g. female-only or specific vehicle), it MUST go to matching riders only!
+    if (!hasStrictPreference) {
+      this.io.to('role_RIDER').emit(SOCKET_EVENTS.NEW_RIDE_REQUEST, payload);
+    }
+
+    // Broadcast to admin dashboard for real-time ride tracking
     this.io.to('role_ADMIN').emit('admin:ride_requested', payload);
 
-    // Send Lock-Screen Web Push Notifications to Target Drivers (Works even when browser is closed)
+    // Send Lock-Screen Web Push Notifications strictly to matching drivers
     try {
-      PushService.sendPushToRiders({ nearbyRiders, ride: payload });
+      PushService.sendPushToRiders({ nearbyRiders: targetRiders, ride: payload });
     } catch (pushErr) {
       logger.warn('Push dispatch error', { error: pushErr.message });
     }
@@ -298,7 +359,8 @@ class SocketManager {
     const payload = {
       rideId: ride.id,
       id: ride.id,
-      rideCode: ride.ride_code,
+      rideCode: ride.ride_code || ride.rideCode,
+      ride_code: ride.ride_code || ride.rideCode,
       status,
       ride: enrichedRide,
       total_fare: totalFare,

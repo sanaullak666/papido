@@ -2,17 +2,36 @@ const rateLimit = require('express-rate-limit');
 const env = require('../config/environment');
 
 const generalLimiter = rateLimit({
-  windowMs: env.RATE_LIMIT.WINDOW_MS,
-  max: env.RATE_LIMIT.MAX || 50000,
+  windowMs: env.RATE_LIMIT.WINDOW_MS || 15 * 60 * 1000,
+  max: env.RATE_LIMIT.MAX || 100000,
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
-    // Skip rate limiting for real-time telemetry, radar polling, health, and local dev
-    return req.path.includes('/requests') ||
-           req.path.includes('/active') ||
-           req.path.includes('/health') ||
-           req.path.includes('/dashboard') ||
-           req.path.includes('/status');
+    // 1. Always skip rate limiting in development mode or for local developer loopback
+    if (
+      process.env.NODE_ENV === 'development' ||
+      req.ip === '127.0.0.1' ||
+      req.ip === '::1' ||
+      req.ip === '::ffff:127.0.0.1' ||
+      req.hostname === 'localhost'
+    ) {
+      return true;
+    }
+
+    // 2. Skip rate limiting for real-time telemetry, radar polling, health, outside-rides, scheduled rides
+    const url = req.originalUrl || req.url || req.path || '';
+    return url.includes('/requests') ||
+           url.includes('/active') ||
+           url.includes('/health') ||
+           url.includes('/dashboard') ||
+           url.includes('/status') ||
+           url.includes('/scheduled') ||
+           url.includes('/outside-rides') ||
+           url.includes('/fares') ||
+           url.includes('/radar') ||
+           url.includes('/rides') ||
+           url.includes('/penalties') ||
+           url.includes('/earnings');
   },
   message: {
     success: false,
@@ -23,9 +42,16 @@ const generalLimiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // 1000 attempts per 15 minutes
+  max: 2000, // 2000 attempts per 15 minutes
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => {
+    return process.env.NODE_ENV === 'development' ||
+           req.ip === '127.0.0.1' ||
+           req.ip === '::1' ||
+           req.ip === '::ffff:127.0.0.1' ||
+           req.hostname === 'localhost';
+  },
   message: {
     success: false,
     message: 'Too many authentication attempts. Please try again after 15 minutes.',

@@ -143,21 +143,6 @@ export function AuthProvider({ children }) {
   // Register Customer / Rider
   const register = async (registerData) => {
     const res = await apiRequest('/auth/register', 'POST', registerData);
-    if (res.data?.accessToken) {
-      localStorage.setItem('papido_user_token', res.data.accessToken);
-      localStorage.setItem('papido_user', JSON.stringify(res.data.user));
-      setToken(res.data.accessToken);
-      setUser(res.data.user);
-    }
-    return res;
-  };
-
-  // Verify Registration Email OTP
-  const verifyRegistrationOtp = async (email, otp) => {
-    const res = await apiRequest('/auth/verify-registration-otp', 'POST', {
-      email,
-      otp
-    });
     const { user: userData, accessToken } = res.data;
     if (accessToken) {
       localStorage.setItem('papido_user_token', accessToken);
@@ -165,20 +150,15 @@ export function AuthProvider({ children }) {
       setToken(accessToken);
       setUser(userData);
     }
-    return res.data;
-  };
-
-  // Resend Registration Email OTP
-  const resendRegistrationOtp = async (email) => {
-    return apiRequest('/auth/resend-registration-otp', 'POST', { email });
+    return res;
   };
 
   const changePassword = async (currentPassword, newPassword) => {
     const activeToken = token || adminToken;
-    return apiRequest('/auth/change-password', 'POST', {
-      currentPassword,
-      newPassword
-    }, activeToken);
+    const body = typeof currentPassword === 'object' && currentPassword !== null
+      ? currentPassword
+      : { currentPassword, newPassword };
+    return apiRequest('/auth/change-password', 'POST', body, activeToken);
   };
 
   const forgotPassword = async (email) => {
@@ -232,6 +212,32 @@ export function AuthProvider({ children }) {
     window.location.replace('/admin');
   };
 
+  // Mobile Login with Email OTP
+  const sendLoginOtp = async (phone, expectedRole = null) => {
+    const res = await apiRequest('/auth/send-login-otp', 'POST', {
+      phone,
+      expectedRole
+    });
+    return res.data;
+  };
+
+  const verifyLoginOtp = async (phone, otp, expectedRole = null) => {
+    const res = await apiRequest('/auth/verify-login-otp', 'POST', {
+      phone,
+      otp,
+      expectedRole
+    });
+    const { user: userData, accessToken } = res.data;
+    if (userData.role === 'ADMIN') {
+      throw new Error('This portal is for students and riders only. Administrators must use the separate Admin Portal.');
+    }
+    localStorage.setItem('papido_user_token', accessToken);
+    localStorage.setItem('papido_user', JSON.stringify(userData));
+    setToken(accessToken);
+    setUser(userData);
+    return userData;
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -241,9 +247,9 @@ export function AuthProvider({ children }) {
       loading,
       login,
       adminLogin,
+      sendLoginOtp,
+      verifyLoginOtp,
       register,
-      verifyRegistrationOtp,
-      resendRegistrationOtp,
       changePassword,
       forgotPassword,
       resetPassword,

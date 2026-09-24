@@ -1,0 +1,637 @@
+/* ============================================================
+   PAPIDO — OutsideTripsView Styles
+   Theme: Dark Operations Console (LOCKED)
+   Prefix: ot-
+   ============================================================ */
+
+/* ---------- Keyframes ---------- */
+@keyframes otFadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes otSlideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes otSpin {
+  to { transform: rotate(360deg); }
+}
+@keyframes otPulseSoft {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.25); }
+  50%      { box-shadow: 0 0 0 8px rgba(244, 63, 94, 0.05); }
+}
+@keyframes otBellShake {
+  0%, 100% { transform: rotate(0deg); }
+  20%      { transform: rotate(-12deg); }
+  40%      { transform: rotate(12deg); }
+  60%      { transform: rotate(-8deg); }
+  80%      { transform: rotate(8deg); }
+}
+@keyframes otSkeleton {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ---------- Page shell ---------- */
+.ot-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: #F8FAFC;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+.ot-page *,
+.ot-page *::before,
+.ot-page *::after { box-sizing: border-box; }
+
+.ot-fade-up    { animation: otFadeUp 320ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.ot-slide-down { animation: otSlideDown 260ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.ot-spin       { animation: otSpin 1s linear infinite; }
+.ot-pulse-soft { animation: otPulseSoft 2s ease-in-out infinite; }
+
+/* ============================================================
+   ALERT BAR
+   ============================================================ */
+.ot-alert-bar {
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.35);
+  border-radius: 10px;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.ot-alert-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 260px;
+}
+.ot-alert-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(244, 63, 94, 0.2);
+  color: #FB7185;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(244, 63, 94, 0.35);
+  animation: otBellShake 1.4s ease-in-out infinite;
+  transform-origin: 50% 20%;
+}
+.ot-alert-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #FECDD3;
+}
+.ot-alert-sub {
+  font-size: 12px;
+  color: #FDA4AF;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* ============================================================
+   HEADER + TAB SWITCH
+   ============================================================ */
+.ot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.ot-tab-switch {
+  display: inline-flex;
+  background: #131D31;
+  border: 1px solid #23314E;
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+}
+.ot-tab-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #94A3B8;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  transition: background 200ms ease, color 200ms ease, box-shadow 200ms ease;
+}
+.ot-tab-btn:hover { color: #F8FAFC; }
+.ot-tab-btn.is-active {
+  background: linear-gradient(135deg, #F97316, #EA580C);
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35);
+}
+.ot-tab-btn--cyan.is-active {
+  background: linear-gradient(135deg, #38BDF8, #0EA5E9);
+  box-shadow: 0 4px 14px rgba(56, 189, 248, 0.35);
+}
+.ot-tab-btn:focus-visible {
+  outline: 2px solid #F59E0B;
+  outline-offset: 2px;
+}
+.ot-tab-count {
+  background: rgba(255, 255, 255, 0.15);
+  color: inherit;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 800;
+  min-width: 22px;
+  text-align: center;
+}
+.ot-tab-btn:not(.is-active) .ot-tab-count {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94A3B8;
+}
+
+.ot-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #1E293B;
+  border: 1px solid #23314E;
+  color: #94A3B8;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 38px;
+  transition: background 180ms ease, color 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+.ot-refresh-btn:hover {
+  background: #23314E;
+  color: #F8FAFC;
+  transform: translateY(-1px);
+}
+.ot-refresh-btn:focus-visible {
+  outline: 2px solid #F59E0B;
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   ALERT MESSAGES (error / success)
+   ============================================================ */
+.ot-alert {
+  padding: 14px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid;
+}
+.ot-alert--error {
+  background: rgba(244, 63, 94, 0.12);
+  border-color: rgba(244, 63, 94, 0.3);
+  color: #FB7185;
+}
+.ot-alert--success {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #34D399;
+}
+
+/* ============================================================
+   PENDING TAB — CARD LIST
+   ============================================================ */
+.ot-pending-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Skeletons */
+.ot-skeletons {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.ot-skeleton-card {
+  background: #131D31;
+  border: 1px solid #23314E;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 140px;
+}
+.ot-skeleton-line {
+  height: 12px;
+  width: 100%;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    rgba(35, 49, 78, 0.4) 0%,
+    rgba(35, 49, 78, 0.9) 50%,
+    rgba(35, 49, 78, 0.4) 100%
+  );
+  background-size: 200% 100%;
+  animation: otSkeleton 1.4s linear infinite;
+}
+.ot-skeleton-line--short { width: 40%; }
+
+/* ============================================================
+   DISPATCH CARD
+   ============================================================ */
+.ot-card {
+  background: #131D31;
+  border: 1px solid #23314E;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  transition: border-color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
+}
+.ot-card:hover {
+  transform: translateY(-1px);
+  border-color: #334155;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3);
+}
+
+/* Card head */
+.ot-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ot-card-head-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ot-card-code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-weight: 800;
+  font-size: 15px;
+  color: #F59E0B;
+  letter-spacing: 0.3px;
+}
+.ot-vehicle-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #94A3B8;
+}
+.ot-card-head-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #64748B;
+}
+
+/* ============================================================
+   CARD INFO GRID (route + passenger)
+   ============================================================ */
+.ot-card-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.ot-info-block {
+  background: #1E293B;
+  border: 1px solid #23314E;
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ot-info-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.ot-info-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid;
+}
+.ot-info-icon--green {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10B981;
+  border-color: rgba(16, 185, 129, 0.35);
+}
+.ot-info-icon--amber {
+  background: rgba(245, 158, 11, 0.12);
+  color: #F59E0B;
+  border-color: rgba(245, 158, 11, 0.35);
+}
+.ot-info-body { flex: 1; min-width: 0; }
+.ot-info-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.ot-info-label--upper { text-transform: uppercase; }
+.ot-info-value {
+  font-size: 13px;
+  color: #F8FAFC;
+  font-weight: 600;
+  margin-top: 2px;
+  word-break: break-word;
+}
+
+.ot-info-map-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #38BDF8;
+  text-decoration: none;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(56, 189, 248, 0.1);
+  flex-shrink: 0;
+  transition: background 180ms ease, color 180ms ease;
+}
+.ot-info-map-link:hover {
+  background: rgba(56, 189, 248, 0.2);
+  color: #7DD3FC;
+}
+
+/* Passenger block specifics */
+.ot-info-block--passenger {
+  justify-content: space-between;
+}
+.ot-passenger-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: #F8FAFC;
+  margin-top: 4px;
+}
+.ot-passenger-phone {
+  font-size: 12px;
+  color: #64748B;
+  margin-top: 2px;
+}
+.ot-passenger-call {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #10B981;
+  text-decoration: none;
+  width: fit-content;
+  transition: color 180ms ease;
+}
+.ot-passenger-call:hover { color: #34D399; text-decoration: underline; }
+
+/* ============================================================
+   DISPATCH CONTROLS (fare + rider + CTA)
+   ============================================================ */
+.ot-dispatch-controls {
+  display: grid;
+  grid-template-columns: minmax(160px, 200px) 1fr auto;
+  align-items: flex-end;
+  gap: 12px;
+  background: #1E293B;
+  border: 1px solid #23314E;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.ot-fare-input-wrap { min-width: 0; }
+.ot-fare-input-wrap label {
+  color: #94A3B8;
+  font-size: 12px;
+}
+.ot-fare-input-wrap input {
+  background: #0B0F19;
+  color: #F8FAFC;
+  border-color: #23314E;
+}
+.ot-fare-input-wrap input::placeholder { color: #64748B; }
+.ot-fare-input-wrap input:focus {
+  border-color: #F59E0B;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+
+.ot-rider-select-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 220px;
+}
+.ot-rider-select-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #94A3B8;
+}
+.ot-rider-select {
+  height: 42px;
+  padding: 0 12px;
+  background: #0B0F19;
+  color: #F8FAFC;
+  border: 1px solid #23314E;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+.ot-rider-select:hover { border-color: #334155; }
+.ot-rider-select:focus-visible {
+  border-color: #F59E0B;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+
+.ot-dispatch-action {
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 0;
+}
+
+/* ============================================================
+   HISTORY TAB
+   ============================================================ */
+.ot-history-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Table cell helpers */
+.ot-table-code {
+  color: #F59E0B;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-weight: 700;
+  font-size: 13px;
+}
+.ot-table-name {
+  font-weight: 600;
+  color: #F8FAFC;
+}
+.ot-table-name--emerald { color: #10B981; }
+.ot-table-sub {
+  font-size: 11px;
+  color: #64748B;
+}
+.ot-table-unassigned {
+  color: #64748B;
+  font-style: italic;
+}
+.ot-table-route {
+  font-size: 13px;
+  font-weight: 600;
+  color: #F8FAFC;
+}
+.ot-table-route-sub {
+  font-size: 12px;
+  color: #64748B;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+.ot-table-fare {
+  color: #10B981;
+  font-size: 14px;
+  font-weight: 800;
+}
+.ot-table-time {
+  font-size: 12px;
+  color: #64748B;
+}
+
+/* ============================================================
+   RESPONSIVE — Laptop & below (<1024px)
+   ============================================================ */
+@media (max-width: 1023px) {
+  .ot-dispatch-controls {
+    grid-template-columns: 1fr 1fr;
+  }
+  .ot-dispatch-action {
+    grid-column: span 2;
+    justify-content: stretch;
+  }
+  .ot-dispatch-action button,
+  .ot-dispatch-action .btn {
+    width: 100%;
+  }
+}
+
+/* Tablet & below (<768px) */
+@media (max-width: 767px) {
+  .ot-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ot-tab-switch { width: 100%; }
+  .ot-tab-btn { flex: 1; justify-content: center; }
+  .ot-refresh-btn { align-self: flex-start; }
+
+  .ot-card { padding: 16px; }
+  .ot-card-info-grid { grid-template-columns: 1fr; }
+  .ot-dispatch-controls {
+    grid-template-columns: 1fr;
+    padding: 12px;
+  }
+  .ot-dispatch-action {
+    grid-column: span 1;
+  }
+  .ot-rider-select-wrap { min-width: 0; }
+}
+
+/* Mobile (<480px) */
+@media (max-width: 479px) {
+  .ot-page { gap: 14px; }
+  .ot-alert-bar { padding: 12px 14px; }
+  .ot-alert-icon { width: 34px; height: 34px; }
+  .ot-alert-title { font-size: 13px; }
+  .ot-alert-sub { font-size: 11px; }
+
+  .ot-tab-switch { flex-direction: column; }
+  .ot-tab-btn {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 12px 14px;
+    min-height: 44px;
+  }
+  .ot-tab-count { margin-left: auto; }
+  .ot-refresh-btn { width: 100%; justify-content: center; min-height: 42px; }
+
+  .ot-card { padding: 14px; gap: 12px; }
+  .ot-card-code { font-size: 14px; }
+  .ot-card-head-time { font-size: 11px; }
+
+  .ot-info-block { padding: 12px; }
+  .ot-info-value { font-size: 12px; }
+  .ot-passenger-name { font-size: 13px; }
+
+  .ot-dispatch-controls { padding: 12px; gap: 10px; }
+  .ot-rider-select { height: 46px; font-size: 14px; }
+  .ot-fare-input-wrap input { min-height: 46px; font-size: 14px; }
+  .ot-dispatch-action button,
+  .ot-dispatch-action .btn { min-height: 46px; font-size: 14px; }
+}
+
+/* Large desktop (>=1280px) */
+@media (min-width: 1280px) {
+  .ot-dispatch-controls {
+    grid-template-columns: minmax(180px, 220px) 1fr auto;
+  }
+}
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .ot-fade-up,
+  .ot-slide-down,
+  .ot-spin,
+  .ot-pulse-soft,
+  .ot-alert-icon,
+  .ot-skeleton-line {
+    animation: none !important;
+  }
+  .ot-tab-btn,
+  .ot-refresh-btn,
+  .ot-card,
+  .ot-rider-select,
+  .ot-info-map-link {
+    transition: none !important;
+  }
+  .ot-card:hover { transform: none !important; }
+}

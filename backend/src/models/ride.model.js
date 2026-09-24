@@ -76,7 +76,14 @@ const RideModel = {
     isScheduled = false,
     scheduledTime = null
   }) {
-    const finalStatus = isScheduled ? 'SCHEDULED' : status;
+    const isActuallyScheduled = Boolean(
+      isScheduled === true || isScheduled === 'true' || isScheduled === 1 ||
+      (scheduledTime && String(scheduledTime).trim().length > 0)
+    );
+    const finalStatus = isActuallyScheduled ? 'SCHEDULED' : status;
+    const finalScheduledTime = (isActuallyScheduled && scheduledTime)
+      ? String(scheduledTime).trim().replace('T', ' ')
+      : null;
     const result = await db.query(
       `INSERT INTO rides (
         ride_code, customer_id, vehicle_type,
@@ -95,7 +102,7 @@ const RideModel = {
         destinationAddress, destinationLatitude, destinationLongitude,
         estimatedDistance, estimatedDuration, estimatedFare,
         otp, finalStatus, paymentMethod, femaleRiderOnly ? 1 : 0, isDoubleRide ? 1 : 0, isOutside ? 1 : 0,
-        isScheduled ? 1 : 0, scheduledTime || null
+        isActuallyScheduled ? 1 : 0, finalScheduledTime
       ]
     );
     return this.findById(result.insertId);
@@ -208,9 +215,15 @@ const RideModel = {
       LEFT JOIN rider_profiles rp ON rd.id = rp.user_id
       WHERE r.customer_id = ? 
         AND (
-          (COALESCE(r.is_scheduled, 0) = 0 AND r.status IN ('PENDING_ADMIN_QUOTE', 'REQUESTED', 'ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED'))
+          (COALESCE(r.is_scheduled, 0) = 0 
+           AND (r.scheduled_time IS NULL OR r.scheduled_time <= NOW() + INTERVAL 15 MINUTE)
+           AND r.status IN ('PENDING_ADMIN_QUOTE', 'REQUESTED', 'ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED'))
           OR
-          (r.is_scheduled = 1 AND r.status IN ('RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED'))
+          (r.is_scheduled = 1 AND (
+            r.status IN ('RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED')
+            OR (r.status = 'REQUESTED' AND r.is_dispatched = 1)
+            OR (r.status = 'ACCEPTED' AND (r.is_dispatched = 1 OR r.scheduled_time <= NOW() + INTERVAL 15 MINUTE))
+          ))
         )
       ORDER BY r.id DESC LIMIT 1
     `;
@@ -303,6 +316,8 @@ const RideModel = {
       FROM rides r
       JOIN users c ON r.customer_id = c.id
       WHERE r.status = 'REQUESTED'
+        AND (COALESCE(r.is_scheduled, 0) = 0 OR r.is_dispatched = 1)
+        AND (r.scheduled_time IS NULL OR r.scheduled_time <= NOW() + INTERVAL 15 MINUTE)
         AND r.rider_id IS NULL
         AND (r.assigned_rider_id IS NULL OR r.assigned_rider_id = ?)
         AND r.id NOT IN (SELECT ride_id FROM ride_declines WHERE rider_id = ?)
@@ -466,14 +481,30 @@ const RideModel = {
   async findDueScheduledRides(dispatchWindowMinutes = 15) {
     try {
       const targetDate = new Date(Date.now() + (dispatchWindowMinutes + 5) * 60 * 1000);
-      // Format as YYYY-MM-DD HH:mm:ss in local time
-      const year = targetDate.getFullYear();
-      const month = String(targetDate.getMonth() + 1).padStart(2, '0');
-      const day = String(targetDate.getDate()).padStart(2, '0');
-      const hours = String(targetDate.getHours()).padStart(2, '0');
-      const minutes = String(targetDate.getMinutes()).padStart(2, '0');
-      const seconds = String(targetDate.getSeconds()).padStart(2, '0');
-      const targetTimeStr = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+      let targetTimeStr;
+      try {
+        const parts = new Intl.DateTimeFormat('en-CA', {
+          timeZone: 'Asia/Kolkata',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        }).formatToParts(targetDate);
+        const p = {};
+        for (const part of parts) p[part.type] = part.value;
+        targetTimeStr = `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second}`;
+      } catch (_) {
+        const year = targetDate.getFullYear();
+        const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+        const day = String(targetDate.getDate()).padStart(2, '0');
+        const hours = String(targetDate.getHours()).padStart(2, '0');
+        const minutes = String(targetDate.getMinutes()).padStart(2, '0');
+        const seconds = String(targetDate.getSeconds()).padStart(2, '0');
+        targetTimeStr = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+      }
 
       const sql = `
         SELECT r.*, 
@@ -514,7 +545,7 @@ const RideModel = {
         LEFT JOIN users rd ON r.rider_id = rd.id
         LEFT JOIN rider_profiles rp ON rd.id = rp.user_id
         WHERE r.customer_id = ? 
-          AND r.is_scheduled = 1
+          AND (r.is_scheduled = 1 OR r.scheduled_time IS NOT NULL)
           AND r.status IN ('SCHEDULED', 'REQUESTED', 'ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED')
         ORDER BY r.scheduled_time ASC, r.id DESC
       `;
@@ -611,7 +642,7 @@ const RideModel = {
           cancellation_reason = ?,
           cancelled_by_role = 'CUSTOMER',
           cancelled_at = CURRENT_TIMESTAMP
-      WHERE id = ? AND customer_id = ? AND status IN ('SCHEDULED', 'ACCEPTED')
+      WHERE id = ? AND customer_id = ? AND is_scheduled = 1 AND status IN ('SCHEDULED', 'ACCEPTED', 'REQUESTED')
     `;
     const res = await db.query(sql, [reason, rideId, customerId]);
     return res && res.affectedRows > 0;

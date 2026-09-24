@@ -135,8 +135,6 @@ const RiderModel = {
       WHERE rp.is_online = 1 
         AND rp.verification_status = 'APPROVED'
         AND u.status = 'ACTIVE'
-        AND rp.current_latitude IS NOT NULL 
-        AND rp.current_longitude IS NOT NULL
     `;
     const params = [];
 
@@ -150,12 +148,20 @@ const RiderModel = {
     // Compute actual distance using Haversine formula and filter by max radius
     const ridersWithDistance = riders
       .map(rider => {
-        const distance = calculateDistance(
-          pickupLat,
-          pickupLng,
-          parseFloat(rider.current_latitude),
-          parseFloat(rider.current_longitude)
-        );
+        let distance = 0.8; // Default 800m campus proximity fallback if GPS coords not set
+        if (
+          pickupLat != null &&
+          pickupLng != null &&
+          rider.current_latitude != null &&
+          rider.current_longitude != null
+        ) {
+          distance = calculateDistance(
+            parseFloat(pickupLat),
+            parseFloat(pickupLng),
+            parseFloat(rider.current_latitude),
+            parseFloat(rider.current_longitude)
+          );
+        }
         return {
           ...rider,
           distance_to_pickup: distance

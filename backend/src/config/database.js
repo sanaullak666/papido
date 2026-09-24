@@ -494,7 +494,16 @@ async function ensureDatabaseSchemaMigrations(targetPool) {
     'ALTER TABLE rider_profiles ADD COLUMN upi_id VARCHAR(100) DEFAULT NULL AFTER license_number;',
     'ALTER TABLE rides ADD COLUMN is_scheduled BOOLEAN DEFAULT FALSE AFTER is_outside;',
     'ALTER TABLE rides ADD COLUMN scheduled_time DATETIME DEFAULT NULL AFTER is_scheduled;',
-    'ALTER TABLE rides ADD COLUMN is_dispatched BOOLEAN DEFAULT FALSE AFTER scheduled_time;'
+    'ALTER TABLE rides ADD COLUMN is_dispatched BOOLEAN DEFAULT FALSE AFTER scheduled_time;',
+    'ALTER TABLE rider_earnings ADD COLUMN gross_fare DECIMAL(10, 2) DEFAULT NULL AFTER applied_rule_description;',
+    'ALTER TABLE rider_earnings ADD COLUMN platform_fee DECIMAL(10, 2) DEFAULT NULL AFTER gross_fare;',
+    'ALTER TABLE rider_earnings ADD COLUMN controller_fee DECIMAL(10, 2) DEFAULT 0.00 AFTER platform_fee;',
+    'ALTER TABLE rider_earnings ADD COLUMN net_earning DECIMAL(10, 2) DEFAULT NULL AFTER controller_fee;',
+    "ALTER TABLE rider_profiles MODIFY COLUMN vehicle_type VARCHAR(50) NOT NULL DEFAULT 'BIKE';",
+    "ALTER TABLE fare_configurations MODIFY COLUMN vehicle_type VARCHAR(50) NOT NULL;",
+    "ALTER TABLE rides MODIFY COLUMN vehicle_type VARCHAR(50) NOT NULL DEFAULT 'BIKE';",
+    "ALTER TABLE rides MODIFY COLUMN status VARCHAR(40) NOT NULL DEFAULT 'REQUESTED';",
+    'ALTER TABLE rider_profiles ADD COLUMN rejection_reason VARCHAR(500) DEFAULT NULL AFTER college_id_doc_url;'
   ];
 
   for (const sql of migrations) {
@@ -606,6 +615,18 @@ async function ensureFlashFreeRidesSchema(targetPool) {
     } catch (_) {}
     try {
       await targetPool.query('ALTER TABLE rides ADD COLUMN is_core_only BOOLEAN DEFAULT FALSE');
+    } catch (_) {}
+    try {
+      await targetPool.query("ALTER TABLE rides MODIFY COLUMN payment_method VARCHAR(40) DEFAULT 'CASH'");
+    } catch (_) {}
+    try {
+      await targetPool.query("ALTER TABLE rides MODIFY COLUMN payment_status VARCHAR(40) DEFAULT 'PENDING'");
+    } catch (_) {}
+    try {
+      await targetPool.query("ALTER TABLE payments MODIFY COLUMN payment_method VARCHAR(40) NOT NULL DEFAULT 'CASH'");
+    } catch (_) {}
+    try {
+      await targetPool.query("ALTER TABLE payments MODIFY COLUMN payment_status VARCHAR(40) NOT NULL DEFAULT 'PENDING'");
     } catch (_) {}
   } catch (err) {
     console.warn('[Database] Flash free rides schema notice:', err.message);

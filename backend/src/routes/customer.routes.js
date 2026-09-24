@@ -18,6 +18,7 @@ router.get('/pending-penalty', CustomerController.getPendingPenalty);
 router.post('/penalties/:id/claim-paid', CustomerController.claimPenaltyPaid);
 router.get('/flash-free-ride/active', CustomerController.getActiveFlashFreeRide);
 router.post('/flash-free-ride/claim', CustomerController.claimFlashFreeRide);
+router.post('/flash-free-ride/:id/claim', CustomerController.claimFlashFreeRide);
 router.get('/rides/active', CustomerController.getActiveRide);
 router.get('/rides/scheduled', CustomerController.getScheduledRides);
 router.post('/rides/:id/reschedule', CustomerController.rescheduleScheduledRide);

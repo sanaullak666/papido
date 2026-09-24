@@ -1,29 +1,29 @@
 export const getSocketUrl = () => {
-  if (import.meta.env.VITE_SOCKET_URL) {
+  if (typeof window !== 'undefined') {
+    // When accessing from a mobile phone or local network IP, always use current origin
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      return window.location.origin;
+    }
+  }
+  if (import.meta.env.VITE_SOCKET_URL && !import.meta.env.VITE_SOCKET_URL.includes('localhost')) {
     return import.meta.env.VITE_SOCKET_URL;
   }
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL.replace(/\/+$/, '').replace(/\/api$/, '');
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
   }
-  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-    return window.location.port === '5173' ? 'http://localhost:5000' : window.location.origin;
-  }
-  if (typeof window !== 'undefined' && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(window.location.hostname)) {
-    return `http://${window.location.hostname}:5000`;
-  }
-  return typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000';
+  return 'http://localhost:5000';
 };
 
 const getBaseUrl = () => {
-  if (import.meta.env.VITE_API_URL) {
+  if (typeof window !== 'undefined') {
+    // When accessing from a mobile phone or local network IP, always use relative /api
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      return '/api';
+    }
+  }
+  if (import.meta.env.VITE_API_URL && !import.meta.env.VITE_API_URL.includes('localhost')) {
     const url = import.meta.env.VITE_API_URL.replace(/\/+$/, '');
     return url.endsWith('/api') ? url : `${url}/api`;
-  }
-  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-    return window.location.port === '5173' ? '/api' : 'http://localhost:5000/api';
-  }
-  if (typeof window !== 'undefined' && /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(window.location.hostname)) {
-    return `http://${window.location.hostname}:5000/api`;
   }
   return '/api';
 };

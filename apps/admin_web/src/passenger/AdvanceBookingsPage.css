@@ -1,0 +1,282 @@
+/* ============================================================
+   PAPIDO — Advance Bookings Page Styles
+   Prefix: ps-
+   ============================================================ */
+
+.ps-advance-page {
+  padding: 24px 16px 80px 16px;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.ps-advance-container {
+  width: 100%;
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ps-tab-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.ps-heading--icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ps-tab-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ps-success-banner {
+  background: #ECFDF5;
+  border: 1.5px solid #A7F3D0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #065F46;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ps-skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ps-empty-card {
+  text-align: center;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.ps-empty-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--ps-amber-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.ps-empty-title {
+  margin: 0;
+  font-family: 'Outfit', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--ps-text, #271E16);
+}
+
+.ps-empty-sub {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ps-text-muted, #796D61);
+  max-width: 440px;
+  line-height: 1.5;
+}
+
+.ps-rides-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ps-sched-card {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+}
+
+.ps-sched-card.is-confirmed {
+  border-left: 4px solid #10B981;
+}
+
+.ps-sched-card.is-pending {
+  border-left: 4px solid #F59E0B;
+}
+
+.ps-sched-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  border-bottom: 1px solid var(--ps-border, #E8DCCB);
+  padding-bottom: 12px;
+}
+
+.ps-sched-head-left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ps-sched-code {
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 800;
+  background: var(--ps-surface, #FAF5EE);
+  border: 1px solid var(--ps-border);
+  padding: 2px 6px;
+  border-radius: 6px;
+  color: var(--ps-text);
+}
+
+.ps-sched-time {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ps-text);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ps-chip {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  letter-spacing: 0.02em;
+}
+.ps-chip--emerald { background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0; }
+.ps-chip--amber   { background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A; }
+
+.ps-sched-fare {
+  text-align: right;
+}
+.ps-sched-fare-label {
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--ps-text-muted);
+  letter-spacing: 0.05em;
+}
+.ps-sched-fare-val {
+  font-family: 'Outfit', sans-serif;
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--ps-amber, #EA580C);
+}
+
+.ps-sched-route {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ps-sched-route-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ps-text);
+}
+.ps-sched-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.ps-sched-dot--green  { background: #10B981; }
+.ps-sched-dot--amber  { background: #F59E0B; }
+.ps-sched-dot--orange { background: #EA580C; }
+
+.ps-sched-meta {
+  font-size: 11px;
+  color: var(--ps-text-muted);
+  margin-top: 4px;
+}
+
+/* Assigned rider box */
+.ps-sched-rider-box {
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.ps-sched-rider-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: #15803D;
+  letter-spacing: 0.05em;
+}
+.ps-sched-rider-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: #14532D;
+  margin-top: 2px;
+}
+.ps-sched-rider-vehicle {
+  font-size: 11px;
+  color: #166534;
+}
+.ps-sched-rider-note {
+  font-size: 11px;
+  color: #15803D;
+  margin-top: 4px;
+}
+
+.ps-sched-pending-box {
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.ps-sched-pending-note {
+  font-size: 12px;
+  color: #92400E;
+  font-weight: 600;
+  flex: 1;
+}
+
+.ps-sched-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ps-modal-error {
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: #991B1B;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+}

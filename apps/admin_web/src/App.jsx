@@ -2,25 +2,26 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from './context/AuthContext';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
-import { LoginView } from './views/LoginView';
-import { HomeView } from './views/HomeView';
-import { AdminLoginView } from './views/AdminLoginView';
-import { CustomerPortalView } from './views/CustomerPortalView';
-import { RiderPortalView } from './views/RiderPortalView';
-import { DashboardView } from './views/DashboardView';
-import { OutsideTripsView } from './views/OutsideTripsView';
-import { CustomersView } from './views/CustomersView';
-import { RidersView } from './views/RidersView';
-import { RidesView } from './views/RidesView';
-import { FareSettingsView } from './views/FareSettingsView';
-import { PaymentsView } from './views/PaymentsView';
-import { ReportsView } from './views/ReportsView';
-import { DailySettlementsView } from './views/DailySettlementsView';
-import { CoreRegisterView } from './views/CoreRegisterView';
-import { CoreTeamView } from './views/CoreTeamView';
+import { LandingView } from './shared/LandingView';
+import { LoginView } from './shared/LoginView';
+import { AdminLoginView } from './adminweb/AdminLoginView';
+import { PassengerRouter } from './passenger/PassengerRouter';
+import { RiderRouter } from './rider/RiderRouter';
+import { DashboardView } from './adminweb/DashboardView';
+import { OutsideTripsView } from './adminweb/OutsideTripsView';
+import { CustomersView } from './adminweb/CustomersView';
+import { RidersView } from './adminweb/RidersView';
+import { RidesView } from './adminweb/RidesView';
+import { FareSettingsView } from './adminweb/FareSettingsView';
+import { PaymentsView } from './adminweb/PaymentsView';
+import { ReportsView } from './adminweb/ReportsView';
+import { DailySettlementsView } from './adminweb/DailySettlementsView';
+import { CoreRegisterView } from './rider/CoreRegisterView';
+import { CoreTeamView } from './adminweb/CoreTeamView';
 import { useSocket } from './context/SocketContext';
 import { alertManager } from './utils/alertManager';
 import { apiRequest } from './api';
+import { AlertBanner } from './components/ui/AlertBanner';
 import { ArrowRight, AlertTriangle, X } from 'lucide-react';
 
 const getAdminTabFromPath = (path) => {
@@ -150,15 +151,27 @@ export function App() {
   }, [adminUser]);
 
   const navigateTo = (path, tabId = null) => {
-    if (window.location.pathname !== path) {
+    const cleanPath = path.split('?')[0];
+    if (window.location.pathname !== cleanPath || window.location.search !== (path.includes('?') ? '?' + path.split('?')[1] : '')) {
       window.history.pushState({}, '', path);
     }
-    setCurrentPath(path);
-    if (path.startsWith('/admin')) {
-      const targetTab = tabId || getAdminTabFromPath(path);
+    setCurrentPath(cleanPath);
+    if (cleanPath.startsWith('/admin')) {
+      const targetTab = tabId || getAdminTabFromPath(cleanPath);
       setCurrentTab(targetTab);
     }
   };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+      if (window.location.pathname.startsWith('/admin')) {
+        setCurrentTab(getAdminTabFromPath(window.location.pathname));
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
 
   // ============================================================
@@ -225,57 +238,18 @@ export function App() {
 
         <main className="main-content">
           {/* Global Outside Campus Ride Alert Banner */}
-          {newOutsideAlert && (
-            <div
-              style={{
-                background: 'linear-gradient(135deg, #F59E0B, #EA580C)',
-                color: '#000',
-                padding: '14px 20px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                fontWeight: 800,
-                fontSize: '14px',
-                boxShadow: '0 6px 25px rgba(245, 158, 11, 0.4)',
-                zIndex: 1000,
-                cursor: 'pointer'
-              }}
-              onClick={() => {
-                alertManager.stopRingtone();
-                navigateTo('/admin/outside-trips', 'outside-trips');
-                setNewOutsideAlert(null);
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <AlertTriangle size={22} color="#000" />
-                <div>
-                  <span style={{ fontWeight: 900 }}>NEW OUTSIDE CAMPUS TRIP:</span> {newOutsideAlert.customerName} requested <strong>{newOutsideAlert.pickupAddress} → {newOutsideAlert.destinationAddress}</strong>
-                </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  style={{ background: '#000', color: '#fff', border: 'none', fontWeight: 800, padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '6px' }}
-                >
-                  <span>Open Dispatch & Set Fare</span>
-                  <ArrowRight size={14} />
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    alertManager.stopRingtone();
-                    setNewOutsideAlert(null);
-                  }}
-                  style={{ background: 'transparent', border: 'none', padding: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#000' }}
-                  title="Dismiss Alert"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-            </div>
-          )}
+          <AlertBanner
+            alert={newOutsideAlert}
+            onAction={() => {
+              alertManager.stopRingtone();
+              navigateTo('/admin/outside-trips', 'outside-trips');
+              setNewOutsideAlert(null);
+            }}
+            onDismiss={() => {
+              alertManager.stopRingtone();
+              setNewOutsideAlert(null);
+            }}
+          />
 
           <Header
             title={meta.title}
@@ -301,108 +275,43 @@ export function App() {
     );
   }
 
-  // Extract normalized route path without query strings
-  const cleanPath = (currentPath || '').split('?')[0].toLowerCase().replace(/\/+$/, '') || '/';
-  const queryString = (currentPath || '').includes('?') ? (currentPath || '').split('?')[1] : (typeof window !== 'undefined' ? window.location.search : '');
-  const searchParams = new URLSearchParams(queryString);
-
   // ============================================================
-  // 2. EXPLICIT LOGIN & REGISTER ROUTES (/login, /register, /signin, /signup)
+  // 2. PUBLIC LANDING VIEW (/ or /welcome)
   // ============================================================
-  if (cleanPath === '/login' || cleanPath === '/register' || cleanPath === '/signin' || cleanPath === '/signup') {
-    if (user) {
-      if (user.role === 'CUSTOMER') return <CustomerPortalView />;
-      if (user.role === 'RIDER') return <RiderPortalView />;
-    }
-
-    const roleParam = searchParams.get('role');
-    const initialRole = roleParam === 'RIDER' ? 'RIDER' : 'CUSTOMER';
-    const initialMode = (cleanPath === '/register' || cleanPath === '/signup') ? 'register' : 'login';
-
+  if ((currentPath === '/' || currentPath === '' || currentPath === '/welcome') && !user) {
     return (
-      <LoginView
-        onGoToAdminPortal={() => navigateTo('/admin/dashboard')}
-        onGoToHome={() => navigateTo('/')}
-        initialMode={initialMode}
-        initialRole={initialRole}
+      <LandingView
+        onGoToLogin={() => navigateTo('/login')}
+        onGoToRegister={() => navigateTo('/login?mode=register')}
+        onGoToRiderLogin={() => navigateTo('/login?mode=rider')}
+        onGoToAdminPortal={() => navigateTo('/admin')}
       />
     );
   }
 
   // ============================================================
-  // 3. PASSENGER DEDICATED PORTAL ROUTES (/passenger, /customer, /book)
-  // ============================================================
-  if (cleanPath === '/passenger' || cleanPath.startsWith('/passenger/') || cleanPath === '/customer' || cleanPath.startsWith('/customer/') || cleanPath === '/book') {
-    if (user) {
-      return <CustomerPortalView />;
-    }
-    return (
-      <LoginView
-        onGoToAdminPortal={() => navigateTo('/admin/dashboard')}
-        onGoToHome={() => navigateTo('/')}
-        initialMode="login"
-        initialRole="CUSTOMER"
-      />
-    );
-  }
-
-  // ============================================================
-  // 4. RIDER / DRIVER DEDICATED PORTAL ROUTES (/driver, /rider)
-  // ============================================================
-  if (cleanPath === '/driver' || cleanPath.startsWith('/driver/') || cleanPath === '/rider' || cleanPath.startsWith('/rider/')) {
-    if (user) {
-      return <RiderPortalView />;
-    }
-    return (
-      <LoginView
-        onGoToAdminPortal={() => navigateTo('/admin/dashboard')}
-        onGoToHome={() => navigateTo('/')}
-        initialMode="login"
-        initialRole="RIDER"
-      />
-    );
-  }
-
-  // ============================================================
-  // 5. HOME LANDING PAGE (Root / or /home)
-  // ============================================================
-  if (cleanPath === '/' || cleanPath === '/home' || !cleanPath) {
-    return (
-      <HomeView
-        user={user}
-        onGoToLogin={() => {
-          if (user) {
-            navigateTo(user.role === 'CUSTOMER' ? '/passenger' : '/driver');
-          } else {
-            navigateTo('/login');
-          }
-        }}
-        onGoToRegister={(role) => {
-          if (user) {
-            navigateTo(user.role === 'CUSTOMER' ? '/passenger' : '/driver');
-          } else {
-            navigateTo(role ? `/register?role=${role}` : '/register');
-          }
-        }}
-        onGoToAdmin={() => navigateTo('/admin')}
-      />
-    );
-  }
-
-  // ============================================================
-  // 6. DEFAULT FALLBACK
+  // 3. ROLE-BASED ROUTING FOR AUTHENTICATED USERS
   // ============================================================
   if (user) {
-    if (user.role === 'CUSTOMER') return <CustomerPortalView />;
-    if (user.role === 'RIDER') return <RiderPortalView />;
+    if (currentPath === '/driver' || currentPath.startsWith('/driver/') || currentPath === '/rider' || currentPath.startsWith('/rider/') || user.role === 'RIDER') {
+      return <RiderRouter />;
+    }
+
+    if (currentPath === '/passenger' || currentPath.startsWith('/passenger/') || currentPath === '/customer' || currentPath.startsWith('/customer/') || currentPath === '/book' || user.role === 'CUSTOMER') {
+      return <PassengerRouter />;
+    }
   }
 
+  // ============================================================
+  // 4. AUTHENTICATION (Not Logged In)
+  // ============================================================
   return (
-    <HomeView
-      user={user}
-      onGoToLogin={() => navigateTo('/login')}
-      onGoToRegister={(role) => navigateTo(role ? `/register?role=${role}` : '/register')}
-      onGoToAdmin={() => navigateTo('/admin')}
+    <LoginView
+      onGoToAdminPortal={() => navigateTo('/admin')}
+      onLoginSuccess={(loggedInUser) => {
+        const dest = loggedInUser?.role === 'RIDER' ? '/rider' : '/passenger';
+        navigateTo(dest);
+      }}
     />
   );
 }

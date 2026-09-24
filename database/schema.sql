@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 CREATE TABLE IF NOT EXISTS `rider_profiles` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `user_id` INT NOT NULL UNIQUE,
-    `vehicle_type` ENUM('BIKE', 'AUTO', 'CAB_MINI', 'CAB_SEDAN') NOT NULL DEFAULT 'BIKE',
+    `vehicle_type` VARCHAR(50) NOT NULL DEFAULT 'BIKE',
     `vehicle_number` VARCHAR(30) NOT NULL UNIQUE,
     `vehicle_model` VARCHAR(100) NOT NULL,
     `license_number` VARCHAR(50) NOT NULL UNIQUE,
@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS `customer_profiles` (
 -- 4. FARE CONFIGURATIONS TABLE (Source of truth for fare calculation)
 CREATE TABLE IF NOT EXISTS `fare_configurations` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
-    `vehicle_type` ENUM('BIKE', 'AUTO', 'CAB_MINI', 'CAB_SEDAN') NOT NULL UNIQUE,
+    `vehicle_type` VARCHAR(50) NOT NULL UNIQUE,
     `base_fare` DECIMAL(10, 2) NOT NULL DEFAULT 20.00,
     `base_distance_km` DECIMAL(5, 2) NOT NULL DEFAULT 1.50,
     `per_km_fare` DECIMAL(10, 2) NOT NULL DEFAULT 10.00,
@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS `rides` (
     `ride_code` VARCHAR(20) NOT NULL UNIQUE,
     `customer_id` INT NOT NULL,
     `rider_id` INT DEFAULT NULL,
-    `vehicle_type` ENUM('BIKE', 'AUTO', 'CAB_MINI', 'CAB_SEDAN') NOT NULL DEFAULT 'BIKE',
+    `vehicle_type` VARCHAR(50) NOT NULL DEFAULT 'BIKE',
     
     `pickup_address` VARCHAR(255) NOT NULL,
     `pickup_latitude` DECIMAL(10, 8) NOT NULL,
@@ -121,6 +121,8 @@ CREATE TABLE IF NOT EXISTS `rides` (
     
     `otp` VARCHAR(6) DEFAULT NULL,
     `status` ENUM(
+        'PENDING_ADMIN_QUOTE',
+        'SCHEDULED',
         'REQUESTED',
         'ACCEPTED',
         'RIDER_ARRIVING',
@@ -132,6 +134,13 @@ CREATE TABLE IF NOT EXISTS `rides` (
     
     `payment_method` ENUM('CASH', 'WALLET', 'UPI', 'CARD') DEFAULT 'CASH',
     `payment_status` ENUM('PENDING', 'PAID', 'FAILED', 'REFUNDED') DEFAULT 'PENDING',
+    
+    `female_rider_only` BOOLEAN DEFAULT FALSE,
+    `is_double_ride` BOOLEAN DEFAULT FALSE,
+    `is_outside` BOOLEAN DEFAULT FALSE,
+    `is_scheduled` BOOLEAN DEFAULT FALSE,
+    `scheduled_time` DATETIME DEFAULT NULL,
+    `is_dispatched` BOOLEAN DEFAULT FALSE,
     
     `cancellation_reason` VARCHAR(255) DEFAULT NULL,
     `cancelled_by_role` ENUM('CUSTOMER', 'RIDER', 'ADMIN') DEFAULT NULL,
@@ -180,6 +189,10 @@ CREATE TABLE IF NOT EXISTS `rider_earnings` (
     `company_earning` DECIMAL(10, 2) NOT NULL,
     `controller_earning` DECIMAL(10, 2) DEFAULT 0.00,
     `applied_rule_description` VARCHAR(255) DEFAULT NULL,
+    `gross_fare` DECIMAL(10, 2) DEFAULT NULL,
+    `platform_fee` DECIMAL(10, 2) DEFAULT NULL,
+    `controller_fee` DECIMAL(10, 2) DEFAULT 0.00,
+    `net_earning` DECIMAL(10, 2) DEFAULT NULL,
     `settlement_status` ENUM('UNSETTLED', 'SETTLED') DEFAULT 'UNSETTLED',
     `settled_at` DATETIME DEFAULT NULL,
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -242,3 +255,109 @@ CREATE TABLE IF NOT EXISTS `system_settings` (
     `description` VARCHAR(255) DEFAULT NULL,
     `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 13. CANCELLATION PENALTIES TABLE
+CREATE TABLE IF NOT EXISTS `cancellation_penalties` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `ride_id` INT NOT NULL,
+    `customer_id` INT NOT NULL,
+    `rider_id` INT NOT NULL,
+    `amount` DECIMAL(10, 2) NOT NULL DEFAULT 15.00,
+    `rider_upi_id` VARCHAR(100) DEFAULT '',
+    `rider_name` VARCHAR(100) DEFAULT '',
+    `status` VARCHAR(30) NOT NULL DEFAULT 'UNPAID',
+    `payment_reference` VARCHAR(150) DEFAULT NULL,
+    `notes` TEXT DEFAULT NULL,
+    `waived_by` INT DEFAULT NULL,
+    `paid_at` DATETIME DEFAULT NULL,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX `idx_cp_customer_status` (`customer_id`, `status`),
+    INDEX `idx_cp_rider_id` (`rider_id`),
+    INDEX `idx_cp_ride_id` (`ride_id`),
+    INDEX `idx_cp_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 14. DAILY DUTY CONTROLLERS TABLE
+CREATE TABLE IF NOT EXISTS `daily_duty_controllers` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `date` DATE NOT NULL UNIQUE,
+    `core_member_id` INT NOT NULL,
+    `payout_status` VARCHAR(30) DEFAULT 'PENDING',
+    `notes` VARCHAR(255) DEFAULT NULL,
+    `assigned_by` INT DEFAULT NULL,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`core_member_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 15. DAILY SHIFT SETTLEMENTS TABLE
+CREATE TABLE IF NOT EXISTS `daily_shift_settlements` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `rider_id` INT NOT NULL,
+    `date` DATE NOT NULL,
+    `total_trips` INT DEFAULT 0,
+    `gross_fare` DECIMAL(10, 2) DEFAULT 0.00,
+    `company_due` DECIMAL(10, 2) DEFAULT 0.00,
+    `controller_due` DECIMAL(10, 2) DEFAULT 0.00,
+    `total_commission_due` DECIMAL(10, 2) DEFAULT 0.00,
+    `rider_net_earnings` DECIMAL(10, 2) DEFAULT 0.00,
+    `status` VARCHAR(30) NOT NULL DEFAULT 'UNSETTLED',
+    `utr_reference` VARCHAR(150) DEFAULT NULL,
+    `rejection_reason` VARCHAR(255) DEFAULT NULL,
+    `submitted_at` DATETIME DEFAULT NULL,
+    `approved_at` DATETIME DEFAULT NULL,
+    `approved_by` INT DEFAULT NULL,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY `uq_dss_rider_date` (`rider_id`, `date`),
+    INDEX `idx_dss_rider` (`rider_id`),
+    INDEX `idx_dss_date` (`date`),
+    INDEX `idx_dss_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 16. RIDE DECLINES TABLE
+CREATE TABLE IF NOT EXISTS `ride_declines` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `ride_id` INT NOT NULL,
+    `rider_id` INT NOT NULL,
+    `declined_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY `uq_decline` (`ride_id`, `rider_id`),
+    FOREIGN KEY (`ride_id`) REFERENCES `rides`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`rider_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 17. PASSWORD RESETS TABLE
+CREATE TABLE IF NOT EXISTS `password_resets` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `email` VARCHAR(150) NOT NULL,
+    `otp` VARCHAR(10) NOT NULL,
+    `expires_at` DATETIME NOT NULL,
+    `used` BOOLEAN DEFAULT FALSE,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 18. PUSH SUBSCRIPTIONS TABLE
+CREATE TABLE IF NOT EXISTS `push_subscriptions` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NOT NULL,
+    `endpoint` TEXT NOT NULL,
+    `p256dh` VARCHAR(255) NOT NULL,
+    `auth` VARCHAR(255) NOT NULL,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 19. LOGIN OTPS TABLE (Mobile login via email OTP)
+CREATE TABLE IF NOT EXISTS `login_otps` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `phone` VARCHAR(20) NOT NULL,
+    `email` VARCHAR(150) NOT NULL,
+    `otp` VARCHAR(10) NOT NULL,
+    `expires_at` DATETIME NOT NULL,
+    `used` BOOLEAN DEFAULT FALSE,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX `idx_login_otps_phone` (`phone`, `used`),
+    INDEX `idx_login_otps_email` (`email`, `used`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

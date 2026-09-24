@@ -1,0 +1,129 @@
+/* ============================================================
+   PAPIDO — Shift Earnings Page (Soft Glass)
+   ============================================================ */
+
+.rp-metrics-row--4 {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.rp-panel {
+  background: var(--rp-surface, rgba(255, 255, 255, 0.78));
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  border: 1px solid var(--rp-border, rgba(234, 88, 12, 0.12));
+  border-radius: 20px;
+  box-shadow: var(--rp-shadow-1);
+  overflow: hidden;
+}
+
+.rp-panel-head {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--rp-border, rgba(234, 88, 12, 0.12));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.rp-panel-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--rp-text, #1E293B);
+  margin: 0;
+}
+
+/* Table */
+.rp-table-wrap {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.rp-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+.rp-table th {
+  padding: 12px 20px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--rp-text-muted, #64748B);
+  background: rgba(249, 115, 22, 0.04);
+  border-bottom: 1px solid var(--rp-border, rgba(234, 88, 12, 0.1));
+}
+.rp-table td {
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(234, 88, 12, 0.06);
+  color: var(--rp-text, #1E293B);
+  vertical-align: middle;
+}
+.rp-table tr:hover td {
+  background: rgba(249, 115, 22, 0.02);
+}
+
+.rp-table-code {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  color: #EA580C;
+}
+.rp-table-route {
+  font-weight: 700;
+  color: var(--rp-text, #1E293B);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.rp-table-route-sub {
+  font-size: 11px;
+  color: var(--rp-text-muted, #64748B);
+  margin-top: 3px;
+}
+.rp-table-amber {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  color: #15803D;
+}
+.rp-table-cyan {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  color: #0891B2;
+}
+
+.rp-status-chip {
+  display: inline-flex;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.rp-status-chip--emerald {
+  background: #DCFCE7;
+  color: #15803D;
+}
+.rp-status-chip--amber {
+  background: #FEF3C7;
+  color: #B45309;
+}
+
+.rp-skeletons {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.rp-skeleton-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rp-skeleton-line {
+  height: 16px;
+  background: #F1F5F9;
+  border-radius: 6px;
+}
+.rp-skeleton-line--short {
+  width: 40%;
+}

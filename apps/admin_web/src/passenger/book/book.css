@@ -1,0 +1,521 @@
+@import '../BookRidePage.css';
+
+/* ============================================================
+   BENTO HERO (new — spec §9)
+   ============================================================ */
+.ps-bento {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.ps-bento-cell {
+  background: var(--ps-surface-solid, #FFFFFF);
+  border: 1px solid var(--ps-border, rgba(234, 88, 12, 0.12));
+  border-radius: 20px;
+  padding: 22px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--ps-shadow-1, 0 2px 8px -2px rgba(15, 23, 42, 0.05));
+}
+.ps-bento-cell:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--ps-shadow-3, 0 16px 40px -8px rgba(15, 23, 42, 0.12));
+}
+
+.ps-bento-cell--hero {
+  background:
+    radial-gradient(circle at 90% 10%, rgba(249, 115, 22, 0.10), transparent 55%),
+    var(--ps-surface-solid, #FFFFFF);
+}
+
+.ps-bento-cell--accent {
+  background:
+    radial-gradient(circle at 20% 90%, rgba(234, 88, 12, 0.08), transparent 50%),
+    var(--ps-surface-solid, #FFFFFF);
+}
+
+.ps-bento-hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--ps-text-muted, #796D61);
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.ps-bento-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--ps-amber, #EA580C);
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15);
+}
+
+.ps-bento-hero-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(28px, 5vw, 42px);
+  font-weight: 900;
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+  margin: 0 0 12px;
+  color: var(--ps-text, #271E16);
+}
+.ps-bento-hero-accent {
+  color: var(--ps-amber, #EA580C);
+}
+
+.ps-bento-hero-sub {
+  font-size: 13px;
+  color: var(--ps-text-muted, #796D61);
+  margin: 0 0 18px;
+  line-height: 1.5;
+}
+
+.ps-bento-hero-cta-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.ps-bento-hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 20px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #F97316, #EA580C);
+  color: #FFFFFF;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: 0 6px 18px rgba(234, 88, 12, 0.30);
+  transition: transform 180ms ease, filter 180ms ease;
+}
+.ps-bento-hero-cta:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+.ps-bento-hero-cta:active {
+  transform: scale(0.98);
+}
+
+.ps-bento-hero-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ps-text-muted, #796D61);
+}
+.ps-bento-live-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #10B981;
+  animation: psDotPulse 1.8s infinite;
+}
+
+/* Stat cells */
+.ps-bento-cell--stat {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 18px;
+}
+
+.ps-bento-stat-icon {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  background: var(--ps-amber-soft, rgba(234, 88, 12, 0.08));
+  color: var(--ps-amber, #EA580C);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: auto;
+}
+.ps-bento-stat-icon--accent {
+  background: rgba(234, 88, 12, 0.14);
+}
+
+.ps-bento-stat-value {
+  font-family: 'Outfit', sans-serif;
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--ps-text, #271E16);
+  line-height: 1;
+  margin-top: 16px;
+}
+.ps-bento-stat-value--sm {
+  font-size: 20px;
+}
+
+.ps-bento-stat-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ps-text-muted, #796D61);
+  margin-top: 4px;
+}
+
+.ps-bento-stat-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ps-amber, #EA580C);
+  text-decoration: none;
+  margin-top: 8px;
+}
+
+/* Responsive: stack on mobile */
+@media (max-width: 720px) {
+  .ps-bento {
+    grid-template-columns: 1fr 1fr;
+  }
+  .ps-bento-cell--hero {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 440px) {
+  .ps-bento {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================
+   LOCATION PULSE (spec §5)
+   ============================================================ */
+@keyframes psMarkerPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45); }
+  70%  { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+.ps-pulse-marker {
+  animation: psMarkerPulse 2s infinite;
+}
+
+/* ============================================================
+   SHARED-ELEMENT TRANSITION (spec §4)
+   Applied to ride status card when it appears
+   ============================================================ */
+@keyframes psSharedEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.ps-status-badge-card {
+  animation: psSharedEnter 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ============================================================
+   BOTTOM SHEET ON MOBILE (spec §8)
+   ============================================================ */
+@media (max-width: 479px) {
+  .ps-modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .ps-modal {
+    border-radius: 20px 20px 0 0;
+    max-height: 88vh;
+    animation: psSheetUp 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+@keyframes psSheetUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   REDUCED MOTION — global guard
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .ps-bento-cell,
+  .ps-bento-hero-cta,
+  .ps-pulse-marker,
+  .ps-status-badge-card {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ============================================================
+   PREFERENCE AVAILABILITY INDICATOR & INTERCEPT MODAL
+   (Strict vehicle type & female rider preference routing)
+   ============================================================ */
+
+.ps-pref-status-box {
+  margin-top: 14px;
+}
+
+.ps-pref-status {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.45;
+  transition: all 200ms ease;
+}
+
+/* Checking pulse */
+.ps-pref-status--checking {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  background: var(--ps-amber-soft, rgba(234, 88, 12, 0.06));
+  border: 1px dashed var(--ps-border, rgba(234, 88, 12, 0.20));
+  color: var(--ps-text-muted, #796D61);
+  font-weight: 600;
+}
+
+.ps-pref-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ps-amber, #EA580C);
+  flex-shrink: 0;
+}
+.ps-pref-status-dot--pulse {
+  animation: psDotPulse 1.4s infinite;
+}
+
+/* Available */
+.ps-pref-status--available {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  background: #ECFDF5;
+  border: 1px solid #A7F3D0;
+  color: #065F46;
+}
+
+.ps-pref-status--available .ps-pref-status-icon {
+  color: #10B981;
+  flex-shrink: 0;
+}
+
+.ps-pref-status-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ps-pref-status-strong {
+  font-weight: 800;
+  font-size: 13px;
+}
+
+/* Unavailable */
+.ps-pref-status--unavailable {
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  color: #92400E;
+}
+
+.ps-pref-status-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.ps-pref-status-icon-wrap {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #FEF3C7;
+  color: #D97706;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.ps-pref-status-desc {
+  font-size: 12px;
+  color: #78350F;
+  margin-top: 2px;
+}
+
+.ps-pref-fallback-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(245, 158, 11, 0.25);
+  margin-top: 2px;
+  flex-wrap: wrap;
+}
+
+.ps-pref-fallback-note {
+  font-size: 11px;
+  font-weight: 700;
+  color: #B45309;
+}
+
+.ps-pref-opt-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #EA580C;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.25);
+  transition: transform 140ms ease, filter 140ms ease;
+}
+
+.ps-pref-opt-link:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+.ps-pref-opt-link:active {
+  transform: scale(0.97);
+}
+
+/* Modal Styling */
+.ps-pref-modal {
+  border-top: 4px solid #F59E0B;
+}
+
+.ps-pref-modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ps-pref-modal-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.ps-pref-modal-alert-icon {
+  color: #DC2626;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.ps-pref-modal-alert-text {
+  font-size: 13px;
+  font-weight: 700;
+  color: #991B1B;
+  line-height: 1.45;
+}
+
+.ps-pref-modal-alert-sub {
+  font-size: 12px;
+  color: #7F1D1D;
+  margin-top: 4px;
+}
+
+.ps-pref-summary-card {
+  background: var(--ps-surface, #FBF8F4);
+  border: 1px solid var(--ps-border, rgba(234, 88, 12, 0.12));
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ps-pref-summary-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.ps-pref-summary-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ps-text-muted, #796D61);
+}
+
+.ps-pref-summary-val {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ps-text, #271E16);
+}
+
+.ps-pref-summary-val--tag {
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  color: #92400E;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: capitalize;
+}
+
+.ps-pref-summary-val--red {
+  color: #DC2626;
+}
+
+.ps-pref-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.ps-pref-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.ps-pref-secondary-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* Device Responsiveness */
+@media (max-width: 640px) {
+  .ps-pref-status {
+    padding: 10px 12px;
+  }
+  .ps-pref-fallback-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .ps-pref-opt-link {
+    justify-content: center;
+    padding: 9px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .ps-pref-secondary-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .ps-pref-modal-alert {
+    padding: 12px;
+  }
+  .ps-pref-modal-alert-text {
+    font-size: 12.5px;
+  }
+}
+

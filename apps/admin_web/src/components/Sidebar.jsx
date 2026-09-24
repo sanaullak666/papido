@@ -20,17 +20,50 @@ export function Sidebar({ currentTab, onNavigate, isOpen, onClose, hasPendingOut
   const currentUser = adminUser || user;
   const handleLogout = adminUser ? adminLogout : logout;
 
-  const navItems = [
-    { id: 'dashboard', path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'daily-settlements', path: '/admin/daily-settlements', label: 'Daily Rider Deductions', icon: CreditCard, badge: 'DAILY' },
-    { id: 'outside-trips', path: '/admin/outside-trips', label: 'Outside Trips Dispatch', icon: Globe, badge: hasPendingOutsideAlert ? 'NEW' : 'DISPATCH' },
-    { id: 'core-team', path: '/admin/core-team', label: 'Core Team Management', icon: Shield, badge: 'CORE' },
-    { id: 'customers', path: '/admin/customers', label: 'Customers Directory', icon: Users },
-    { id: 'riders', path: '/admin/riders', label: 'Riders (Drivers)', icon: Bike },
-    { id: 'rides', path: '/admin/rides', label: 'Ride Operations', icon: Navigation },
-    { id: 'fares', path: '/admin/fares', label: 'Fare & Split Rules', icon: Sliders },
-    { id: 'payments', path: '/admin/payments', label: 'Payments Ledger', icon: DollarSign },
-    { id: 'reports', path: '/admin/reports', label: 'Reports & Analytics', icon: FileBarChart }
+  // Grouped Navigation Structure
+  const navGroups = [
+    {
+      title: 'Overview',
+      items: [
+        { id: 'dashboard', path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'rides', path: '/admin/rides', label: 'Live Rides', icon: Navigation }
+      ]
+    },
+    {
+      title: 'Operations',
+      items: [
+        {
+          id: 'outside-trips',
+          path: '/admin/outside-trips',
+          label: 'Dispatch',
+          icon: Globe,
+          badge: hasPendingOutsideAlert ? 'NEW' : 'DISPATCH',
+          alert: hasPendingOutsideAlert
+        },
+        { id: 'core-team', path: '/admin/core-team', label: 'Core Team', icon: Shield, badge: 'CORE' }
+      ]
+    },
+    {
+      title: 'People',
+      items: [
+        { id: 'riders', path: '/admin/riders', label: 'Riders', icon: Bike },
+        { id: 'customers', path: '/admin/customers', label: 'Customers', icon: Users }
+      ]
+    },
+    {
+      title: 'Finance',
+      items: [
+        { id: 'daily-settlements', path: '/admin/daily-settlements', label: 'Settlements', icon: CreditCard, badge: 'DAILY' },
+        { id: 'payments', path: '/admin/payments', label: 'Payments', icon: DollarSign },
+        { id: 'fares', path: '/admin/fares', label: 'Pricing Rules', icon: Sliders }
+      ]
+    },
+    {
+      title: 'Intelligence',
+      items: [
+        { id: 'reports', path: '/admin/reports', label: 'Reports', icon: FileBarChart }
+      ]
+    }
   ];
 
   return (
@@ -42,11 +75,12 @@ export function Sidebar({ currentTab, onNavigate, isOpen, onClose, hasPendingOut
         />
       )}
       <aside className={`sidebar ${isOpen ? 'mobile-open' : ''}`}>
+        {/* Brand Header */}
         <div className="brand-header">
           <div className="brand-logo">P</div>
           <div>
             <div className="brand-title">PAPIDO</div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Portal</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Operations Console</div>
           </div>
           <span className="brand-badge">PROD</span>
           {onClose && (
@@ -69,53 +103,85 @@ export function Sidebar({ currentTab, onNavigate, isOpen, onClose, hasPendingOut
           )}
         </div>
 
-      <ul className="nav-list">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = currentTab === item.id;
-          const isOutsideAlert = item.id === 'outside-trips' && hasPendingOutsideAlert;
-          return (
-            <li key={item.id}>
-              <a
-                href={item.path}
-                className={`nav-item ${isActive ? 'active' : ''}`}
-                style={{
-                  width: '100%',
-                  textDecoration: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  background: isOutsideAlert ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
-                  textAlign: 'left',
-                  border: isOutsideAlert ? '1px solid #F59E0B' : 'none'
-                }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  if (onNavigate) {
-                    onNavigate(item.path, item.id);
-                  }
-                  if (onClose) onClose();
-                }}
-              >
-                <Icon size={18} color={isOutsideAlert ? '#F59E0B' : undefined} />
-                <span style={{ fontWeight: isOutsideAlert ? 800 : undefined, color: isOutsideAlert ? '#F59E0B' : undefined }}>{item.label}</span>
-                {item.badge && (
-                  <span
-                    className="nav-item-badge"
-                    style={{
-                      background: isOutsideAlert ? '#F59E0B' : undefined,
-                      color: isOutsideAlert ? '#000' : 'var(--primary)',
-                      fontWeight: 800
-                    }}
-                  >
-                    {item.badge}
-                  </span>
-                )}
-              </a>
-            </li>
-          );
-        })}
-      </ul>
+        {/* Grouped Navigation */}
+        <div
+          className="nav-list-wrapper"
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            padding: '8px 0'
+          }}
+        >
+          {navGroups.map((group, gIdx) => (
+            <div key={gIdx} style={{ marginBottom: '8px' }}>
+              <div className="nav-group-title">
+                {group.title}
+              </div>
 
+              <ul className="nav-list" style={{ listStyle: 'none', padding: '0 8px', margin: 0 }}>
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = currentTab === item.id;
+                  const isOutsideAlert = item.alert;
+
+                  return (
+                    <li key={item.id} style={{ marginBottom: '2px' }}>
+                      <a
+                        href={item.path}
+                        className={`nav-item ${isActive ? 'active' : ''}`}
+                        style={{
+                          width: '100%',
+                          textDecoration: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          padding: '9px 12px',
+                          borderRadius: 'var(--radius-sm, 6px)',
+                          background: isOutsideAlert
+                            ? 'rgba(245, 158, 11, 0.18)'
+                            : isActive
+                            ? 'rgba(245, 158, 11, 0.12)'
+                            : 'transparent',
+                          color: isOutsideAlert || isActive ? 'var(--primary, #F59E0B)' : 'var(--text-secondary, #94A3B8)',
+                          fontWeight: isOutsideAlert || isActive ? 700 : 500,
+                          border: isOutsideAlert ? '1px solid #F59E0B' : '1px solid transparent',
+                          transition: 'all 0.15s ease'
+                        }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (onNavigate) {
+                            onNavigate(item.path, item.id);
+                          }
+                          if (onClose) onClose();
+                        }}
+                      >
+                        <Icon size={18} style={{ flexShrink: 0 }} />
+                        <span style={{ flex: 1, fontSize: '13px' }}>{item.label}</span>
+                        {item.badge && (
+                          <span
+                            className="nav-item-badge"
+                            style={{
+                              background: isOutsideAlert ? '#F59E0B' : 'rgba(255, 255, 255, 0.08)',
+                              color: isOutsideAlert ? '#0F172A' : 'var(--text-secondary, #94A3B8)',
+                              fontWeight: 700,
+                              fontSize: '10px',
+                              padding: '2px 6px',
+                              borderRadius: '4px'
+                            }}
+                          >
+                            {item.badge}
+                          </span>
+                        )}
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        {/* User Profile Widget */}
         {currentUser && (
           <div className="user-profile-widget">
             <img
@@ -150,3 +216,4 @@ export function Sidebar({ currentTab, onNavigate, isOpen, onClose, hasPendingOut
     </>
   );
 }
+export default Sidebar;

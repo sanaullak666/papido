@@ -1,0 +1,578 @@
+/* ============================================================
+   PAPIDO — DailySettlementsView Styles
+   Theme: Dark Operations Console (LOCKED)
+   Prefix: ds-
+   ============================================================ */
+
+/* ---------- Keyframes ---------- */
+@keyframes dsFadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes dsSlideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes dsSkeleton {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes dsLivePulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22); }
+  50%      { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.05); }
+}
+@keyframes dsAmberPulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.22); }
+  50%      { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.05); }
+}
+
+/* ---------- Page shell ---------- */
+.ds-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  color: #F8FAFC;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+.ds-page *,
+.ds-page *::before,
+.ds-page *::after { box-sizing: border-box; }
+
+.ds-fade-up    { animation: dsFadeUp 320ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.ds-slide-down { animation: dsSlideDown 260ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* ============================================================
+   KPI GRID (MetricCard renders its own styles; grid is here)
+   ============================================================ */
+.ds-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+/* ============================================================
+   TOOLBAR
+   ============================================================ */
+.ds-toolbar {
+  background: #131D31;
+  border: 1px solid #23314E;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+.ds-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+.ds-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Date switch pill */
+.ds-date-switch {
+  display: inline-flex;
+  background: #1E293B;
+  border-radius: 6px;
+  padding: 2px;
+  border: 1px solid #23314E;
+}
+.ds-date-btn {
+  padding: 6px 14px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: #94A3B8;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 180ms ease, color 180ms ease, box-shadow 180ms ease;
+  min-height: 32px;
+}
+.ds-date-btn:hover { color: #F8FAFC; }
+.ds-date-btn.is-active {
+  background: #F59E0B;
+  color: #0F172A;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.35);
+}
+.ds-date-btn:focus-visible {
+  outline: 2px solid #F59E0B;
+  outline-offset: 2px;
+}
+
+/* Date picker */
+.ds-date-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #1E293B;
+  border: 1px solid #23314E;
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: #94A3B8;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+.ds-date-picker:focus-within {
+  border-color: #F59E0B;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+.ds-date-input {
+  background: transparent;
+  border: none;
+  color: #F8FAFC;
+  font-size: 12px;
+  font-weight: 700;
+  outline: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+.ds-date-input::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+/* Search wrapper */
+.ds-search-wrap {
+  min-width: 220px;
+  flex: 1;
+  max-width: 320px;
+}
+.ds-search-wrap input {
+  background: #1E293B;
+  color: #F8FAFC;
+  border-color: #23314E;
+}
+.ds-search-wrap input::placeholder { color: #64748B; }
+.ds-search-wrap input:focus {
+  border-color: #F59E0B;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+
+/* Select (used in controller bar) */
+.ds-select {
+  height: 36px;
+  padding: 0 12px;
+  background: #1E293B;
+  color: #F8FAFC;
+  border: 1px solid #23314E;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  min-width: 220px;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+.ds-select:hover { border-color: #334155; }
+.ds-select:focus-visible {
+  border-color: #F59E0B;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+
+/* ============================================================
+   DUTY CONTROLLER BAR
+   ============================================================ */
+.ds-controller-bar {
+  background: #131D31;
+  border: 1px solid #23314E;
+  border-radius: 10px;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+.ds-controller-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 260px;
+}
+.ds-controller-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38BDF8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+.ds-controller-info { min-width: 0; }
+.ds-controller-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #F8FAFC;
+}
+.ds-controller-sub {
+  font-size: 12px;
+  color: #64748B;
+  margin-top: 2px;
+  line-height: 1.5;
+}
+.ds-controller-name {
+  color: #38BDF8;
+  font-weight: 800;
+}
+.ds-controller-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Inline success */
+.ds-inline-success {
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #34D399;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ============================================================
+   SETTLEMENTS TABLE CARD
+   ============================================================ */
+.ds-table-card {
+  background: #131D31;
+  border: 1px solid #23314E;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+.ds-table-card-head {
+  padding: 16px 20px;
+  border-bottom: 1px solid #23314E;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.ds-table-card-title {
+  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+  color: #F8FAFC;
+  letter-spacing: -0.01em;
+}
+.ds-table-card-sub {
+  font-size: 12px;
+  color: #64748B;
+  margin: 4px 0 0 0;
+  line-height: 1.5;
+}
+.ds-table-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #10B981;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 4px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.4px;
+}
+.ds-table-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10B981;
+  animation: dsLivePulse 1.8s ease-in-out infinite;
+}
+
+/* Table cell helpers */
+.ds-table-name {
+  font-weight: 700;
+  color: #F8FAFC;
+}
+.ds-table-sub {
+  font-size: 11px;
+  color: #64748B;
+  margin-top: 2px;
+}
+.ds-table-sub-strong {
+  font-size: 12px;
+  color: #94A3B8;
+  font-weight: 600;
+}
+.ds-table-mono {
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-weight: 700;
+  color: #F8FAFC;
+}
+.ds-table-trips {
+  color: #F59E0B;
+  font-size: 14px;
+  font-weight: 800;
+}
+.ds-table-gross { color: #F8FAFC; font-weight: 600; }
+.ds-table-amber { color: #F59E0B; font-weight: 700; }
+.ds-table-cyan { color: #38BDF8; font-weight: 700; }
+.ds-table-rose { color: #F43F5E; font-size: 14px; font-weight: 800; }
+.ds-table-emerald { color: #10B981; font-size: 14px; font-weight: 800; }
+
+.ds-row-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ============================================================
+   RIDER DRAWER
+   ============================================================ */
+.ds-drawer {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.ds-drawer-profile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: #1E293B;
+  border-radius: 6px;
+  border: 1px solid #23314E;
+}
+.ds-drawer-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(245, 158, 11, 0.15);
+  color: #F59E0B;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 18px;
+  flex-shrink: 0;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.ds-drawer-name {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+  color: #F8FAFC;
+}
+.ds-drawer-vehicle {
+  font-size: 12px;
+  color: #64748B;
+  margin-top: 2px;
+}
+
+.ds-drawer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 13px;
+}
+.ds-drawer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.ds-drawer-row--lg { font-size: 15px; }
+.ds-drawer-row-label {
+  color: #94A3B8;
+  font-weight: 500;
+}
+.ds-drawer-row-label--bold { font-weight: 700; color: #F8FAFC; }
+.ds-drawer-row-value {
+  color: #F8FAFC;
+  font-weight: 700;
+}
+.ds-drawer-row-value--lg { font-size: 16px; }
+.ds-drawer-row-value--amber { color: #F59E0B; }
+.ds-drawer-row-value--cyan { color: #38BDF8; }
+.ds-drawer-row-value--rose { color: #F43F5E; }
+.ds-drawer-row-value--emerald { color: #10B981; }
+
+.ds-drawer-divider {
+  height: 1px;
+  background: #23314E;
+  margin: 4px 0;
+}
+
+.ds-drawer-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+/* ============================================================
+   REJECTION MODAL
+   ============================================================ */
+.ds-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ds-modal-body label {
+  color: #94A3B8;
+}
+.ds-modal-body input,
+.ds-modal-body textarea {
+  background: #1E293B;
+  color: #F8FAFC;
+  border-color: #23314E;
+}
+.ds-modal-body input::placeholder { color: #64748B; }
+.ds-modal-body input:focus,
+.ds-modal-body textarea:focus {
+  border-color: #F43F5E;
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.15);
+}
+.ds-modal-footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+/* ============================================================
+   RESPONSIVE — Laptop & below (<1024px)
+   ============================================================ */
+@media (max-width: 1023px) {
+  .ds-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .ds-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ds-toolbar-left,
+  .ds-toolbar-right {
+    width: 100%;
+  }
+  .ds-toolbar-right { justify-content: flex-end; }
+  .ds-search-wrap { max-width: none; }
+}
+
+/* Tablet & below (<768px) */
+@media (max-width: 767px) {
+  .ds-page { gap: 20px; }
+  .ds-kpi-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .ds-toolbar { padding: 14px; }
+  .ds-toolbar-left {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ds-date-switch { width: 100%; }
+  .ds-date-btn { flex: 1; }
+  .ds-date-picker { width: 100%; justify-content: center; }
+  .ds-date-picker input { flex: 1; }
+  .ds-search-wrap { min-width: 0; max-width: none; }
+
+  .ds-controller-bar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 14px 16px;
+  }
+  .ds-controller-right {
+    justify-content: stretch;
+  }
+  .ds-controller-right .ds-select { flex: 1; min-width: 0; }
+
+  .ds-drawer-actions { grid-template-columns: 1fr; }
+}
+
+/* Mobile (<480px) */
+@media (max-width: 479px) {
+  .ds-page { gap: 16px; }
+  .ds-kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .ds-toolbar { padding: 12px; }
+  .ds-toolbar-right {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ds-toolbar-right .btn,
+  .ds-toolbar-right button { width: 100%; }
+
+  .ds-date-btn { min-height: 40px; padding: 8px 12px; }
+
+  .ds-controller-icon { width: 38px; height: 38px; }
+  .ds-controller-title { font-size: 13px; }
+  .ds-controller-sub { font-size: 11px; }
+  .ds-controller-right {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ds-controller-right .ds-select { width: 100%; min-width: 0; height: 42px; }
+  .ds-controller-right .btn,
+  .ds-controller-right button { width: 100%; }
+
+  .ds-table-card-head { padding: 14px 16px; }
+  .ds-table-card-title { font-size: 15px; }
+  .ds-table-card-sub { font-size: 11px; }
+
+  .ds-drawer-profile { padding: 14px; gap: 12px; }
+  .ds-drawer-avatar { width: 42px; height: 42px; font-size: 16px; }
+  .ds-drawer-name { font-size: 15px; }
+  .ds-drawer-row { font-size: 12px; }
+  .ds-drawer-row--lg { font-size: 13px; }
+
+  .ds-modal-footer {
+    flex-direction: column-reverse;
+  }
+  .ds-modal-footer .btn,
+  .ds-modal-footer button { width: 100%; }
+}
+
+/* Large desktop (>=1280px) */
+@media (min-width: 1280px) {
+  .ds-kpi-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .ds-fade-up,
+  .ds-slide-down,
+  .ds-table-live-dot {
+    animation: none !important;
+  }
+  .ds-date-btn,
+  .ds-date-picker,
+  .ds-select {
+    transition: none !important;
+  }
+}

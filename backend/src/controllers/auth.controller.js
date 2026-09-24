@@ -42,8 +42,17 @@ const AuthController = {
         return error(res, 'Please provide a valid 10-digit mobile number.', 400);
       }
 
-      if (password.length < 6) {
-        return error(res, 'Password must be at least 6 characters.', 400);
+      if (password.length < 8) {
+        return error(res, 'Password must be at least 8 characters long.', 400);
+      }
+      if (!/[A-Z]/.test(password)) {
+        return error(res, 'Password must include at least one uppercase letter (A-Z).', 400);
+      }
+      if (!/[0-9]/.test(password)) {
+        return error(res, 'Password must include at least one number (0-9).', 400);
+      }
+      if (!/[^A-Za-z0-9]/.test(password)) {
+        return error(res, 'Password must include at least one special character (e.g. !@#$%^&*).', 400);
       }
 
       const validGender = ['MALE', 'FEMALE', 'OTHER'].includes((gender || '').toUpperCase())
@@ -64,18 +73,18 @@ const AuthController = {
         collegeIdDocUrl: collegeIdDocUrl || (profileData && profileData.collegeIdDocUrl) || null
       };
 
-      // If registering as Rider, validate Vehicle Model + 3 mandatory Document Uploads (bypassed for Core Members)
+      // If registering as Rider, validate Vehicle Model and Campus / College ID Card upload (bypassed for Core Members)
       if (role === 'RIDER' && !req.body.isCoreMember) {
         const missing = [];
         if (!mergedProfileData.vehicleModel) {
           missing.push('Vehicle Model (e.g. Honda Activa 6G / Splendor)');
         }
-        if (!mergedProfileData.collegeIdDocUrl) missing.push('Campus / College ID Card (Upload)');
-        if (!mergedProfileData.licenseDocUrl) missing.push('Driving Licence (Upload)');
-        if (!mergedProfileData.rcDocUrl) missing.push('Vehicle RC Document (Upload)');
+        if (!mergedProfileData.collegeIdDocUrl) {
+          missing.push('Campus / College ID Card (Upload)');
+        }
 
         if (missing.length > 0) {
-          return error(res, `Mandatory Driver Requirements Missing: ${missing.join(', ')}. Please enter your Vehicle Model and upload all 3 documents.`, 400);
+          return error(res, `Mandatory Driver Requirements Missing: ${missing.join(', ')}. Please enter your Vehicle Model and upload your Campus ID Card.`, 400);
         }
       }
 
@@ -91,16 +100,7 @@ const AuthController = {
         profileData: mergedProfileData
       });
 
-      // Send 6-digit verification OTP to user's registered email
-      const EmailService = require('../services/email.service');
-      await EmailService.createAndSendRegistrationOtp(cleanEmail, cleanName);
-
-      return success(res, 'Account created successfully! A 6-digit verification code has been sent to your email.', {
-        requiresOtp: true,
-        email: cleanEmail,
-        name: cleanName,
-        role: result.user.role
-      }, 201);
+      return success(res, 'Account registered successfully.', result, 201);
     } catch (err) {
       return error(res, err.message, 400);
     }
@@ -272,36 +272,43 @@ const AuthController = {
     }
   },
 
+  async sendLoginOtp(req, res, next) {
+    try {
+      const { phone, expectedRole } = req.body;
+      if (!phone) {
+        return error(res, 'Mobile number is required.', 400);
+      }
+      const EmailService = require('../services/email.service');
+      const result = await EmailService.createAndSendLoginEmailOtp({
+        phone,
+        expectedRole: expectedRole || null
+      });
+      return success(res, result.message, result, 200);
+    } catch (err) {
+      return error(res, err.message, 400);
+    }
+  },
+
+  async verifyLoginOtp(req, res, next) {
+    try {
+      const { phone, otp, expectedRole } = req.body;
+      if (!phone || !otp) {
+        return error(res, 'Mobile number and OTP are required.', 400);
+      }
+      const EmailService = require('../services/email.service');
+      const result = await EmailService.verifyLoginEmailOtp({
+        phone,
+        otp,
+        expectedRole: expectedRole || null
+      });
+      return success(res, 'Login successful.', result, 200);
+    } catch (err) {
+      return error(res, err.message, 400);
+    }
+  },
+
   async logout(req, res, next) {
     return success(res, 'Logged out successfully.', null, 200);
-  },
-
-  async verifyRegistrationOtp(req, res, next) {
-    try {
-      const { email, otp } = req.body;
-      if (!email || !otp) {
-        return error(res, 'Email and 6-digit OTP code are required.', 400);
-      }
-      const EmailService = require('../services/email.service');
-      const result = await EmailService.verifyRegistrationOtp(email, otp);
-      return success(res, result.message, result, 200);
-    } catch (err) {
-      return error(res, err.message, 400);
-    }
-  },
-
-  async resendRegistrationOtp(req, res, next) {
-    try {
-      const { email } = req.body;
-      if (!email) {
-        return error(res, 'Email address is required.', 400);
-      }
-      const EmailService = require('../services/email.service');
-      const result = await EmailService.resendRegistrationOtp(email);
-      return success(res, result.message, result, 200);
-    } catch (err) {
-      return error(res, err.message, 400);
-    }
   }
 };
 

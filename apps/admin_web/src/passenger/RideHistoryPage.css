@@ -1,0 +1,160 @@
+/* ============================================================
+   PAPIDO — Ride History Page Styles
+   Prefix: ps-
+   ============================================================ */
+
+.ps-history-page {
+  padding: 24px 16px 80px 16px;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.ps-history-container {
+  width: 100%;
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ps-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ps-hist-card {
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.ps-hist-card.is-prebooked {
+  border-left: 4px solid #3B82F6;
+}
+
+.ps-hist-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.ps-hist-code-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ps-hist-code {
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 800;
+  background: var(--ps-surface, #FAF5EE);
+  border: 1px solid var(--ps-border);
+  padding: 2px 6px;
+  border-radius: 6px;
+  color: var(--ps-text);
+}
+
+.ps-prebooked-tag {
+  font-size: 9px;
+  font-weight: 800;
+  background: #DBEAFE;
+  color: #1E40AF;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+}
+
+.ps-hist-route {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ps-hist-route-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ps-text);
+}
+
+.ps-hist-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.ps-hist-dot--green { background: #10B981; }
+.ps-hist-dot--amber { background: #F59E0B; }
+
+.ps-hist-meta {
+  font-size: 11px;
+  color: var(--ps-text-muted);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ps-hist-meta-strong {
+  font-weight: 800;
+  color: #1D4ED8;
+}
+
+.ps-hist-sep {
+  opacity: 0.4;
+}
+
+.ps-hist-right {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.ps-hist-fare {
+  font-family: 'Outfit', sans-serif;
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--ps-text);
+}
+
+.ps-hist-status {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+.ps-hist-status.is-complete {
+  background: #ECFDF5;
+  color: #059669;
+  border: 1px solid #A7F3D0;
+}
+.ps-hist-status.is-cancelled {
+  background: #FEF2F2;
+  color: #DC2626;
+  border: 1px solid #FECACA;
+}
+
+@media (max-width: 580px) {
+  .ps-hist-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .ps-hist-right {
+    flex-direction: row;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid var(--ps-border);
+    padding-top: 10px;
+  }
+}

@@ -159,7 +159,13 @@ const CustomerController = {
       const routeFare = await FareModel.findRouteFare(finalPickup, finalDest);
       const outsideTrip = isExplicitOutside || (isKeywordsOutside && !routeFare);
 
-      const isScheduledTrip = isScheduled === true || isScheduled === 'true' || isScheduled === 1;
+      const isScheduledTrip = Boolean(
+        isScheduled === true || isScheduled === 'true' || isScheduled === 1 ||
+        (scheduledTime && String(scheduledTime).trim().length > 0)
+      );
+      const normalizedScheduledTime = (isScheduledTrip && scheduledTime)
+        ? String(scheduledTime).trim().replace('T', ' ')
+        : null;
 
       const UserModel = require('../models/user.model');
       const customer = await UserModel.findById(req.user.id);
@@ -183,11 +189,11 @@ const CustomerController = {
         isDoubleRide: !outsideTrip && (isDoubleRide === true || isDoubleRide === 'true' || isDoubleRide === 1),
         isOutside: outsideTrip,
         isScheduled: isScheduledTrip,
-        scheduledTime: scheduledTime || null
+        scheduledTime: normalizedScheduledTime
       });
 
       const responseMessage = isScheduledTrip
-        ? `Ride pre-booked successfully for ${scheduledTime}.`
+        ? `Ride pre-booked successfully for ${normalizedScheduledTime || 'scheduled time'}.`
         : (outsideTrip
             ? 'Outside trip submitted to Dispatch. Admin is setting the fare & assigning a rider.'
             : 'Ride requested successfully. Searching for nearby riders.');
@@ -368,7 +374,7 @@ const CustomerController = {
 
   async claimFlashFreeRide(req, res, next) {
     try {
-      const { flashId } = req.body;
+      const flashId = req.params.id || req.body?.flashId;
       const customerId = req.user.id;
 
       if (!flashId) {
@@ -427,7 +433,7 @@ const CustomerController = {
       // Update ride to be is_free_ride = 1, is_core_only = 1, vehicle_type = 'ANY'
       await db.query(`
         UPDATE rides 
-        SET is_free_ride = 1, is_core_only = 1, vehicle_type = 'ANY', final_fare = 0.00, payment_status = 'COMPLETED'
+        SET is_free_ride = 1, is_core_only = 1, vehicle_type = 'ANY', final_fare = 0.00, payment_status = 'PAID'
         WHERE id = ?
       `, [newRide.id]);
 
@@ -474,7 +480,12 @@ const CustomerController = {
         socketManager.io.emit('ride:requested', ridePayload);
       }
 
-      return success(res, 'Congratulations! You won the Papido Flash Free Ride!', completeRide);
+      const responseData = {
+        ...(typeof completeRide === 'object' ? completeRide : {}),
+        ride: completeRide
+      };
+
+      return success(res, 'Congratulations! You won the Papido Flash Free Ride!', responseData);
     } catch (err) {
       next(err);
     }

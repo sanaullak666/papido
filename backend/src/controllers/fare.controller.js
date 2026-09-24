@@ -204,6 +204,28 @@ const FareController = {
     } catch (err) {
       next(err);
     }
+  },
+
+  async getServiceAreas(req, res, next) {
+    try {
+      const { PAPIDO_SERVICE_AREAS } = require('../config/serviceAreas');
+      return success(res, 'Configured Papido service areas fetched.', PAPIDO_SERVICE_AREAS);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async getRoute(req, res, next) {
+    try {
+      const { origin, destination, vehicleType = 'BIKE' } = req.body || {};
+      if (!origin || !destination) {
+        return error(res, 'Origin and destination coordinates are required.', 400);
+      }
+      const route = await MapService.getDistanceAndDuration(origin, destination, vehicleType);
+      return success(res, 'Route calculated.', route);
+    } catch (err) {
+      next(err);
+    }
   }
 };
 

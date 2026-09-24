@@ -1,3 +1,5 @@
+@import './design/tokens.css';
+
 :root {
   --font-heading: 'Outfit', sans-serif;
   --font-sans: 'Plus+Jakarta+Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -1095,84 +1097,103 @@ h1, h2, h3, h4, h5, h6 {
   display: inline-block;
 }
 
-/* ============================================================ */
-/* PAPIDO ANIMATED SVG BRAND LOADER STYLES */
-/* ============================================================ */
-.papido-loader-container {
+/* ==========================================================================
+   Shared Component UI Animations & Utilities
+   ========================================================================== */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideLeft {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.table-row-hover:hover {
+  background: rgba(255, 255, 255, 0.035) !important;
+}
+
+.metric-card-ui.clickable:hover {
+  border-color: var(--primary, #F59E0B) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+}
+
+.form-input-control:focus {
+  border-color: var(--primary, #F59E0B) !important;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18) !important;
+}
+
+.nav-group-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted, #64748B);
+  padding: 12px 14px 4px 14px;
+}
+
+/* ==========================================================================
+   Mobile Bottom Navigation Bar (Rider & Passenger)
+   ========================================================================== */
+.papido-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 8px;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  z-index: 999;
+  box-shadow: 0 -4px 25px rgba(0, 0, 0, 0.35);
+}
+
+.papido-bottom-nav-item {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 3px;
+  flex: 1;
+  height: 100%;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 700;
+  transition: all 0.15s ease;
+  user-select: none;
+  min-height: 44px;
+  cursor: pointer;
 }
 
-.papido-letters-row {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.has-bottom-nav {
+  padding-bottom: calc(72px + env(safe-area-inset-bottom, 0));
 }
 
-.papido-dash {
-  animation: papidoDashArray 2s ease-in-out infinite,
-             papidoDashOffset 2s linear infinite;
-}
-
-.papido-spin {
-  animation: papidoSpinDashArray 2s ease-in-out infinite,
-             papidoSpin 8s ease-in-out infinite,
-             papidoDashOffset 2s linear infinite;
-  transform-origin: center;
-}
-
-@keyframes papidoDashArray {
-  0% {
-    stroke-dasharray: 0 1 359 0;
+@media (min-width: 769px) {
+  .papido-bottom-nav {
+    display: none !important;
   }
-  50% {
-    stroke-dasharray: 0 359 1 0;
-  }
-  100% {
-    stroke-dasharray: 359 1 0 0;
+  .has-bottom-nav {
+    padding-bottom: 0 !important;
   }
 }
-
-@keyframes papidoSpinDashArray {
-  0% {
-    stroke-dasharray: 270 90;
-  }
-  50% {
-    stroke-dasharray: 0 360;
-  }
-  100% {
-    stroke-dasharray: 270 90;
-  }
-}
-
-@keyframes papidoDashOffset {
-  0% {
-    stroke-dashoffset: 365;
-  }
-  100% {
-    stroke-dashoffset: 5;
-  }
-}
-
-@keyframes papidoSpin {
-  0% {
-    rotate: 0deg;
-  }
-  12.5%, 25% {
-    rotate: 270deg;
-  }
-  37.5%, 50% {
-    rotate: 540deg;
-  }
-  62.5%, 75% {
-    rotate: 810deg;
-  }
-  87.5%, 100% {
-    rotate: 1080deg;
-  }
-}
-
-
-

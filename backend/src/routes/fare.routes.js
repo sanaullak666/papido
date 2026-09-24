@@ -11,5 +11,7 @@ router.get('/places', FareController.searchPlaces);
 router.get('/reverse', FareController.reverseGeocode);
 router.get('/resolve-link', FareController.resolveMapLink);
 router.post('/resolve-link', FareController.resolveMapLink);
+router.get('/service-areas', FareController.getServiceAreas);
+router.post('/route', FareController.getRoute);
 
 module.exports = router;
