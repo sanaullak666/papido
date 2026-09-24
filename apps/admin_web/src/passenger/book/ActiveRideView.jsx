@@ -144,7 +144,7 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
       </div>
 
       {/* Scheduled confirmed banner */}
-      {activeRide.status === 'ACCEPTED' && activeRide.scheduled_time && (
+      {activeRide.status === 'ACCEPTED' && Boolean(activeRide.scheduled_time) && (
         <div className="ps-confirmed-banner ps-fade-up">
           <div className="ps-confirmed-left">
             <div className="ps-confirmed-icon">
@@ -160,7 +160,7 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
       )}
 
       {/* Waiting banner */}
-      {activeRide.is_waiting && (
+      {Boolean(activeRide.is_waiting) && (
         <div className="ps-waiting-banner ps-pulse-soft">
           <div className="ps-waiting-left">
             <div className="ps-waiting-icon"><Clock size={15} /></div>
