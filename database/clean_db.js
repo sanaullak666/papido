@@ -1,5 +1,10 @@
 const { initializeDatabase, query } = require('../backend/src/config/database');
-const bcrypt = require('../backend/node_modules/bcryptjs');
+let bcrypt;
+try {
+  bcrypt = require('bcryptjs');
+} catch (e) {
+  bcrypt = require('../backend/node_modules/bcryptjs');
+}
 
 async function cleanDatabase() {
   console.log('--- Starting Full TiDB Database Cleaning ---');
@@ -36,6 +41,7 @@ async function cleanDatabase() {
   await query(`
     INSERT INTO users (id, name, email, phone, gender, password_hash, role, status, is_core_member)
     VALUES (1, 'Papido Master Admin', 'admin@papido.com', '+919876543210', 'OTHER', ?, 'ADMIN', 'ACTIVE', 1)
+    ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash), status = 'ACTIVE'
   `, [hash]);
   console.log('✓ Created clean Master Admin (admin@papido.com / Password@123)');
 
@@ -46,7 +52,8 @@ async function cleanDatabase() {
       ('SCOOTER', 20.00, 1.50, 8.50, 0.75, 20.00, 5.00, 1),
       ('AUTO', 30.00, 1.50, 12.00, 1.00, 30.00, 10.00, 1),
       ('CAB_MINI', 45.00, 2.00, 16.00, 1.50, 45.00, 15.00, 1),
-      ('CAB_SEDAN', 60.00, 2.00, 20.00, 2.00, 60.00, 20.00, 1);
+      ('CAB_SEDAN', 60.00, 2.00, 20.00, 2.00, 60.00, 20.00, 1)
+    ON DUPLICATE KEY UPDATE base_fare = VALUES(base_fare)
   `);
   console.log('✓ Initialized default Fare Configurations');
 
@@ -56,7 +63,8 @@ async function cleanDatabase() {
       (1, 0.00, 25.00, 'FIXED', 2.00, 2.00, 0.00, 0.00, 'Tier 1: Fare up to ₹25 (Company ₹2, Controller ₹2)', 1, 1),
       (2, 25.01, 35.00, 'FIXED', 3.00, 3.00, 0.00, 0.00, 'Tier 2: Fare ₹25–₹35 (Company ₹3, Controller ₹3)', 2, 1),
       (3, 35.01, 60.00, 'FIXED', 4.00, 4.00, 0.00, 0.00, 'Tier 3: Fare ₹35–₹60 (Company ₹4, Controller ₹4)', 3, 1),
-      (4, 60.01, NULL, 'PERCENTAGE', 0.00, 4.00, 20.00, 80.00, 'Tier 4: Fare > ₹60 (Company 20%, Rider/Controller ₹4 baseline + 80%)', 4, 1);
+      (4, 60.01, NULL, 'PERCENTAGE', 0.00, 4.00, 20.00, 80.00, 'Tier 4: Fare > ₹60 (Company 20%, Rider/Controller ₹4 baseline + 80%)', 4, 1)
+    ON DUPLICATE KEY UPDATE rule_type = VALUES(rule_type)
   `);
   console.log('✓ Initialized default Fare Split Rules');
 
@@ -69,7 +77,8 @@ async function cleanDatabase() {
       ('OTP_VERIFICATION_REQUIRED', 'true', 'Require 4-digit OTP from customer to start ride'),
       ('ADMIN_SETTLEMENT_UPI_ID', 'papido.admin@okaxis', 'Default Admin UPI ID for driver shift commission collection'),
       ('ADMIN_SETTLEMENT_NAME', 'Papido Campus Operations', 'Default Receiver Name for Admin UPI'),
-      ('ADMIN_SETTLEMENT_AUTO_LOCK', 'true', 'Whether unsettled shift dues auto-lock driver online status');
+      ('ADMIN_SETTLEMENT_AUTO_LOCK', 'true', 'Whether unsettled shift dues auto-lock driver online status')
+    ON DUPLICATE KEY UPDATE \`value\` = VALUES(\`value\`)
   `);
   console.log('✓ Initialized default System Settings');
 
