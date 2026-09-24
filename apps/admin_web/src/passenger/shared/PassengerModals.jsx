@@ -34,8 +34,7 @@ export function PenaltyPaymentModal({ penalty, onClose }) {
 
   const riderUpi = penalty.rider_upi || penalty.rider_upi_id || `${penalty.rider_phone || 'driver'}@upi`;
   const riderName = penalty.rider_name || penalty.rider_name_full || 'Driver';
-  const txRef = String(penalty.ride_code || penalty.penalty_id || penalty.id || Date.now()).trim();
-  const txNote = `Papido_Comp_${txRef}`;
+  const txNote = 'Papido';
 
   const gpayUri = `gpay://upi/pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&tn=${encodeURIComponent(txNote)}&cu=INR`;
   const phonepeUri = `phonepe://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&tn=${encodeURIComponent(txNote)}&cu=INR`;

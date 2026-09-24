@@ -75,7 +75,7 @@ const RideService = {
     if (pendingPenalty) {
       const riderUpi = pendingPenalty.rider_upi_id || pendingPenalty.profile_upi_id || `${pendingPenalty.rider_phone}@upi`;
       const riderName = pendingPenalty.rider_name || pendingPenalty.rider_name_full || 'Driver';
-      const upiPayUrl = `upi://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&tn=Papido_Driver_Comp_${pendingPenalty.ride_code || 'Fee'}&cu=INR`;
+      const upiPayUrl = `upi://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&tn=Papido&cu=INR`;
       const err = new Error(`You have an unpaid ₹15 driver compensation fee for cancelled Ride #${pendingPenalty.ride_code || ''} to driver ${riderName}. Please settle via UPI to unlock new bookings.`);
       err.penalty = {
         ...pendingPenalty,
@@ -1075,7 +1075,7 @@ const RideService = {
           notes: `Customer cancelled after driver arrived at pickup location. Reason: ${cancellationReason || 'Direct cancellation'}`
         });
 
-        const upiPayUrl = `upi://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&tn=Papido_Driver_Comp_${ride.ride_code}&cu=INR`;
+        const upiPayUrl = `upi://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&tn=Papido&cu=INR`;
         
         penalty = {
           ...(createdPenalty || {}),

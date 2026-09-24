@@ -117,6 +117,25 @@ export function PassengerProvider({ children }) {
     return () => clearInterval(interval);
   }, [token, activeRide?.id, activeRide?.status]);
 
+  /* ---------- Auto-refresh active ride and payment on tab focus / app switch ---------- */
+  useEffect(() => {
+    if (!token) return;
+    const handleRefresh = () => {
+      fetchActiveRide(true);
+    };
+    window.addEventListener('focus', handleRefresh);
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchActiveRide(true);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      window.removeEventListener('focus', handleRefresh);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [token]);
+
   /* ---------- Background polling for secondary data (every 25s) ---------- */
   useEffect(() => {
     if (!token) return;

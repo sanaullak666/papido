@@ -41,11 +41,10 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
   const driverName = activeRide.rider_name || 'Campus Driver';
   const rawFare = activeRide.total_fare || activeRide.final_fare || activeRide.estimated_fare || (standardCampusFare || 25);
   const formattedFare = Number(rawFare).toFixed(2);
-  const txRef = String(activeRide.ride_code || activeRide.rideCode || `PAP-${activeRide.id || Date.now()}`).trim();
-  const txNote = `Papido_${txRef}`;
+  const txNote = 'Papido';
 
   // App-specific intent URIs & universal generic fallback
-  // Note: We omit 'tr' (merchant-only Transaction Reference) to avoid bank switch P2M limit errors on personal savings VPAs
+  // Note: Omit merchant 'tr' and ride code from note to keep clean P2P intent
   const gpayUrl = `gpay://upi/pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${formattedFare}&tn=${encodeURIComponent(txNote)}&cu=INR`;
   const phonepeUrl = `phonepe://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${formattedFare}&tn=${encodeURIComponent(txNote)}&cu=INR`;
   const upiPayUrl = `upi://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${formattedFare}&tn=${encodeURIComponent(txNote)}&cu=INR`;

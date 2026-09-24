@@ -234,9 +234,7 @@ export function DailySettlementsPage() {
                 const adminUpiId = shiftSettlement?.adminUpi?.upiId || 'papido.admin@okaxis';
                 const adminReceiverName = shiftSettlement?.adminUpi?.receiverName || 'Papido Operations';
                 const dueAmount = Number(shiftSettlement?.totalCommissionDue || 0).toFixed(2);
-                const shiftDate = shiftSettlement?.date || selectedSettlementDate;
-                const txRef = `SHIFT_${shiftDate}`;
-                const txNote = `Papido_Shift_${shiftDate}`;
+                const txNote = 'Papido';
 
                 const gpaySettleUrl = `gpay://upi/pay?pa=${encodeURIComponent(adminUpiId)}&pn=${encodeURIComponent(adminReceiverName)}&am=${dueAmount}&tn=${encodeURIComponent(txNote)}&cu=INR`;
                 const phonepeSettleUrl = `phonepe://pay?pa=${encodeURIComponent(adminUpiId)}&pn=${encodeURIComponent(adminReceiverName)}&am=${dueAmount}&tn=${encodeURIComponent(txNote)}&cu=INR`;

@@ -219,7 +219,7 @@ const CustomerController = {
       if (penalty) {
         const riderUpi = penalty.rider_upi_id || penalty.profile_upi_id || `${penalty.rider_phone}@upi`;
         const riderName = penalty.rider_name || penalty.rider_name_full || 'Driver';
-        const upiPayUrl = `upi://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&tn=Papido_Driver_Comp_${penalty.ride_code || 'Fee'}&cu=INR`;
+        const upiPayUrl = `upi://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&tn=Papido&cu=INR`;
         return success(res, 'Pending cancellation penalty found.', {
           ...penalty,
           riderUpi,

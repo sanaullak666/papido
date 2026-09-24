@@ -1255,7 +1255,7 @@ export function CustomerPortalView() {
           rider_name: fallbackName,
           rider_upi: fallbackUpi,
           rider_phone: currentActiveRide.rider_phone || '',
-          upiPayUrl: `upi://pay?pa=${encodeURIComponent(fallbackUpi)}&pn=${encodeURIComponent(fallbackName)}&am=15.00&tn=Papido_Rider_Compensation_${currentActiveRide.ride_code || 'Trip'}&cu=INR`
+          upiPayUrl: `upi://pay?pa=${encodeURIComponent(fallbackUpi)}&pn=${encodeURIComponent(fallbackName)}&am=15.00&tn=Papido&cu=INR`
         };
         setPendingPenalty(fallbackObj);
         setShowPenaltyModal(true);
@@ -2476,8 +2476,7 @@ export function CustomerPortalView() {
                         const driverFare = parseFloat(activeRide.final_fare || activeRide.total_fare || activeRide.estimated_fare || 20).toFixed(2);
                         const driverUpi = (activeRide.rider_upi_id || '').trim() || (activeRide.rider_phone ? `${activeRide.rider_phone}@upi` : 'driver@upi');
                         const driverName = activeRide.rider_name || 'Campus Driver';
-                        const txRef = String(activeRide.ride_code || activeRide.rideCode || `PAP-${activeRide.id || Date.now()}`).trim();
-                        const txNote = `Papido_${txRef}`;
+                        const txNote = 'Papido';
 
                         const gpayUrl = `gpay://upi/pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${driverFare}&tn=${encodeURIComponent(txNote)}&cu=INR`;
                         const phonepeUrl = `phonepe://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${driverFare}&tn=${encodeURIComponent(txNote)}&cu=INR`;
@@ -3453,7 +3452,7 @@ export function CustomerPortalView() {
       {showPenaltyModal && pendingPenalty && (() => {
         const riderUpi = pendingPenalty.rider_upi || pendingPenalty.rider_upi_id || `${pendingPenalty.rider_phone || 'driver'}@upi`;
         const riderName = pendingPenalty.rider_name || pendingPenalty.rider_name_full || 'Driver';
-        const upiUri = pendingPenalty.upiPayUrl || `upi://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&tn=Papido_Driver_Compensation_${pendingPenalty.ride_code || 'Trip'}&cu=INR`;
+        const upiUri = pendingPenalty.upiPayUrl || `upi://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&tn=Papido&cu=INR`;
         const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(upiUri)}`;
 
         const handleCopyUpi = () => {
