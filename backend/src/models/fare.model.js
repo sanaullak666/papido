@@ -241,6 +241,61 @@ const FareModel = {
       await db.query('DELETE FROM route_fares WHERE id = ?', [id]);
     }
     return true;
+  },
+
+  /**
+   * Fare Split Rules management
+   */
+  async getAllSplitRules() {
+    return db.query('SELECT * FROM fare_split_rules ORDER BY priority ASC, min_fare ASC');
+  },
+
+  async createSplitRule(data = {}) {
+    const minFare = data.minFare !== undefined ? parseFloat(data.minFare) : (data.min_fare !== undefined ? parseFloat(data.min_fare) : 0);
+    const maxFare = data.maxFare !== undefined ? (data.maxFare === null ? null : parseFloat(data.maxFare)) : (data.max_fare !== undefined ? (data.max_fare === null ? null : parseFloat(data.max_fare)) : null);
+    const ruleType = data.ruleType || data.rule_type || 'FIXED';
+    const companyCutFixed = data.companyCutFixed !== undefined ? parseFloat(data.companyCutFixed) : (data.company_cut_fixed !== undefined ? parseFloat(data.company_cut_fixed) : 0);
+    const riderControllerCutFixed = data.riderControllerCutFixed !== undefined ? parseFloat(data.riderControllerCutFixed) : (data.rider_controller_cut_fixed !== undefined ? parseFloat(data.rider_controller_cut_fixed) : 0);
+    const companyCutPercentage = data.companyCutPercentage !== undefined ? parseFloat(data.companyCutPercentage) : (data.company_cut_percentage !== undefined ? parseFloat(data.company_cut_percentage) : 0);
+    const riderCutPercentage = data.riderCutPercentage !== undefined ? parseFloat(data.riderCutPercentage) : (data.rider_cut_percentage !== undefined ? parseFloat(data.rider_cut_percentage) : 80);
+    const description = data.description || '';
+    const priority = data.priority !== undefined ? parseInt(data.priority, 10) : 1;
+    const isActive = data.isActive !== undefined ? (data.isActive ? 1 : 0) : (data.is_active !== undefined ? (data.is_active ? 1 : 0) : 1);
+
+    const res = await db.query(
+      `INSERT INTO fare_split_rules 
+       (min_fare, max_fare, rule_type, company_cut_fixed, rider_controller_cut_fixed, company_cut_percentage, rider_cut_percentage, description, priority, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [minFare, maxFare, ruleType, companyCutFixed, riderControllerCutFixed, companyCutPercentage, riderCutPercentage, description, priority, isActive]
+    );
+
+    return db.queryOne('SELECT * FROM fare_split_rules WHERE id = ?', [res.insertId]);
+  },
+
+  async updateSplitRule(id, data = {}) {
+    const existing = await db.queryOne('SELECT * FROM fare_split_rules WHERE id = ?', [id]);
+    if (!existing) return null;
+
+    const minFare = data.minFare !== undefined ? parseFloat(data.minFare) : (data.min_fare !== undefined ? parseFloat(data.min_fare) : existing.min_fare);
+    const maxFare = data.maxFare !== undefined ? (data.maxFare === null ? null : parseFloat(data.maxFare)) : (data.max_fare !== undefined ? (data.max_fare === null ? null : parseFloat(data.max_fare)) : existing.max_fare);
+    const ruleType = data.ruleType || data.rule_type || existing.rule_type;
+    const companyCutFixed = data.companyCutFixed !== undefined ? parseFloat(data.companyCutFixed) : (data.company_cut_fixed !== undefined ? parseFloat(data.company_cut_fixed) : existing.company_cut_fixed);
+    const riderControllerCutFixed = data.riderControllerCutFixed !== undefined ? parseFloat(data.riderControllerCutFixed) : (data.rider_controller_cut_fixed !== undefined ? parseFloat(data.rider_controller_cut_fixed) : existing.rider_controller_cut_fixed);
+    const companyCutPercentage = data.companyCutPercentage !== undefined ? parseFloat(data.companyCutPercentage) : (data.company_cut_percentage !== undefined ? parseFloat(data.company_cut_percentage) : existing.company_cut_percentage);
+    const riderCutPercentage = data.riderCutPercentage !== undefined ? parseFloat(data.riderCutPercentage) : (data.rider_cut_percentage !== undefined ? parseFloat(data.rider_cut_percentage) : existing.rider_cut_percentage);
+    const description = data.description !== undefined ? data.description : existing.description;
+    const priority = data.priority !== undefined ? parseInt(data.priority, 10) : existing.priority;
+    const isActive = data.isActive !== undefined ? (data.isActive ? 1 : 0) : (data.is_active !== undefined ? (data.is_active ? 1 : 0) : existing.is_active);
+
+    await db.query(
+      `UPDATE fare_split_rules 
+       SET min_fare = ?, max_fare = ?, rule_type = ?, company_cut_fixed = ?, rider_controller_cut_fixed = ?,
+           company_cut_percentage = ?, rider_cut_percentage = ?, description = ?, priority = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [minFare, maxFare, ruleType, companyCutFixed, riderControllerCutFixed, companyCutPercentage, riderCutPercentage, description, priority, isActive, id]
+    );
+
+    return db.queryOne('SELECT * FROM fare_split_rules WHERE id = ?', [id]);
   }
 };
 

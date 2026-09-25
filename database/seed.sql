@@ -10,7 +10,7 @@ USE `papido_db`;
 -- 1. USERS (Admin, Riders, Customers)
 -- Password for all test users is Password@123
 INSERT IGNORE INTO `users` (`id`, `name`, `email`, `phone`, `password_hash`, `role`, `status`, `profile_image`, `is_core_member`) VALUES
-(1, 'Papido Master Admin', 'admin@papido.com', '+919876543210', '$2b$10$q.ljOgbNllNSXlYi0tm7wOBBg8pJ3dy8FLd23UARyPmjDSB1DCJ06', 'ADMIN', 'ACTIVE', NULL, 1),
+(1, 'Papido Master Admin', 'pupapido@gmail.com', '+919876543210', '$2b$10$WFRLpguhJunJKFcMdp0qgeYkcc3YmFXeknuzRAWo06VgDJLZuJXOi', 'ADMIN', 'ACTIVE', NULL, 1),
 (2, 'ANANYA SEN', 'customer.ananya@papido.com', '+919876543211', '$2b$10$q.ljOgbNllNSXlYi0tm7wOBBg8pJ3dy8FLd23UARyPmjDSB1DCJ06', 'CUSTOMER', 'ACTIVE', NULL, 0),
 (3, 'ROHAN MEHTA', 'customer.rohan@papido.com', '+919876543213', '$2b$10$q.ljOgbNllNSXlYi0tm7wOBBg8pJ3dy8FLd23UARyPmjDSB1DCJ06', 'CUSTOMER', 'ACTIVE', NULL, 0),
 (4, 'RAHUL SHARMA', 'rider.rahul@papido.com', '+919876543214', '$2b$10$q.ljOgbNllNSXlYi0tm7wOBBg8pJ3dy8FLd23UARyPmjDSB1DCJ06', 'RIDER', 'ACTIVE', NULL, 1),

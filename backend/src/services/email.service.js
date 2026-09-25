@@ -294,8 +294,8 @@ class EmailService {
       throw new Error('Your account is currently inactive. Please contact support.');
     }
 
-    // Check OTP: Allow master demo OTP '123456' or database record
-    const isMasterDemo = cleanOtp === '123456';
+    // Check OTP: Strictly require valid database record in production. Demo OTP only allowed if explicitly enabled in non-production.
+    const isMasterDemo = (process.env.NODE_ENV !== 'production' && process.env.ALLOW_DEMO_OTP === 'true') && cleanOtp === '123456';
     if (!isMasterDemo) {
       const record = await db.queryOne(
         'SELECT * FROM login_otps WHERE (phone = ? OR email = ?) AND otp = ? AND used = 0 ORDER BY id DESC LIMIT 1',

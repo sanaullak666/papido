@@ -97,7 +97,7 @@ module.exports = {
   VAPID: {
     PUBLIC_KEY: process.env.VAPID_PUBLIC_KEY || 'BGFugS6k-KrKIMVzt5Y6_vXVg-x84AhVBPexrqFMSYq8L2LMUyb6l6yA_dafnffFqvOIT9esp5T3VpfIEPtD00M',
     PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY || 'nUJ4aoGkh--wYlmvP9uE1qZi5H69vo1GRJEyZNfzpow',
-    SUBJECT: process.env.VAPID_SUBJECT || 'mailto:admin@papido.com'
+    SUBJECT: process.env.VAPID_SUBJECT || 'mailto:pupapido@gmail.com'
   },
 
   PUSH_NOTIFICATION_KEY: process.env.PUSH_NOTIFICATION_KEY || '',

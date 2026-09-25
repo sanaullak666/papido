@@ -75,7 +75,7 @@ export function AdminLoginView({ onGoToUserPortal }) {
                 className="al-input"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@papido.com"
+                placeholder="pupapido@gmail.com"
               />
             </div>
           </div>

@@ -123,7 +123,23 @@ async function runTests() {
     
     // 1. Request
     const customerUser = regResult.user;
-    const riderUser = await UserModel.findByEmail('rider.rahul@papido.com');
+    let riderUser = await UserModel.findByEmail('rider.rahul@papido.com');
+    if (!riderUser) {
+      const riderReg = await AuthService.register({
+        name: 'Test Driver Automated',
+        email: `test.driver.${Date.now()}@papido.com`,
+        phone: `+9197${Date.now().toString().slice(-8)}`,
+        password: 'Password@123',
+        role: 'RIDER',
+        profileData: {
+          vehicleType: 'BIKE',
+          vehicleModel: 'Hero Splendor Plus',
+          verificationStatus: 'APPROVED'
+        }
+      });
+      riderUser = riderReg.user;
+      await RiderModel.updateVerificationStatus(riderUser.id, 'APPROVED');
+    }
     
     const ride = await RideService.requestRide({
       customerId: customerUser.id,

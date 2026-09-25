@@ -27,6 +27,10 @@ const AuthController = {
         return error(res, 'Name, email, phone, password, and role are required fields.', 400);
       }
 
+      if (!['CUSTOMER', 'RIDER'].includes(role.toUpperCase())) {
+        return error(res, 'Public registration is only permitted for CUSTOMER or RIDER roles.', 400);
+      }
+
       const cleanName = name.trim().toUpperCase();
       if (cleanName.length < 2) {
         return error(res, 'Full Name must be at least 2 characters.', 400);
@@ -95,7 +99,7 @@ const AuthController = {
         gender: validGender,
         password,
         role,
-        isCoreMember: Boolean(req.body.isCoreMember),
+        isCoreMember: false,
         profileImage: mergedProfileData.profileImage,
         profileData: mergedProfileData
       });

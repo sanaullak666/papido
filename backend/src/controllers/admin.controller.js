@@ -162,9 +162,9 @@ const AdminController = {
 
       // Emit real-time socket event so user's app receives suspension notice immediately
       try {
-        const socketService = require('../services/socket.service');
-        if (socketService.io) {
-          socketService.io.to(`user_${userId}`).emit('account_status_changed', {
+        const socketManager = req.app.get('socketManager');
+        if (socketManager && socketManager.io) {
+          socketManager.io.to(`user_${userId}`).emit('account_status_changed', {
             status,
             suspensionReason,
             message: status === 'SUSPENDED'

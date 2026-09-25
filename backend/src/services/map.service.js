@@ -223,6 +223,45 @@ const MapService = {
       }
     }
 
+    // SSRF Guard: Parse URL and validate against trusted mapping domains and block internal IPs
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(url);
+    } catch (_) {
+      return null;
+    }
+
+    if (parsedUrl.protocol !== 'https:' && parsedUrl.protocol !== 'http:') {
+      return null;
+    }
+
+    const host = parsedUrl.hostname.toLowerCase();
+    const isAllowedMapHost =
+      host === 'maps.app.goo.gl' ||
+      host === 'goo.gl' ||
+      host === 'google.com' ||
+      host.endsWith('.google.com') ||
+      host === 'openstreetmap.org' ||
+      host.endsWith('.openstreetmap.org');
+
+    if (!isAllowedMapHost) {
+      return null;
+    }
+
+    // Block private, loopback, and link-local IP spaces
+    if (
+      host === 'localhost' ||
+      host === '127.0.0.1' ||
+      host === '::1' ||
+      host === '0.0.0.0' ||
+      host.startsWith('10.') ||
+      host.startsWith('192.168.') ||
+      host.startsWith('169.254.') ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(host)
+    ) {
+      return null;
+    }
+
     let finalUrl = url;
     let htmlContent = '';
 

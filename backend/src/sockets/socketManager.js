@@ -68,34 +68,75 @@ class SocketManager {
 
       // Explicit authentication / identification for clients that authenticate post-handshake
       socket.on('identify', async (userData) => {
-        if (userData && userData.id && userData.role) {
-          socket.user = userData;
-          socket.join(`user_${userData.id}`);
-          socket.join(`role_${userData.role.toUpperCase()}`);
-          if (userData.role.toUpperCase() === 'RIDER') {
+        try {
+          if (!userData) return;
+          let verifiedUser = socket.user;
+
+          // If not already verified via handshake, verify incoming token
+          if (!verifiedUser) {
+            const token = userData.token || userData.accessToken;
+            if (!token) {
+              logger.warn(`Unauthenticated identify rejected for socket ${socket.id}`);
+              return socket.emit('error', { message: 'Authentication token required' });
+            }
+            verifiedUser = jwt.verify(token, env.JWT.SECRET);
+            socket.user = verifiedUser;
+          }
+
+          // Enforce that caller cannot spoof identity or escalate role
+          if (userData.id && parseInt(userData.id, 10) !== parseInt(verifiedUser.id, 10)) {
+            logger.warn(`User ${verifiedUser.id} attempted to spoof user ID ${userData.id}`);
+            return;
+          }
+
+          const role = verifiedUser.role ? verifiedUser.role.toUpperCase() : 'CUSTOMER';
+          socket.join(`user_${verifiedUser.id}`);
+          socket.join(`role_${role}`);
+
+          if (role === 'RIDER') {
             socket.join('role_RIDER');
-            socket.join(`rider_${userData.id}`);
-            this.activeRiderSockets.set(userData.id, socket.id);
+            socket.join(`rider_${verifiedUser.id}`);
+            this.activeRiderSockets.set(verifiedUser.id, socket.id);
             if (userData.isOnline !== undefined) {
               const onlineState = Boolean(userData.isOnline);
               try {
-                await RiderModel.updateOnlineStatus(userData.id, onlineState);
-                this.io.to('role_ADMIN').emit('admin:rider_status_changed', { riderId: userData.id, isOnline: onlineState });
+                await RiderModel.updateOnlineStatus(verifiedUser.id, onlineState);
+                this.io.to('role_ADMIN').emit('admin:rider_status_changed', { riderId: verifiedUser.id, isOnline: onlineState });
               } catch (_) {}
             }
           }
-          logger.info(`Socket identified: ${socket.id} as ${userData.role} ID ${userData.id}`);
+          logger.info(`Socket verified and identified: ${socket.id} as ${role} ID ${verifiedUser.id}`);
+        } catch (err) {
+          logger.warn(`Socket identify error: ${err.message}`);
         }
       });
 
       socket.on('rider:identify', async (data) => {
-        const riderId = data?.riderId || data?.id || socket.user?.id;
-        if (riderId) {
-          socket.user = { ...(socket.user || {}), id: riderId, role: ROLES.RIDER };
+        try {
+          if (!data) return;
+          let verifiedUser = socket.user;
+
+          if (!verifiedUser) {
+            const token = data.token || data.accessToken;
+            if (!token) {
+              logger.warn(`Unauthenticated rider:identify rejected for socket ${socket.id}`);
+              return socket.emit('error', { message: 'Authentication token required' });
+            }
+            verifiedUser = jwt.verify(token, env.JWT.SECRET);
+            socket.user = verifiedUser;
+          }
+
+          if (verifiedUser.role !== ROLES.RIDER && verifiedUser.role !== 'RIDER') {
+            logger.warn(`Non-rider user ${verifiedUser.id} attempted rider:identify`);
+            return;
+          }
+
+          const riderId = verifiedUser.id;
           socket.join(`user_${riderId}`);
           socket.join(`rider_${riderId}`);
           socket.join('role_RIDER');
           this.activeRiderSockets.set(riderId, socket.id);
+
           if (data.isOnline !== undefined || data.status !== undefined) {
             const onlineState = data.isOnline !== undefined ? Boolean(data.isOnline) : (data.status === 'ONLINE');
             try {
@@ -103,7 +144,9 @@ class SocketManager {
               this.io.to('role_ADMIN').emit('admin:rider_status_changed', { riderId, isOnline: onlineState });
             } catch (_) {}
           }
-          logger.info(`Socket identified: ${socket.id} as RIDER ID ${riderId}`);
+          logger.info(`Socket verified and identified: ${socket.id} as RIDER ID ${riderId}`);
+        } catch (err) {
+          logger.warn(`Socket rider:identify error: ${err.message}`);
         }
       });
 

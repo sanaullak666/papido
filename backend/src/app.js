@@ -80,6 +80,7 @@ app.get('/download/app.apk', (req, res) => {
 
 // Simple web download page for mobile browser
 app.get('/download', (req, res) => {
+  const sanitizedHost = String(req.headers.host || 'Papido Cloud').replace(/[^a-zA-Z0-9.:_-]/g, '');
   res.send(`
     <!DOCTYPE html>
     <html>
@@ -103,7 +104,7 @@ app.get('/download', (req, res) => {
           <h1>Papido Android App</h1>
           <p>Campus Bike-Hailing Platform for Passengers & Drivers</p>
           <a class="btn" href="/download/app.apk">⬇️ Download APK (Direct)</a>
-          <div class="info">Connected to Server: ${req.headers.host}</div>
+          <div class="info">Connected to Server: ${sanitizedHost}</div>
         </div>
       </body>
     </html>

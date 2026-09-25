@@ -128,7 +128,46 @@ const UserModel = {
   },
 
   async deleteUser(id) {
-    // 1. Clean up or unassign from foreign key relations
+    if (parseInt(id, 10) === 1) {
+      throw new Error('Action prohibited: Master Administrator account cannot be deleted.');
+    }
+
+    // 1. Fetch user for phone/email cleanup
+    const user = await db.queryOne('SELECT * FROM users WHERE id = ?', [id]);
+    if (!user) return false;
+
+    // 2. Clean up or unassign from foreign key relations
+    try {
+      await db.query('DELETE FROM payments WHERE customer_id = ?', [id]);
+    } catch (_) {}
+
+    try {
+      await db.query('DELETE FROM cancellation_penalties WHERE customer_id = ? OR rider_id = ?', [id, id]);
+    } catch (_) {}
+
+    try {
+      await db.query('DELETE FROM daily_duty_controllers WHERE core_member_id = ?', [id]);
+      await db.query('DELETE FROM daily_shift_settlements WHERE rider_id = ?', [id]);
+    } catch (_) {}
+
+    try {
+      await db.query('UPDATE flash_free_rides SET claimed_by_user_id = NULL WHERE claimed_by_user_id = ?', [id]);
+      await db.query('UPDATE flash_free_rides SET created_by_admin_id = NULL WHERE created_by_admin_id = ?', [id]);
+    } catch (_) {}
+
+    try {
+      const customerRides = await db.query('SELECT id FROM rides WHERE customer_id = ?', [id]);
+      if (customerRides && customerRides.length > 0) {
+        const rideIds = customerRides.map(r => r.id);
+        const placeholders = rideIds.map(() => '?').join(',');
+        await db.query(`DELETE FROM rider_earnings WHERE ride_id IN (${placeholders})`, rideIds);
+        await db.query(`DELETE FROM payments WHERE ride_id IN (${placeholders})`, rideIds);
+        await db.query(`DELETE FROM ratings WHERE ride_id IN (${placeholders})`, rideIds);
+        await db.query(`DELETE FROM ride_declines WHERE ride_id IN (${placeholders})`, rideIds);
+        await db.query('DELETE FROM rides WHERE customer_id = ?', [id]);
+      }
+    } catch (_) {}
+
     try {
       await db.query('UPDATE rides SET rider_id = NULL WHERE rider_id = ?', [id]);
       await db.query('UPDATE rides SET assigned_rider_id = NULL WHERE assigned_rider_id = ?', [id]);
@@ -166,7 +205,14 @@ const UserModel = {
       await db.query('DELETE FROM audit_logs WHERE user_id = ?', [id]);
     } catch (_) {}
 
-    // 2. Permanently delete from users table
+    try {
+      if (user.email || user.phone) {
+        await db.query('DELETE FROM login_otps WHERE phone = ? OR email = ?', [user.phone || '', user.email || '']);
+        await db.query('DELETE FROM password_resets WHERE email = ?', [user.email || '']);
+      }
+    } catch (_) {}
+
+    // 3. Permanently delete from users table
     invalidateCachedUser(id);
     const result = await db.query('DELETE FROM users WHERE id = ?', [id]);
     return result;

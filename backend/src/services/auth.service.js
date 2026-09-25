@@ -56,9 +56,12 @@ const AuthService = {
   /**
    * Registers a new user with their role-specific profile
    */
-  async register({ name, email, phone, gender = 'OTHER', password, role, profileImage = null, isCoreMember = false, profileData = {} }) {
+  async register({ name, email, phone, gender = 'OTHER', password, role, profileImage = null, isCoreMember = false, profileData = {}, allowAdminRole = false }) {
+    if (role === ROLES.ADMIN && !allowAdminRole) {
+      throw new Error('Registration with role ADMIN is not permitted via public registration.');
+    }
     if (![ROLES.CUSTOMER, ROLES.RIDER, ROLES.ADMIN].includes(role)) {
-      throw new Error(`Invalid role '${role}'. Must be CUSTOMER, RIDER, or ADMIN.`);
+      throw new Error(`Invalid role '${role}'. Must be CUSTOMER or RIDER.`);
     }
 
     // Check existing email

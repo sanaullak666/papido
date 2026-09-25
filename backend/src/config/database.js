@@ -477,10 +477,10 @@ async function bootstrapMysqlSchema(targetPool) {
     // Check if master admin exists
     const [rows] = await targetPool.query('SELECT COUNT(*) as count FROM users');
     if (rows[0].count === 0) {
-      const hash = await bcrypt.hash('Password@123', 10);
+      const hash = await bcrypt.hash('Papido@669669#', 10);
       await targetPool.query(`
-        INSERT INTO users (id, name, email, phone, gender, password_hash, role, status)
-        VALUES (1, 'Papido Master Admin', 'admin@papido.com', '+919876543210', 'OTHER', ?, 'ADMIN', 'ACTIVE')
+        INSERT INTO users (id, name, email, phone, gender, password_hash, role, status, is_core_member)
+        VALUES (1, 'Papido Master Admin', 'pupapido@gmail.com', '+919876543210', 'OTHER', ?, 'ADMIN', 'ACTIVE', 1)
       `, [hash]);
 
       await targetPool.query(`
@@ -779,21 +779,35 @@ async function ensureSettlementsSchema(targetPool) {
 }
 
 /**
- * Ensures Master Admin account exists with Password@123 (Fresh system - No demo riders/customers)
+ * Ensures Master Admin account exists with pupapido@gmail.com and password Papido@669669#
  */
 async function ensureMasterAdmin(targetPool) {
   try {
     const bcrypt = require('bcryptjs');
-    const defaultPasswordHash = await bcrypt.hash('Password@123', 10);
+    const adminEmail = 'pupapido@gmail.com';
+    const adminPassword = 'Papido@669669#';
+    const adminHash = await bcrypt.hash(adminPassword, 10);
 
-    const [existing] = await targetPool.query('SELECT id FROM users WHERE LOWER(email) = ?', ['admin@papido.com']);
-    if (!existing || existing.length === 0) {
+    const [existing] = await targetPool.query(
+      'SELECT id FROM users WHERE LOWER(email) = ? OR LOWER(email) = ? OR id = 1',
+      [adminEmail, 'admin@papido.com']
+    );
+
+    if (existing && existing.length > 0) {
+      await targetPool.query(
+        `UPDATE users 
+         SET email = ?, password_hash = ?, role = 'ADMIN', status = 'ACTIVE', is_core_member = 1, name = 'Papido Master Admin'
+         WHERE id = ?`,
+        [adminEmail, adminHash, existing[0].id]
+      );
+      console.log(`[Database] Master Admin account confirmed (${adminEmail}).`);
+    } else {
       await targetPool.query(
         `INSERT INTO users (id, name, email, phone, gender, password_hash, role, status, is_core_member)
-         VALUES (1, 'Papido Master Admin', 'admin@papido.com', '+919876543210', 'OTHER', ?, 'ADMIN', 'ACTIVE', 1)`,
-        [defaultPasswordHash]
+         VALUES (1, 'Papido Master Admin', ?, '+919876543210', 'OTHER', ?, 'ADMIN', 'ACTIVE', 1)`,
+        [adminEmail, adminHash]
       );
-      console.log('[Database] Clean Master Admin initialized.');
+      console.log(`[Database] Clean Master Admin initialized with ${adminEmail}`);
     }
   } catch (err) {
     console.warn('[Database] Master admin init notice:', err.message);

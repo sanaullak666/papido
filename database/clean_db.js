@@ -36,14 +36,14 @@ async function cleanDatabase() {
 
   // Bootstrap fresh Master Admin & Base Configuration
   console.log('\n--- Bootstrapping Clean Master Admin & Core Config ---');
-  const hash = await bcrypt.hash('Password@123', 10);
+  const hash = await bcrypt.hash('Papido@669669#', 10);
   
   await query(`
     INSERT INTO users (id, name, email, phone, gender, password_hash, role, status, is_core_member)
-    VALUES (1, 'Papido Master Admin', 'admin@papido.com', '+919876543210', 'OTHER', ?, 'ADMIN', 'ACTIVE', 1)
-    ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash), status = 'ACTIVE'
+    VALUES (1, 'Papido Master Admin', 'pupapido@gmail.com', '+919876543210', 'OTHER', ?, 'ADMIN', 'ACTIVE', 1)
+    ON DUPLICATE KEY UPDATE email = VALUES(email), password_hash = VALUES(password_hash), status = 'ACTIVE'
   `, [hash]);
-  console.log('✓ Created clean Master Admin (admin@papido.com / Password@123)');
+  console.log('✓ Created clean Master Admin (pupapido@gmail.com / Papido@669669#)');
 
   await query(`
     INSERT INTO fare_configurations (vehicle_type, base_fare, base_distance_km, per_km_fare, per_minute_fare, minimum_fare, cancellation_fee, is_active)

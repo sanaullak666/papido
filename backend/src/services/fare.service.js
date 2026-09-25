@@ -95,8 +95,10 @@ const FareService = {
 
   /**
    * Calculates dynamic fare split between platform company, controller, and rider based on Papido deduction policy:
-   * - Fare <= ₹80: Total deduction ₹4 (₹2 to Company, ₹2 to Controller). Rider keeps remainder.
-   * - Fare > ₹80: 10% of fare to Company, ₹2 to Controller. Rider keeps remainder.
+   * - Tier 1: Fare <= 25 => Company = ₹2, Rider = ₹(Fare - 2)
+   * - Tier 2: Fare 25.01 - 35 => Company = ₹3, Rider = ₹(Fare - 3)
+   * - Tier 3: Fare 35.01 - 60 => Company = ₹4, Rider = ₹(Fare - 4)
+   * - Tier 4: Fare > 60 => Company = 20%, Rider = 80%
    */
   async calculateFareSplit(finalFare) {
     const fare = parseFloat(finalFare) || 0;
@@ -105,23 +107,59 @@ const FareService = {
     let riderEarning = 0.00;
     let description = '';
 
-    if (fare <= 80.00) {
-      // Fare <= ₹80: ₹4 Total Platform Deduction (₹2 to Company, ₹2 to Controller)
-      if (fare < 4.00) {
-        companyEarning = Number((fare / 2).toFixed(2));
-        controllerEarning = Number((fare - companyEarning).toFixed(2));
-      } else {
+    // Fetch dynamic rules from FareModel if available
+    let rules = [];
+    try {
+      rules = await FareModel.getAllSplitRules();
+      if (Array.isArray(rules)) {
+        rules = rules.filter(r => r.is_active);
+      }
+    } catch (_) {}
+
+    if (rules && rules.length > 0) {
+      const matched = rules.find(r => {
+        const min = parseFloat(r.min_fare) || 0;
+        const max = r.max_fare !== null && r.max_fare !== undefined ? parseFloat(r.max_fare) : Infinity;
+        return fare >= min && fare <= max;
+      });
+
+      if (matched) {
+        controllerEarning = parseFloat(matched.rider_controller_cut_fixed) || 0;
+        if (matched.rule_type === 'PERCENTAGE') {
+          const companyPct = parseFloat(matched.company_cut_percentage) || 0;
+          companyEarning = Number(((fare * companyPct) / 100).toFixed(2));
+          riderEarning = Number(Math.max(0, fare - companyEarning).toFixed(2));
+          description = matched.description || `Tier Split: Company ${companyPct}%, Rider remainder`;
+        } else {
+          companyEarning = parseFloat(matched.company_cut_fixed) || 0;
+          riderEarning = Number(Math.max(0, fare - companyEarning).toFixed(2));
+          description = matched.description || `Tier Split: Company ₹${companyEarning}, Rider remainder`;
+        }
+      }
+    }
+
+    if (!description) {
+      if (fare <= 25.00) {
         companyEarning = 2.00;
         controllerEarning = 2.00;
+        riderEarning = Number(Math.max(0, fare - companyEarning).toFixed(2));
+        description = 'Tier 1: Fare up to ₹25 (Company ₹2)';
+      } else if (fare <= 35.00) {
+        companyEarning = 3.00;
+        controllerEarning = 3.00;
+        riderEarning = Number(Math.max(0, fare - companyEarning).toFixed(2));
+        description = 'Tier 2: Fare ₹25–₹35 (Company ₹3)';
+      } else if (fare <= 60.00) {
+        companyEarning = 4.00;
+        controllerEarning = 4.00;
+        riderEarning = Number(Math.max(0, fare - companyEarning).toFixed(2));
+        description = 'Tier 3: Fare ₹35–₹60 (Company ₹4)';
+      } else {
+        companyEarning = Number((fare * 0.20).toFixed(2));
+        controllerEarning = 4.00;
+        riderEarning = Number(Math.max(0, fare - companyEarning).toFixed(2));
+        description = 'Tier 4: Fare > ₹60 (Company 20%, Rider 80%)';
       }
-      riderEarning = Number(Math.max(0, fare - companyEarning - controllerEarning).toFixed(2));
-      description = `Standard Policy (Fare ≤ ₹80): Company ₹${companyEarning.toFixed(2)}, Controller ₹${controllerEarning.toFixed(2)}, Rider ₹${riderEarning.toFixed(2)}`;
-    } else {
-      // Fare > ₹80: 10% to Company, ₹2 to Controller
-      companyEarning = Number((fare * 0.10).toFixed(2));
-      controllerEarning = 2.00;
-      riderEarning = Number(Math.max(0, fare - companyEarning - controllerEarning).toFixed(2));
-      description = `Outside / Long Trip Policy (Fare > ₹80): Company 10% (₹${companyEarning.toFixed(2)}), Controller ₹2.00, Rider ₹${riderEarning.toFixed(2)}`;
     }
 
     return {
