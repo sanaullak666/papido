@@ -1762,11 +1762,11 @@ export function RiderPortalView() {
                             type="button"
                             onClick={() => handleAcceptRequest(req.id)}
                             disabled={acceptingRideId !== null || actionLoading || Boolean(conflict)}
-                            title={conflict ? `Schedule conflict with your confirmed ride ${conflict.conflictingRideCode} at ${formatRideDateTime(conflict.conflictingTime)}. Please maintain at least a 15-minute gap.` : 'Accept Ride'}
+                            title={conflict ? `Schedule conflict with your confirmed ride ${conflict.conflictingRideCode} at ${formatRideDateTime(conflict.conflictingTime)}. Please maintain at least a 15-minute gap.` : 'Accept'}
                             className={`rp-btn rp-btn--lg ${conflict ? 'rp-btn--ghost' : 'rp-btn--success'}`}
                             style={{ flex: 2 }}
                           >
-                            {acceptingRideId === req.id ? 'Accepting...' : conflict ? 'Time Conflict' : 'Accept Ride Now'}
+                            {acceptingRideId === req.id ? 'Accepting...' : conflict ? 'Time Conflict' : 'Accept'}
                           </button>
                         </div>
                       </div>

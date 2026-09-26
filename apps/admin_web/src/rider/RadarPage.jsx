@@ -314,7 +314,7 @@ export function RadarPage({ onNavigateTab }) {
                       loading={acceptingRideId === req.id}
                       onClick={() => handleAcceptRequest(req.id)}
                     >
-                      {conflict ? 'Time Conflict' : 'Accept Ride Now'}
+                      {conflict ? 'Time Conflict' : 'Accept'}
                     </RPButton>
                   </div>
                 </div>
