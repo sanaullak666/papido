@@ -622,18 +622,7 @@ export function BookingForm({
         </div>
 
         <div className="ps-fare-total">
-          <div className="ps-fare-total-label">
-            Total Fare
-            {fareEstimate?.isRouteBased && fareEstimate?.routeName ? (
-              <span style={{ fontSize: '11px', color: '#059669', marginLeft: '6px', fontWeight: 600 }}>
-                • Admin Route ({fareEstimate.routeName})
-              </span>
-            ) : (
-              <span style={{ fontSize: '11px', color: '#D97706', marginLeft: '6px', fontWeight: 600 }}>
-                • Base Fare: ₹{fareEstimate?.baseFare || standardCampusFare || 25}
-              </span>
-            )}
-          </div>
+          <div className="ps-fare-total-label">Total Fare</div>
           <div className="ps-fare-value">
             {estimating ? '...' : `₹${fareEstimate?.estimatedFare || (isDoubleRide ? Math.max(standardCampusFare || 25, (standardCampusFare || 25) * 2 - 10) : (standardCampusFare || 25))}`}
           </div>

@@ -2082,11 +2082,6 @@ export function CustomerPortalView() {
                     <div className="cp-fare-total">
                       <div>
                         <div className="cp-fare-total-label">Total Trip Fare:</div>
-                        {fareEstimate?.isRouteBased && (
-                          <div className="cp-fare-tag cp-fare-tag--amber">
-                            <MapPinned size={12} /> {fareEstimate.routeName || 'Configured Campus Route'}
-                          </div>
-                        )}
                         {isDoubleRide && (
                           <div className="cp-fare-tag cp-fare-tag--green">
                             <Users size={12} /> Double Ride (₹10 Discount Applied)
