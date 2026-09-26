@@ -149,11 +149,6 @@ export function App() {
         setCurrentPath('/admin/dashboard');
         setCurrentTab('dashboard');
       }
-    } else {
-      if (lowerPath === '/admin' || lowerPath === '/admin/') {
-        window.history.replaceState({}, '', '/AdminLogin');
-        setCurrentPath('/AdminLogin');
-      }
     }
   }, [adminUser]);
 
@@ -194,6 +189,7 @@ export function App() {
 
   // ============================================================
   // 1. ADMIN LOGIN (/AdminLogin, /adminlogin, /admin/login)
+  // ONLY accessible via the exact secret route!
   // ============================================================
   const lowerPath = currentPath.toLowerCase();
   if (lowerPath === '/adminlogin' || lowerPath === '/admin/login') {
@@ -211,17 +207,58 @@ export function App() {
 
   // ============================================================
   // 2. ADMIN PORTAL (/admin or /admin/*)
+  // Blocked for outsiders! If unauthenticated, do NOT redirect to /AdminLogin.
+  // Display a 404 Not Found screen to completely conceal admin view.
   // ============================================================
   if (currentPath.startsWith('/admin')) {
     if (!adminUser) {
-      if (window.location.pathname !== '/AdminLogin') {
-        window.history.replaceState({}, '', '/AdminLogin');
-      }
       return (
-        <AdminLoginView
-          onGoToUserPortal={() => navigateTo('/login')}
-          onLoginSuccess={() => navigateTo('/admin/dashboard')}
-        />
+        <div style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#090d16',
+          color: '#f8fafc',
+          flexDirection: 'column',
+          padding: '24px',
+          textAlign: 'center',
+          fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+        }}>
+          <div style={{
+            fontSize: '76px',
+            fontWeight: '900',
+            lineHeight: '1',
+            marginBottom: '16px',
+            background: 'linear-gradient(135deg, #10b981, #059669)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent'
+          }}>
+            404
+          </div>
+          <h1 style={{ fontSize: '24px', fontWeight: '700', margin: '0 0 8px', color: '#f1f5f9' }}>
+            Page Not Found
+          </h1>
+          <p style={{ fontSize: '15px', color: '#94a3b8', maxWidth: '420px', margin: '0 0 28px', lineHeight: '1.6' }}>
+            The page you are looking for doesn't exist, has been removed, or is not accessible.
+          </p>
+          <button
+            onClick={() => navigateTo('/')}
+            style={{
+              background: '#10b981',
+              color: '#064e3b',
+              border: 'none',
+              padding: '12px 28px',
+              borderRadius: '12px',
+              fontWeight: '700',
+              cursor: 'pointer',
+              fontSize: '15px',
+              boxShadow: '0 4px 14px rgba(16, 185, 129, 0.3)'
+            }}
+          >
+            Go to Home
+          </button>
+        </div>
       );
     }
 
@@ -312,7 +349,6 @@ export function App() {
         onGoToLogin={() => navigateTo('/login')}
         onGoToRegister={() => navigateTo('/login?mode=register')}
         onGoToRiderLogin={() => navigateTo('/login?mode=rider')}
-        onGoToAdminPortal={() => navigateTo('/AdminLogin')}
       />
     );
   }
@@ -335,7 +371,6 @@ export function App() {
   // ============================================================
   return (
     <LoginView
-      onGoToAdminPortal={() => navigateTo('/AdminLogin')}
       onLoginSuccess={(loggedInUser) => {
         const dest = loggedInUser?.role === 'RIDER' ? '/rider' : '/passenger';
         navigateTo(dest);
