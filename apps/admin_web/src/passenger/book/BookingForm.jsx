@@ -82,21 +82,17 @@ export function BookingForm({
     const load = async () => {
       try {
         const res = await apiRequest('/fares/routes', 'GET', null, token);
+        const defaultStops = CAMPUS_HOTSPOTS.map(s => s.name);
         if (Array.isArray(res?.data)) {
           const active = res.data.filter(r => r.is_active);
-          const stops = Array.from(new Set(
-            active.flatMap(r => [r.pickup_stop, r.destination_stop])
-              .map(s => (s || '').trim()).filter(Boolean)
-          ));
-          if (stops.length) {
-            setAdminStops(stops);
-            setPickupAddress(p => (stops.includes(p) ? p : stops[0]));
-            setDestAddress(p => (stops.includes(p) ? p : (stops[1] || stops[0])));
-          } else {
-            setAdminStops(CAMPUS_HOTSPOTS.map(s => s.name));
-          }
+          const customStops = active.flatMap(r => [r.pickup_stop, r.destination_stop])
+            .map(s => (s || '').trim()).filter(Boolean);
+          const combined = Array.from(new Set([...defaultStops, ...customStops]));
+          setAdminStops(combined);
+          setPickupAddress(p => (combined.includes(p) ? p : combined[0]));
+          setDestAddress(p => (combined.includes(p) ? p : (combined[1] || combined[0])));
         } else {
-          setAdminStops(CAMPUS_HOTSPOTS.map(s => s.name));
+          setAdminStops(defaultStops);
         }
       } catch {
         setAdminStops(CAMPUS_HOTSPOTS.map(s => s.name));
@@ -622,7 +618,18 @@ export function BookingForm({
         </div>
 
         <div className="ps-fare-total">
-          <div className="ps-fare-total-label">Total Fare</div>
+          <div className="ps-fare-total-label">
+            Total Fare
+            {fareEstimate?.isRouteBased ? (
+              <span style={{ fontSize: '11px', color: '#059669', marginLeft: '6px', fontWeight: 600 }}>
+                • Fixed Route Price
+              </span>
+            ) : (
+              <span style={{ fontSize: '11px', color: '#D97706', marginLeft: '6px', fontWeight: 600 }}>
+                • Standard Campus Fare
+              </span>
+            )}
+          </div>
           <div className="ps-fare-value">
             {estimating ? '...' : `₹${fareEstimate?.estimatedFare || (isDoubleRide ? Math.max(standardCampusFare || 25, (standardCampusFare || 25) * 2 - 10) : (standardCampusFare || 25))}`}
           </div>

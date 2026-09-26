@@ -32,11 +32,11 @@ INSERT IGNORE INTO `customer_profiles` (`id`, `user_id`, `rating`, `total_rating
 
 -- 4. FARE CONFIGURATIONS
 INSERT IGNORE INTO `fare_configurations` (`vehicle_type`, `base_fare`, `base_distance_km`, `per_km_fare`, `per_minute_fare`, `minimum_fare`, `cancellation_fee`, `is_active`) VALUES
-('BIKE', 20.00, 1.50, 8.50, 0.75, 25.00, 10.00, TRUE),
+('BIKE', 25.00, 1.50, 8.50, 0.75, 25.00, 10.00, TRUE),
 ('AUTO', 30.00, 1.50, 12.00, 1.00, 35.00, 15.00, TRUE),
 ('CAB_MINI', 45.00, 2.00, 16.00, 1.50, 55.00, 25.00, TRUE),
 ('CAB_SEDAN', 60.00, 2.00, 20.00, 2.00, 75.00, 35.00, TRUE)
-ON DUPLICATE KEY UPDATE `base_fare`=VALUES(`base_fare`);
+ON DUPLICATE KEY UPDATE `base_fare`=VALUES(`base_fare`), `minimum_fare`=VALUES(`minimum_fare`);
 
 -- 5. FARE SPLIT RULES (Papido's Configurable System)
 -- Rules:

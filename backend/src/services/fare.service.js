@@ -30,8 +30,11 @@ const FareService = {
 
     if (!baseResult) {
       // 2. Standard Flat Campus Fare Fallback (for any intra-campus ride where no custom route is set)
-      const config = await FareModel.getFareConfiguration(vehicleType);
-      const standardFlatFare = config ? parseFloat(config.base_fare || config.minimum_fare || 25.0) : 25.0;
+      const config = await FareModel.getFareConfiguration(vehicleType === 'ANY' ? 'BIKE' : vehicleType) 
+                   || await FareModel.getFareConfiguration('BIKE');
+      const standardFlatFare = config 
+        ? (parseFloat(config.minimum_fare) || parseFloat(config.base_fare) || 25.0) 
+        : 25.0;
 
       baseResult = {
         distanceKm,

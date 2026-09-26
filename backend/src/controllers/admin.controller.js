@@ -281,14 +281,14 @@ const AdminController = {
   async saveRouteFare(req, res, next) {
     try {
       const { id, pickupStop, destinationStop, fareAmount, distanceKm, isActive, isBidirectional } = req.body;
+      let result;
       if (id) {
-        const updated = await FareModel.updateRouteFareById(id, { fareAmount, distanceKm, isActive });
-        return success(res, 'Route fare updated successfully.', updated);
+        result = await FareModel.updateRouteFareById(id, { fareAmount, distanceKm, isActive });
       } else {
         if (!pickupStop || !destinationStop || fareAmount === undefined) {
           return error(res, 'Pickup stop, destination stop, and fare amount are required.', 400);
         }
-        const created = await FareModel.upsertRouteFare({
+        result = await FareModel.upsertRouteFare({
           pickupStop,
           destinationStop,
           fareAmount,
@@ -296,8 +296,15 @@ const AdminController = {
           isActive,
           isBidirectional: isBidirectional !== false
         });
-        return success(res, 'Route fare saved successfully.', created, 201);
       }
+
+      // Broadcast route fare update event to all connected portals
+      const socketManager = req.app.get('socketManager');
+      if (socketManager) {
+        socketManager.io.emit('fare:routes_updated');
+      }
+
+      return success(res, id ? 'Route fare updated successfully.' : 'Route fare saved successfully.', result, id ? 200 : 201);
     } catch (err) {
       next(err);
     }
@@ -307,6 +314,13 @@ const AdminController = {
     try {
       const id = req.params.id;
       await FareModel.deleteRouteFare(id);
+
+      // Broadcast route fare update event
+      const socketManager = req.app.get('socketManager');
+      if (socketManager) {
+        socketManager.io.emit('fare:routes_updated');
+      }
+
       return success(res, 'Route fare deleted successfully.');
     } catch (err) {
       next(err);

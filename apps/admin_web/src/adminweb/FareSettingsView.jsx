@@ -27,6 +27,7 @@ import {
   Building2,
   Wallet
 } from 'lucide-react';
+import { CAMPUS_HOTSPOTS } from '../passenger/shared/passengerConstants';
 
 const CAMPUS_STOPS = [
   'SJC (Silver Jubilee Campus)',
@@ -63,6 +64,7 @@ export function FareSettingsView() {
     new Set(
       [
         ...CAMPUS_STOPS,
+        ...CAMPUS_HOTSPOTS.map(h => h.name),
         ...routeFares.flatMap((r) => [r.pickup_stop, r.destination_stop]).filter(Boolean)
       ]
     )
@@ -271,13 +273,20 @@ export function FareSettingsView() {
             </div>
 
             <p className="fs-policy-desc">
-              Default flat rate applied to all standard intra-campus rides (Hostels, Library, Departments, Canteen).
+              Default flat rate applied to all unlisted intra-campus rides (Hostels, Library, Departments, Canteen).
             </p>
 
             <div className="fs-policy-foot">
               Driver take-home:{' '}
-              <strong>₹{(parseFloat(tempStandardFare || 25) - 4).toFixed(2)}</strong>
-              <span> (after ₹4 platform split)</span>
+              <strong>
+                ₹{(parseFloat(tempStandardFare || 25) <= 25 
+                  ? parseFloat(tempStandardFare || 25) - 2 
+                  : parseFloat(tempStandardFare || 25) <= 35 
+                    ? parseFloat(tempStandardFare || 25) - 3 
+                    : parseFloat(tempStandardFare || 25) - 4
+                ).toFixed(2)}
+              </strong>
+              <span> (after ₹{parseFloat(tempStandardFare || 25) <= 25 ? 2 : parseFloat(tempStandardFare || 25) <= 35 ? 3 : 4} platform split)</span>
             </div>
           </div>
 
@@ -307,33 +316,36 @@ export function FareSettingsView() {
             </div>
           </div>
 
-          {/* Card 3: Outer SJC Rates Summary */}
+          {/* Card 3: Outer SJC / Custom Route Overrides */}
           <div className="fs-policy-card fs-policy-card--cyan">
             <div className="fs-policy-head">
               <span className="fs-policy-badge fs-policy-badge--cyan">
-                <Tag size={12} /> SJC ROUTE EXCEPTIONS
+                <Tag size={12} /> ROUTE FARE OVERRIDES
               </span>
-              <span className="fs-policy-count">4 active routes</span>
+              <span className="fs-policy-count">
+                {routeFares.filter(r => r.is_active).length} active routes
+              </span>
             </div>
 
             <div className="fs-route-preview">
-              {[
-                { from: 'Girls Hostel', to: 'SJC', fare: '30.00' },
-                { from: 'Gate 1 (Main Gate)', to: 'SJC', fare: '30.00' },
-                { from: 'Gate 2 (ECR Gate)', to: 'SJC', fare: '35.00' },
-                { from: 'Boys Hostel', to: 'SJC', fare: '25.00' }
-              ].map((r) => (
-                <div key={`${r.from}-${r.to}`} className="fs-route-preview-row">
-                  <span className="fs-route-preview-route">
-                    {r.from} <ArrowRight size={11} /> {r.to}
-                  </span>
-                  <strong className="fs-route-preview-fare">₹{r.fare}</strong>
+              {routeFares.filter(r => r.is_active).length === 0 ? (
+                <div style={{ fontSize: '13px', color: '#94A3B8', padding: '12px 0' }}>
+                  No route overrides configured. All campus trips use the standard ₹{parseFloat(tempStandardFare || 25).toFixed(2)} fare.
                 </div>
-              ))}
+              ) : (
+                routeFares.filter(r => r.is_active).slice(0, 4).map((r) => (
+                  <div key={r.id || `${r.pickup_stop}-${r.destination_stop}`} className="fs-route-preview-row">
+                    <span className="fs-route-preview-route">
+                      {r.pickup_stop} <ArrowRight size={11} /> {r.destination_stop}
+                    </span>
+                    <strong className="fs-route-preview-fare">₹{parseFloat(r.fare_amount).toFixed(2)}</strong>
+                  </div>
+                ))
+              )}
             </div>
 
             <div className="fs-policy-foot fs-policy-foot--quiet">
-              Managed in the route matrix table below.
+              All routes not listed above automatically charge the ₹{parseFloat(tempStandardFare || 25).toFixed(2)} standard fare.
             </div>
           </div>
         </div>
@@ -350,7 +362,7 @@ export function FareSettingsView() {
               Campus Route-to-Route Fare Matrix &amp; SJC Overrides
             </h2>
             <p className="fs-panel-sub">
-              Set exact fixed pricing (₹) between campus locations. These rates directly sync with the Papido Mobile App.
+              Set exact fixed pricing (₹) for specific routes. All other unlisted routes automatically use the standard flat fare (₹{parseFloat(tempStandardFare || 25).toFixed(2)}).
             </p>
           </div>
           <div className="fs-panel-actions">

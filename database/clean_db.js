@@ -48,12 +48,12 @@ async function cleanDatabase() {
   await query(`
     INSERT INTO fare_configurations (vehicle_type, base_fare, base_distance_km, per_km_fare, per_minute_fare, minimum_fare, cancellation_fee, is_active)
     VALUES 
-      ('BIKE', 20.00, 1.50, 8.50, 0.75, 20.00, 5.00, 1),
-      ('SCOOTER', 20.00, 1.50, 8.50, 0.75, 20.00, 5.00, 1),
+      ('BIKE', 25.00, 1.50, 8.50, 0.75, 25.00, 5.00, 1),
+      ('SCOOTER', 25.00, 1.50, 8.50, 0.75, 25.00, 5.00, 1),
       ('AUTO', 30.00, 1.50, 12.00, 1.00, 30.00, 10.00, 1),
       ('CAB_MINI', 45.00, 2.00, 16.00, 1.50, 45.00, 15.00, 1),
       ('CAB_SEDAN', 60.00, 2.00, 20.00, 2.00, 60.00, 20.00, 1)
-    ON DUPLICATE KEY UPDATE base_fare = VALUES(base_fare)
+    ON DUPLICATE KEY UPDATE base_fare = VALUES(base_fare), minimum_fare = VALUES(minimum_fare)
   `);
   console.log('✓ Initialized default Fare Configurations');
 
