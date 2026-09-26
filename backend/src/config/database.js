@@ -584,10 +584,8 @@ async function ensureDatabaseSchemaMigrations(targetPool) {
     `);
   } catch (_) {}
 
-  // Ensure standard 25 campus base fare and default SJC route exceptions are initialized
+  // Ensure default route exceptions exist if not already created (non-destructive)
   try {
-    await targetPool.query("UPDATE fare_configurations SET base_fare = 25.00, minimum_fare = 25.00 WHERE vehicle_type IN ('BIKE', 'SCOOTER') AND minimum_fare < 25.00");
-    
     const defaultRoutes = [
       { pickup: 'Girls Hostel', dest: 'Silver Jubilee Campus (SJC)', fare: 30.00, dist: 2.2 },
       { pickup: 'Boys Hostel', dest: 'Silver Jubilee Campus (SJC)', fare: 25.00, dist: 1.8 },
@@ -597,9 +595,8 @@ async function ensureDatabaseSchemaMigrations(targetPool) {
 
     for (const r of defaultRoutes) {
       await targetPool.query(`
-        INSERT INTO route_fares (pickup_stop, destination_stop, fare_amount, distance_km, is_active)
+        INSERT IGNORE INTO route_fares (pickup_stop, destination_stop, fare_amount, distance_km, is_active)
         VALUES (?, ?, ?, ?, 1)
-        ON DUPLICATE KEY UPDATE fare_amount = VALUES(fare_amount), distance_km = VALUES(distance_km), is_active = 1
       `, [r.pickup, r.dest, r.fare, r.dist]);
     }
   } catch (_) {}

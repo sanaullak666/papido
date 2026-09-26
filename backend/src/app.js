@@ -45,6 +45,14 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Apply General Rate Limiter
 app.use('/api/', generalLimiter);
 
+// Disable caching for all API responses so dynamic fare and state updates are immediate
+app.use('/api', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+
 // Mount API Routes
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);

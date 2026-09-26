@@ -1,24 +1,12 @@
 const db = require('../config/database');
 
-let configsCache = null;
-let configsCacheExpiry = 0;
-let routeFaresCache = null;
-let routeFaresCacheExpiry = 0;
-const FARE_CACHE_TTL = 60000; // 60 seconds TTL
-
 const FareModel = {
   async getFareConfiguration(vehicleType) {
     return db.queryOne('SELECT * FROM fare_configurations WHERE vehicle_type = ? AND is_active = 1', [vehicleType]);
   },
 
   async getAllConfigurations() {
-    if (configsCache && Date.now() < configsCacheExpiry) {
-      return configsCache;
-    }
-    const rows = await db.query('SELECT * FROM fare_configurations ORDER BY id ASC');
-    configsCache = rows;
-    configsCacheExpiry = Date.now() + FARE_CACHE_TTL;
-    return rows;
+    return db.query('SELECT * FROM fare_configurations ORDER BY id ASC');
   },
 
   async updateConfiguration(vehicleType, {
@@ -30,20 +18,28 @@ const FareModel = {
     cancellationFee,
     isActive
   }) {
-    configsCache = null; // Invalidate cache
-    await db.query(
-      `UPDATE fare_configurations 
-       SET base_fare = COALESCE(?, base_fare),
-           base_distance_km = COALESCE(?, base_distance_km),
-           per_km_fare = COALESCE(?, per_km_fare),
-           per_minute_fare = COALESCE(?, per_minute_fare),
-           minimum_fare = COALESCE(?, minimum_fare),
-           cancellation_fee = COALESCE(?, cancellation_fee),
-           is_active = COALESCE(?, is_active),
-           updated_at = CURRENT_TIMESTAMP
-       WHERE vehicle_type = ?`,
-      [baseFare, baseDistanceKm, perKmFare, perMinuteFare, minimumFare, cancellationFee, isActive, vehicleType]
-    );
+    const existing = await db.queryOne('SELECT id FROM fare_configurations WHERE vehicle_type = ?', [vehicleType]);
+    if (existing) {
+      await db.query(
+        `UPDATE fare_configurations 
+         SET base_fare = COALESCE(?, base_fare),
+             base_distance_km = COALESCE(?, base_distance_km),
+             per_km_fare = COALESCE(?, per_km_fare),
+             per_minute_fare = COALESCE(?, per_minute_fare),
+             minimum_fare = COALESCE(?, minimum_fare),
+             cancellation_fee = COALESCE(?, cancellation_fee),
+             is_active = COALESCE(?, is_active),
+             updated_at = CURRENT_TIMESTAMP
+         WHERE vehicle_type = ?`,
+        [baseFare, baseDistanceKm, perKmFare, perMinuteFare, minimumFare, cancellationFee, isActive, vehicleType]
+      );
+    } else {
+      await db.query(
+        `INSERT INTO fare_configurations (vehicle_type, base_fare, base_distance_km, per_km_fare, per_minute_fare, minimum_fare, cancellation_fee, is_active)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [vehicleType, baseFare || 25.00, baseDistanceKm || 1.5, perKmFare || 8.50, perMinuteFare || 0.75, minimumFare || baseFare || 25.00, cancellationFee || 5.00, isActive !== undefined ? isActive : 1]
+      );
+    }
     return this.getFareConfiguration(vehicleType);
   },
 
@@ -52,13 +48,7 @@ const FareModel = {
   // ==========================================
 
   async getAllRouteFares() {
-    if (routeFaresCache && Date.now() < routeFaresCacheExpiry) {
-      return routeFaresCache;
-    }
-    const rows = await db.query('SELECT * FROM route_fares ORDER BY pickup_stop ASC, destination_stop ASC');
-    routeFaresCache = rows;
-    routeFaresCacheExpiry = Date.now() + FARE_CACHE_TTL;
-    return rows;
+    return db.query('SELECT * FROM route_fares ORDER BY pickup_stop ASC, destination_stop ASC');
   },
 
   async findRouteFare(pickupStop, destinationStop) {

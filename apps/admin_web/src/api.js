@@ -32,7 +32,9 @@ const BASE_URL = getBaseUrl();
 
 export async function apiRequest(endpoint, method = 'GET', body = null, token = null) {
   const headers = {
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache'
   };
 
   const isAdminCall = endpoint.startsWith('/admin') || window.location.pathname.startsWith('/admin') || window.location.hash.includes('admin');
@@ -48,7 +50,8 @@ export async function apiRequest(endpoint, method = 'GET', body = null, token = 
 
   const config = {
     method,
-    headers
+    headers,
+    cache: 'no-store'
   };
 
   if (body && (method === 'POST' || method === 'PATCH' || method === 'PUT')) {

@@ -83,7 +83,7 @@ export function FareSettingsView() {
 
       const bikeCfg = cfgs.find(c => c.vehicle_type === 'BIKE') || cfgs[0];
       if (bikeCfg) {
-        setTempStandardFare(String(parseFloat(bikeCfg.minimum_fare || bikeCfg.base_fare || 25).toFixed(2)));
+        setTempStandardFare(String(parseFloat(bikeCfg.base_fare || bikeCfg.minimum_fare || 25).toFixed(2)));
       }
     } catch (err) {
       console.error('Failed to load fare settings', err);
@@ -118,7 +118,7 @@ export function FareSettingsView() {
       setSuccessMsg(`Global standard campus flat fare updated to ₹${val.toFixed(2)} for all standard trips!`);
       setTimeout(() => setSuccessMsg(''), 4000);
       setIsEditingStandardFare(false);
-      loadData();
+      await loadData();
     } catch (err) {
       alert(`Failed to update standard fare: ${err.message}`);
     } finally {
@@ -129,18 +129,23 @@ export function FareSettingsView() {
   const handleUpdateFare = async (config) => {
     try {
       setSavingFare(true);
+      const bFare = parseFloat(config.base_fare);
+      const mFare = parseFloat(config.minimum_fare);
       await apiRequest(`/admin/fare-settings/${config.vehicle_type}`, 'PATCH', {
-        baseFare: parseFloat(config.base_fare),
+        baseFare: bFare,
         baseDistanceKm: parseFloat(config.base_distance_km),
         perKmFare: parseFloat(config.per_km_fare),
         perMinuteFare: parseFloat(config.per_minute_fare),
-        minimumFare: parseFloat(config.minimum_fare),
+        minimumFare: isNaN(mFare) ? bFare : mFare,
         cancellationFee: parseFloat(config.cancellation_fee)
       });
+      if (config.vehicle_type === 'BIKE') {
+        setTempStandardFare(bFare.toFixed(2));
+      }
       setSuccessMsg(`Default fare rates for ${config.vehicle_type} updated successfully!`);
       setTimeout(() => setSuccessMsg(''), 4000);
       setEditingConfig(null);
-      loadData();
+      await loadData();
     } catch (err) {
       alert(`Failed to update fare: ${err.message}`);
     } finally {
