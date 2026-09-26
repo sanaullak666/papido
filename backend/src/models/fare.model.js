@@ -97,11 +97,12 @@ const FareModel = {
       }
     }
 
-    // 3. Substring inclusion match (e.g. 'Main Gate' inside 'PU Main Gate (Gate 1)')
+    // 3. Substring inclusion match (both stops must match, e.g. 'Main Gate' inside 'PU Main Gate (Gate 1)')
     for (const r of allRoutes) {
       const rpNorm = normalize(r.pickup_stop);
       const rdNorm = normalize(r.destination_stop);
-      if (!rpNorm || !rdNorm) continue;
+      if (!rpNorm || !rdNorm || rpNorm.length < 3 || rdNorm.length < 3) continue;
+
       const directSub = (pNorm.includes(rpNorm) || rpNorm.includes(pNorm)) &&
                         (dNorm.includes(rdNorm) || rdNorm.includes(dNorm));
       const reverseSub = (pNorm.includes(rdNorm) || rdNorm.includes(pNorm)) &&
@@ -111,55 +112,8 @@ const FareModel = {
       }
     }
 
-    // 4. Multi-tier Campus Category & Synonym Matcher
-    const getCampusTags = (str) => {
-      if (!str) return [];
-      const s = (str || '').toLowerCase();
-      const tags = [];
-      if (s.includes('gate 1') || s.includes('gate1') || s.includes('main gate')) tags.push('GATE_1');
-      if (s.includes('gate 2') || s.includes('gate2') || s.includes('ecr')) tags.push('GATE_2');
-      if (s.includes('gate') || s.includes('ecr') || s.includes('entrance')) tags.push('GATES');
-      if (s.includes('girl') || s.includes('curie') || s.includes('teresa') || s.includes('ganga') || s.includes('yamuna') || s.includes('sarojini') || s.includes('cauvery') || s.includes('saraswathi')) tags.push('GIRLS_HOSTEL');
-      if (s.includes('boy') || s.includes('bharathidasan') || s.includes('kabilar') || s.includes('subramania') || s.includes('kalidas') || s.includes('valmiki') || s.includes('foreign') || s.includes('birsa') || s.includes('munda')) tags.push('BOYS_HOSTEL');
-      if (s.includes('silver') || s.includes('jubilee') || s.includes('sjc') || s.includes('school of management') || s.includes('som')) tags.push('SILVER_JUBILEE');
-      if (s.includes('science') || s.includes('physics') || s.includes('math') || s.includes('ramanujan') || s.includes('biotech') || s.includes('chemistry') || s.includes('life science')) tags.push('SCIENCE_BLOCK');
-      if (s.includes('library') || s.includes('reading')) tags.push('LIBRARY');
-      if (s.includes('canteen') || s.includes('food') || s.includes('mess') || s.includes('shopping') || s.includes('store') || s.includes('co-op')) tags.push('CANTEEN');
-      if (s.includes('admin') || s.includes('exam') || s.includes('vc') || s.includes('registrar') || s.includes('auditorium')) tags.push('ADMIN_BLOCK');
-      if (s.includes('dept') || s.includes('department') || s.includes('humanities') || s.includes('social science') || s.includes('media') || s.includes('communication') || s.includes('engineering') || s.includes('technology') || s.includes('sociology')) tags.push('DEPARTMENTS');
-      return tags;
-    };
-
-    const pTags = getCampusTags(pickupStop);
-    const dTags = getCampusTags(destinationStop);
-
-    let bestRoute = null;
-    let highestScore = 0;
-
-    for (const r of allRoutes) {
-      const rpTags = getCampusTags(r.pickup_stop);
-      const rdTags = getCampusTags(r.destination_stop);
-
-      let score = 0;
-
-      // Specific gate bonus
-      if ((pTags.includes('GATE_1') && rpTags.includes('GATE_1')) || (dTags.includes('GATE_1') && rdTags.includes('GATE_1'))) score += 30;
-      if ((pTags.includes('GATE_2') && rpTags.includes('GATE_2')) || (dTags.includes('GATE_2') && rdTags.includes('GATE_2'))) score += 30;
-
-      const directMatches = pTags.filter(t => rpTags.includes(t)).length + dTags.filter(t => rdTags.includes(t)).length;
-      const reverseMatches = pTags.filter(t => rdTags.includes(t)).length + dTags.filter(t => rpTags.includes(t)).length;
-      const matchCount = Math.max(directMatches, reverseMatches);
-
-      if (matchCount >= 2) {
-        score += matchCount * 10;
-        if (score > highestScore) {
-          highestScore = score;
-          bestRoute = r;
-        }
-      }
-    }
-
-    return bestRoute;
+    // No admin route matches this pickup and destination pair
+    return null;
   },
 
   async upsertRouteFare({ pickupStop, destinationStop, fareAmount, distanceKm = 1.5, isActive = 1, isBidirectional = true }) {
