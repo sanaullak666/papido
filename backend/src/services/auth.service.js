@@ -169,7 +169,11 @@ const AuthService = {
    * Authenticates user and verifies role
    */
   async login({ email, password, expectedRole = null }) {
-    const user = await UserModel.findByEmail(email);
+    const cleanIdentifier = (email || '').trim().toLowerCase();
+    let user = await UserModel.findByEmail(cleanIdentifier);
+    if (!user && expectedRole === ROLES.ADMIN && (cleanIdentifier === 'admin' || cleanIdentifier === 'pupapido' || cleanIdentifier === 'master' || cleanIdentifier === 'admin@papido.com')) {
+      user = await UserModel.findByEmail('pupapido@gmail.com');
+    }
     if (!user) {
       throw new Error('Invalid email or password.');
     }

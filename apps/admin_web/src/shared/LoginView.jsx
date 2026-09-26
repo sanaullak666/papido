@@ -33,9 +33,56 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess }) {
   } = useAuth();
 
   /* ---------- Screen & role ---------- */
-  const [screen, setScreen] = useState(SCREEN.PHONE);
-  const [role, setRole] = useState('CUSTOMER');
+  const [screen, setScreen] = useState(() => {
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const mode = (searchParams.get('mode') || '').toLowerCase();
+      const screenParam = (searchParams.get('screen') || '').toLowerCase();
+      const path = (window.location.pathname || '').toLowerCase();
+      if (mode === 'register' || screenParam === 'register' || path === '/register' || path === '/signup') {
+        return SCREEN.REGISTER;
+      }
+    } catch (_) {}
+    return SCREEN.PHONE;
+  });
+
+  const [role, setRole] = useState(() => {
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const roleParam = (searchParams.get('role') || '').toLowerCase();
+      const modeParam = (searchParams.get('mode') || '').toLowerCase();
+      const path = (window.location.pathname || '').toLowerCase();
+      if (roleParam === 'rider' || modeParam === 'rider' || path.includes('rider') || path.includes('driver')) {
+        return 'RIDER';
+      }
+    } catch (_) {}
+    return 'CUSTOMER';
+  });
+
   const [direction, setDirection] = useState('forward'); // for slide transition
+
+  // Sync screen and role when URL / query params change
+  useEffect(() => {
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const mode = (searchParams.get('mode') || '').toLowerCase();
+      const screenParam = (searchParams.get('screen') || '').toLowerCase();
+      const roleParam = (searchParams.get('role') || '').toLowerCase();
+      const path = (window.location.pathname || '').toLowerCase();
+
+      if (mode === 'register' || screenParam === 'register' || path === '/register' || path === '/signup') {
+        setScreen(SCREEN.REGISTER);
+      } else if (mode === 'login' || screenParam === 'login' || path === '/login') {
+        setScreen(SCREEN.PHONE);
+      }
+
+      if (roleParam === 'rider' || mode === 'rider' || path.includes('rider') || path.includes('driver')) {
+        setRole('RIDER');
+      } else if (roleParam === 'customer' || roleParam === 'passenger') {
+        setRole('CUSTOMER');
+      }
+    } catch (_) {}
+  }, []);
 
   /* ---------- Phone entry ---------- */
   const [phone, setPhone] = useState('');

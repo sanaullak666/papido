@@ -82,6 +82,39 @@ async function cleanDatabase() {
   `);
   console.log('✓ Initialized default System Settings');
 
+  const defaultRoutes = [
+    { pickup: 'Girls Hostel', dest: 'Silver Jubilee Campus (SJC)', fare: 30.00, dist: 2.2 },
+    { pickup: 'Boys Hostel', dest: 'Silver Jubilee Campus (SJC)', fare: 25.00, dist: 1.8 },
+    { pickup: 'Silver Jubilee Campus (SJC)', dest: 'Gate 2 (ECR Gate)', fare: 35.00, dist: 2.8 },
+    { pickup: 'Silver Jubilee Campus (SJC)', dest: 'Gate 1 (Main Gate)', fare: 30.00, dist: 2.4 }
+  ];
+  for (const r of defaultRoutes) {
+    await query(`
+      INSERT INTO route_fares (pickup_stop, destination_stop, fare_amount, distance_km, is_active)
+      VALUES (?, ?, ?, ?, 1)
+      ON DUPLICATE KEY UPDATE fare_amount = VALUES(fare_amount), distance_km = VALUES(distance_km), is_active = 1
+    `, [r.pickup, r.dest, r.fare, r.dist]);
+  }
+  console.log('✓ Initialized default Route Fares');
+
+  // Purge any uploaded KYC / identity documents from old test accounts
+  const fs = require('fs');
+  const path = require('path');
+  const uploadsDir = path.join(__dirname, '../backend/uploads/documents');
+  if (fs.existsSync(uploadsDir)) {
+    const files = fs.readdirSync(uploadsDir);
+    let purgedCount = 0;
+    for (const f of files) {
+      if (f !== '.gitkeep') {
+        try {
+          fs.unlinkSync(path.join(uploadsDir, f));
+          purgedCount++;
+        } catch (_) {}
+      }
+    }
+    console.log(`✓ Purged ${purgedCount} uploaded KYC/profile documents from filesystem`);
+  }
+
   // Verify final counts across all tables
   console.log('\n--- Final Verification: Row Count by Table ---');
   const finalTables = await query("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'");

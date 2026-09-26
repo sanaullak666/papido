@@ -66,16 +66,17 @@ export function AdminLoginView({ onGoToUserPortal }) {
 
         <form onSubmit={handleSubmit} className="al-form">
           <div className="al-field">
-            <label className="al-label">Administrator Email</label>
+            <label className="al-label">Administrator Username or Email</label>
             <div className="al-input-wrap">
               <Mail size={16} className="al-input-icon" />
               <input
-                type="email"
+                type="text"
                 required
                 className="al-input"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="pupapido@gmail.com"
+                placeholder="Enter your username"
+                autoComplete="username"
               />
             </div>
           </div>
