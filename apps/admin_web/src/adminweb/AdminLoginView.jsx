@@ -13,7 +13,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-export function AdminLoginView({ onGoToUserPortal }) {
+export function AdminLoginView({ onGoToUserPortal, onLoginSuccess }) {
   const { adminLogin } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,6 +27,9 @@ export function AdminLoginView({ onGoToUserPortal }) {
     setLoading(true);
     try {
       await adminLogin(email, password);
+      if (typeof onLoginSuccess === 'function') {
+        onLoginSuccess();
+      }
     } catch (err) {
       setError(err.message || 'Administrator authentication failed.');
     } finally {

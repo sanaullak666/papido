@@ -138,14 +138,21 @@ export function App() {
     return () => window.removeEventListener('popstate', handleLocationChange);
   }, []);
 
-  // Auto-normalize /admin or /admin/ to /admin/dashboard
+  // Auto-normalize /admin or /AdminLogin routes
   useEffect(() => {
+    const rawPath = window.location.pathname.replace(/\/+$/, '');
+    const lowerPath = rawPath.toLowerCase();
+
     if (adminUser) {
-      const path = window.location.pathname.replace(/\/+$/, '');
-      if (path === '/admin') {
+      if (lowerPath === '/admin' || lowerPath === '/adminlogin' || lowerPath === '/admin/login') {
         window.history.replaceState({}, '', '/admin/dashboard');
         setCurrentPath('/admin/dashboard');
         setCurrentTab('dashboard');
+      }
+    } else {
+      if (lowerPath === '/admin' || lowerPath === '/admin/') {
+        window.history.replaceState({}, '', '/AdminLogin');
+        setCurrentPath('/AdminLogin');
       }
     }
   }, [adminUser]);
@@ -186,13 +193,34 @@ export function App() {
   }
 
   // ============================================================
-  // 1. ADMIN PORTAL (/admin or /admin/*)
+  // 1. ADMIN LOGIN (/AdminLogin, /adminlogin, /admin/login)
+  // ============================================================
+  const lowerPath = currentPath.toLowerCase();
+  if (lowerPath === '/adminlogin' || lowerPath === '/admin/login') {
+    if (adminUser) {
+      navigateTo('/admin/dashboard');
+      return null;
+    }
+    return (
+      <AdminLoginView
+        onGoToUserPortal={() => navigateTo('/login')}
+        onLoginSuccess={() => navigateTo('/admin/dashboard')}
+      />
+    );
+  }
+
+  // ============================================================
+  // 2. ADMIN PORTAL (/admin or /admin/*)
   // ============================================================
   if (currentPath.startsWith('/admin')) {
     if (!adminUser) {
+      if (window.location.pathname !== '/AdminLogin') {
+        window.history.replaceState({}, '', '/AdminLogin');
+      }
       return (
         <AdminLoginView
           onGoToUserPortal={() => navigateTo('/login')}
+          onLoginSuccess={() => navigateTo('/admin/dashboard')}
         />
       );
     }
@@ -284,7 +312,7 @@ export function App() {
         onGoToLogin={() => navigateTo('/login')}
         onGoToRegister={() => navigateTo('/login?mode=register')}
         onGoToRiderLogin={() => navigateTo('/login?mode=rider')}
-        onGoToAdminPortal={() => navigateTo('/admin')}
+        onGoToAdminPortal={() => navigateTo('/AdminLogin')}
       />
     );
   }
@@ -307,7 +335,7 @@ export function App() {
   // ============================================================
   return (
     <LoginView
-      onGoToAdminPortal={() => navigateTo('/admin')}
+      onGoToAdminPortal={() => navigateTo('/AdminLogin')}
       onLoginSuccess={(loggedInUser) => {
         const dest = loggedInUser?.role === 'RIDER' ? '/rider' : '/passenger';
         navigateTo(dest);

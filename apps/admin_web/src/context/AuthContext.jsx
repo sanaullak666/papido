@@ -209,7 +209,7 @@ export function AuthProvider({ children }) {
     } catch (_) {}
     setAdminToken(null);
     setAdminUser(null);
-    window.location.replace('/admin');
+    window.location.replace('/AdminLogin');
   };
 
   // Mobile Login with Email OTP
