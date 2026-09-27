@@ -216,6 +216,10 @@ const UserModel = {
     invalidateCachedUser(id);
     const result = await db.query('DELETE FROM users WHERE id = ?', [id]);
     return result;
+  },
+
+  delete(id) {
+    return this.deleteUser(id);
   }
 };
 

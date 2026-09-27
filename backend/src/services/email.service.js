@@ -27,11 +27,12 @@ class EmailService {
       [cleanEmail, otp]
     );
 
-    // Log high-visibility OTP banner for local debugging and zero-setup testing
-    logger.info('================================================================');
-    logger.info(`📧 [PASSWORD RESET OTP] For: ${cleanEmail}`);
-    logger.info(`🔑 Verification OTP Code: >>> ${otp} <<< (Valid for 15 minutes)`);
-    logger.info('================================================================');
+    // Log OTP only in test mode; never expose in production logs
+    if (process.env.NODE_ENV === 'test') {
+      logger.info(`📧 [PASSWORD RESET OTP] For: ${cleanEmail} -> ${otp}`);
+    } else {
+      logger.info(`📧 [PASSWORD RESET OTP] Dispatched to registered email for: ${cleanEmail}`);
+    }
 
     // Nodemailer dispatch using configured Gmail App Password
     const smtpUser = env.SMTP?.USER || process.env.SMTP_USER || 'pupapido@gmail.com';
@@ -157,23 +158,24 @@ class EmailService {
       throw new Error('Please enter a valid 10-digit mobile number.');
     }
 
-    // Lookup user by phone
+    // Lookup user by phone (strictly match 10-digit number or +91 format)
+    const phoneCandidates = [cleanPhone, `+91${cleanPhone}`, `91${cleanPhone}`];
     let user = await db.queryOne(
       `SELECT id, name, email, phone, role, status, suspension_reason
        FROM users
-       WHERE (phone = ? OR phone = ? OR phone = ? OR phone LIKE ?)
+       WHERE (phone = ? OR phone = ? OR phone = ?)
        ${expectedRole ? 'AND role = ?' : ''}
        ORDER BY id DESC LIMIT 1`,
       expectedRole
-        ? [cleanPhone, `+91${cleanPhone}`, `91${cleanPhone}`, `%${cleanPhone}%`, expectedRole]
-        : [cleanPhone, `+91${cleanPhone}`, `91${cleanPhone}`, `%${cleanPhone}%`]
+        ? [...phoneCandidates, expectedRole]
+        : phoneCandidates
     );
 
     // If expectedRole was given and no user found, check if they exist under a different role
     if (!user && expectedRole) {
       const anyUser = await db.queryOne(
-        `SELECT role FROM users WHERE (phone = ? OR phone = ? OR phone = ? OR phone LIKE ?) LIMIT 1`,
-        [cleanPhone, `+91${cleanPhone}`, `91${cleanPhone}`, `%${cleanPhone}%`]
+        `SELECT role FROM users WHERE (phone = ? OR phone = ? OR phone = ?) LIMIT 1`,
+        phoneCandidates
       );
       if (anyUser) {
         const portalName = anyUser.role === 'CUSTOMER' ? 'Passenger' : 'Rider';
@@ -208,12 +210,12 @@ class EmailService {
       [cleanPhone, user.email, otp]
     );
 
-    // Log high-visibility banner for debugging & testing
-    logger.info('================================================================');
-    logger.info(`📱 [LOGIN OTP SENT TO EMAIL] Mobile: +91 ${cleanPhone}`);
-    logger.info(`📧 Registered User Email: ${user.email} (${user.name})`);
-    logger.info(`🔑 Verification Code: >>> ${otp} <<< (Valid for 15 minutes)`);
-    logger.info('================================================================');
+    // Log OTP only in test mode; never expose in production logs
+    if (process.env.NODE_ENV === 'test') {
+      logger.info(`📱 [LOGIN OTP] For +91 ${cleanPhone} -> ${otp}`);
+    } else {
+      logger.info(`📱 [LOGIN OTP] Verification code dispatched for +91 ${cleanPhone}`);
+    }
 
     // Send email via Nodemailer
     const smtpUser = env.SMTP?.USER || process.env.SMTP_USER || 'pupapido@gmail.com';
@@ -255,8 +257,7 @@ class EmailService {
       success: true,
       message: `Verification code sent to your registered email (${maskedEmail})`,
       phone: cleanPhone,
-      maskedEmail,
-      email: user.email
+      maskedEmail
     };
   }
 
@@ -272,14 +273,15 @@ class EmailService {
     const cleanOtp = otp.trim();
 
     // Lookup user
+    const phoneCandidates = [cleanPhone, `+91${cleanPhone}`, `91${cleanPhone}`];
     const user = await db.queryOne(
       `SELECT * FROM users
-       WHERE (phone = ? OR phone = ? OR phone = ? OR phone LIKE ?)
+       WHERE (phone = ? OR phone = ? OR phone = ?)
        ${expectedRole ? 'AND role = ?' : ''}
        ORDER BY id DESC LIMIT 1`,
       expectedRole
-        ? [cleanPhone, `+91${cleanPhone}`, `91${cleanPhone}`, `%${cleanPhone}%`, expectedRole]
-        : [cleanPhone, `+91${cleanPhone}`, `91${cleanPhone}`, `%${cleanPhone}%`]
+        ? [...phoneCandidates, expectedRole]
+        : phoneCandidates
     );
 
     if (!user) {

@@ -77,8 +77,8 @@ const AuthController = {
         collegeIdDocUrl: collegeIdDocUrl || (profileData && profileData.collegeIdDocUrl) || null
       };
 
-      // If registering as Rider, validate Vehicle Model and Campus / College ID Card upload (bypassed for Core Members)
-      if (role === 'RIDER' && !req.body.isCoreMember) {
+      // If registering as Rider, validate Vehicle Model and Campus / College ID Card upload
+      if (role === 'RIDER') {
         const missing = [];
         if (!mergedProfileData.vehicleModel) {
           missing.push('Vehicle Model (e.g. Honda Activa 6G / Splendor)');

@@ -215,6 +215,116 @@ async function runTests() {
     assert(cancelledRide.status === 'CANCELLED', 'Ride successfully transitioned to CANCELLED state');
     assert(cancelledRide.cancelled_by_role === 'CUSTOMER', 'Cancelled by role recorded accurately');
 
+    // ----------------------------------------------------
+    // TEST 8: Regression - Ride Start OTP Enforcement
+    // ----------------------------------------------------
+    console.log('\n▶ [8] Testing Ride Start OTP Verification Enforcement...');
+    const otpTestRide = await RideService.requestRide({
+      customerId: customerUser.id,
+      vehicleType: 'BIKE',
+      pickupAddress: 'Science Complex',
+      pickupLatitude: 12.0261,
+      pickupLongitude: 79.8550,
+      destinationAddress: 'Main Gate',
+      destinationLatitude: 12.0228,
+      destinationLongitude: 79.8509
+    });
+
+    await RideService.acceptRide(otpTestRide.id, riderUser.id);
+    await RideService.setRiderReached(otpTestRide.id, riderUser.id);
+
+    let emptyOtpCaught = false;
+    try {
+      await RideService.startRide(otpTestRide.id, riderUser.id, '');
+    } catch (e) {
+      emptyOtpCaught = true;
+    }
+    assert(emptyOtpCaught, 'startRide rejected when empty OTP supplied');
+
+    let wrongOtpCaught = false;
+    try {
+      await RideService.startRide(otpTestRide.id, riderUser.id, '0000');
+    } catch (e) {
+      wrongOtpCaught = true;
+    }
+    assert(wrongOtpCaught, 'startRide rejected when wrong OTP supplied');
+
+    const startedOtpRide = await RideService.startRide(otpTestRide.id, riderUser.id, otpTestRide.otp);
+    assert(startedOtpRide.status === 'STARTED', 'startRide accepted with correct 4-digit customer OTP');
+
+    // ----------------------------------------------------
+    // TEST 9: Regression - Started Ride Cancellation Blocking
+    // ----------------------------------------------------
+    console.log('\n▶ [9] Testing Cancellation Prevention for Started Rides (Free Ride Exploit Shield)...');
+    let cancelStartedCaught = false;
+    try {
+      await RideService.cancelRide(otpTestRide.id, customerUser.id, 'CUSTOMER', 'Trying to cancel in transit');
+    } catch (e) {
+      cancelStartedCaught = true;
+    }
+    assert(cancelStartedCaught, 'Passenger blocked from cancelling ride that is already STARTED in progress');
+
+    // Complete the test ride safely
+    await RideService.completeRide(otpTestRide.id, riderUser.id);
+
+    // ----------------------------------------------------
+    // TEST 10: Regression - Concurrent Ride Acceptance (Race Condition Shield)
+    // ----------------------------------------------------
+    console.log('\n▶ [10] Testing Concurrent Driver Acceptance Protection...');
+    const raceRide = await RideService.requestRide({
+      customerId: customerUser.id,
+      vehicleType: 'BIKE',
+      pickupAddress: 'Library Block',
+      pickupLatitude: 12.0245,
+      pickupLongitude: 79.8532,
+      destinationAddress: 'ECR Gate',
+      destinationLatitude: 12.0295,
+      destinationLongitude: 79.8580
+    });
+
+    // First acceptance succeeds
+    const firstAccept = await RideService.acceptRide(raceRide.id, riderUser.id);
+    assert(firstAccept.status === 'ACCEPTED', 'First driver successfully accepts ride');
+
+    // Second acceptance must fail with error
+    let secondAcceptBlocked = false;
+    try {
+      await RideModel.assignRider(raceRide.id, 99999);
+    } catch (e) {
+      secondAcceptBlocked = true;
+    }
+    assert(secondAcceptBlocked, 'Second concurrent acceptance blocked by atomic status guard');
+
+    // Clean up test ride
+    await RideService.cancelRide(raceRide.id, customerUser.id, 'CUSTOMER', 'Race test clean up');
+
+    // ----------------------------------------------------
+    // TEST 11: Regression - UserModel.delete Alias & Cleanup
+    // ----------------------------------------------------
+    console.log('\n▶ [11] Testing UserModel.delete Alias & Error Recovery...');
+    assert(typeof UserModel.delete === 'function', 'UserModel.delete is a callable function');
+    assert(typeof UserModel.deleteUser === 'function', 'UserModel.deleteUser is a callable function');
+
+    // ----------------------------------------------------
+    // TEST 12: Regression - SSRF Protection on Map Link Resolver
+    // ----------------------------------------------------
+    console.log('\n▶ [12] Testing SSRF Protection against Internal IPs and Cloud Metadata...');
+    const MapService = require('../src/services/map.service');
+    const ssrfLoopback = await MapService.resolveMapLink('http://127.0.0.1:5000/api/health');
+    assert(ssrfLoopback === null, 'SSRF blocked for 127.0.0.1 loopback URL');
+
+    const ssrfMetadata = await MapService.resolveMapLink('http://169.254.169.254/latest/meta-data/');
+    assert(ssrfMetadata === null, 'SSRF blocked for cloud metadata IP 169.254.169.254');
+
+    const ssrfPrivate = await MapService.resolveMapLink('http://192.168.1.1/admin');
+    assert(ssrfPrivate === null, 'SSRF blocked for private 192.168.x network');
+
+    const ssrfEvilDomain = await MapService.resolveMapLink('https://evil-attacker-site.com/exploit');
+    assert(ssrfEvilDomain === null, 'SSRF blocked for unauthorized arbitrary external domains');
+
+    const validCoords = await MapService.resolveMapLink('12.0228, 79.8509');
+    assert(validCoords && validCoords.success === true, 'Valid GPS coordinates properly resolved');
+
     console.log('\n======================================================');
     console.log(`  🎉 TEST RESULTS: ${passedTests} PASSED, ${failedTests} FAILED`);
     console.log('======================================================\n');
@@ -222,6 +332,7 @@ async function runTests() {
     if (failedTests > 0) {
       process.exit(1);
     }
+    process.exit(0);
   } catch (err) {
     console.error('Test execution error:', err);
     process.exit(1);

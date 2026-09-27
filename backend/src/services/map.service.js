@@ -223,59 +223,83 @@ const MapService = {
       }
     }
 
-    // SSRF Guard: Parse URL and validate against trusted mapping domains and block internal IPs
-    let parsedUrl;
-    try {
-      parsedUrl = new URL(url);
-    } catch (_) {
+    function isSafeMapUrl(testUrl) {
+      let parsed;
+      try {
+        parsed = new URL(testUrl);
+      } catch (_) {
+        return false;
+      }
+      if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+        return false;
+      }
+      const h = parsed.hostname.toLowerCase();
+      const isAllowed =
+        h === 'maps.app.goo.gl' ||
+        h === 'goo.gl' ||
+        h === 'google.com' ||
+        h.endsWith('.google.com') ||
+        h === 'openstreetmap.org' ||
+        h.endsWith('.openstreetmap.org');
+
+      if (!isAllowed) return false;
+
+      // Block private, loopback, link-local, and cloud metadata
+      if (
+        h === 'localhost' ||
+        h === '127.0.0.1' ||
+        h === '::1' ||
+        h === '0.0.0.0' ||
+        h.startsWith('10.') ||
+        h.startsWith('192.168.') ||
+        h.startsWith('169.254.') ||
+        /^172\.(1[6-9]|2\d|3[01])\./.test(h)
+      ) {
+        return false;
+      }
+      return true;
+    }
+
+    if (!isSafeMapUrl(url)) {
       return null;
     }
 
-    if (parsedUrl.protocol !== 'https:' && parsedUrl.protocol !== 'http:') {
-      return null;
-    }
-
-    const host = parsedUrl.hostname.toLowerCase();
-    const isAllowedMapHost =
-      host === 'maps.app.goo.gl' ||
-      host === 'goo.gl' ||
-      host === 'google.com' ||
-      host.endsWith('.google.com') ||
-      host === 'openstreetmap.org' ||
-      host.endsWith('.openstreetmap.org');
-
-    if (!isAllowedMapHost) {
-      return null;
-    }
-
-    // Block private, loopback, and link-local IP spaces
-    if (
-      host === 'localhost' ||
-      host === '127.0.0.1' ||
-      host === '::1' ||
-      host === '0.0.0.0' ||
-      host.startsWith('10.') ||
-      host.startsWith('192.168.') ||
-      host.startsWith('169.254.') ||
-      /^172\.(1[6-9]|2\d|3[01])\./.test(host)
-    ) {
-      return null;
-    }
-
+    let currentUrl = url;
     let finalUrl = url;
     let htmlContent = '';
 
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        redirect: 'follow',
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept-Language': 'en-US,en;q=0.9'
+      const maxHops = 4;
+      for (let hop = 0; hop < maxHops; hop++) {
+        if (!isSafeMapUrl(currentUrl)) {
+          return null;
         }
-      });
-      finalUrl = response.url || url;
-      htmlContent = await response.text().catch(() => '');
+
+        const response = await fetch(currentUrl, {
+          method: 'GET',
+          redirect: 'manual',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9'
+          }
+        });
+
+        if ([301, 302, 303, 307, 308].includes(response.status)) {
+          const loc = response.headers.get('location');
+          if (!loc) break;
+          const nextUrl = new URL(loc, currentUrl).toString();
+          if (!isSafeMapUrl(nextUrl)) {
+            console.warn('[MapService SSRF Guard] Blocked unsafe redirect to:', nextUrl);
+            return null;
+          }
+          currentUrl = nextUrl;
+          finalUrl = nextUrl;
+        } else {
+          finalUrl = currentUrl;
+          htmlContent = await response.text().catch(() => '');
+          break;
+        }
+      }
     } catch (e) {
       console.warn('[MapService] Redirect resolution notice:', e.message);
     }

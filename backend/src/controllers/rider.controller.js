@@ -169,9 +169,8 @@ const RiderController = {
   async completeRide(req, res, next) {
     try {
       const rideId = req.params.id;
-      const { finalFare } = req.body;
-
-      const result = await RideService.completeRide(rideId, req.user.id, finalFare);
+      // Calculate finalFare strictly server-side to prevent client fare tampering
+      const result = await RideService.completeRide(rideId, req.user.id);
       return success(res, 'Ride completed successfully! Earnings added to your wallet.', result);
     } catch (err) {
       return error(res, err.message, 400);

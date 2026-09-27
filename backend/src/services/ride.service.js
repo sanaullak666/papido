@@ -791,9 +791,11 @@ const RideService = {
       throw new Error(`Cannot start ride with status ${ride.status}.`);
     }
 
-    // Verify OTP if required
-    if (enteredOtp && ride.otp && ride.otp !== enteredOtp.toString().trim()) {
-      throw new Error('Invalid OTP provided. Please ask the customer for the correct 4-digit code.');
+    // Strictly verify OTP if required
+    if (ride.otp) {
+      if (!enteredOtp || ride.otp !== enteredOtp.toString().trim()) {
+        throw new Error('Invalid or missing OTP code. Please ask the customer for their 4-digit verification code.');
+      }
     }
 
     const updatedRide = await RideModel.updateStatus(rideId, RIDE_STATUS.STARTED);
@@ -978,6 +980,10 @@ const RideService = {
 
     if ([RIDE_STATUS.COMPLETED, RIDE_STATUS.CANCELLED].includes(ride.status)) {
       throw new Error(`Ride is already ${ride.status.toLowerCase()}.`);
+    }
+
+    if (ride.status === RIDE_STATUS.STARTED) {
+      throw new Error('Cannot cancel a ride that is already in progress. The driver has already started the journey.');
     }
 
     // Role security check

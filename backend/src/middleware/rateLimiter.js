@@ -1,37 +1,33 @@
 const rateLimit = require('express-rate-limit');
 const env = require('../config/environment');
 
+const isLocalOrTest = (req) => {
+  return (
+    process.env.NODE_ENV === 'test' ||
+    req.ip === '127.0.0.1' ||
+    req.ip === '::1' ||
+    req.ip === '::ffff:127.0.0.1' ||
+    req.hostname === 'localhost'
+  );
+};
+
 const generalLimiter = rateLimit({
   windowMs: env.RATE_LIMIT.WINDOW_MS || 15 * 60 * 1000,
-  max: env.RATE_LIMIT.MAX || 100000,
+  max: env.RATE_LIMIT.MAX || 50000,
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
-    // 1. Always skip rate limiting in development mode or for local developer loopback
-    if (
-      process.env.NODE_ENV === 'development' ||
-      req.ip === '127.0.0.1' ||
-      req.ip === '::1' ||
-      req.ip === '::ffff:127.0.0.1' ||
-      req.hostname === 'localhost'
-    ) {
-      return true;
-    }
-
-    // 2. Skip rate limiting for real-time telemetry, radar polling, health, outside-rides, scheduled rides
+    if (isLocalOrTest(req)) return true;
     const url = req.originalUrl || req.url || req.path || '';
-    return url.includes('/requests') ||
-           url.includes('/active') ||
-           url.includes('/health') ||
-           url.includes('/dashboard') ||
-           url.includes('/status') ||
-           url.includes('/scheduled') ||
-           url.includes('/outside-rides') ||
-           url.includes('/fares') ||
-           url.includes('/radar') ||
-           url.includes('/rides') ||
-           url.includes('/penalties') ||
-           url.includes('/earnings');
+    return (
+      url.includes('/requests') ||
+      url.includes('/active') ||
+      url.includes('/health') ||
+      url.includes('/dashboard') ||
+      url.includes('/status') ||
+      url.includes('/scheduled') ||
+      url.includes('/radar')
+    );
   },
   message: {
     success: false,
@@ -42,16 +38,10 @@ const generalLimiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 2000, // 2000 attempts per 15 minutes
+  max: 30, // 30 attempts per 15 minutes
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => {
-    return process.env.NODE_ENV === 'development' ||
-           req.ip === '127.0.0.1' ||
-           req.ip === '::1' ||
-           req.ip === '::ffff:127.0.0.1' ||
-           req.hostname === 'localhost';
-  },
+  skip: (req) => isLocalOrTest(req),
   message: {
     success: false,
     message: 'Too many authentication attempts. Please try again after 15 minutes.',
@@ -59,7 +49,35 @@ const authLimiter = rateLimit({
   }
 });
 
+const otpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 15, // 15 OTP attempts per 15 minutes
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => isLocalOrTest(req),
+  message: {
+    success: false,
+    message: 'Too many OTP verification attempts. Please try again after 15 minutes.',
+    timestamp: new Date().toISOString()
+  }
+});
+
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30, // 30 uploads per 15 minutes
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => isLocalOrTest(req),
+  message: {
+    success: false,
+    message: 'Upload rate limit reached. Please wait before uploading more files.',
+    timestamp: new Date().toISOString()
+  }
+});
+
 module.exports = {
   generalLimiter,
-  authLimiter
+  authLimiter,
+  otpLimiter,
+  uploadLimiter
 };

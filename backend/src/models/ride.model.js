@@ -109,12 +109,15 @@ const RideModel = {
   },
 
   async assignRider(rideId, riderId) {
-    await db.query(
+    const res = await db.query(
       `UPDATE rides 
        SET rider_id = ?, status = 'ACCEPTED', accepted_at = CURRENT_TIMESTAMP 
        WHERE id = ? AND status = 'REQUESTED'`,
       [riderId, rideId]
     );
+    if (!res || res.affectedRows === 0) {
+      throw new Error('Ride is no longer available. Another driver may have already accepted it.');
+    }
     return this.findById(rideId);
   },
 
