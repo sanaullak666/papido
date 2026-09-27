@@ -29,9 +29,9 @@ class EmailService {
 
     // Log OTP only in test mode; never expose in production logs
     if (process.env.NODE_ENV === 'test') {
-      logger.info(`📧 [PASSWORD RESET OTP] For: ${cleanEmail} -> ${otp}`);
+      logger.info(`[PASSWORD RESET OTP] For: ${cleanEmail} -> ${otp}`);
     } else {
-      logger.info(`📧 [PASSWORD RESET OTP] Dispatched to registered email for: ${cleanEmail}`);
+      logger.info(`[PASSWORD RESET OTP] Dispatched to registered email for: ${cleanEmail}`);
     }
 
     // Nodemailer dispatch using configured Gmail App Password
@@ -69,16 +69,16 @@ class EmailService {
         await transporter.sendMail({
           from: `"Papido Mobility" <${smtpUser}>`,
           to: cleanEmail,
-          subject: '🔐 Your Papido Password Reset Verification Code',
+          subject: 'Your Papido Password Reset Verification Code',
           html: EmailService.renderPasswordResetEmail({ user, cleanEmail, otp })
         });
-        logger.info(`✅ [EMAIL SENT] Verification OTP sent successfully via Gmail from ${smtpUser} to: ${cleanEmail}`);
+        logger.info(`[EMAIL SENT] Verification OTP sent successfully via Gmail from ${smtpUser} to: ${cleanEmail}`);
       } catch (mailErr) {
-        logger.error(`❌ [EMAIL ERROR] Failed to send email via SMTP: ${mailErr.message}`);
+        logger.error(`[EMAIL ERROR] Failed to send email via SMTP: ${mailErr.message}`);
         throw new Error(`Email delivery failed (${mailErr.message}). Please verify that ${smtpUser} can send emails.`);
       }
     } else {
-      logger.warn('⚠️ [EMAIL NOTICE] SMTP configuration missing. Real email not dispatched.');
+      logger.warn('[EMAIL NOTICE] SMTP configuration missing. Real email not dispatched.');
     }
 
     return {
@@ -212,9 +212,9 @@ class EmailService {
 
     // Log OTP only in test mode; never expose in production logs
     if (process.env.NODE_ENV === 'test') {
-      logger.info(`📱 [LOGIN OTP] For +91 ${cleanPhone} -> ${otp}`);
+      logger.info(`[LOGIN OTP] For +91 ${cleanPhone} -> ${otp}`);
     } else {
-      logger.info(`📱 [LOGIN OTP] Verification code dispatched for +91 ${cleanPhone}`);
+      logger.info(`[LOGIN OTP] Verification code dispatched for +91 ${cleanPhone}`);
     }
 
     // Send email via Nodemailer
@@ -235,12 +235,12 @@ class EmailService {
         await transporter.sendMail({
           from: `"Papido Mobility" <${smtpUser}>`,
           to: user.email,
-          subject: '🔐 Your Papido Login Verification Code',
+          subject: 'Your Papido Login Verification Code',
           html: EmailService.renderLoginOtpEmail({ user, cleanPhone, otp })
         });
-        logger.info(`✅ [EMAIL SENT] Login verification OTP sent successfully to: ${user.email}`);
+        logger.info(`[EMAIL SENT] Login verification OTP sent successfully to: ${user.email}`);
       } catch (mailErr) {
-        logger.error(`❌ [EMAIL ERROR] Failed to send login OTP email: ${mailErr.message}`);
+        logger.error(`[EMAIL ERROR] Failed to send login OTP email: ${mailErr.message}`);
       }
     }
 
@@ -402,42 +402,36 @@ class EmailService {
 
     const metaRowsHtml = isLogin
       ? `<tr>
-           <td style="padding: 4px 0; font-size: 13px; color: #796D61; line-height: 1.6;">
-             ⏱ <strong>Validity:</strong> Expires in 15 minutes
-           </td>
+           <td style="padding: 6px 0; font-size: 13px; color: #64748B; width: 140px; font-weight: 500;">Validity</td>
+           <td style="padding: 6px 0; font-size: 13px; color: #0F172A; font-weight: 600;">Expires in 15 minutes</td>
          </tr>
          <tr>
-           <td style="padding: 4px 0; font-size: 13px; color: #796D61; line-height: 1.6;">
-             📱 <strong>Requested from:</strong> +91 ${formattedPhone}
-           </td>
+           <td style="padding: 6px 0; font-size: 13px; color: #64748B; border-top: 1px solid #F1F5F9; font-weight: 500;">Phone Number</td>
+           <td style="padding: 6px 0; font-size: 13px; color: #0F172A; font-weight: 600; border-top: 1px solid #F1F5F9;">+91 ${formattedPhone}</td>
          </tr>
          <tr>
-           <td style="padding: 4px 0; font-size: 13px; color: #796D61; line-height: 1.6;">
-             🔐 <strong>Portal:</strong> ${roleName} Access
-           </td>
+           <td style="padding: 6px 0; font-size: 13px; color: #64748B; border-top: 1px solid #F1F5F9; font-weight: 500;">Account Portal</td>
+           <td style="padding: 6px 0; font-size: 13px; color: #0F172A; font-weight: 600; border-top: 1px solid #F1F5F9;">${roleName} Access</td>
          </tr>`
       : `<tr>
-           <td style="padding: 4px 0; font-size: 13px; color: #796D61; line-height: 1.6;">
-             ⏱ <strong>Validity:</strong> Expires in 15 minutes
-           </td>
+           <td style="padding: 6px 0; font-size: 13px; color: #64748B; width: 140px; font-weight: 500;">Validity</td>
+           <td style="padding: 6px 0; font-size: 13px; color: #0F172A; font-weight: 600;">Expires in 15 minutes</td>
          </tr>
          <tr>
-           <td style="padding: 4px 0; font-size: 13px; color: #796D61; line-height: 1.6;">
-             📧 <strong>Requested for:</strong> ${cleanEmail}
-           </td>
+           <td style="padding: 6px 0; font-size: 13px; color: #64748B; border-top: 1px solid #F1F5F9; font-weight: 500;">Account Email</td>
+           <td style="padding: 6px 0; font-size: 13px; color: #0F172A; font-weight: 600; border-top: 1px solid #F1F5F9;">${cleanEmail}</td>
          </tr>
          <tr>
-           <td style="padding: 4px 0; font-size: 13px; color: #796D61; line-height: 1.6;">
-             🔒 <strong>Access:</strong> Single-use security token
-           </td>
+           <td style="padding: 6px 0; font-size: 13px; color: #64748B; border-top: 1px solid #F1F5F9; font-weight: 500;">Security Token</td>
+           <td style="padding: 6px 0; font-size: 13px; color: #0F172A; font-weight: 600; border-top: 1px solid #F1F5F9;">Single-use verification code</td>
          </tr>`;
 
     const warningHtml = isLogin
-      ? `🛡 <strong>Never share this code.</strong> Papido staff will never ask for your verification code or password.`
-      : `🛡 <strong>Didn't request a reset?</strong> Your account remains safe &mdash; you can safely ignore this email.`;
+      ? `<strong>Security Notice:</strong> Never share this verification code with anyone. Papido campus representatives will never contact you asking for your verification code or password.`
+      : `<strong>Security Notice:</strong> If you did not initiate this password reset request, you can safely disregard this email. Your account credentials remain secure.`;
 
     const footerNote = isLogin
-      ? `Didn't request this sign-in? You can safely ignore this email.`
+      ? `If you did not request this sign-in code, you can safely ignore this email.`
       : `This code is single-use and invalidates immediately after use.`;
 
     return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -652,10 +646,10 @@ class EmailService {
                 </tr>
               </table>
 
-              <!-- Security / Warning Box -->
-              <table class="papido-warning-box" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background-color: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px; margin: 0 0 8px;">
+              <!-- Security Notice Callout -->
+              <table class="papido-warning-box" width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background-color: #FFFBEB; border: 1px solid #FDE68A; border-left: 4px solid #D97706; border-radius: 8px; margin: 0 0 8px;">
                 <tr>
-                  <td class="papido-warning-text" style="padding: 12px 16px; font-size: 12.5px; color: #991B1B; line-height: 1.5;">
+                  <td class="papido-warning-text" style="padding: 12px 16px; font-size: 12.5px; color: #92400E; line-height: 1.5;">
                     ${warningHtml}
                   </td>
                 </tr>
@@ -666,15 +660,15 @@ class EmailService {
 
           <!-- Footer Strip -->
           <tr>
-            <td class="papido-footer-cell" style="background-color: #FCFAF7; border-top: 1px solid #E8DCCB; padding: 22px 24px; text-align: center; font-size: 12.5px; color: #796D61; line-height: 1.6;">
+            <td class="papido-footer-cell" style="background-color: #F8FAFC; border-top: 1px solid #E2E8F0; padding: 22px 24px; text-align: center; font-size: 12px; color: #64748B; line-height: 1.6;">
               ${footerNote}<br/>
-              Need assistance? Contact <a href="mailto:support@papido.app" class="support-link" style="color: #EA580C; text-decoration: none; font-weight: 600;">support@papido.app</a>
+              Need assistance? Contact our team at <a href="mailto:support@papido.app" class="support-link" style="color: #EA580C; text-decoration: none; font-weight: 600;">support@papido.app</a>
               
-              <div style="border-top: 1px dashed #E8DCCB; margin: 14px auto; max-width: 240px;"></div>
+              <div style="border-top: 1px solid #E2E8F0; margin: 14px auto; max-width: 240px;"></div>
               
-              <div style="font-size: 11.5px; color: #A89D91; line-height: 1.6;">
-                Official Pondicherry University Platform<br/>
-                Kalapet, Puducherry 605014 &bull; Made with &#x1F9E1; for campus mobility
+              <div style="font-size: 11px; color: #94A3B8; line-height: 1.6;">
+                Pondicherry University Campus Mobility Service<br/>
+                Kalapet, Puducherry 605014 &bull; All rights reserved.
               </div>
             </td>
           </tr>
