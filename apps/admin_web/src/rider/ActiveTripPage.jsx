@@ -241,7 +241,7 @@ export function ActiveTripPage({ onNavigateTab }) {
             onClick={() => handleStatusChange('RIDER_ARRIVING')}
           >
             <Bike size={18} />
-            <span>1. I am On The Way (Arriving)</span>
+            <span>I am On The Way (Arriving)</span>
           </RPButton>
         )}
 
@@ -255,7 +255,7 @@ export function ActiveTripPage({ onNavigateTab }) {
             onClick={() => handleStatusChange('RIDER_REACHED')}
           >
             <MapPin size={18} />
-            <span>2. Reached Pickup Location</span>
+            <span>Reached Pickup Location</span>
           </RPButton>
         )}
 
@@ -291,7 +291,7 @@ export function ActiveTripPage({ onNavigateTab }) {
               onClick={() => handleStatusChange('STARTED')}
             >
               <CheckCircle2 size={18} />
-              <span>3. Verify OTP &amp; Start Trip</span>
+              <span>Verify OTP &amp; Start Trip</span>
             </RPButton>
           </div>
         )}
@@ -306,7 +306,7 @@ export function ActiveTripPage({ onNavigateTab }) {
             onClick={() => handleStatusChange('COMPLETED')}
           >
             <CheckCircle size={18} />
-            <span>4. Reached Destination &amp; Complete Trip</span>
+            <span>Reached Destination &amp; Complete Trip</span>
           </RPButton>
         )}
 

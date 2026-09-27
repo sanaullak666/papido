@@ -684,13 +684,13 @@ export function SimulatorView() {
                   {/* Rider Step Actions */}
                   {riderActiveRide.status === 'ACCEPTED' && (
                     <button className="btn btn-primary" style={{ width: '100%' }} onClick={handleRiderArriving} disabled={riderActionLoading}>
-                      1. Start Heading to Pickup (Arriving)
+                      Start Heading to Pickup (Arriving)
                     </button>
                   )}
 
                   {riderActiveRide.status === 'RIDER_ARRIVING' && (
                     <button className="btn btn-primary" style={{ width: '100%' }} onClick={handleRiderReached} disabled={riderActionLoading}>
-                      2. I Have Reached Pickup Location
+                      I Have Reached Pickup Location
                     </button>
                   )}
 
@@ -706,14 +706,14 @@ export function SimulatorView() {
                         onChange={(e) => setOtpInput(e.target.value)}
                       />
                       <button className="btn btn-success" style={{ width: '100%' }} onClick={handleRiderStartRide} disabled={riderActionLoading}>
-                        3. Verify OTP & Start Trip
+                        Verify OTP & Start Trip
                       </button>
                     </div>
                   )}
 
                   {riderActiveRide.status === 'STARTED' && (
                     <button className="btn btn-success" style={{ width: '100%' }} onClick={handleRiderCompleteRide} disabled={riderActionLoading}>
-                      4. Reached Destination & Complete Trip
+                      Reached Destination & Complete Trip
                     </button>
                   )}
 

@@ -2021,7 +2021,7 @@ export function RiderPortalView() {
                     className="rp-btn rp-btn--primary rp-btn--lg rp-btn--block cp-btn-ripple"
                   >
                     <Bike size={18} />
-                    <span>{actionLoading ? 'Updating Status...' : '1. I am On The Way (Arriving)'}</span>
+                    <span>{actionLoading ? 'Updating Status...' : 'I am On The Way (Arriving)'}</span>
                   </button>
                 )}
 
@@ -2033,7 +2033,7 @@ export function RiderPortalView() {
                     className="rp-btn rp-btn--primary rp-btn--lg rp-btn--block cp-btn-ripple"
                   >
                     <MapPin size={18} />
-                    <span>{actionLoading ? 'Updating Status...' : '2. Reached Pickup Location'}</span>
+                    <span>{actionLoading ? 'Updating Status...' : 'Reached Pickup Location'}</span>
                   </button>
                 )}
 
@@ -2068,7 +2068,7 @@ export function RiderPortalView() {
                       className={`rp-btn rp-btn--lg rp-btn--block ${(enteredOtp.length === 4 && !actionLoading) ? 'rp-btn--success' : 'rp-btn--ghost'}`}
                     >
                       <CheckCircle2 size={18} />
-                      <span>{actionLoading ? 'Verifying...' : '3. Verify OTP & Start Trip'}</span>
+                      <span>{actionLoading ? 'Verifying...' : 'Verify OTP & Start Trip'}</span>
                     </button>
                   </div>
                 )}
@@ -2081,7 +2081,7 @@ export function RiderPortalView() {
                     className="rp-btn rp-btn--success rp-btn--lg rp-btn--block"
                   >
                     <CheckCircle size={18} />
-                    <span>{actionLoading ? 'Completing...' : '4. Reached Destination & Complete Trip'}</span>
+                    <span>{actionLoading ? 'Completing...' : 'Reached Destination & Complete Trip'}</span>
                   </button>
                 )}
 
