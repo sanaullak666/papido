@@ -528,10 +528,11 @@ const RideModel = {
   },
 
   async markScheduledDispatched(rideId) {
-    await db.query(
+    const res = await db.query(
       `UPDATE rides SET status = 'REQUESTED', is_dispatched = 1, requested_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'SCHEDULED'`,
       [rideId]
     );
+    if (!res || res.affectedRows === 0) return null;
     return this.findById(rideId);
   },
 
