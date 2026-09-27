@@ -4,10 +4,11 @@ const upload = require('../middleware/upload.middleware');
 const { verifyToken } = require('../middleware/auth.middleware');
 const { uploadLimiter } = require('../middleware/rateLimiter');
 const { success, error } = require('../utils/response');
+const storageService = require('../services/storage.service');
 
-// File upload endpoint (rate limited and file signature verified)
+// File upload endpoint (rate limited, signature verified, and cloud/local storage enabled)
 router.post('/file', uploadLimiter, (req, res) => {
-  upload.single('file')(req, res, (err) => {
+  upload.single('file')(req, res, async (err) => {
     if (err) {
       if (err.code === 'LIMIT_FILE_SIZE') {
         return error(res, 'File size exceeds the 5MB limit. Please upload a file smaller than 5MB.', 400);
@@ -51,9 +52,10 @@ router.post('/file', uploadLimiter, (req, res) => {
       } catch (_) {}
       return error(res, `File size (${(req.file.size / 1024).toFixed(1)} KB) exceeds the ${requestedMaxKb} KB limit. Please upload a file smaller than ${requestedMaxKb} KB.`, 400);
     }
+
     const host = req.get('host');
     const protocol = req.protocol;
-    const fileUrl = `${protocol}://${host}/uploads/documents/${req.file.filename}`;
+    const defaultLocalUrl = `${protocol}://${host}/uploads/documents/${req.file.filename}`;
 
     let dataUri = null;
     try {
@@ -63,14 +65,30 @@ router.post('/file', uploadLimiter, (req, res) => {
       }
     } catch (_) {}
 
+    // Upload to Cloudflare R2 / AWS S3 if configured, or local fallback
+    let storageResult = null;
+    try {
+      storageResult = await storageService.uploadFile({
+        filename: req.file.filename,
+        mimetype: req.file.mimetype,
+        folder: 'documents',
+        localFilePath: req.file.path
+      });
+    } catch (storeErr) {
+      console.warn('[Upload Route] Storage upload notice:', storeErr.message);
+    }
+
+    const finalUrl = (storageResult && storageResult.url) || dataUri || defaultLocalUrl;
+
     return success(res, 'File uploaded successfully.', {
       filename: req.file.filename,
       originalName: req.file.originalname,
       size: req.file.size,
       mimetype: req.file.mimetype,
-      url: dataUri || fileUrl,
+      provider: (storageResult && storageResult.provider) || 'local',
+      url: finalUrl,
+      fileUrl: (storageResult && storageResult.fileUrl) || defaultLocalUrl,
       dataUri,
-      fileUrl,
       relativePath: `/uploads/documents/${req.file.filename}`
     }, 201);
   });

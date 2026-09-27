@@ -109,5 +109,26 @@ module.exports = {
     USER: process.env.SMTP_USER || 'pupapido@gmail.com',
     PASS: (process.env.SMTP_PASS || 'plfilaeftmkzgkzm').replace(/\s+/g, ''),
     FROM: process.env.SMTP_FROM || '"Papido" <pupapido@gmail.com>'
+  },
+
+  REDIS_URL: process.env.REDIS_URL || '',
+
+  STORAGE: {
+    PROVIDER: process.env.STORAGE_PROVIDER || (process.env.R2_ACCESS_KEY_ID ? 'r2' : (process.env.AWS_ACCESS_KEY_ID ? 's3' : 'local')),
+    R2: {
+      ACCOUNT_ID: process.env.R2_ACCOUNT_ID || '',
+      ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID || '',
+      SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY || '',
+      BUCKET_NAME: process.env.R2_BUCKET_NAME || 'papido-uploads',
+      PUBLIC_URL: process.env.R2_PUBLIC_URL || '',
+      ENDPOINT: process.env.R2_ENDPOINT || (process.env.R2_ACCOUNT_ID ? `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com` : '')
+    },
+    S3: {
+      REGION: process.env.AWS_REGION || 'us-east-1',
+      ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID || '',
+      SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY || '',
+      BUCKET_NAME: process.env.AWS_BUCKET_NAME || 'papido-uploads',
+      PUBLIC_URL: process.env.AWS_PUBLIC_URL || ''
+    }
   }
 };

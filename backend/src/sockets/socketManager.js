@@ -21,8 +21,36 @@ class SocketManager {
 
     this.activeRiderSockets = new Map(); // riderId -> socketId
     this.activeCustomerSockets = new Map(); // customerId -> socketId
+    this.setupRedisAdapter();
     this.setupMiddleware();
     this.setupEventHandlers();
+  }
+
+  setupRedisAdapter() {
+    if (env.REDIS_URL) {
+      try {
+        const { createAdapter } = require('@socket.io/redis-adapter');
+        const Redis = require('ioredis');
+        const pubClient = new Redis(env.REDIS_URL, {
+          maxRetriesPerRequest: 3,
+          enableReadyCheck: false
+        });
+        const subClient = pubClient.duplicate();
+
+        pubClient.on('error', (err) => logger.warn(`[Redis Adapter Pub] Error: ${err.message}`));
+        subClient.on('error', (err) => logger.warn(`[Redis Adapter Sub] Error: ${err.message}`));
+
+        pubClient.on('connect', () => logger.info('[Redis Adapter] PubClient connected to Redis cluster.'));
+        subClient.on('connect', () => logger.info('[Redis Adapter] SubClient connected to Redis cluster.'));
+
+        this.io.adapter(createAdapter(pubClient, subClient));
+        logger.info('[SocketManager] Attached @socket.io/redis-adapter for horizontal multi-instance scaling.');
+      } catch (redisErr) {
+        logger.warn(`[SocketManager] Could not attach Redis adapter: ${redisErr.message}. Operating in single-instance mode.`);
+      }
+    } else {
+      logger.info('[SocketManager] Operating in single-instance in-memory mode (REDIS_URL not set).');
+    }
   }
 
   setupMiddleware() {

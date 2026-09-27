@@ -325,6 +325,35 @@ async function runTests() {
     const validCoords = await MapService.resolveMapLink('12.0228, 79.8509');
     assert(validCoords && validCoords.success === true, 'Valid GPS coordinates properly resolved');
 
+    // ----------------------------------------------------
+    // TEST 13: Regression - StorageService Cloud & Local Fallback
+    // ----------------------------------------------------
+    console.log('\n▶ [13] Testing StorageService Resilient Upload Pipeline...');
+    const storageService = require('../src/services/storage.service');
+    assert(typeof storageService.uploadFile === 'function', 'storageService.uploadFile is a callable function');
+
+    const testUploadResult = await storageService.uploadFile({
+      buffer: Buffer.from('%PDF-1.4 test document content'),
+      filename: `test_license_${Date.now()}.pdf`,
+      mimetype: 'application/pdf',
+      folder: 'documents'
+    });
+    assert(testUploadResult && testUploadResult.success === true, 'Storage upload successfully returned success: true');
+    assert(testUploadResult.url && testUploadResult.url.length > 0, 'Storage upload returned valid URL');
+    assert(testUploadResult.provider === 'local' || testUploadResult.provider === 'r2' || testUploadResult.provider === 's3', 'Storage upload resolved valid provider');
+
+    // ----------------------------------------------------
+    // TEST 14: Regression - SocketManager Multi-Instance Adapter Readiness
+    // ----------------------------------------------------
+    console.log('\n▶ [14] Testing SocketManager Horizontal Clustering Readiness...');
+    const http = require('http');
+    const SocketManager = require('../src/sockets/socketManager');
+    const dummyServer = http.createServer();
+    const testSocketManager = new SocketManager(dummyServer);
+    assert(testSocketManager && testSocketManager.io, 'SocketManager initializes with io server instance');
+    assert(typeof testSocketManager.setupRedisAdapter === 'function', 'SocketManager has setupRedisAdapter method');
+    dummyServer.close();
+
     console.log('\n======================================================');
     console.log(`  🎉 TEST RESULTS: ${passedTests} PASSED, ${failedTests} FAILED`);
     console.log('======================================================\n');
