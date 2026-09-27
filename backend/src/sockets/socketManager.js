@@ -5,7 +5,6 @@ const { SOCKET_EVENTS, ROLES } = require('../config/constants');
 const RiderModel = require('../models/rider.model');
 const RideModel = require('../models/ride.model');
 const PushService = require('../services/push.service');
-const LiveLocationService = require('../services/liveLocation.service');
 const logger = require('../utils/logger');
 
 class SocketManager {
@@ -188,8 +187,6 @@ class SocketManager {
             const userRole = (socket.user.role || '').toUpperCase();
             if (userRole === 'ADMIN' || userRole === ROLES.ADMIN) {
               socket.join(`ride_${rideId}`);
-              const cachedLoc = await LiveLocationService.getLiveLocation(rideId);
-              if (cachedLoc) socket.emit(SOCKET_EVENTS.RIDE_LOCATION_TRACK, cachedLoc);
               logger.debug(`Admin ${socket.user.id} joined ride room ride_${rideId}`);
               return;
             }
@@ -205,9 +202,6 @@ class SocketManager {
 
             if (isCustomer || isAssignedRider) {
               socket.join(`ride_${rideId}`);
-              // Deliver current live location from Redis immediately upon joining
-              const cachedLoc = await LiveLocationService.getLiveLocation(rideId);
-              if (cachedLoc) socket.emit(SOCKET_EVENTS.RIDE_LOCATION_TRACK, cachedLoc);
               logger.debug(`User ${socket.user.id} (${socket.user.role}) joined ride room ride_${rideId}`);
             } else {
               logger.warn(`Unauthorized attempt to join ride room ride_${rideId} by user ${socket.user.id}`);
@@ -216,8 +210,6 @@ class SocketManager {
           } else {
             // Guest or simulator fallback
             socket.join(`ride_${rideId}`);
-            const cachedLoc = await LiveLocationService.getLiveLocation(rideId);
-            if (cachedLoc) socket.emit(SOCKET_EVENTS.RIDE_LOCATION_TRACK, cachedLoc);
           }
         } catch (err) {
           logger.error('Error in join_ride authorization', { error: err.message, rideId });
@@ -230,84 +222,54 @@ class SocketManager {
         }
       });
 
-      // Handler for live driver location telemetry updates
-      const handleDriverLocationPing = async (data) => {
+      // Rider live location update (GPS ping) with coordinate and role validation
+      socket.on(SOCKET_EVENTS.RIDER_LOCATION_UPDATE, async (data) => {
         try {
-          if (!data) return;
-          const riderId = socket.user?.id || data.riderId || data.driverId;
-          const lat = parseFloat(data.latitude || data.lat);
-          const lng = parseFloat(data.longitude || data.lng);
-          const rideId = data.rideId ? Number(data.rideId) : null;
-          const accuracy = typeof data.accuracy === 'number' ? data.accuracy : 10;
+          const riderId = socket.user?.id || data.riderId;
+          const lat = parseFloat(data.latitude);
+          const lng = parseFloat(data.longitude);
+          const rideId = data.rideId;
 
-          // 1. Coordinate boundary validation (-90 to 90 lat, -180 to 180 lng)
+          // Coordinate boundary validation (-90 to 90 lat, -180 to 180 lng)
           if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
             logger.warn(`Rejected invalid coordinates from rider ${riderId}: (${data.latitude}, ${data.longitude})`);
             return;
           }
 
-          // 2. Reject extremely inaccurate GPS pings (> 120 meters) to avoid erratic map jumps
-          if (accuracy > 120) {
-            logger.debug(`Filtered out low-accuracy GPS ping (${accuracy}m) from rider ${riderId}`);
-            return;
-          }
-
-          // 3. Verify rider role if authenticated
-          if (socket.user && socket.user.role && socket.user.role !== 'RIDER' && socket.user.role !== 'ADMIN') {
+          // Verify rider role if authenticated
+          if (socket.user && socket.user.role && socket.user.role !== 'RIDER') {
             logger.warn(`Non-rider user ${socket.user.id} attempted to publish rider location`);
             return;
           }
 
           if (riderId) {
+            // Update database coordinates
+            await RiderModel.updateLocation(riderId, lat, lng);
+
             const payload = {
-              riderId: Number(riderId),
-              driverId: Number(riderId),
+              riderId,
               rideId: rideId || null,
               latitude: lat,
               longitude: lng,
               heading: typeof data.heading === 'number' ? data.heading : 0,
               speed: typeof data.speed === 'number' ? data.speed : 0,
-              accuracy: accuracy,
+              accuracy: typeof data.accuracy === 'number' ? data.accuracy : 10,
               recordedAt: data.recordedAt || new Date().toISOString(),
-              timestamp: typeof data.timestamp === 'number' ? data.timestamp : Date.now()
+              timestamp: new Date().toISOString()
             };
 
-            // If attached to an active ride, enforce ownership & store in Redis
-            if (rideId) {
-              const ride = await RideModel.findById(rideId);
-              if (ride) {
-                const isActive = ['ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED'].includes(ride.status);
-                const isAssigned = Number(ride.rider_id) === Number(riderId) || (socket.user && socket.user.role === 'ADMIN');
-
-                if (isActive && isAssigned) {
-                  // A. Save to Redis with 5-minute TTL
-                  await LiveLocationService.setLiveLocation(rideId, payload);
-
-                  // B. Broadcast to Ride room (Passenger & Admin listeners)
-                  this.io.to(`ride_${rideId}`).emit(SOCKET_EVENTS.RIDE_LOCATION_TRACK, payload);
-
-                  // C. Direct fallback to passenger personal room
-                  if (ride.customer_id) {
-                    this.io.to(`user_${ride.customer_id}`).emit(SOCKET_EVENTS.RIDE_LOCATION_TRACK, payload);
-                  }
-                }
-              }
-            } else {
-              // Idle driver periodic scan: update driver coordinates in MySQL for dispatching
-              await RiderModel.updateLocation(riderId, lat, lng);
-            }
-
-            // Broadcast to Admin live telemetry
+            // Broadcast to Admin
             this.io.to('role_ADMIN').emit('admin:rider_location', payload);
+
+            // Broadcast to Ride room if rider is on an active ride
+            if (rideId) {
+              this.io.to(`ride_${rideId}`).emit(SOCKET_EVENTS.RIDE_LOCATION_TRACK, payload);
+            }
           }
         } catch (err) {
           logger.error('Error in socket rider location update', { error: err.message });
         }
-      };
-
-      // Register both standard and alias location update events
-      socket.on(SOCKET_EVENTS.RIDER_LOCATION_UPDATE, handleDriverLocationPing);
-      socket.on('ride:location_update', handleDriverLocationPing);
+      });
 
       // Rider online/offline toggle via socket
       socket.on(SOCKET_EVENTS.RIDER_STATUS_TOGGLE, async (data) => {
@@ -477,13 +439,6 @@ class SocketManager {
       final_fare: Number(ride.final_fare || totalFare),
       timestamp: new Date().toISOString()
     };
-
-    // Clear Redis live location tracking when ride ends or is cancelled
-    if (status === 'COMPLETED' || status === 'CANCELLED') {
-      if (ride.id) {
-        LiveLocationService.clearLiveLocation(ride.id).catch(() => {});
-      }
-    }
 
     // If accepted by any rider, notify all other riders so it's dismissed from their radar
     // If cancelled, broadcast cancellation to driver, ride room, and all riders

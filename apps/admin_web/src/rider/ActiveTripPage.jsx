@@ -4,7 +4,6 @@ import { useRider } from './shared/RiderContext';
 import { calcDriverSplit, formatRideDateTime, getMapLink } from './shared/riderConstants';
 import { RideStatusStepper } from '../components/ride/RideStatusStepper';
 import { RPButton } from './shared/RiderUI';
-import { PapidoLiveMap } from '../map/PapidoLiveMap';
 import {
   Bike,
   MapPin,
@@ -22,7 +21,6 @@ export function ActiveTripPage({ onNavigateTab }) {
   const {
     activeRide,
     setActiveRide,
-    riderLocation,
     actionLoading,
     handleStatusChange,
     handleToggleWaiting,
@@ -152,26 +150,6 @@ export function ActiveTripPage({ onNavigateTab }) {
             </div>
           </div>
         )}
-
-        {/* Live Road Route & GPS Navigation Map */}
-        <div style={{ marginBottom: '16px', borderRadius: '16px', overflow: 'hidden', height: '340px' }}>
-          <PapidoLiveMap
-            activeRide={activeRide}
-            driverLocation={riderLocation}
-            pickup={{
-              latitude: activeRide.pickup_latitude,
-              longitude: activeRide.pickup_longitude,
-              address: activeRide.pickup_address
-            }}
-            destination={{
-              latitude: activeRide.destination_latitude,
-              longitude: activeRide.destination_longitude,
-              address: activeRide.destination_address
-            }}
-            isDriverView={true}
-            height="340px"
-          />
-        </div>
 
         {/* Route Details Card */}
         <div className="rp-route-card">

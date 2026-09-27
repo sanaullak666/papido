@@ -11,7 +11,9 @@ node_modules/
 dist/
 */dist/
 build/
-/public/
+*/build/
+public/
+*/public/
 
 # Database files
 backend/data/*.db

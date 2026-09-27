@@ -43,7 +43,6 @@ import LoadingSkeleton from '../components/ui/LoadingSkeleton';
 import RideCard from '../components/ride/RideCard';
 import RideStatusStepper from '../components/ride/RideStatusStepper';
 import FareBreakdown from '../components/ride/FareBreakdown';
-import { PapidoLiveMap } from '../map/PapidoLiveMap';
 
 export function RidesView() {
   const [activeTab, setActiveTab] = useState('rides'); // 'rides' | 'penalties'
@@ -501,32 +500,6 @@ export function RidesView() {
                   <div className="rv-stepper-box">
                     <RideStatusStepper currentStatus={selectedRide.status} />
                   </div>
-
-                  {/* Live Map for Active Rides */}
-                  {Boolean(selectedRide.pickup_latitude && selectedRide.destination_latitude) && (
-                    <div style={{ height: '280px', borderRadius: '14px', overflow: 'hidden', margin: '14px 0', border: '1px solid rgba(255,255,255,0.1)' }}>
-                      <PapidoLiveMap
-                        activeRide={selectedRide}
-                        driverLocation={selectedRide.rider_current_lat ? {
-                          latitude: Number(selectedRide.rider_current_lat),
-                          longitude: Number(selectedRide.rider_current_lng),
-                          heading: 0,
-                          speed: 0
-                        } : null}
-                        pickup={{
-                          latitude: selectedRide.pickup_latitude,
-                          longitude: selectedRide.pickup_longitude,
-                          address: selectedRide.pickup_address
-                        }}
-                        destination={{
-                          latitude: selectedRide.destination_latitude,
-                          longitude: selectedRide.destination_longitude,
-                          address: selectedRide.destination_address
-                        }}
-                        height="280px"
-                      />
-                    </div>
-                  )}
 
                   {/* Route card */}
                   <div className="rv-route-box">
