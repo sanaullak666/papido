@@ -354,6 +354,37 @@ async function runTests() {
     assert(typeof testSocketManager.setupRedisAdapter === 'function', 'SocketManager has setupRedisAdapter method');
     dummyServer.close();
 
+    // ----------------------------------------------------
+    // TEST 15: LiveLocationService (Redis + Fallback Storage)
+    // ----------------------------------------------------
+    console.log('\n▶ [15] Testing LiveLocationService Redis/Memory Ride Tracking...');
+    const liveLocationService = require('../src/services/liveLocation.service');
+    const testRideId = 999999;
+    const testLocPayload = {
+      driverId: 123,
+      latitude: 12.0228,
+      longitude: 79.8509,
+      accuracy: 12.5,
+      speed: 8.5,
+      heading: 180,
+      timestamp: Date.now()
+    };
+
+    const saveSuccess = await liveLocationService.setLiveLocation(testRideId, testLocPayload);
+    assert(saveSuccess === true, 'LiveLocationService successfully saved location payload');
+
+    const retrievedLoc = await liveLocationService.getLiveLocation(testRideId);
+    assert(retrievedLoc !== null, 'LiveLocationService retrieved saved location');
+    assert(Number(retrievedLoc.latitude) === 12.0228, 'Retrieved latitude matches expected value');
+    assert(Number(retrievedLoc.longitude) === 79.8509, 'Retrieved longitude matches expected value');
+    assert(Number(retrievedLoc.driverId) === 123, 'Retrieved driverId matches expected value');
+
+    const deleted = await liveLocationService.clearLiveLocation(testRideId);
+    assert(deleted === true, 'LiveLocationService successfully deleted location');
+
+    const afterDeleteLoc = await liveLocationService.getLiveLocation(testRideId);
+    assert(afterDeleteLoc === null, 'Live location is null after ride completion/cancellation');
+
     console.log('\n======================================================');
     console.log(`  🎉 TEST RESULTS: ${passedTests} PASSED, ${failedTests} FAILED`);
     console.log('======================================================\n');

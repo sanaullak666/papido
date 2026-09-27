@@ -1,0 +1,114 @@
+{
+  "type": "FeatureCollection",
+  "name": "PapidoCampusPickupPoints",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "gate-1",
+        "name": "Gate 1 (Main Entrance Gate)",
+        "code": "G1",
+        "description": "Main Entrance Gate on Kalapet Highway",
+        "type": "gate",
+        "popular": true
+      },
+      "geometry": { "type": "Point", "coordinates": [79.8509415, 12.0228681] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "gate-2",
+        "name": "Gate 2 (ECR Gate)",
+        "code": "G2",
+        "description": "East Coast Road entrance near Lawspet / beach road",
+        "type": "gate",
+        "popular": true
+      },
+      "geometry": { "type": "Point", "coordinates": [79.8580, 12.0295] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "sjc-block",
+        "name": "Silver Jubilee Campus (SJC)",
+        "code": "SJC",
+        "description": "Department of Computer Science & SJC Block",
+        "type": "academic",
+        "popular": true
+      },
+      "geometry": { "type": "Point", "coordinates": [79.8520, 12.0280] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "central-library",
+        "name": "Central Library (Ananda Rangapillai)",
+        "code": "LIB",
+        "description": "Central Campus Library Square",
+        "type": "facility",
+        "popular": true
+      },
+      "geometry": { "type": "Point", "coordinates": [79.8532, 12.0245] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "food-court",
+        "name": "Central Food Court & Mess",
+        "code": "CFC",
+        "description": "Student Dining Hall & Canteen Square",
+        "type": "dining",
+        "popular": true
+      },
+      "geometry": { "type": "Point", "coordinates": [79.8541, 12.0238] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "admin-block",
+        "name": "Dr. B.R. Ambedkar Admin Block",
+        "code": "ADM",
+        "description": "Main Administration & Vice-Chancellor Office",
+        "type": "admin",
+        "popular": false
+      },
+      "geometry": { "type": "Point", "coordinates": [79.8515, 12.0230] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "science-complex",
+        "name": "Science Complex & Departments",
+        "code": "SCI",
+        "description": "Physics, Chemistry, Biotechnology Buildings",
+        "type": "academic",
+        "popular": false
+      },
+      "geometry": { "type": "Point", "coordinates": [79.8535, 12.0260] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "girls-hostel",
+        "name": "Madame Curie / Ganga Girls Hostel",
+        "code": "GH",
+        "description": "Girls Hostel Residential Zone",
+        "type": "hostel",
+        "popular": true
+      },
+      "geometry": { "type": "Point", "coordinates": [79.8570, 12.0218] }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "boys-hostel",
+        "name": "Subramania Bharati Boys Hostel",
+        "code": "BH",
+        "description": "Boys Hostel Residential Zone",
+        "type": "hostel",
+        "popular": true
+      },
+      "geometry": { "type": "Point", "coordinates": [79.8560, 12.0270] }
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "type": "FeatureCollection",
+  "name": "PapidoCampusBuildings",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "bldg-lib",
+        "name": "Ananda Rangapillai Library",
+        "category": "library",
+        "levels": 3
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [79.8528, 12.0242],
+            [79.8536, 12.0242],
+            [79.8536, 12.0248],
+            [79.8528, 12.0248],
+            [79.8528, 12.0242]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "bldg-sjc",
+        "name": "Silver Jubilee Academic Complex",
+        "category": "academic",
+        "levels": 4
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [79.8516, 12.0276],
+            [79.8525, 12.0276],
+            [79.8525, 12.0284],
+            [79.8516, 12.0284],
+            [79.8516, 12.0276]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "bldg-mess",
+        "name": "Central Dining Hall & Canteen",
+        "category": "dining",
+        "levels": 2
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [79.8538, 12.0235],
+            [79.8544, 12.0235],
+            [79.8544, 12.0241],
+            [79.8538, 12.0241],
+            [79.8538, 12.0235]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "bldg-adm",
+        "name": "Ambedkar Administrative Block",
+        "category": "administrative",
+        "levels": 3
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [79.8511, 12.0227],
+            [79.8519, 12.0227],
+            [79.8519, 12.0233],
+            [79.8511, 12.0233],
+            [79.8511, 12.0227]
+          ]
+        ]
+      }
+    }
+  ]
+}

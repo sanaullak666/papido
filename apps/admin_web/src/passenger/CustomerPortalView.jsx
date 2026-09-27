@@ -49,6 +49,7 @@ import {
 import { BottomNavigation } from '../components/layout/BottomNavigation';
 import { RatingControl } from '../components/passenger/RatingControl';
 import { RideStatusStepper } from '../components/ride/RideStatusStepper';
+import { PapidoLiveMap } from '../map/PapidoLiveMap';
 
 const DEFAULT_GROUPED_CAMPUS_STOPS = [
   {
@@ -2288,6 +2289,28 @@ export function CustomerPortalView() {
                       <div className="cp-stepper-card-label">Ride Progression</div>
                       <RideStatusStepper currentStatus={activeRide.status} />
                     </div>
+
+                    {/* Live MapLibre GPS Tracking & OSRM Road Route Map */}
+                    {['ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED'].includes(activeRide.status) && (
+                      <div style={{ marginBottom: '16px', borderRadius: '16px', overflow: 'hidden', height: '340px' }}>
+                        <PapidoLiveMap
+                          activeRide={activeRide}
+                          driverLocation={driverLocation}
+                          pickup={{
+                            latitude: activeRide.pickup_latitude,
+                            longitude: activeRide.pickup_longitude,
+                            address: activeRide.pickup_address
+                          }}
+                          destination={{
+                            latitude: activeRide.destination_latitude,
+                            longitude: activeRide.destination_longitude,
+                            address: activeRide.destination_address
+                          }}
+                          isDriverView={false}
+                          height="340px"
+                        />
+                      </div>
+                    )}
 
                     <div className="cp-route-card">
                       <div className="cp-route-card-header">

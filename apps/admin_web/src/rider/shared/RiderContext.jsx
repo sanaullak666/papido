@@ -413,7 +413,7 @@ export function RiderProvider({ children, onNavigateTab }) {
 
   /* Geolocation Tracker */
   useEffect(() => {
-    if (!isOnline || !navigator.geolocation) {
+    if ((!isOnline && !activeRide) || !navigator.geolocation) {
       if (locationWatchIdRef.current !== null && navigator.geolocation) {
         navigator.geolocation.clearWatch(locationWatchIdRef.current);
         locationWatchIdRef.current = null;
@@ -424,6 +424,13 @@ export function RiderProvider({ children, onNavigateTab }) {
     const handlePosition = (position) => {
       const { latitude, longitude, heading, speed, accuracy } = position.coords;
       const now = Date.now();
+
+      // Discard poor GPS readings (> 80m accuracy)
+      if (accuracy > 80) {
+        console.debug('[RiderContext] Discarded low-accuracy GPS ping:', accuracy);
+        return;
+      }
+
       const currentLoc = {
         latitude,
         longitude,

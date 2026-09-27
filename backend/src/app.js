@@ -15,6 +15,7 @@ const adminRoutes = require('./routes/admin.routes');
 const fareRoutes = require('./routes/fare.routes');
 const uploadRoutes = require('./routes/upload.routes');
 const pushRoutes = require('./routes/push.routes');
+const rideRoutes = require('./routes/ride.routes');
 const path = require('path');
 
 const app = express();
@@ -62,6 +63,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/fares', fareRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/push', pushRoutes);
+app.use('/api/rides', rideRoutes);
 
 const fs = require('fs');
 const staticWebPath = path.join(__dirname, '../../apps/admin_web/dist');
