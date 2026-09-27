@@ -1,4 +1,11 @@
-const Redis = require('ioredis');
+let Redis = null;
+try {
+  Redis = require('ioredis');
+} catch (err) {
+  // ioredis not available in current environment (e.g. lightweight serverless lambda)
+  Redis = null;
+}
+
 const env = require('../config/environment');
 const logger = require('../utils/logger');
 
@@ -13,7 +20,7 @@ class LiveLocationService {
   }
 
   initRedis() {
-    if (env.REDIS_URL) {
+    if (env.REDIS_URL && Redis) {
       try {
         this.redisClient = new Redis(env.REDIS_URL, {
           maxRetriesPerRequest: 3,
