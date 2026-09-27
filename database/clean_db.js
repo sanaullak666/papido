@@ -115,6 +115,25 @@ async function cleanDatabase() {
     console.log(`✓ Purged ${purgedCount} uploaded KYC/profile documents from filesystem`);
   }
 
+  // Flush Redis Cache & Pub/Sub state if configured
+  const env = require('../backend/src/config/environment');
+  if (env.REDIS_URL) {
+    try {
+      let Redis;
+      try {
+        Redis = require('ioredis');
+      } catch (_) {
+        Redis = require('../backend/node_modules/ioredis');
+      }
+      const redis = new Redis(env.REDIS_URL);
+      await redis.flushdb();
+      console.log('✓ Flushed all test keys, cache, and rooms from Upstash Redis');
+      redis.disconnect();
+    } catch (rErr) {
+      console.warn('! Redis flush notice:', rErr.message);
+    }
+  }
+
   // Verify final counts across all tables
   console.log('\n--- Final Verification: Row Count by Table ---');
   const finalTables = await query("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'");
