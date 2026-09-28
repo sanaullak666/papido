@@ -572,7 +572,7 @@ const RideModel = {
         WHERE r.is_scheduled = 1
           AND r.rider_id IS NULL
           AND r.status = 'SCHEDULED'
-          AND r.scheduled_time >= CURRENT_TIMESTAMP
+          AND (r.scheduled_time >= DATE_SUB(NOW(), INTERVAL 30 MINUTE) OR r.scheduled_time IS NULL)
       `;
       const params = [];
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './advance/advance.css';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api';
@@ -17,6 +17,29 @@ export function AdvanceBookingsPage() {
 
   const [loading, setLoading] = useState(false);
   const [rescheduleTarget, setRescheduleTarget] = useState(null);
+
+  // Auto-sync scheduled rides on mount, tab focus, and active 3s interval
+  useEffect(() => {
+    fetchScheduledRides();
+
+    const interval = setInterval(() => {
+      fetchScheduledRides();
+    }, 3000);
+
+    const handleSync = () => {
+      if (document.visibilityState === 'visible') {
+        fetchScheduledRides();
+      }
+    };
+    window.addEventListener('focus', handleSync);
+    document.addEventListener('visibilitychange', handleSync);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleSync);
+      document.removeEventListener('visibilitychange', handleSync);
+    };
+  }, []);
 
   const handleRefresh = async () => {
     setLoading(true);

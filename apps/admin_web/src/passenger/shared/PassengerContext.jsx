@@ -147,7 +147,7 @@ export function PassengerProvider({ children }) {
       fetchScheduledRides();
       fetchPendingPenalty();
       fetchFlashFreeRide();
-    }, 25000);
+    }, 8000);
 
     return () => clearInterval(interval);
   }, [token]);
@@ -162,6 +162,7 @@ export function PassengerProvider({ children }) {
       socket.emit('identify', { id: user?.id, role: 'CUSTOMER', name: user?.name });
       fetchActiveRide(true);
       fetchFareConfigs();
+      fetchScheduledRides();
     });
 
     socket.on('flash_free_ride:new', (d) => setFlashFreeRide(d));
@@ -233,6 +234,36 @@ export function PassengerProvider({ children }) {
         setPendingPenalty(prev => prev ? { ...prev, status: 'UNPAID' } : null);
       }
     });
+
+    /* ---------- Scheduled Rides Real-Time Sync ---------- */
+    const onScheduledSync = () => {
+      fetchScheduledRides();
+    };
+
+    socket.on('ride:scheduled_confirmed', (data) => {
+      fetchScheduledRides();
+      if (data?.rider?.name) {
+        setStatusMessage({
+          type: 'success',
+          text: `Your advance ride for ${data.scheduledTime || 'pre-booked trip'} was confirmed by Rider ${data.rider.name}!`
+        });
+      }
+    });
+
+    socket.on('ride:scheduled_reopened', () => {
+      fetchScheduledRides();
+      setStatusMessage({
+        type: 'info',
+        text: 'Your pre-booked trip is searching for another available rider.'
+      });
+    });
+
+    socket.on('ride:scheduled_created', onScheduledSync);
+    socket.on('ride:scheduled_updated', onScheduledSync);
+    socket.on('ride:scheduled_claimed', onScheduledSync);
+    socket.on('ride:scheduled_cancelled', onScheduledSync);
+    socket.on('ride:scheduled_time_updated', onScheduledSync);
+    socket.on('ride:new_scheduled_booking', onScheduledSync);
 
     return () => socket.disconnect();
   }, [token, user?.id, standardCampusFare]);

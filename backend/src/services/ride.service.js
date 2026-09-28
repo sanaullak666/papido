@@ -215,18 +215,24 @@ const RideService = {
         details: { rideCode, scheduledTime: normalizedScheduledTime, estimatedFare: fareEstimate.estimatedFare, isDoubleRide }
       });
 
-      // Broadcast new pre-booking to all eligible riders
+      // Broadcast new pre-booking to all eligible riders and notify customer
       if (socketManager) {
-        socketManager.io.emit('ride:new_scheduled_booking', {
+        const scheduledPayload = {
           id: ride.id,
           ride_code: ride.ride_code,
+          customer_id: ride.customer_id,
           pickup_address: ride.pickup_address,
           destination_address: ride.destination_address,
           scheduled_time: ride.scheduled_time,
           estimated_fare: ride.estimated_fare,
           vehicle_type: ride.vehicle_type,
-          female_rider_only: ride.female_rider_only
-        });
+          female_rider_only: ride.female_rider_only,
+          status: 'SCHEDULED',
+          is_scheduled: 1
+        };
+        socketManager.io.emit('ride:new_scheduled_booking', scheduledPayload);
+        socketManager.io.emit('ride:scheduled_updated', scheduledPayload);
+        socketManager.io.to(`user_${customerId}`).emit('ride:scheduled_created', scheduledPayload);
       }
 
       return ride;
@@ -351,6 +357,8 @@ const RideService = {
     }
     if (socketManager) {
       socketManager.io.emit('ride:scheduled_cancelled', { rideId });
+      socketManager.io.emit('ride:scheduled_updated', { rideId, status: 'CANCELLED' });
+      socketManager.io.to(`user_${customerId}`).emit('ride:scheduled_cancelled', { rideId });
     }
     return { success: true, rideId };
   },
@@ -450,7 +458,8 @@ const RideService = {
       });
 
       // Broadcast to other riders that this scheduled ride has been claimed
-      socketManager.io.emit('ride:scheduled_claimed', { rideId });
+      socketManager.io.emit('ride:scheduled_claimed', { rideId, riderId });
+      socketManager.io.emit('ride:scheduled_updated', { rideId, status: 'ACCEPTED', rider_id: riderId });
     }
 
     return updatedRide;
@@ -485,6 +494,7 @@ const RideService = {
 
       // Broadcast back to online riders
       socketManager.io.emit('ride:new_scheduled_booking', ride);
+      socketManager.io.emit('ride:scheduled_updated', { rideId: ride.id, status: 'SCHEDULED', rider_id: null });
     }
 
     return { success: true, rideId };
@@ -542,6 +552,7 @@ const RideService = {
         scheduledTime: updatedRide.scheduled_time
       });
       socketManager.io.emit('ride:new_scheduled_booking', updatedRide);
+      socketManager.io.emit('ride:scheduled_updated', updatedRide);
     }
 
     return updatedRide;

@@ -489,6 +489,7 @@ export function RiderProvider({ children, onNavigateTab }) {
       socket.emit('identify', { id: user?.id, role: 'RIDER', name: user?.name, isOnline });
       socket.emit('rider:identify', { riderId: user?.id, status: isOnline ? 'ONLINE' : 'OFFLINE', isOnline });
       fetchAvailableRequests();
+      fetchScheduledRides();
     });
 
     socket.on('ride:new_request', (ride) => {
@@ -649,6 +650,18 @@ export function RiderProvider({ children, onNavigateTab }) {
       fetchScheduledRides();
     });
 
+    socket.on('ride:scheduled_updated', () => {
+      fetchScheduledRides();
+    });
+
+    socket.on('ride:scheduled_time_updated', () => {
+      fetchScheduledRides();
+    });
+
+    socket.on('ride:scheduled_confirmed', () => {
+      fetchScheduledRides();
+    });
+
     return () => {
       socket.disconnect();
     };
@@ -685,6 +698,15 @@ export function RiderProvider({ children, onNavigateTab }) {
       fetchScheduledRides();
     }
   }, [token, fetchActiveRide, fetchEarnings, fetchPendingPenalties, fetchShiftSettlement, fetchScheduledRides]);
+
+  /* Periodic background sync for scheduled rides (every 10s) */
+  useEffect(() => {
+    if (!token) return;
+    const interval = setInterval(() => {
+      fetchScheduledRides();
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [token, fetchScheduledRides]);
 
   /* Action Handlers */
   const handleAcceptRequest = async (rideId) => {

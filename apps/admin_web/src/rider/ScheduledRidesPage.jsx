@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import './ScheduledRidesPage.css';
 import { useRider } from './shared/RiderContext';
 import {
@@ -30,6 +30,29 @@ export function ScheduledRidesPage({ onNavigateTab }) {
     setActiveRide,
     showStatusBanner
   } = useRider();
+
+  // Auto-sync advance pre-bookings on mount, tab focus, and active 3s interval
+  useEffect(() => {
+    fetchScheduledRides();
+
+    const interval = setInterval(() => {
+      fetchScheduledRides();
+    }, 3000);
+
+    const handleSync = () => {
+      if (document.visibilityState === 'visible') {
+        fetchScheduledRides();
+      }
+    };
+    window.addEventListener('focus', handleSync);
+    document.addEventListener('visibilitychange', handleSync);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleSync);
+      document.removeEventListener('visibilitychange', handleSync);
+    };
+  }, [fetchScheduledRides]);
 
   const handleStartScheduledTrip = (ride) => {
     const schedTime = ride.scheduled_time_ist || ride.scheduled_time;
