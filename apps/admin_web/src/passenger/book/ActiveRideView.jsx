@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { usePassenger } from '../shared/PassengerContext';
 import { RideStatusStepper } from '../../components/ride/RideStatusStepper';
 import { PSButton, PSCard } from '../shared/PassengerUI';
-import { openCancelWarning } from '../shared/PassengerModals';
+import { openCancelWarning, openPenaltyModal } from '../shared/PassengerModals';
 import {
   Bike, MapPin, Clock, Phone, Search, CheckCircle, Navigation,
   ExternalLink, Star, Award, Sparkles, ShieldCheck, ThumbsUp,
@@ -11,7 +11,7 @@ import {
 
 export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
   const { socketRef, standardCampusFare } = usePassenger();
-  const [payMode, setPayMode] = useState('QR'); // 'QR' or 'APPS'
+  const [payMode, setPayMode] = useState('QR');
   const [copiedUpi, setCopiedUpi] = useState(false);
 
   const handleCancelClick = () => {
@@ -42,8 +42,6 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
   const rawFare = activeRide.total_fare || activeRide.final_fare || activeRide.estimated_fare || (standardCampusFare || 25);
   const formattedFare = Number(rawFare).toFixed(2);
 
-  // App-specific intent URIs & universal generic fallback
-  // Pure amount update only: pa, pn, am, cu (no tn note, no tr ref)
   const gpayUrl = `gpay://upi/pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${formattedFare}&cu=INR`;
   const phonepeUrl = `phonepe://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${formattedFare}&cu=INR`;
   const upiPayUrl = `upi://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${formattedFare}&cu=INR`;
@@ -86,6 +84,40 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
           {activeRide.status === 'RIDER_REACHED' && <><MapPin size={18} /> {statusLabel}</>}
           {activeRide.status === 'STARTED' && <><Navigation size={18} /> {statusLabel}</>}
           {activeRide.status === 'PENDING_ADMIN_QUOTE' && <><Clock size={18} /> {statusLabel}</>}
+        </div>
+      </div>
+
+      {/* ── Live Map Preview (NEW) ── */}
+      <div className="ps-route-map-preview ps-fade-up">
+        <div className="ps-route-map-placeholder">
+          <div className="ps-map-grid" />
+          <div className="ps-map-marker ps-map-marker--pickup" title="Pickup">
+            <MapPin size={16} color="#FFFFFF" />
+          </div>
+          <div className="ps-map-marker ps-map-marker--driver" title="Driver">
+            <Bike size={14} color="#FFFFFF" />
+          </div>
+          <div className="ps-map-marker ps-map-marker--drop" title="Drop">
+            <Navigation size={16} color="#FFFFFF" />
+          </div>
+          <div className="ps-map-route-line" />
+        </div>
+        <div className="ps-route-map-info">
+          <span className="ps-route-map-eta">
+            <Clock size={12} />
+            {activeRide.status === 'STARTED' ? 'In progress' :
+             activeRide.status === 'RIDER_REACHED' ? 'Arrived' :
+             activeRide.status === 'RIDER_ARRIVING' ? 'En route' :
+             'Realtime tracking'}
+          </span>
+          <a
+            href={`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(activeRide.pickup_address)}&destination=${encodeURIComponent(activeRide.destination_address)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ps-route-map-link"
+          >
+            <ExternalLink size={12} /> Open in Maps
+          </a>
         </div>
       </div>
 
@@ -232,6 +264,42 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
               </a>
             )}
           </div>
+
+          {(Number(activeRide.rider_total_rides) >= 15 && Number(activeRide.rider_rating || 5.0) >= 4.6) ? (
+            <div className="ps-top-badge ps-top-badge--amber">
+              <div className="ps-top-badge-icon ps-top-badge-icon--amber">
+                <Award size={18} />
+              </div>
+              <div className="ps-top-badge-body">
+                <div className="ps-top-badge-head">
+                  <span className="ps-top-badge-title ps-top-badge-title--amber">Most Chosen Rider</span>
+                  <span className="ps-top-badge-chip ps-top-badge-chip--amber">
+                    <Sparkles size={10} /> Top Rated
+                  </span>
+                </div>
+                <div className="ps-top-badge-sub">
+                  Consistently chosen by passengers with a {Number(activeRide.rider_rating || 5.0).toFixed(1)} rating.
+                </div>
+              </div>
+            </div>
+          ) : (Number(activeRide.rider_rating || 5.0) >= 4.7) ? (
+            <div className="ps-top-badge ps-top-badge--emerald">
+              <div className="ps-top-badge-icon ps-top-badge-icon--emerald">
+                <ShieldCheck size={18} />
+              </div>
+              <div className="ps-top-badge-body">
+                <div className="ps-top-badge-head">
+                  <span className="ps-top-badge-title ps-top-badge-title--emerald">Top Rated Campus Rider</span>
+                  <span className="ps-top-badge-chip ps-top-badge-chip--emerald">
+                    <ThumbsUp size={9} /> High Satisfaction
+                  </span>
+                </div>
+                <div className="ps-top-badge-sub">
+                  Verified trusted rider with excellent passenger feedback ({Number(activeRide.rider_rating || 5.0).toFixed(1)} rating).
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
       )}
 
@@ -252,7 +320,6 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
             </div>
           </div>
 
-          {/* Payment Tabs: QR (Default, 100% Works) vs 1-Tap UPI Apps */}
           <div className="ps-pay-tabs">
             <button
               type="button"

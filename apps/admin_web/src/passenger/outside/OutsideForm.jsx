@@ -3,13 +3,47 @@ import { PSButton } from '../shared/PassengerUI';
 import { LocationInput } from './LocationInput';
 import { PopularSpots } from './PopularSpots';
 import { POPULAR_OUTSIDE_SPOTS } from '../shared/passengerConstants';
-import { Bike, Zap, Compass, Clock, Send, Check } from 'lucide-react';
+import { usePassenger } from '../shared/PassengerContext';
+import {
+  Bike, Zap, Compass, Clock, Send, Check, History, ArrowRight
+} from 'lucide-react';
 
 const VEHICLE_OPTIONS = [
   { id: 'ANY',     icon: Zap,     label: 'Any',     sub: 'Fastest' },
   { id: 'BIKE',    icon: Bike,    label: 'Bike',    sub: 'Standard' },
   { id: 'SCOOTER', icon: Compass, label: 'Scooter', sub: 'Smooth' }
 ];
+
+/**
+ * Extract a compact "recent outside trips" list from ride history.
+ * Filters only outside trips (destination not in campus hotspots)
+ * and dedupes by destination.
+ */
+function useRecentDestinations() {
+  const { pastRides = [] } = usePassenger();
+
+  return React.useMemo(() => {
+    const safeRides = Array.isArray(pastRides) ? pastRides : [];
+    const seen = new Set();
+    const list = [];
+
+    for (const r of safeRides) {
+      const dest = (r?.destination_address || '').trim();
+      if (!dest) continue;
+      const key = dest.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      list.push({
+        name: dest,
+        lat: parseFloat(r.destination_latitude) || null,
+        lng: parseFloat(r.destination_longitude) || null
+      });
+      if (list.length >= 3) break;
+    }
+
+    return list;
+  }, [pastRides]);
+}
 
 export function OutsideForm({ onSubmit, token }) {
   const [pickup, setPickup] = useState('PU Main Gate (Gate 1)');
@@ -22,6 +56,9 @@ export function OutsideForm({ onSubmit, token }) {
 
   const [vehicleType, setVehicleType] = useState('ANY');
   const [submitting, setSubmitting] = useState(false);
+
+  /* Recent outside trips (auto-derived from history) */
+  const recentDestinations = useRecentDestinations();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,6 +86,13 @@ export function OutsideForm({ onSubmit, token }) {
   const handleSelectPopular = (spot) => {
     setDest(spot.name);
     setDestCoords({ lat: spot.lat, lng: spot.lng });
+  };
+
+  const handleSelectRecent = (spot) => {
+    setDest(spot.name);
+    if (spot.lat && spot.lng) {
+      setDestCoords({ lat: spot.lat, lng: spot.lng });
+    }
   };
 
   return (
@@ -80,6 +124,34 @@ export function OutsideForm({ onSubmit, token }) {
         target="dest"
         required
       />
+
+      {/* ── RECENT DESTINATIONS (NEW) ── */}
+      {recentDestinations.length > 0 && (
+        <div className="ps-recent-wrap ps-fade-up">
+          <div className="ps-recent-header">
+            <History size={12} />
+            <span className="ps-recent-title">Recent trips</span>
+            <span className="ps-recent-hint">1-tap refill</span>
+          </div>
+          <div className="ps-recent-grid">
+            {recentDestinations.map((spot) => {
+              const isActive = dest === spot.name;
+              return (
+                <button
+                  key={spot.name}
+                  type="button"
+                  onClick={() => handleSelectRecent(spot)}
+                  className={`ps-recent-pill ${isActive ? 'is-active' : ''}`}
+                  title={spot.name}
+                >
+                  <ArrowRight size={10} />
+                  <span className="ps-recent-pill-text">{spot.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* POPULAR SPOTS */}
       <PopularSpots

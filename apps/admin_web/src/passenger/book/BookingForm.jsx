@@ -10,7 +10,8 @@ import {
 } from '../shared/passengerConstants';
 import {
   Bike, Zap, Compass, MapPin, Clock, Plus, X,
-  Users, Shield, CreditCard, Check, Calendar, AlertTriangle, AlertCircle
+  Users, Shield, CreditCard, Check, Calendar, AlertTriangle, AlertCircle,
+  Navigation
 } from 'lucide-react';
 
 export function BookingForm({
@@ -154,13 +155,9 @@ export function BookingForm({
           setPrefAvailability(res.data);
         }
       } catch (err) {
-        if (!isCancelled) {
-          setPrefAvailability(null);
-        }
+        if (!isCancelled) setPrefAvailability(null);
       } finally {
-        if (!isCancelled) {
-          setCheckingPref(false);
-        }
+        if (!isCancelled) setCheckingPref(false);
       }
     };
 
@@ -172,7 +169,7 @@ export function BookingForm({
     };
   }, [vehicleType, effectiveFemaleOnly, hasPreferences, bookingMode, token]);
 
-  /* Execute actual ride request (supports parameter overrides, e.g. opting for any ride) */
+  /* Execute actual ride request */
   const executeRequestRide = async (overrides = {}) => {
     if (!pickupCoords || !destCoords) return;
     onBookingStart();
@@ -192,7 +189,6 @@ export function BookingForm({
         const timePart = `${String(h24).padStart(2, '0')}:${scheduledMinute}:00`;
         targetScheduledTime = `${scheduledDate} ${timePart}`;
 
-        // Validate that pre-booking is for future date/time
         const targetDateObj = new Date(`${scheduledDate}T${timePart}`);
         if (isNaN(targetDateObj.getTime()) || targetDateObj.getTime() <= Date.now()) {
           setStatusMessage({ text: 'Please choose a future date and time for pre-booking.', type: 'error' });
@@ -225,7 +221,6 @@ export function BookingForm({
           await fetchScheduledRides();
         }
         setStatusMessage({ text: 'Ride pre-booked successfully! View under the Advance tab.', type: 'success' });
-        // Smoothly navigate to the Advance tab to view the pre-booked trip card
         window.history.pushState({}, '', '/passenger/prebook');
         window.dispatchEvent(new PopStateEvent('popstate'));
       } else {
@@ -265,6 +260,21 @@ export function BookingForm({
     rideNowTimeOption === '10MIN' ? 'In 10 min' :
     rideNowTimeOption === '15MIN' ? 'In 15 min' : 'Custom';
 
+  /* ---------- Progress computation for step indicator ---------- */
+  const progressSteps = [
+    { step: 1, label: 'Pickup', icon: MapPin, complete: Boolean(pickupAddress) },
+    { step: 2, label: 'Drop', icon: Navigation, complete: Boolean(destAddress) },
+    { step: 3, label: 'Vehicle', icon: Bike, complete: Boolean(vehicleType) },
+    { step: 4, label: 'Confirm', icon: CreditCard, complete: Boolean(fareEstimate || standardCampusFare) }
+  ];
+
+  const currentFare = estimating
+    ? null
+    : (fareEstimate?.estimatedFare ||
+       (isDoubleRide
+         ? Math.max(standardCampusFare || 25, (standardCampusFare || 25) * 2 - 10)
+         : (standardCampusFare || 25)));
+
   return (
     <div id="book-form" className="ps-booking-form">
 
@@ -284,6 +294,30 @@ export function BookingForm({
         >
           <Calendar size={15} /> Pre-Book
         </button>
+      </div>
+
+      {/* ── Booking Progress Indicator (NEW) ── */}
+      <div className="ps-booking-progress ps-fade-up">
+        {progressSteps.map((s, i) => {
+          const StepIcon = s.icon;
+          const isLast = i === progressSteps.length - 1;
+          return (
+            <React.Fragment key={s.step}>
+              <div
+                className={`ps-progress-step ${s.complete ? 'is-complete' : ''}`}
+                title={s.label}
+              >
+                <div className="ps-progress-dot">
+                  {s.complete ? <Check size={11} strokeWidth={3} /> : <StepIcon size={11} />}
+                </div>
+                <span className="ps-progress-label">{s.label}</span>
+              </div>
+              {!isLast && (
+                <div className={`ps-progress-connector ${s.complete ? 'is-complete' : ''}`} />
+              )}
+            </React.Fragment>
+          );
+        })}
       </div>
 
       {/* Now time pills */}
@@ -624,7 +658,7 @@ export function BookingForm({
         <div className="ps-fare-total">
           <div className="ps-fare-total-label">Total Fare</div>
           <div className="ps-fare-value">
-            {estimating ? '...' : `₹${fareEstimate?.estimatedFare || (isDoubleRide ? Math.max(standardCampusFare || 25, (standardCampusFare || 25) * 2 - 10) : (standardCampusFare || 25))}`}
+            {currentFare ? `₹${currentFare}` : '...'}
           </div>
         </div>
 
@@ -718,7 +752,7 @@ export function BookingForm({
               >
                 <Zap size={16} /> Opt for Available Ride (Fastest)
               </button>
-              
+
               <div className="ps-pref-secondary-row">
                 <button
                   type="button"

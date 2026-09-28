@@ -5,7 +5,16 @@ import { apiRequest } from '../api';
 import { usePassenger } from './shared/PassengerContext';
 import { PSCard } from './shared/PassengerUI';
 import { OutsideForm } from './outside/OutsideForm';
-import { Compass } from 'lucide-react';
+import {
+  Compass, MapPin, Users, Sparkles, Route, ArrowRight
+} from 'lucide-react';
+
+const HOW_IT_WORKS_STEPS = [
+  { id: 'pick', label: 'Pick location', icon: MapPin },
+  { id: 'submit', label: 'Submit request', icon: Route },
+  { id: 'quote', label: 'Get fair quote', icon: Sparkles },
+  { id: 'ride', label: 'Rider assigned', icon: Users }
+];
 
 export function OutsideTripsPage() {
   const { token } = useAuth();
@@ -42,18 +51,45 @@ export function OutsideTripsPage() {
     <div className="ps-outside-page">
       <div className="ps-outside-container">
 
-        <div className="ps-heading-block">
-          <h1 className="ps-heading ps-heading--icon">
-            <Compass size={24} color="#EA580C" />
-            Outside Campus Ride
+        {/* ── HERO ── */}
+        <div className="ps-outside-hero ps-fade-up">
+          <div className="ps-outside-hero-eyebrow">
+            <Compass size={12} />
+            OUTSIDE CAMPUS
+          </div>
+          <h1 className="ps-outside-hero-title">
+            Go anywhere in <span className="ps-outside-hero-accent">Puducherry</span>
           </h1>
-          <p className="ps-subheading">
-            Travel anywhere outside campus — White Town, Rock Beach, JIPMER,
-            Railway Station, Auroville, or ECR. Dispatch sets a fair
-            distance-based fare.
+          <p className="ps-outside-hero-sub">
+            White Town, Rock Beach, JIPMER, Railway Station, Auroville, or ECR —
+            dispatch sets a fair distance-based fare.
           </p>
         </div>
 
+        {/* ── HOW IT WORKS STEPPER (NEW) ── */}
+        <div className="ps-outside-stepper ps-fade-up">
+          {HOW_IT_WORKS_STEPS.map((step, i) => {
+            const Icon = step.icon;
+            const isLast = i === HOW_IT_WORKS_STEPS.length - 1;
+            return (
+              <React.Fragment key={step.id}>
+                <div className="ps-outside-step">
+                  <div className="ps-outside-step-icon">
+                    <Icon size={14} />
+                  </div>
+                  <div className="ps-outside-step-label">{step.label}</div>
+                </div>
+                {!isLast && (
+                  <div className="ps-outside-step-connector" aria-hidden="true">
+                    <ArrowRight size={11} />
+                  </div>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
+
+        {/* ── FORM CARD ── */}
         <PSCard className="ps-outside-card ps-fade-up">
           <OutsideForm onSubmit={handleSubmit} token={token} />
         </PSCard>
