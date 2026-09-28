@@ -8,7 +8,7 @@ import { ProfileForm } from './profile/ProfileForm';
 import { SecuritySection } from './profile/SecuritySection';
 import { ChangePasswordModal } from './profile/ChangePasswordModal';
 import {
-  User, Bike, Calendar, Star, TrendingUp
+  User, Bike, Calendar, Star
 } from 'lucide-react';
 
 export function PassengerProfilePage() {
@@ -149,15 +149,6 @@ export function PassengerProfilePage() {
             <div className="ps-profile-stat-label">Rides completed</div>
           </div>
 
-          <div className="ps-profile-stat-card">
-            <div className="ps-profile-stat-icon ps-profile-stat-icon--green">
-              <TrendingUp size={16} />
-            </div>
-            <div className="ps-profile-stat-value">
-              {loadingHistory && !stats.totalSpent ? '—' : `₹${stats.totalSpent}`}
-            </div>
-            <div className="ps-profile-stat-label">Total spent</div>
-          </div>
 
           <div className="ps-profile-stat-card">
             <div className="ps-profile-stat-icon ps-profile-stat-icon--blue">
