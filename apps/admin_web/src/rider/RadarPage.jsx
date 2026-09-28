@@ -45,6 +45,10 @@ export function RadarPage({ onNavigateTab }) {
     reservedScheduledRides
   } = useRider();
 
+  React.useEffect(() => {
+    alertManager.unlock();
+  }, []);
+
   return (
     <div className="rp-content rp-content--narrow">
       <div className="rp-surface rp-fade-up">

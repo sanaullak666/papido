@@ -321,6 +321,7 @@ export function RiderPortalView() {
 
   const socketRef = useRef(null);
   const prevKnownRideIdsRef = useRef(new Set());
+  const hasInitialFetchedRequestsRef = useRef(false);
 
   const calcDriverSplit = (rawFare) => {
     const f = parseFloat(rawFare) || 0;
@@ -602,7 +603,7 @@ export function RiderPortalView() {
 
       const hasNewRequest = available.some(r => !prevKnownRideIdsRef.current.has(String(r.id)));
 
-      if (hasNewRequest && available.length > 0 && !activeRide && soundEnabled) {
+      if (hasNewRequest && available.length > 0 && !activeRide && soundEnabled && hasInitialFetchedRequestsRef.current) {
         const topReq = available[0];
         alertManager.triggerRideAlert({
           title: `New Ride Request: ₹${topReq.total_fare || 20}`,
@@ -611,6 +612,7 @@ export function RiderPortalView() {
         });
       }
 
+      hasInitialFetchedRequestsRef.current = true;
       prevKnownRideIdsRef.current = new Set(available.map(r => String(r.id)));
       setIncomingRequests(available);
     } catch (err) {

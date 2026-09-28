@@ -321,6 +321,7 @@ const RideModel = {
       FROM rides r
       JOIN users c ON r.customer_id = c.id
       WHERE r.status = 'REQUESTED'
+        AND (COALESCE(r.is_outside, 0) = 0 OR r.is_dispatched = 1)
         AND (COALESCE(r.is_scheduled, 0) = 0 OR r.is_dispatched = 1)
         AND (r.scheduled_time IS NULL OR r.scheduled_time <= NOW() + INTERVAL 15 MINUTE)
         AND r.rider_id IS NULL
@@ -386,7 +387,7 @@ const RideModel = {
 
     await db.query(
       `UPDATE rides 
-       SET estimated_fare = ?, final_fare = ?, assigned_rider_id = ?, rider_id = COALESCE(?, rider_id), status = ?
+       SET estimated_fare = ?, final_fare = ?, assigned_rider_id = ?, rider_id = COALESCE(?, rider_id), status = ?, is_dispatched = 1
        WHERE id = ? AND status = 'PENDING_ADMIN_QUOTE'`,
       [fareAmount, fareAmount, finalRiderId, isSched && finalRiderId ? finalRiderId : null, targetStatus, rideId]
     );

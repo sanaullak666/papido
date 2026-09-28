@@ -113,14 +113,6 @@ export function OutsideTripsView() {
         alertManager.stopRingtone();
       }
 
-      if (prevPendingCountRef.current !== null && pending.length > prevPendingCountRef.current) {
-        const newest = pending[0];
-        alertManager.triggerRideAlert({
-          title: `New Outside Campus Request (${pending.length})`,
-          body: `Route: ${newest?.pickup_address || 'Pickup'} → ${newest?.destination_address || 'Destination'}. Review & dispatch now.`,
-          repeat: false
-        });
-      }
       prevPendingCountRef.current = pending.length;
 
       setPendingRides(pending);

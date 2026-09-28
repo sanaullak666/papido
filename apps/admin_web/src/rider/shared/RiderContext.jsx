@@ -126,6 +126,7 @@ export function RiderProvider({ children, onNavigateTab }) {
   const lastLocationEmitRef = useRef({ timestamp: 0, lat: null, lng: null });
   const socketRef = useRef(null);
   const prevRequestIdsRef = useRef(new Set());
+  const hasInitialFetchedRequestsRef = useRef(false);
 
   useEffect(() => {
     if (user?.profile) {
@@ -252,6 +253,9 @@ export function RiderProvider({ children, onNavigateTab }) {
       return;
     }
     const nextStatus = !isOnline;
+    if (nextStatus) {
+      alertManager.unlock();
+    }
     setIsOnline(nextStatus);
     try {
       await apiRequest('/rider/status', 'PATCH', { isOnline: nextStatus }, token);
@@ -373,7 +377,7 @@ export function RiderProvider({ children, onNavigateTab }) {
 
         // Trigger ringtone/sound alert if new requests appeared via polling
         const newRides = mapped.filter(r => !prevRequestIdsRef.current.has(String(r.id)));
-        if (newRides.length > 0 && soundEnabled && prevRequestIdsRef.current.size > 0) {
+        if (newRides.length > 0 && soundEnabled && hasInitialFetchedRequestsRef.current) {
           const topRide = newRides[0];
           alertManager.triggerRideAlert({
             title: `New Ride Request: ₹${topRide.total_fare}`,
@@ -381,6 +385,7 @@ export function RiderProvider({ children, onNavigateTab }) {
             repeat: true
           });
         }
+        hasInitialFetchedRequestsRef.current = true;
         prevRequestIdsRef.current = new Set(mapped.map(r => String(r.id)));
 
         setIncomingRequests(mapped);

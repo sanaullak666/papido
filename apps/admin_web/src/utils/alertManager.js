@@ -159,7 +159,7 @@ function getFallbackAudio() {
 
 /**
  * Synthesizes a clean, high-urgency 3-note dispatcher chime using Web Audio API.
- * Falls back to HTML5 Audio ONLY if Web Audio is suspended or unavailable.
+ * Falls back to HTML5 Audio ONLY if Web Audio is unsupported.
  */
 function playAlertChime() {
   if (soundMuted) return;
@@ -167,73 +167,66 @@ function playAlertChime() {
   const ctx = getAudioContext();
   let playedWebAudio = false;
 
-  if (ctx && ctx.state === 'running') {
+  if (ctx) {
     try {
-      const now = ctx.currentTime;
-
-      // Master gain envelope for this chime
-      if (!masterGainNode) {
-        masterGainNode = ctx.createGain();
-        masterGainNode.connect(ctx.destination);
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
       }
-      masterGainNode.gain.cancelScheduledValues(now);
-      masterGainNode.gain.setValueAtTime(0.9, now);
+      const now = ctx.currentTime || 0;
 
-      // Clean up previous oscillators if any are dangling
+      // Clean up previous oscillators if still playing
       activeOscillators.forEach(osc => {
         try { osc.stop(); osc.disconnect(); } catch (_) {}
       });
       activeOscillators = [];
 
+      // Isolated gain envelope for this chime (never leaves master muted)
+      const chimeGain = ctx.createGain();
+      chimeGain.gain.setValueAtTime(0.001, now);
+      chimeGain.gain.linearRampToValueAtTime(0.95, now + 0.02);
+      chimeGain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+      chimeGain.connect(ctx.destination);
+
       // Tone 1: 880 Hz (A5 - Clear Bell Chime)
       const osc1 = ctx.createOscillator();
-      const gain1 = ctx.createGain();
       osc1.type = 'sine';
       osc1.frequency.setValueAtTime(880, now);
-      gain1.gain.setValueAtTime(0.001, now);
-      gain1.gain.linearRampToValueAtTime(0.85, now + 0.01);
-      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-      osc1.connect(gain1);
-      gain1.connect(masterGainNode);
+      osc1.connect(chimeGain);
       osc1.start(now);
-      osc1.stop(now + 0.25);
+      osc1.stop(now + 0.28);
       activeOscillators.push(osc1);
 
       // Tone 2: 1318.5 Hz (E6 - Bright Accent)
       const osc2 = ctx.createOscillator();
-      const gain2 = ctx.createGain();
       osc2.type = 'triangle';
       osc2.frequency.setValueAtTime(1318.5, now + 0.12);
-      gain2.gain.setValueAtTime(0.001, now + 0.12);
-      gain2.gain.linearRampToValueAtTime(0.9, now + 0.13);
-      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
-      osc2.connect(gain2);
-      gain2.connect(masterGainNode);
+      osc2.connect(chimeGain);
       osc2.start(now + 0.12);
-      osc2.stop(now + 0.45);
+      osc2.stop(now + 0.48);
       activeOscillators.push(osc2);
 
       // Tone 3: 1760 Hz (A6 - Crisp High Ping)
       const osc3 = ctx.createOscillator();
-      const gain3 = ctx.createGain();
       osc3.type = 'sine';
       osc3.frequency.setValueAtTime(1760, now + 0.24);
-      gain3.gain.setValueAtTime(0.001, now + 0.24);
-      gain3.gain.linearRampToValueAtTime(0.8, now + 0.25);
-      gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
-      osc3.connect(gain3);
-      gain3.connect(masterGainNode);
+      osc3.connect(chimeGain);
       osc3.start(now + 0.24);
-      osc3.stop(now + 0.6);
+      osc3.stop(now + 0.65);
       activeOscillators.push(osc3);
 
       playedWebAudio = true;
-    } catch (_) {
+
+      // Clean up nodes after chime finishes
+      setTimeout(() => {
+        try { chimeGain.disconnect(); } catch (_) {}
+      }, 800);
+    } catch (err) {
+      console.warn('Web Audio synthesis error, falling back to HTML5 audio:', err);
       playedWebAudio = false;
     }
   }
 
-  // Fall back to HTML5 Audio if Web Audio API was blocked or inactive
+  // Fall back to HTML5 Audio if Web Audio API was unsupported or threw error
   if (!playedWebAudio) {
     try {
       const audio = getFallbackAudio();
@@ -249,13 +242,6 @@ function playAlertChime() {
 }
 
 function stopAllActiveSounds() {
-  if (audioCtx && masterGainNode) {
-    try {
-      const now = audioCtx.currentTime;
-      masterGainNode.gain.cancelScheduledValues(now);
-      masterGainNode.gain.setValueAtTime(0.001, now);
-    } catch (_) {}
-  }
   activeOscillators.forEach(osc => {
     try { osc.stop(); osc.disconnect(); } catch (_) {}
   });

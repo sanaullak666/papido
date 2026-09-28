@@ -71,12 +71,6 @@ export function App() {
           const dAddress = newest?.destination_address || 'Destination';
           const isViewingOutside = currentTab === 'outside-trips';
 
-          alertManager.triggerRideAlert({
-            title: `NEW OUTSIDE CAMPUS TRIP REQUEST (${pending.length})`,
-            body: `${custName} requested: ${pAddress} → ${dAddress}. Review & dispatch now.`,
-            repeat: !isViewingOutside
-          });
-
           if (!isViewingOutside) {
             setNewOutsideAlert({
               rideId: newest.id,
@@ -100,12 +94,6 @@ export function App() {
       const pAddress = data.pickupAddress || data.pickup_address || 'Pickup';
       const dAddress = data.destinationAddress || data.destination_address || 'Destination';
       const isViewingOutside = currentTab === 'outside-trips';
-
-      alertManager.triggerRideAlert({
-        title: 'NEW OUTSIDE CAMPUS TRIP REQUEST',
-        body: `${custName} requested route: ${pAddress} → ${dAddress}. Click to open Dispatch & quote fare.`,
-        repeat: !isViewingOutside
-      });
 
       if (!isViewingOutside) {
         setNewOutsideAlert({
