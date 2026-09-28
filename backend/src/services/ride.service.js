@@ -115,16 +115,23 @@ const RideService = {
         paymentMethod,
         femaleRiderOnly,
         isDoubleRide: false,
-        isOutside: true
+        isOutside: true,
+        isScheduled: isScheduledTrip,
+        scheduledTime: normalizedScheduledTime
       });
 
       // Notify customer
+      const notifTitle = isScheduledTrip ? 'Outside Trip Pre-Booked' : 'Outside Ride Submitted';
+      const notifMsg = isScheduledTrip
+        ? `Your outside pre-booked trip ${rideCode} for ${normalizedScheduledTime} has been submitted to Dispatch. Admin will review the route to set the fare & dispatch.`
+        : `Your outside ride ${rideCode} has been sent to Dispatch. Admin will review the route to set the fare & dispatch.`;
+
       await NotificationModel.create({
         userId: customerId,
-        title: 'Outside Ride Submitted',
-        message: `Your outside ride ${rideCode} has been sent to Dispatch. Admin will review the route to set the fare & dispatch.`,
+        title: notifTitle,
+        message: notifMsg,
         type: 'OUTSIDE_RIDE_PENDING_QUOTE',
-        data: { rideId: ride.id, rideCode, isOutside: true }
+        data: { rideId: ride.id, rideCode, isOutside: true, isScheduled: isScheduledTrip, scheduledTime: normalizedScheduledTime }
       });
 
       // Notify Admin via Socket.IO
@@ -140,8 +147,33 @@ const RideService = {
           customerPhone: customer?.phone || '',
           pickupAddress: ride.pickup_address,
           destinationAddress: ride.destination_address,
+          isScheduled: isScheduledTrip,
+          is_scheduled: isScheduledTrip ? 1 : 0,
+          scheduledTime: normalizedScheduledTime,
+          scheduled_time: normalizedScheduledTime,
+          vehicleType: vehicleType || 'BIKE',
+          vehicle_type: vehicleType || 'BIKE',
           requestedAt: ride.requested_at || new Date().toISOString()
         });
+
+        if (isScheduledTrip) {
+          const scheduledPayload = {
+            id: ride.id,
+            ride_code: ride.ride_code,
+            customer_id: ride.customer_id,
+            pickup_address: ride.pickup_address,
+            destination_address: ride.destination_address,
+            scheduled_time: normalizedScheduledTime,
+            estimated_fare: 0,
+            vehicle_type: ride.vehicle_type,
+            female_rider_only: ride.female_rider_only,
+            status: 'PENDING_ADMIN_QUOTE',
+            is_outside: 1,
+            is_scheduled: 1
+          };
+          socketManager.io.to(`user_${customerId}`).emit('ride:scheduled_created', scheduledPayload);
+          socketManager.io.emit('ride:scheduled_updated', scheduledPayload);
+        }
       }
 
       await AuditModel.log({
@@ -149,7 +181,7 @@ const RideService = {
         action: 'OUTSIDE_RIDE_REQUESTED',
         entityType: 'RIDE',
         entityId: ride.id,
-        details: { rideCode, isOutside: true }
+        details: { rideCode, isOutside: true, isScheduled: isScheduledTrip, scheduledTime: normalizedScheduledTime }
       });
 
       return ride;
@@ -580,54 +612,64 @@ const RideService = {
     });
 
     if (socketManager) {
-      // Notify customer of fare update and transition to REQUESTED
+      // Notify customer of fare update and transition to target status
       socketManager.io.to(`user_${ride.customer_id}`).emit('ride:status_change', {
         rideId: updatedRide.id,
         rideCode: updatedRide.ride_code,
-        status: 'REQUESTED',
+        status: updatedRide.status,
         ride: updatedRide,
         timestamp: new Date().toISOString()
       });
 
-      // If directly assigned to a specific rider
-      if (assignedRiderId) {
-        const directPayload = {
-          id: updatedRide.id,
-          rideId: updatedRide.id,
-          rideCode: updatedRide.ride_code,
-          vehicleType: updatedRide.vehicle_type,
-          vehicle_type: updatedRide.vehicle_type,
-          pickupAddress: updatedRide.pickup_address,
-          pickup_address: updatedRide.pickup_address,
-          destinationAddress: updatedRide.destination_address,
-          destination_address: updatedRide.destination_address,
-          estimatedFare: fareAmount,
-          estimated_fare: fareAmount,
-          totalFare: fareAmount,
-          total_fare: fareAmount,
-          customerName: updatedRide.customer_name || 'Passenger',
-          customer_name: updatedRide.customer_name || 'Passenger',
-          customerGender: updatedRide.customer_gender || 'OTHER',
-          customer_gender: updatedRide.customer_gender || 'OTHER',
-          isDirectAssignment: true,
-          isOutside: true,
-          is_outside: true
-        };
-
-        socketManager.io.to(`user_${assignedRiderId}`).emit('ride:new_request', directPayload);
-        socketManager.io.to(`user_${assignedRiderId}`).emit('ride:requested', directPayload);
-      } else {
-        // Broadcast to all eligible online riders
-        let nearbyRiders = await RiderModel.findNearbyOnlineRiders(
-          updatedRide.pickup_latitude,
-          updatedRide.pickup_longitude,
-          updatedRide.vehicle_type,
-          25.0
-        );
-        if (updatedRide.female_rider_only) {
-          nearbyRiders = nearbyRiders.filter(r => r.gender === 'FEMALE');
+      if (updatedRide.is_scheduled) {
+        socketManager.io.to(`user_${ride.customer_id}`).emit('ride:scheduled_updated', updatedRide);
+        socketManager.io.emit('ride:scheduled_updated', updatedRide);
+        if (updatedRide.status === 'SCHEDULED') {
+          socketManager.io.emit('ride:new_scheduled_booking', updatedRide);
+        } else if (assignedRiderId) {
+          socketManager.io.to(`user_${assignedRiderId}`).emit('ride:scheduled_confirmed', updatedRide);
         }
-        socketManager.broadcastNewRideRequest(updatedRide, nearbyRiders);
+      } else {
+        // If directly assigned to a specific rider
+        if (assignedRiderId) {
+          const directPayload = {
+            id: updatedRide.id,
+            rideId: updatedRide.id,
+            rideCode: updatedRide.ride_code,
+            vehicleType: updatedRide.vehicle_type,
+            vehicle_type: updatedRide.vehicle_type,
+            pickupAddress: updatedRide.pickup_address,
+            pickup_address: updatedRide.pickup_address,
+            destinationAddress: updatedRide.destination_address,
+            destination_address: updatedRide.destination_address,
+            estimatedFare: fareAmount,
+            estimated_fare: fareAmount,
+            totalFare: fareAmount,
+            total_fare: fareAmount,
+            customerName: updatedRide.customer_name || 'Passenger',
+            customer_name: updatedRide.customer_name || 'Passenger',
+            customerGender: updatedRide.customer_gender || 'OTHER',
+            customer_gender: updatedRide.customer_gender || 'OTHER',
+            isDirectAssignment: true,
+            isOutside: true,
+            is_outside: true
+          };
+
+          socketManager.io.to(`user_${assignedRiderId}`).emit('ride:new_request', directPayload);
+          socketManager.io.to(`user_${assignedRiderId}`).emit('ride:requested', directPayload);
+        } else {
+          // Broadcast to all eligible online riders
+          let nearbyRiders = await RiderModel.findNearbyOnlineRiders(
+            updatedRide.pickup_latitude,
+            updatedRide.pickup_longitude,
+            updatedRide.vehicle_type,
+            25.0
+          );
+          if (updatedRide.female_rider_only) {
+            nearbyRiders = nearbyRiders.filter(r => r.gender === 'FEMALE');
+          }
+          socketManager.broadcastNewRideRequest(updatedRide, nearbyRiders);
+        }
       }
     }
 

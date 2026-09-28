@@ -18,7 +18,7 @@ const HOW_IT_WORKS_STEPS = [
 
 export function OutsideTripsPage() {
   const { token } = useAuth();
-  const { setActiveRide, setStatusMessage, pendingPenalty } = usePassenger();
+  const { setActiveRide, setStatusMessage, pendingPenalty, fetchScheduledRides } = usePassenger();
 
   const handleSubmit = async (payload) => {
     if (pendingPenalty) {
@@ -32,10 +32,22 @@ export function OutsideTripsPage() {
     try {
       const res = await apiRequest('/customer/outside-rides', 'POST', payload, token);
       if (res.data) {
-        setActiveRide(res.data);
-        setStatusMessage('Outside campus request submitted to dispatch!');
-        window.history.pushState({}, '', '/passenger/book');
-        window.dispatchEvent(new PopStateEvent('popstate'));
+        if (payload.isScheduled) {
+          if (typeof fetchScheduledRides === 'function') {
+            await fetchScheduledRides();
+          }
+          setStatusMessage({
+            text: 'Outside trip pre-booked successfully! Admin dispatch will review the route & quote fare.',
+            type: 'success'
+          });
+          window.history.pushState({}, '', '/passenger/prebook');
+          window.dispatchEvent(new PopStateEvent('popstate'));
+        } else {
+          setActiveRide(res.data);
+          setStatusMessage('Outside campus request submitted to dispatch!');
+          window.history.pushState({}, '', '/passenger/book');
+          window.dispatchEvent(new PopStateEvent('popstate'));
+        }
         return true;
       }
     } catch (err) {

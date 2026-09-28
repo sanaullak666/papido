@@ -80,7 +80,9 @@ const RideModel = {
       isScheduled === true || isScheduled === 'true' || isScheduled === 1 ||
       (scheduledTime && String(scheduledTime).trim().length > 0)
     );
-    const finalStatus = isActuallyScheduled ? 'SCHEDULED' : status;
+    const finalStatus = (status === 'PENDING_ADMIN_QUOTE')
+      ? 'PENDING_ADMIN_QUOTE'
+      : (isActuallyScheduled ? 'SCHEDULED' : status);
     const finalScheduledTime = (isActuallyScheduled && scheduledTime)
       ? String(scheduledTime).trim().replace('T', ' ')
       : null;
@@ -375,11 +377,18 @@ const RideModel = {
   },
 
   async adminQuoteAndDispatch(rideId, fareAmount, assignedRiderId = null) {
+    const ride = await this.findById(rideId);
+    const isSched = Boolean(ride && (ride.is_scheduled || ride.scheduled_time));
+    const targetStatus = isSched
+      ? (assignedRiderId ? 'ACCEPTED' : 'SCHEDULED')
+      : 'REQUESTED';
+    const finalRiderId = assignedRiderId || null;
+
     await db.query(
       `UPDATE rides 
-       SET estimated_fare = ?, final_fare = ?, assigned_rider_id = ?, status = 'REQUESTED'
+       SET estimated_fare = ?, final_fare = ?, assigned_rider_id = ?, rider_id = COALESCE(?, rider_id), status = ?
        WHERE id = ? AND status = 'PENDING_ADMIN_QUOTE'`,
-      [fareAmount, fareAmount, assignedRiderId || null, rideId]
+      [fareAmount, fareAmount, finalRiderId, isSched && finalRiderId ? finalRiderId : null, targetStatus, rideId]
     );
     return this.findById(rideId);
   },
@@ -550,7 +559,7 @@ const RideModel = {
         LEFT JOIN rider_profiles rp ON rd.id = rp.user_id
         WHERE r.customer_id = ? 
           AND (r.is_scheduled = 1 OR r.scheduled_time IS NOT NULL)
-          AND r.status IN ('SCHEDULED', 'REQUESTED', 'ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED')
+          AND r.status IN ('PENDING_ADMIN_QUOTE', 'SCHEDULED', 'REQUESTED', 'ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED')
         ORDER BY r.scheduled_time ASC, r.id DESC
       `;
       return await db.query(sql, [customerId]);

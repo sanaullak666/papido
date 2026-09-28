@@ -25,13 +25,35 @@ import {
   ChevronRight,
   CircleDot,
   Route,
-  ArrowRight
+  ArrowRight,
+  Calendar,
+  Zap
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import StatusBadge from '../components/ui/StatusBadge';
 import DataTable from '../components/ui/DataTable';
 import EmptyState from '../components/ui/EmptyState';
+
+export function formatScheduledDateTime(val) {
+  if (!val) return 'Date/Time not specified';
+  try {
+    const str = String(val).trim();
+    const d = new Date(str.includes('T') ? str : str.replace(' ', 'T'));
+    if (isNaN(d.getTime())) return String(val);
+    return d.toLocaleString('en-IN', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  } catch {
+    return String(val);
+  }
+}
 
 export function OutsideTripsView() {
   const [activeTab, setActiveTab] = useState('pending'); // 'pending' or 'history'
@@ -149,9 +171,16 @@ export function OutsideTripsView() {
     {
       header: 'Ride Code',
       accessor: (ride) => (
-        <span className="ot-table-code">
-          {ride.ride_code || `#${ride.id}`}
-        </span>
+        <div>
+          <span className="ot-table-code">
+            {ride.ride_code || `#${ride.id}`}
+          </span>
+          {(ride.is_scheduled === 1 || ride.is_scheduled === true || ride.scheduled_time) && (
+            <div>
+              <span className="ot-table-prebook-tag">Pre-Book</span>
+            </div>
+          )}
+        </div>
       )
     },
     {
@@ -197,11 +226,24 @@ export function OutsideTripsView() {
       accessor: (ride) => <StatusBadge status={ride.status} size="sm" />
     },
     {
-      header: 'Requested At',
+      header: 'Timing & Schedule',
       accessor: (ride) => (
-        <span className="ot-table-time">
-          {new Date(ride.created_at).toLocaleString()}
-        </span>
+        <div>
+          {ride.scheduled_time ? (
+            <div className="ot-table-scheduled-row">
+              <Calendar size={12} />
+              <span><strong>Pre-Book:</strong> {formatScheduledDateTime(ride.scheduled_time)}</span>
+            </div>
+          ) : (
+            <div className="ot-table-immediate-row">
+              <Zap size={11} />
+              <span>Immediate Trip</span>
+            </div>
+          )}
+          <div className="ot-table-sub">
+            Req: {new Date(ride.created_at || ride.requested_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+          </div>
+        </div>
       )
     }
   ];
@@ -306,6 +348,9 @@ export function OutsideTripsView() {
               const currentForm = formData[ride.id] || {};
               const vehicleType = ride.vehicle_type || 'BIKE';
               const mapLink = getMapLink(ride.destination_address, ride.dest_lat, ride.dest_lng);
+              const isPreBooked = Boolean(
+                ride.is_scheduled === 1 || ride.is_scheduled === true || ride.scheduled_time
+              );
 
               return (
                 <div
@@ -324,15 +369,37 @@ export function OutsideTripsView() {
                         <span>{vehicleType}</span>
                       </span>
                       <StatusBadge status={ride.status || 'requested'} size="sm" />
+                      {isPreBooked && (
+                        <span className="ot-scheduled-badge">
+                          <Calendar size={12} />
+                          <span>Pre-Booked</span>
+                        </span>
+                      )}
                     </div>
 
                     <div className="ot-card-head-time">
                       <Clock size={13} />
                       <span>
-                        Requested {new Date(ride.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        Requested {new Date(ride.created_at || ride.requested_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
                   </div>
+
+                  {/* Pre-booked advance banner */}
+                  {isPreBooked && (
+                    <div className="ot-scheduled-banner">
+                      <div className="ot-scheduled-banner-left">
+                        <Calendar size={16} />
+                        <div>
+                          <span className="ot-scheduled-banner-tag">Pre-Booked Outside Trip</span>
+                          <div className="ot-scheduled-banner-time">
+                            Pickup Date &amp; Time: <strong>{formatScheduledDateTime(ride.scheduled_time)}</strong>
+                          </div>
+                        </div>
+                      </div>
+                      <span className="ot-scheduled-banner-pill">Advance Dispatch</span>
+                    </div>
+                  )}
 
                   {/* Info grid: route + passenger */}
                   <div className="ot-card-info-grid">

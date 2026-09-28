@@ -34,7 +34,17 @@ export function ScheduledRideCard({ ride, index, onReschedule, onCancel }) {
             {formatRideDateTime(scheduledTime)}
           </span>
 
-          {isRiderAssigned ? (
+          {(ride.is_outside === 1 || ride.is_outside === true) && (
+            <span className="ps-chip ps-chip--blue">
+              Outside Campus
+            </span>
+          )}
+
+          {ride.status === 'PENDING_ADMIN_QUOTE' ? (
+            <span className="ps-chip ps-chip--amber">
+              Dispatch Quoting Fare
+            </span>
+          ) : isRiderAssigned ? (
             <span className="ps-chip ps-chip--emerald">
               <CheckCircle2 size={12} />
               Confirmed with Rider
@@ -47,8 +57,12 @@ export function ScheduledRideCard({ ride, index, onReschedule, onCancel }) {
         </div>
 
         <div className="ps-sched-fare">
-          <div className="ps-sched-fare-label">ESTIMATED FARE</div>
-          <div className="ps-sched-fare-val">₹{estimatedFare}</div>
+          <div className="ps-sched-fare-label">
+            {ride.status === 'PENDING_ADMIN_QUOTE' ? 'DISPATCH QUOTE' : 'ESTIMATED FARE'}
+          </div>
+          <div className="ps-sched-fare-val">
+            {ride.status === 'PENDING_ADMIN_QUOTE' && (!ride.total_fare && !ride.estimated_fare) ? 'Pending' : `₹${estimatedFare}`}
+          </div>
         </div>
       </div>
 
@@ -93,6 +107,7 @@ export function ScheduledRideCard({ ride, index, onReschedule, onCancel }) {
         />
       ) : (
         <PendingBox
+          ride={ride}
           onReschedule={onReschedule}
           onCancel={onCancel}
         />
@@ -141,11 +156,15 @@ function RiderAssignedBox({ ride, scheduledTime, onReschedule, onCancel }) {
   );
 }
 
-function PendingBox({ onReschedule, onCancel }) {
+function PendingBox({ ride, onReschedule, onCancel }) {
+  const isDispatchQuote = ride?.status === 'PENDING_ADMIN_QUOTE';
+
   return (
     <div className="ps-sched-pending-box ps-fade-up">
       <div className="ps-sched-pending-note">
-        Listed on campus advance board. Nearby riders can claim your request.
+        {isDispatchQuote
+          ? 'Outside trip submitted to Dispatch. Admin is reviewing the route to set a distance-based fare & assign a rider before pickup.'
+          : 'Listed on campus advance board. Nearby riders can claim your request.'}
       </div>
 
       <div className="ps-sched-actions">
