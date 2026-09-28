@@ -8,7 +8,7 @@ import { ProfileForm } from './profile/ProfileForm';
 import { SecuritySection } from './profile/SecuritySection';
 import { ChangePasswordModal } from './profile/ChangePasswordModal';
 import {
-  User, Bike, Calendar, Award, Star, TrendingUp, Clock, ShieldCheck
+  User, Bike, Calendar, Star, TrendingUp
 } from 'lucide-react';
 
 export function PassengerProfilePage() {
@@ -178,30 +178,6 @@ export function PassengerProfilePage() {
           </div>
         </div>
 
-        {/* ── ACHIEVEMENT / STATUS CARD (NEW) ── */}
-        {stats.totalRides > 0 && (
-          <div className="ps-profile-achievement ps-fade-up">
-            <div className="ps-profile-achievement-icon">
-              {stats.totalRides >= 25 ? <Award size={22} /> :
-               stats.totalRides >= 10 ? <ShieldCheck size={22} /> :
-               <Clock size={22} />}
-            </div>
-            <div className="ps-profile-achievement-body">
-              <div className="ps-profile-achievement-title">
-                {stats.totalRides >= 25 ? 'Campus Legend' :
-                 stats.totalRides >= 10 ? 'Frequent Rider' :
-                 'Welcome Aboard'}
-              </div>
-              <div className="ps-profile-achievement-desc">
-                {stats.totalRides >= 25
-                  ? `You've completed ${stats.totalRides} rides. You're a Papido pro!`
-                  : stats.totalRides >= 10
-                    ? `${stats.totalRides} rides and counting. Keep it up!`
-                    : `${stats.totalRides} ride${stats.totalRides > 1 ? 's' : ''} so far. Book more to unlock rewards.`}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* PERSONAL DETAILS */}
         <ProfileForm
