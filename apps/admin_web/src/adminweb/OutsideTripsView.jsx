@@ -22,6 +22,7 @@ import {
   Radio,
   BellRing,
   VolumeX,
+  Volume2,
   ChevronRight,
   CircleDot,
   Route,
@@ -65,6 +66,23 @@ export function OutsideTripsView() {
   const [successMsg, setSuccessMsg] = useState(null);
   const prevPendingCountRef = useRef(null);
 
+  const [soundMuted, setSoundMuted] = useState(() => alertManager.isMuted());
+
+  useEffect(() => {
+    return alertManager.onMuteChange((enabled) => {
+      setSoundMuted(!enabled);
+    });
+  }, []);
+
+  const handleToggleSound = () => {
+    const unmuted = alertManager.toggleMute();
+    setSoundMuted(!unmuted);
+  };
+
+  const handleSilenceAlert = () => {
+    alertManager.stopRingtone();
+  };
+
   const getMapLink = (address, lat, lng) => {
     if (lat && lng) {
       return `https://www.google.com/maps?q=${lat},${lng}`;
@@ -90,6 +108,10 @@ export function OutsideTripsView() {
 
       const pending = ridesRes.data?.pending || (Array.isArray(ridesRes.data) ? ridesRes.data : []);
       const all = ridesRes.data?.all || [];
+
+      if (pending.length === 0) {
+        alertManager.stopRingtone();
+      }
 
       if (prevPendingCountRef.current !== null && pending.length > prevPendingCountRef.current) {
         const newest = pending[0];
@@ -123,7 +145,10 @@ export function OutsideTripsView() {
   useEffect(() => {
     fetchData(false);
     const interval = setInterval(() => fetchData(true), 3000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      alertManager.stopRingtone();
+    };
   }, []);
 
   const handleFareChange = (rideId, val) => {
@@ -158,6 +183,7 @@ export function OutsideTripsView() {
       });
 
       setSuccessMsg(`Outside ride #${rideId} quoted at ₹${fare} and dispatched successfully!`);
+      alertManager.stopRingtone();
       setTimeout(() => setSuccessMsg(null), 5000);
       await fetchData();
     } catch (err) {
@@ -264,9 +290,31 @@ export function OutsideTripsView() {
                 {pendingRides.length} pending dispatch {pendingRides.length === 1 ? 'request' : 'requests'}
               </div>
               <div className="ot-alert-sub">
-                Audio ringtone is active. New outside campus requests arrive in real time.
+                {soundMuted
+                  ? 'Audio alerts are currently muted. Click Unmute to hear alerts.'
+                  : 'Audio ringtone is active. New outside campus requests alert in real time.'}
               </div>
             </div>
+          </div>
+          <div className="ot-alert-actions">
+            <button
+              type="button"
+              onClick={handleSilenceAlert}
+              className="ot-alert-action-btn"
+              title="Stop ringing audio"
+            >
+              <VolumeX size={13} />
+              <span>Silence</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleToggleSound}
+              className={`ot-alert-action-btn ${soundMuted ? 'is-muted' : ''}`}
+              title={soundMuted ? 'Unmute sounds' : 'Mute sounds'}
+            >
+              {soundMuted ? <VolumeX size={13} /> : <Volume2 size={13} />}
+              <span>{soundMuted ? 'Unmute' : 'Mute'}</span>
+            </button>
           </div>
         </div>
       )}

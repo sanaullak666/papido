@@ -1,10 +1,11 @@
 import React from 'react';
-import { AlertTriangle, ArrowRight, X } from 'lucide-react';
+import { AlertTriangle, ArrowRight, X, VolumeX } from 'lucide-react';
 
 export function AlertBanner({
   alert,
   onAction,
   onDismiss,
+  onSilence,
   className = '',
   style = {}
 }) {
@@ -55,7 +56,34 @@ export function AlertBanner({
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+        {onSilence && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSilence();
+            }}
+            style={{
+              background: 'rgba(15, 23, 42, 0.2)',
+              color: '#0F172A',
+              border: '1px solid rgba(15, 23, 42, 0.3)',
+              fontWeight: 700,
+              fontSize: '12px',
+              padding: '6px 12px',
+              borderRadius: 'var(--radius-sm, 6px)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              cursor: 'pointer'
+            }}
+            title="Silence ringing sound"
+          >
+            <VolumeX size={13} />
+            <span>Silence Sound</span>
+          </button>
+        )}
+
         {onAction && (
           <button
             type="button"

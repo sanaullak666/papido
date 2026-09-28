@@ -58,25 +58,34 @@ export function App() {
         const res = await apiRequest('/admin/outside-rides');
         const pending = res.data?.pending || (Array.isArray(res.data) ? res.data : []);
         
+        // If queue is cleared, ensure ringtone and alert banner stop
+        if (pending.length === 0) {
+          alertManager.stopRingtone();
+          setNewOutsideAlert(null);
+        }
+
         if (prevAdminPendingCountRef.current !== null && pending.length > prevAdminPendingCountRef.current) {
           const newest = pending[0];
           const custName = newest?.customer_name || 'Passenger';
           const pAddress = newest?.pickup_address || 'Pickup';
           const dAddress = newest?.destination_address || 'Destination';
+          const isViewingOutside = currentTab === 'outside-trips';
 
           alertManager.triggerRideAlert({
             title: `NEW OUTSIDE CAMPUS TRIP REQUEST (${pending.length})`,
             body: `${custName} requested: ${pAddress} → ${dAddress}. Review & dispatch now.`,
-            repeat: true
+            repeat: !isViewingOutside
           });
 
-          setNewOutsideAlert({
-            rideId: newest.id,
-            customerName: custName,
-            pickupAddress: pAddress,
-            destinationAddress: dAddress,
-            time: new Date().toLocaleTimeString()
-          });
+          if (!isViewingOutside) {
+            setNewOutsideAlert({
+              rideId: newest.id,
+              customerName: custName,
+              pickupAddress: pAddress,
+              destinationAddress: dAddress,
+              time: new Date().toLocaleTimeString()
+            });
+          }
         }
 
         prevAdminPendingCountRef.current = pending.length;
@@ -90,20 +99,23 @@ export function App() {
       const custName = data.customerName || data.customer_name || 'Passenger';
       const pAddress = data.pickupAddress || data.pickup_address || 'Pickup';
       const dAddress = data.destinationAddress || data.destination_address || 'Destination';
+      const isViewingOutside = currentTab === 'outside-trips';
 
       alertManager.triggerRideAlert({
         title: 'NEW OUTSIDE CAMPUS TRIP REQUEST',
         body: `${custName} requested route: ${pAddress} → ${dAddress}. Click to open Dispatch & quote fare.`,
-        repeat: true
+        repeat: !isViewingOutside
       });
 
-      setNewOutsideAlert({
-        rideId: data.rideId || data.id,
-        customerName: custName,
-        pickupAddress: pAddress,
-        destinationAddress: dAddress,
-        time: new Date().toLocaleTimeString()
-      });
+      if (!isViewingOutside) {
+        setNewOutsideAlert({
+          rideId: data.rideId || data.id,
+          customerName: custName,
+          pickupAddress: pAddress,
+          destinationAddress: dAddress,
+          time: new Date().toLocaleTimeString()
+        });
+      }
     };
 
     if (socket) {
@@ -116,12 +128,13 @@ export function App() {
         socket.off('admin:outside_ride_requested', handleOutsideRide);
       }
     };
-  }, [socket, adminUser]);
+  }, [socket, adminUser, currentTab]);
 
   // Stop ringtone when admin opens outside trips
   useEffect(() => {
     if (currentTab === 'outside-trips') {
       alertManager.stopRingtone();
+      setNewOutsideAlert(null);
     }
   }, [currentTab]);
 
@@ -305,6 +318,7 @@ export function App() {
           {/* Global Outside Campus Ride Alert Banner */}
           <AlertBanner
             alert={newOutsideAlert}
+            onSilence={() => alertManager.stopRingtone()}
             onAction={() => {
               alertManager.stopRingtone();
               navigateTo('/admin/outside-trips', 'outside-trips');

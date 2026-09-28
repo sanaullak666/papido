@@ -33,6 +33,8 @@ export function RadarPage({ onNavigateTab }) {
     handleToggleOnline,
     soundEnabled,
     setSoundEnabled,
+    silenceAlert,
+    isAlertRinging,
     kycStatus,
     activeRide,
     incomingRequests,
@@ -106,12 +108,25 @@ export function RadarPage({ onNavigateTab }) {
         </div>
 
         {/* Sound alerts bar */}
-        <div className={`rp-sound-bar ${soundEnabled ? 'is-on' : 'is-off'}`}>
+        <div className={`rp-sound-bar ${soundEnabled ? 'is-on' : 'is-off'} ${isAlertRinging ? 'is-ringing' : ''}`}>
           <div className="rp-sound-bar-left">
             {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-            <span>{soundEnabled ? 'Ride Sound & Chime Alerts: ACTIVE' : 'Ride Sounds Muted'}</span>
+            <span>
+              {isAlertRinging ? '🔔 ALERT RINGING...' : soundEnabled ? 'Ride Sound & Chime Alerts: ACTIVE' : 'Ride Sounds Muted'}
+            </span>
           </div>
           <div className="rp-sound-bar-actions">
+            {isAlertRinging && (
+              <RPButton
+                type="button"
+                variant="danger-soft"
+                size="sm"
+                onClick={silenceAlert}
+                title="Silence current ringtone without muting future alerts"
+              >
+                <VolumeX size={13} /> Silence
+              </RPButton>
+            )}
             <RPButton
               type="button"
               variant="ghost"
@@ -188,7 +203,20 @@ export function RadarPage({ onNavigateTab }) {
               <span className="rp-requests-stack-label">
                 <Zap size={14} /> AVAILABLE REQUESTS ({incomingRequests.length})
               </span>
-              <span className="rp-requests-stack-hint">Select a ride to accept</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {isAlertRinging && (
+                  <RPButton
+                    type="button"
+                    variant="danger-soft"
+                    size="sm"
+                    onClick={silenceAlert}
+                    title="Silence currently ringing sound"
+                  >
+                    <VolumeX size={12} /> Silence Ringtone
+                  </RPButton>
+                )}
+                <span className="rp-requests-stack-hint">Select a ride to accept</span>
+              </div>
             </div>
 
             {incomingRequests.map((req) => {

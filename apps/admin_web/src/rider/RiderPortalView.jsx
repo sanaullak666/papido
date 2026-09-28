@@ -229,7 +229,28 @@ export function RiderPortalView() {
   const [enteredOtp, setEnteredOtp] = useState('');
   const [otpError, setOtpError] = useState(null);
 
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabledState] = useState(() => alertManager.isSoundEnabled());
+  const [isAlertRinging, setIsAlertRinging] = useState(() => alertManager.isPlayingRingtone());
+
+  useEffect(() => {
+    const unsubMute = alertManager.onMuteChange(setSoundEnabledState);
+    const unsubRing = alertManager.onRingtoneChange(setIsAlertRinging);
+    return () => {
+      unsubMute();
+      unsubRing();
+      alertManager.stopRingtone();
+    };
+  }, []);
+
+  const setSoundEnabled = (val) => {
+    const nextVal = typeof val === 'boolean' ? val : !alertManager.isSoundEnabled();
+    alertManager.setSoundEnabled(nextVal);
+    setSoundEnabledState(nextVal);
+  };
+
+  const silenceAlert = () => {
+    alertManager.stopRingtone();
+  };
 
   const [earnings, setEarnings] = useState({
     todayTotal: 0,
@@ -1556,12 +1577,25 @@ export function RiderPortalView() {
               </div>
 
               {/* Sound Alerts */}
-              <div className={`rp-sound-bar ${soundEnabled ? 'is-on' : 'is-off'}`}>
+              <div className={`rp-sound-bar ${soundEnabled ? 'is-on' : 'is-off'} ${isAlertRinging ? 'is-ringing' : ''}`}>
                 <div className="rp-sound-bar-left">
                   {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
-                  <span>{soundEnabled ? 'Ride Sound & Chime Alerts: ACTIVE' : 'Ride Sounds Muted'}</span>
+                  <span>
+                    {isAlertRinging ? '🔔 ALERT RINGING...' : soundEnabled ? 'Ride Sound & Chime Alerts: ACTIVE' : 'Ride Sounds Muted'}
+                  </span>
                 </div>
                 <div className="rp-sound-bar-actions">
+                  {isAlertRinging && (
+                    <button
+                      type="button"
+                      onClick={silenceAlert}
+                      className="rp-btn rp-btn--ghost rp-btn--sm"
+                      style={{ color: '#DC2626', fontWeight: 700 }}
+                      title="Silence currently ringing sound"
+                    >
+                      <VolumeX size={14} /> Silence
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => alertManager.playOneShot()}

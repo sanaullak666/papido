@@ -27,6 +27,8 @@ export function RiderLayout({ currentTab = 'radar', onTabChange, children }) {
     handleToggleOnline,
     soundEnabled,
     setSoundEnabled,
+    silenceAlert,
+    isAlertRinging,
     todayNetEarning,
     incomingRequests,
     activeRide,
@@ -127,6 +129,23 @@ export function RiderLayout({ currentTab = 'radar', onTabChange, children }) {
 
           {/* Right Controls */}
           <div className="rp-header-right">
+            {isAlertRinging && (
+              <button
+                type="button"
+                onClick={silenceAlert}
+                className="rp-icon-btn is-ringing"
+                title="Silence currently ringing alert"
+                aria-label="Silence currently ringing alert"
+                style={{
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  borderColor: '#EF4444',
+                  color: '#DC2626'
+                }}
+              >
+                <VolumeX size={16} />
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => setSoundEnabled(!soundEnabled)}

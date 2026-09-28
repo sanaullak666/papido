@@ -40,7 +40,32 @@ export function RiderProvider({ children, onNavigateTab }) {
   );
 
   /* Audio Setting */
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabledState] = useState(() => alertManager.isSoundEnabled());
+  const [isAlertRinging, setIsAlertRinging] = useState(() => alertManager.isPlayingRingtone());
+
+  useEffect(() => {
+    const unsubMute = alertManager.onMuteChange((enabled) => {
+      setSoundEnabledState(enabled);
+    });
+    const unsubRing = alertManager.onRingtoneChange((ringing) => {
+      setIsAlertRinging(ringing);
+    });
+    return () => {
+      unsubMute();
+      unsubRing();
+      alertManager.stopRingtone();
+    };
+  }, []);
+
+  const setSoundEnabled = useCallback((val) => {
+    const nextVal = typeof val === 'boolean' ? val : !alertManager.isSoundEnabled();
+    alertManager.setSoundEnabled(nextVal);
+    setSoundEnabledState(nextVal);
+  }, []);
+
+  const silenceAlert = useCallback(() => {
+    alertManager.stopRingtone();
+  }, []);
 
   /* Requests & Active Trip */
   const [incomingRequests, setIncomingRequests] = useState([]);
@@ -908,6 +933,8 @@ export function RiderProvider({ children, onNavigateTab }) {
     handleToggleOnline,
     soundEnabled,
     setSoundEnabled,
+    silenceAlert,
+    isAlertRinging,
     statusBanner,
     showStatusBanner,
     clearStatusBanner,
