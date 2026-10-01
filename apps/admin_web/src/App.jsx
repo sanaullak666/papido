@@ -100,11 +100,11 @@ export function App() {
           const dAddress = newest?.destination_address || 'Destination';
           const isViewingOutside = currentTab === 'outside-trips';
 
-          // Trigger audible alert for Admin (chime if already in outside-trips, ringtone if elsewhere)
+          // Trigger audible alert for Admin (repeats frequently until acknowledged, silenced or dispatched)
           alertManager.triggerRideAlert({
             title: `NEW OUTSIDE CAMPUS TRIP (${pending.length})`,
             body: `${custName} requested: ${pAddress} → ${dAddress}. Review & dispatch now.`,
-            repeat: !isViewingOutside
+            repeat: true
           });
 
           if (!isViewingOutside) {
@@ -135,11 +135,11 @@ export function App() {
       const dAddress = data.destinationAddress || data.destination_address || 'Destination';
       const isViewingOutside = currentTab === 'outside-trips';
 
-      // Trigger audible alert for Admin
+      // Trigger audible alert for Admin (repeats frequently)
       alertManager.triggerRideAlert({
         title: 'NEW OUTSIDE CAMPUS TRIP REQUEST',
         body: `${custName} requested: ${pAddress} → ${dAddress}. Review & dispatch now.`,
-        repeat: !isViewingOutside
+        repeat: true
       });
 
       if (!isViewingOutside) {
@@ -165,10 +165,9 @@ export function App() {
     };
   }, [socket, adminUser, currentTab]);
 
-  // Stop ringtone when admin opens outside trips
+  // Dismiss popup banner when admin opens outside trips (alert bar handles it on page)
   useEffect(() => {
     if (currentTab === 'outside-trips') {
-      alertManager.stopRingtone();
       setNewOutsideAlert(null);
     }
   }, [currentTab]);

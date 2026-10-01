@@ -226,12 +226,13 @@ function playAlertChime() {
     }
   }
 
-  // Fall back to HTML5 Audio if Web Audio API was unsupported or threw error
-  if (!playedWebAudio) {
+  // Fall back to HTML5 Audio if Web Audio API was unsupported, threw error, or context is not yet running
+  if (!playedWebAudio || (ctx && ctx.state === 'suspended')) {
     try {
-      const audio = getFallbackAudio();
-      if (audio) {
-        audio.currentTime = 0;
+      if (!cachedWavUri) cachedWavUri = createWavDataUri();
+      if (cachedWavUri) {
+        const audio = new Audio(cachedWavUri);
+        audio.volume = 1.0;
         const p = audio.play();
         if (p && typeof p.catch === 'function') {
           p.catch(() => {});
@@ -399,8 +400,8 @@ export const alertManager = {
     }
   },
 
-  // Start continuous repeating ringtone with auto-stop safety timeout (default 45s)
-  startRingtone(repeatIntervalMs = 2200, maxDurationSec = 45) {
+  // Start continuous repeating ringtone with auto-stop safety timeout (default 60s, repeating frequently every 1200ms)
+  startRingtone(repeatIntervalMs = 1200, maxDurationSec = 60) {
     if (soundMuted) return;
     if (isRinging) return;
     isRinging = true;
