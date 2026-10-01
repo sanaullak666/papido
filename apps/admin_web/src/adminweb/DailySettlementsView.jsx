@@ -546,6 +546,78 @@ export function DailySettlementsView() {
       )}
 
       {/* ============================================================
+          PAPIDO COMMISSION SETTLEMENT UPI CONFIGURATION
+          ============================================================ */}
+      <div className="ds-settings-card ds-fade-up">
+        <div className="ds-settings-head">
+          <div className="ds-settings-head-left">
+            <div className="ds-settings-icon">
+              <CreditCard size={20} />
+            </div>
+            <div>
+              <div className="ds-settings-title">
+                Papido Platform Commission Settlement UPI
+              </div>
+              <div className="ds-settings-sub">
+                Configure the destination UPI ID and business display name where drivers pay their daily commission & platform deductions. (Used by drivers for GPay, PhonePe, Paytm, and QR Code payments).
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <form onSubmit={handleSaveAdminSettings} className="ds-settings-form">
+          <div className="ds-settings-field">
+            <label className="ds-settings-label">Papido Settlement UPI ID</label>
+            <input
+              type="text"
+              value={adminUpiId}
+              onChange={(e) => setAdminUpiId(e.target.value)}
+              placeholder="e.g. papido.admin@okaxis"
+              className="ds-settings-input"
+              required
+            />
+          </div>
+
+          <div className="ds-settings-field">
+            <label className="ds-settings-label">Beneficiary / Business Display Name</label>
+            <input
+              type="text"
+              value={adminName}
+              onChange={(e) => setAdminName(e.target.value)}
+              placeholder="e.g. Papido Campus Operations"
+              className="ds-settings-input"
+              required
+            />
+          </div>
+
+          <Button
+            type="submit"
+            variant="primary"
+            loading={isSavingSettings}
+            icon={Save}
+          >
+            Save UPI Settings
+          </Button>
+        </form>
+
+        <label className="ds-settings-toggle">
+          <input
+            type="checkbox"
+            checked={autoLockEnabled}
+            onChange={(e) => setAutoLockEnabled(e.target.checked)}
+          />
+          <span>Auto-lock driver duty when previous shift commission is overdue</span>
+        </label>
+
+        {settingsSuccessMsg && (
+          <div className="ds-inline-success ds-slide-down">
+            <CheckCircle2 size={16} color="#34D399" />
+            <span>{settingsSuccessMsg}</span>
+          </div>
+        )}
+      </div>
+
+      {/* ============================================================
           SETTLEMENTS LEDGER TABLE
           ============================================================ */}
       <div className="ds-table-card ds-fade-up">

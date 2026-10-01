@@ -254,6 +254,106 @@
 }
 
 /* ============================================================
+   ADMIN SETTLEMENT UPI SETTINGS CARD
+   ============================================================ */
+.ds-settings-card {
+  background: #131D31;
+  border: 1px solid #23314E;
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+.ds-settings-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.ds-settings-head-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.ds-settings-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(245, 158, 11, 0.15);
+  color: #F59E0B;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.ds-settings-title {
+  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #F8FAFC;
+  letter-spacing: -0.01em;
+}
+.ds-settings-sub {
+  font-size: 12px;
+  color: #94A3B8;
+  margin-top: 3px;
+  line-height: 1.4;
+}
+.ds-settings-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  align-items: flex-end;
+  gap: 14px;
+}
+.ds-settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ds-settings-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.ds-settings-input {
+  background: #0F172A;
+  border: 1px solid #23314E;
+  color: #F8FAFC;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.ds-settings-input:focus {
+  border-color: #F59E0B;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+.ds-settings-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #94A3B8;
+  cursor: pointer;
+  user-select: none;
+  width: fit-content;
+}
+.ds-settings-toggle input[type="checkbox"] {
+  accent-color: #F59E0B;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* ============================================================
    SETTLEMENTS TABLE CARD
    ============================================================ */
 .ds-table-card {
@@ -505,6 +605,10 @@
     justify-content: stretch;
   }
   .ds-controller-right .ds-select { flex: 1; min-width: 0; }
+
+  .ds-settings-form {
+    grid-template-columns: 1fr;
+  }
 
   .ds-drawer-actions { grid-template-columns: 1fr; }
 }
