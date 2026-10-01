@@ -28,7 +28,7 @@ export function AuthProvider({ children }) {
 
   const [loading, setLoading] = useState(false);
 
-  // Listen for 401 unauthorized events to instantly reset state
+  // Listen for 401 unauthorized or 403 role violation events to instantly reset state
   useEffect(() => {
     const handleUnauthorized = (e) => {
       const isAdmin = e.detail?.isAdmin;
@@ -42,6 +42,9 @@ export function AuthProvider({ children }) {
         setUser(null);
         localStorage.removeItem('papido_user_token');
         localStorage.removeItem('papido_user');
+        if (e.detail?.reason === 'unauthorized_role') {
+          window.location.replace('/login?reason=unauthorized_role');
+        }
       }
     };
     window.addEventListener('auth:unauthorized', handleUnauthorized);
@@ -190,15 +193,21 @@ export function AuthProvider({ children }) {
     return res;
   };
 
-  const logout = () => {
+  const logout = (redirectUrl = '/login') => {
     localStorage.removeItem('papido_user_token');
     localStorage.removeItem('papido_user');
     try {
+      const authErr = sessionStorage.getItem('papido_auth_error');
       sessionStorage.clear();
+      if (authErr) {
+        sessionStorage.setItem('papido_auth_error', authErr);
+      }
     } catch (_) {}
     setToken(null);
     setUser(null);
-    window.location.replace('/login');
+    if (redirectUrl) {
+      window.location.replace(redirectUrl);
+    }
   };
 
   const adminLogout = () => {

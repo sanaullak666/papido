@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { RiderProvider } from './shared/RiderContext';
 import { RiderLayout } from './RiderLayout';
 import { RadarPage } from './RadarPage';
@@ -31,7 +32,22 @@ const TAB_TO_PATH = {
 };
 
 export function RiderRouter() {
+  const { user, logout } = useAuth();
   const [currentTab, setCurrentTab] = useState(() => getRiderTabFromPath(window.location.pathname));
+
+  useEffect(() => {
+    if (user && user.role !== 'RIDER') {
+      const msg = 'Access Denied: Passenger accounts cannot access Driver routes. Your session has been terminated for security.';
+      try {
+        sessionStorage.setItem('papido_auth_error', msg);
+      } catch (_) {}
+      logout('/login?reason=unauthorized_role&role=rider&message=' + encodeURIComponent(msg));
+    }
+  }, [user, logout]);
+
+  if (user && user.role !== 'RIDER') {
+    return null;
+  }
 
   useEffect(() => {
     const handlePopState = () => {

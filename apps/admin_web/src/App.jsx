@@ -24,6 +24,23 @@ import { apiRequest } from './api';
 import { AlertBanner } from './components/ui/AlertBanner';
 import { ArrowRight, AlertTriangle, X } from 'lucide-react';
 
+const isDriverRoute = (path) => {
+  const cleanPath = (path || '').toLowerCase().replace(/\/+$/, '');
+  return cleanPath === '/driver' || cleanPath.startsWith('/driver/') || cleanPath === '/rider' || cleanPath.startsWith('/rider/');
+};
+
+const isPassengerRoute = (path) => {
+  const cleanPath = (path || '').toLowerCase().replace(/\/+$/, '');
+  return (
+    cleanPath === '/passenger' ||
+    cleanPath.startsWith('/passenger/') ||
+    cleanPath === '/customer' ||
+    cleanPath.startsWith('/customer/') ||
+    cleanPath === '/book' ||
+    cleanPath.startsWith('/book/')
+  );
+};
+
 const getAdminTabFromPath = (path) => {
   const cleanPath = (path || '').toLowerCase().replace(/\/+$/, '');
   if (!cleanPath || cleanPath === '/admin' || cleanPath === '/admin/dashboard' || cleanPath === '/admin/overview') return 'dashboard';
@@ -40,7 +57,7 @@ const getAdminTabFromPath = (path) => {
 };
 
 export function App() {
-  const { user, adminUser } = useAuth();
+  const { user, adminUser, logout } = useAuth();
   const { socket } = useSocket() || {};
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [currentTab, setCurrentTab] = useState(() => getAdminTabFromPath(window.location.pathname));
@@ -126,7 +143,7 @@ export function App() {
     }
   }, [currentTab]);
 
-  // Sync route on popstate or pushState
+  // Sync route on popstate
   useEffect(() => {
     const handleLocationChange = () => {
       const path = window.location.pathname;
@@ -153,8 +170,48 @@ export function App() {
     }
   }, [adminUser]);
 
+  // Security Enforcement: Immediate role cross-access detection & session termination
+  useEffect(() => {
+    if (!user) return;
+
+    if (user.role === 'CUSTOMER' && isDriverRoute(currentPath)) {
+      const msg = 'Access Denied: Passenger accounts cannot access Driver routes. You have been logged out of your session.';
+      try {
+        sessionStorage.setItem('papido_auth_error', msg);
+      } catch (_) {}
+      logout('/login?reason=unauthorized_role&role=rider&message=' + encodeURIComponent(msg));
+    } else if (user.role === 'RIDER' && isPassengerRoute(currentPath)) {
+      const msg = 'Access Denied: Driver accounts cannot access Passenger routes. You have been logged out of your session.';
+      try {
+        sessionStorage.setItem('papido_auth_error', msg);
+      } catch (_) {}
+      logout('/login?reason=unauthorized_role&role=customer&message=' + encodeURIComponent(msg));
+    }
+  }, [user, currentPath, logout]);
+
   const navigateTo = (path, tabId = null) => {
     const cleanPath = path.split('?')[0];
+
+    // Security check on programmatic navigation
+    if (user) {
+      if (user.role === 'CUSTOMER' && isDriverRoute(cleanPath)) {
+        const msg = 'Access Denied: Passenger accounts cannot access Driver routes. You have been logged out of your session.';
+        try {
+          sessionStorage.setItem('papido_auth_error', msg);
+        } catch (_) {}
+        logout('/login?reason=unauthorized_role&role=rider&message=' + encodeURIComponent(msg));
+        return;
+      }
+      if (user.role === 'RIDER' && isPassengerRoute(cleanPath)) {
+        const msg = 'Access Denied: Driver accounts cannot access Passenger routes. You have been logged out of your session.';
+        try {
+          sessionStorage.setItem('papido_auth_error', msg);
+        } catch (_) {}
+        logout('/login?reason=unauthorized_role&role=customer&message=' + encodeURIComponent(msg));
+        return;
+      }
+    }
+
     if (window.location.pathname !== cleanPath || window.location.search !== (path.includes('?') ? '?' + path.split('?')[1] : '')) {
       window.history.pushState({}, '', path);
     }
@@ -164,17 +221,6 @@ export function App() {
       setCurrentTab(targetTab);
     }
   };
-
-  useEffect(() => {
-    const handlePopState = () => {
-      setCurrentPath(window.location.pathname);
-      if (window.location.pathname.startsWith('/admin')) {
-        setCurrentTab(getAdminTabFromPath(window.location.pathname));
-      }
-    };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
 
 
   // ============================================================
@@ -359,13 +405,119 @@ export function App() {
   // 3. ROLE-BASED ROUTING FOR AUTHENTICATED USERS
   // ============================================================
   if (user) {
-    if (currentPath === '/driver' || currentPath.startsWith('/driver/') || currentPath === '/rider' || currentPath.startsWith('/rider/') || user.role === 'RIDER') {
+    // 3a. Strict Role Enforcement: Passenger (CUSTOMER)
+    if (user.role === 'CUSTOMER') {
+      if (isDriverRoute(currentPath)) {
+        return (
+          <div style={{
+            minHeight: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#0a0d14',
+            color: '#f8fafc',
+            padding: '24px',
+            textAlign: 'center',
+            fontFamily: 'system-ui, -apple-system, sans-serif'
+          }}>
+            <div style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '50%',
+              background: 'rgba(239, 68, 68, 0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '20px'
+            }}>
+              <AlertTriangle size={36} color="#ef4444" />
+            </div>
+            <h2 style={{ fontSize: '24px', fontWeight: '800', margin: '0 0 10px', color: '#f87171' }}>
+              Access Denied: Security Violation
+            </h2>
+            <p style={{ fontSize: '15px', color: '#94a3b8', maxWidth: '440px', margin: '0 0 24px', lineHeight: '1.6' }}>
+              Passenger accounts cannot access Driver portals (<code style={{ color: '#fca5a5', background: 'rgba(239,68,68,0.1)', padding: '2px 6px', borderRadius: '4px' }}>/driver/</code>). Your session has been terminated for security.
+            </p>
+            <button
+              onClick={() => logout('/login?reason=unauthorized_role&role=rider')}
+              style={{
+                background: '#ef4444',
+                color: '#fff',
+                border: 'none',
+                padding: '12px 28px',
+                borderRadius: '10px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                fontSize: '15px'
+              }}
+            >
+              Return to Login
+            </button>
+          </div>
+        );
+      }
+      return <PassengerRouter />;
+    }
+
+    // 3b. Strict Role Enforcement: Driver (RIDER)
+    if (user.role === 'RIDER') {
+      if (isPassengerRoute(currentPath)) {
+        return (
+          <div style={{
+            minHeight: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#0a0d14',
+            color: '#f8fafc',
+            padding: '24px',
+            textAlign: 'center',
+            fontFamily: 'system-ui, -apple-system, sans-serif'
+          }}>
+            <div style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '50%',
+              background: 'rgba(239, 68, 68, 0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '20px'
+            }}>
+              <AlertTriangle size={36} color="#ef4444" />
+            </div>
+            <h2 style={{ fontSize: '24px', fontWeight: '800', margin: '0 0 10px', color: '#f87171' }}>
+              Access Denied: Security Violation
+            </h2>
+            <p style={{ fontSize: '15px', color: '#94a3b8', maxWidth: '440px', margin: '0 0 24px', lineHeight: '1.6' }}>
+              Driver accounts cannot access Passenger portals. Your session has been terminated for security.
+            </p>
+            <button
+              onClick={() => logout('/login?reason=unauthorized_role&role=customer')}
+              style={{
+                background: '#ef4444',
+                color: '#fff',
+                border: 'none',
+                padding: '12px 28px',
+                borderRadius: '10px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                fontSize: '15px'
+              }}
+            >
+              Return to Login
+            </button>
+          </div>
+        );
+      }
       return <RiderRouter />;
     }
 
-    if (currentPath === '/passenger' || currentPath.startsWith('/passenger/') || currentPath === '/customer' || currentPath.startsWith('/customer/') || currentPath === '/book' || user.role === 'CUSTOMER') {
-      return <PassengerRouter />;
-    }
+    // Fallback: If user role is unrecognized, terminate session immediately
+    logout('/login?reason=unauthorized_role');
+    return null;
   }
 
   // ============================================================

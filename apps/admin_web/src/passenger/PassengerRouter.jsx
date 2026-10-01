@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { PassengerLayout } from './PassengerLayout';
 import { BookRidePage } from './BookRidePage';
 import { AdvanceBookingsPage } from './AdvanceBookingsPage';
@@ -16,8 +17,23 @@ export const getPassengerTabFromPath = (path) => {
 };
 
 export function PassengerRouter() {
+  const { user, logout } = useAuth();
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const currentTab = getPassengerTabFromPath(currentPath);
+
+  useEffect(() => {
+    if (user && user.role !== 'CUSTOMER') {
+      const msg = 'Access Denied: Driver accounts cannot access Passenger routes. Your session has been terminated for security.';
+      try {
+        sessionStorage.setItem('papido_auth_error', msg);
+      } catch (_) {}
+      logout('/login?reason=unauthorized_role&role=customer&message=' + encodeURIComponent(msg));
+    }
+  }, [user, logout]);
+
+  if (user && user.role !== 'CUSTOMER') {
+    return null;
+  }
 
   useEffect(() => {
     const handlePopState = () => {

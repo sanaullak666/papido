@@ -69,6 +69,18 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess }) {
       const screenParam = (searchParams.get('screen') || '').toLowerCase();
       const roleParam = (searchParams.get('role') || '').toLowerCase();
       const path = (window.location.pathname || '').toLowerCase();
+      const reason = searchParams.get('reason');
+      const paramMsg = searchParams.get('message');
+
+      if (reason === 'unauthorized_role') {
+        setError(paramMsg || 'Access Denied: Cross-portal access detected. Your session has been terminated for security.');
+      } else {
+        const sessionMsg = sessionStorage.getItem('papido_auth_error');
+        if (sessionMsg) {
+          sessionStorage.removeItem('papido_auth_error');
+          setError(sessionMsg);
+        }
+      }
 
       if (mode === 'register' || screenParam === 'register' || path === '/register' || path === '/signup') {
         setScreen(SCREEN.REGISTER);
@@ -141,7 +153,22 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess }) {
 
   /* ---------- Feedback ---------- */
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(() => {
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const reason = searchParams.get('reason');
+      const paramMsg = searchParams.get('message');
+      if (reason === 'unauthorized_role') {
+        return paramMsg || 'Access Denied: Cross-portal access detected. Your session has been terminated for security.';
+      }
+      const sessionMsg = sessionStorage.getItem('papido_auth_error');
+      if (sessionMsg) {
+        sessionStorage.removeItem('papido_auth_error');
+        return sessionMsg;
+      }
+    } catch (_) {}
+    return '';
+  });
   const [successMsg, setSuccessMsg] = useState('');
   const [shakeKey, setShakeKey] = useState(0);
 

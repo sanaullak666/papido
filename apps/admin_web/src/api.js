@@ -79,7 +79,7 @@ export async function apiRequest(endpoint, method = 'GET', body = null, token = 
       error.status = res.status;
       error.data = data;
 
-      if (res.status === 401) {
+      if (res.status === 401 || (res.status === 403 && typeof data?.message === 'string' && data.message.toLowerCase().includes('access denied'))) {
         if (isAdminCall) {
           localStorage.removeItem('papido_admin_token');
           localStorage.removeItem('papido_admin_user');
@@ -87,7 +87,10 @@ export async function apiRequest(endpoint, method = 'GET', body = null, token = 
         } else {
           localStorage.removeItem('papido_user_token');
           localStorage.removeItem('papido_user');
-          window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: { isAdmin: false } }));
+          try {
+            sessionStorage.setItem('papido_auth_error', 'Access Denied: Cross-portal role violation detected. Your session has been terminated for security.');
+          } catch (_) {}
+          window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: { isAdmin: false, reason: 'unauthorized_role' } }));
         }
       }
       throw error;
