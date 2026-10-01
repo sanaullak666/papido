@@ -112,10 +112,47 @@ const AuthController = {
 
   async registerCore(req, res, next) {
     try {
-      const { name, email, phone, gender, password } = req.body;
+      const { name, email, phone, gender, password, inviteCode } = req.body;
+
+      // Verify authorization: either authenticated ADMIN or valid invite code
+      const authHeader = req.headers.authorization;
+      let isAdmin = false;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        try {
+          const token = authHeader.split(' ')[1];
+          const decoded = jwt.verify(token, env.JWT.SECRET);
+          const caller = await UserModel.findById(decoded.id);
+          if (caller && caller.role === 'ADMIN') {
+            isAdmin = true;
+          }
+        } catch (_) {}
+      }
+
+      const validInviteCode = process.env.CORE_INVITE_CODE || 'PAPIDO_CORE_FLEET';
+      const providedCode = String(inviteCode || req.query?.code || '').trim();
+
+      if (!isAdmin && (!providedCode || providedCode !== validInviteCode)) {
+        return error(res, 'Access Denied: A valid Core Team invitation code is required to register.', 403);
+      }
 
       if (!name || !email || !phone || !password) {
         return error(res, 'Name, email, phone, and password are required to register as a Core Team member.', 400);
+      }
+
+      const cleanName = String(name).trim();
+      const cleanEmail = String(email).trim().toLowerCase();
+      const cleanPhone = String(phone).trim().replace(/\D/g, '');
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+        return error(res, 'Please provide a valid email address.', 400);
+      }
+
+      if (cleanPhone.length !== 10) {
+        return error(res, 'Please provide a valid 10-digit mobile number.', 400);
+      }
+
+      if (String(password).length < 6) {
+        return error(res, 'Password must be at least 6 characters long.', 400);
       }
 
       const validGender = ['MALE', 'FEMALE', 'OTHER'].includes((gender || '').toUpperCase())
@@ -123,9 +160,9 @@ const AuthController = {
         : 'OTHER';
 
       const result = await AuthService.register({
-        name,
-        email,
-        phone,
+        name: cleanName,
+        email: cleanEmail,
+        phone: cleanPhone,
         gender: validGender,
         password,
         role: 'RIDER',

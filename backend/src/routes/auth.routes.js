@@ -6,7 +6,7 @@ const { requireRole } = require('../middleware/role.middleware');
 const { authLimiter, otpLimiter } = require('../middleware/rateLimiter');
 
 router.post('/register', authLimiter, AuthController.register);
-router.post('/register-core', verifyToken, requireRole('ADMIN'), AuthController.registerCore);
+router.post('/register-core', authLimiter, AuthController.registerCore);
 router.post('/login', authLimiter, AuthController.login);
 router.post('/send-login-otp', otpLimiter, AuthController.sendLoginOtp);
 router.post('/verify-login-otp', otpLimiter, AuthController.verifyLoginOtp);

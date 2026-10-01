@@ -33,7 +33,7 @@ export function CoreTeamView() {
   const [searchTerm, setSearchTerm] = useState('');
   const [actionLoading, setActionLoading] = useState({});
 
-  const inviteLink = `${window.location.origin}/register/core`;
+  const inviteLink = `${window.location.origin}/register/core?code=PAPIDO_CORE_FLEET`;
 
   const fetchCoreMembers = async () => {
     try {

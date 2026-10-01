@@ -1,15 +1,17 @@
 export const getSocketUrl = () => {
-  if (typeof window !== 'undefined') {
-    // When accessing from a mobile phone or local network IP, always use current origin
-    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-      return window.location.origin;
-    }
-  }
+  // If an explicit WebSocket backend URL is configured (e.g. Render / Railway / EC2), prioritize it
   if (import.meta.env.VITE_SOCKET_URL && !import.meta.env.VITE_SOCKET_URL.includes('localhost')) {
     return import.meta.env.VITE_SOCKET_URL;
   }
   if (typeof window !== 'undefined') {
-    return window.location.origin;
+    // Vercel serverless functions do not support persistent WebSockets; avoid failing polling loops
+    if (window.location.hostname.includes('vercel.app')) {
+      return null;
+    }
+    // When accessing from a mobile phone or local network IP, use current origin
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      return window.location.origin;
+    }
   }
   return 'http://localhost:5000';
 };

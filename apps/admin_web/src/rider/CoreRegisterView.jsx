@@ -74,12 +74,14 @@ export function CoreRegisterView({ onGoToLogin }) {
 
     try {
       setLoading(true);
+      const urlCode = new URLSearchParams(window.location.search).get('code');
       const res = await apiRequest('/auth/register-core', 'POST', {
         name,
         email,
         phone,
         gender: formData.gender,
-        password: formData.password
+        password: formData.password,
+        inviteCode: urlCode || 'PAPIDO_CORE_FLEET'
       });
 
       setSuccessMsg('Welcome to Papido Core Team! Logging you in...');
