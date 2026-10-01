@@ -555,6 +555,8 @@ export function RiderProvider({ children, onNavigateTab }) {
           return [newReq, ...prev];
         });
 
+        prevRequestIdsRef.current.add(String(rideId));
+
         if (soundEnabled) {
           alertManager.triggerRideAlert({
             title: `New Ride Request: ₹${fare}`,

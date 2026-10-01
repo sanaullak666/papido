@@ -65,6 +65,8 @@ export function App() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [newOutsideAlert, setNewOutsideAlert] = useState(null);
   const prevAdminPendingCountRef = useRef(null);
+  const hasInitialFetchedAdminRef = useRef(false);
+  const alertedAdminRideIdsRef = useRef(new Set());
 
   // Background polling + Socket listener for Admin alerts across all pages
   useEffect(() => {
@@ -81,12 +83,29 @@ export function App() {
           setNewOutsideAlert(null);
         }
 
-        if (prevAdminPendingCountRef.current !== null && pending.length > prevAdminPendingCountRef.current) {
-          const newest = pending[0];
+        // On initial fetch, record existing IDs to suppress sound on page load / refresh
+        if (!hasInitialFetchedAdminRef.current) {
+          hasInitialFetchedAdminRef.current = true;
+          pending.forEach(r => alertedAdminRideIdsRef.current.add(String(r.id)));
+          prevAdminPendingCountRef.current = pending.length;
+          return;
+        }
+
+        const newRides = pending.filter(r => !alertedAdminRideIdsRef.current.has(String(r.id)));
+        if (newRides.length > 0) {
+          newRides.forEach(r => alertedAdminRideIdsRef.current.add(String(r.id)));
+          const newest = newRides[0];
           const custName = newest?.customer_name || 'Passenger';
           const pAddress = newest?.pickup_address || 'Pickup';
           const dAddress = newest?.destination_address || 'Destination';
           const isViewingOutside = currentTab === 'outside-trips';
+
+          // Trigger audible alert for Admin (chime if already in outside-trips, ringtone if elsewhere)
+          alertManager.triggerRideAlert({
+            title: `NEW OUTSIDE CAMPUS TRIP (${pending.length})`,
+            body: `${custName} requested: ${pAddress} → ${dAddress}. Review & dispatch now.`,
+            repeat: !isViewingOutside
+          });
 
           if (!isViewingOutside) {
             setNewOutsideAlert({
@@ -107,14 +126,25 @@ export function App() {
     const interval = setInterval(checkPendingOutsideRides, 3000);
 
     const handleOutsideRide = (data) => {
+      const rideId = String(data.rideId || data.id);
+      if (alertedAdminRideIdsRef.current.has(rideId)) return;
+      alertedAdminRideIdsRef.current.add(rideId);
+
       const custName = data.customerName || data.customer_name || 'Passenger';
       const pAddress = data.pickupAddress || data.pickup_address || 'Pickup';
       const dAddress = data.destinationAddress || data.destination_address || 'Destination';
       const isViewingOutside = currentTab === 'outside-trips';
 
+      // Trigger audible alert for Admin
+      alertManager.triggerRideAlert({
+        title: 'NEW OUTSIDE CAMPUS TRIP REQUEST',
+        body: `${custName} requested: ${pAddress} → ${dAddress}. Review & dispatch now.`,
+        repeat: !isViewingOutside
+      });
+
       if (!isViewingOutside) {
         setNewOutsideAlert({
-          rideId: data.rideId || data.id,
+          rideId: rideId,
           customerName: custName,
           pickupAddress: pAddress,
           destinationAddress: dAddress,
