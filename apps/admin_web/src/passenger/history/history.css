@@ -1,11 +1,12 @@
 /* ============================================================
-   PAPIDO — Ride History Page
+   PAPIDO — Ride History Page (Modern Uber / Rapido Edition)
+   Soft Glass + Crisp Depth · Preserves Papido Warm Beige & Amber Theme
    Prefix: ps-
    ============================================================ */
 
 /* ---------- Shell ---------- */
 .ps-history-page {
-  padding: 24px 16px 80px;
+  padding: 24px 16px 84px;
   display: flex;
   justify-content: center;
   width: 100%;
@@ -16,39 +17,40 @@
   max-width: 820px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
 }
 
-/* ---------- Summary bar ---------- */
+/* ---------- Summary Bar ---------- */
 .ps-hist-summary {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 12px;
-  padding: 16px 20px;
-  background: var(--ps-surface-solid);
-  border: 1px solid var(--ps-border);
-  border-radius: 16px;
-  box-shadow: var(--ps-shadow-1);
+  gap: 14px;
+  padding: 18px 22px;
+  background: var(--ps-surface-solid, #FFFFFF);
+  border: 1.5px solid var(--ps-border, #E8DCCB);
+  border-radius: var(--ps-radius-card, 20px);
+  box-shadow: 0 4px 18px -2px rgba(39, 30, 22, 0.05);
 }
 
 .ps-hist-summary-cell {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   min-width: 0;
 }
 
 .ps-hist-summary-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
   background: var(--ps-amber-soft);
   color: var(--ps-amber);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.1);
 }
 .ps-hist-summary-icon--accent {
   background: rgba(16, 185, 129, 0.12);
@@ -63,24 +65,24 @@
 
 .ps-hist-summary-value {
   font-family: 'Outfit', sans-serif;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 900;
-  color: var(--ps-text);
+  color: var(--ps-text, #271E16);
   line-height: 1;
   letter-spacing: -0.02em;
 }
 
 .ps-hist-summary-label {
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 700;
-  color: var(--ps-text-muted);
+  color: var(--ps-text-muted, #796D61);
   margin-top: 4px;
 }
 
 .ps-hist-summary-divider {
   width: 1px;
-  height: 32px;
-  background: var(--ps-border);
+  height: 36px;
+  background: var(--ps-border, #E8DCCB);
 }
 
 /* ---------- Filters ---------- */
@@ -89,46 +91,45 @@
   align-items: center;
   gap: 6px;
   padding: 5px;
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid var(--ps-border);
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1.5px solid var(--ps-border, #E8DCCB);
+  border-radius: 14px;
   overflow-x: auto;
   scrollbar-width: none;
 }
 .ps-hist-filters::-webkit-scrollbar { display: none; }
 
 .ps-hist-filter {
-  padding: 7px 14px;
-  border: none;
-  border-radius: 8px;
+  padding: 8px 16px;
+  border: 1px solid transparent;
+  border-radius: 10px;
   background: transparent;
-  color: var(--ps-text-muted);
-  font-size: 12px;
+  color: var(--ps-text-muted, #796D61);
+  font-size: 12.5px;
   font-weight: 800;
   cursor: pointer;
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: background 180ms ease,
-              color 180ms ease,
-              box-shadow 180ms ease;
+  transition: all 160ms ease;
 }
 .ps-hist-filter:hover {
   background: rgba(234, 88, 12, 0.06);
   color: var(--ps-amber);
 }
 .ps-hist-filter.is-active {
-  background: linear-gradient(135deg, #F97316, #EA580C);
+  background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
   color: #FFFFFF;
-  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.28);
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.28);
 }
 
 .ps-hist-filter-count {
   font-size: 10px;
   font-weight: 900;
-  padding: 1px 6px;
-  border-radius: 8px;
+  padding: 2px 7px;
+  border-radius: 999px;
   background: rgba(255, 255, 255, 0.25);
 }
 .ps-hist-filter:not(.is-active) .ps-hist-filter-count {
@@ -140,7 +141,7 @@
 .ps-history-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .ps-skeleton-list {
@@ -149,28 +150,31 @@
   gap: 14px;
 }
 
-/* ---------- Receipt card ---------- */
+/* ---------- Receipt Card (Uber Ride Receipt Style) ----------- */
 .ps-hist-card {
-  background: var(--ps-surface-solid);
-  border: 1px solid var(--ps-border);
-  border-radius: 16px;
-  padding: 18px 20px;
+  background: var(--ps-surface-solid, #FFFFFF);
+  border: 1.5px solid var(--ps-border, #E8DCCB);
+  border-radius: var(--ps-radius-card, 18px);
+  padding: 20px 22px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  transition: transform 220ms var(--ease-out-soft, cubic-bezier(0.16, 1, 0.3, 1)),
-              box-shadow 220ms var(--ease-out-soft, cubic-bezier(0.16, 1, 0.3, 1));
+  box-shadow: 0 4px 18px -2px rgba(39, 30, 22, 0.04);
+  transition:
+    transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 200ms ease;
 }
 .ps-hist-card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--ps-shadow-3);
+  box-shadow: 0 12px 32px -4px rgba(39, 30, 22, 0.09);
 }
 
-.ps-hist-card.is-prebooked { border-left: 4px solid #3B82F6; }
+.ps-hist-card.is-prebooked { border-left: 5px solid #3B82F6; }
 .ps-hist-card.is-cancelled {
-  opacity: 0.72;
-  border-left: 4px solid #EF4444;
+  opacity: 0.78;
+  border-left: 5px solid #EF4444;
 }
 
 /* Body */
@@ -191,33 +195,36 @@
 
 .ps-hist-code {
   font-family: ui-monospace, monospace;
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 800;
-  background: var(--ps-surface);
+  background: var(--ps-surface, #FAF5EE);
   border: 1px solid var(--ps-border);
-  padding: 2px 6px;
+  padding: 2px 7px;
   border-radius: 6px;
   color: var(--ps-text);
+  letter-spacing: 0.03em;
 }
 
 .ps-hist-prebooked-tag,
 .ps-hist-double-tag {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  font-size: 9px;
+  gap: 4px;
+  font-size: 9.5px;
   font-weight: 800;
-  letter-spacing: 0.05em;
-  padding: 2px 6px;
-  border-radius: 4px;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: 5px;
 }
 .ps-hist-prebooked-tag {
   background: #DBEAFE;
   color: #1E40AF;
+  border: 1px solid #BFDBFE;
 }
 .ps-hist-double-tag {
   background: #ECFDF5;
   color: #047857;
+  border: 1px solid #A7F3D0;
 }
 
 /* Route timeline */
@@ -230,9 +237,9 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ps-text);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ps-text, #271E16);
 }
 .ps-hist-route-text {
   overflow: hidden;
@@ -241,40 +248,41 @@
 }
 .ps-hist-route-line {
   width: 2px;
-  height: 12px;
+  height: 14px;
   background: repeating-linear-gradient(
     to bottom,
-    var(--ps-border) 0 3px,
+    #C7BEB1 0 3px,
     transparent 3px 6px
   );
-  margin-left: 3px;
+  margin-left: 4px;
   margin-top: 2px;
   margin-bottom: 2px;
 }
 
 .ps-hist-dot {
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 .ps-hist-dot--green { background: #10B981; }
-.ps-hist-dot--amber { background: #F59E0B; }
+.ps-hist-dot--amber { background: #EA580C; }
 
 /* Meta row */
 .ps-hist-meta {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px;
-  font-size: 11px;
-  color: var(--ps-text-muted);
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--ps-text-muted, #796D61);
 }
 
 .ps-hist-meta-item {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   font-weight: 700;
 }
 
@@ -291,16 +299,16 @@
 
 .ps-hist-fare {
   font-family: 'Outfit', sans-serif;
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 900;
-  color: var(--ps-text);
+  color: var(--ps-text, #271E16);
   line-height: 1;
   display: inline-flex;
   align-items: baseline;
   gap: 1px;
 }
 .ps-hist-fare-sym {
-  font-size: 15px;
+  font-size: 16px;
   opacity: 0.7;
 }
 
@@ -309,15 +317,15 @@
   align-items: center;
   gap: 4px;
   font-size: 10px;
-  font-weight: 800;
-  padding: 3px 8px;
+  font-weight: 900;
+  padding: 3px 9px;
   border-radius: 6px;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
 }
 .ps-hist-status.is-complete {
   background: #ECFDF5;
-  color: #059669;
+  color: #047857;
   border: 1px solid #A7F3D0;
 }
 .ps-hist-status.is-cancelled {
@@ -331,59 +339,91 @@
   border: 1px solid var(--ps-border);
 }
 
-/* ---------- Empty state ---------- */
-.ps-empty-card {
-  text-align: center;
-  padding: 40px 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-
-.ps-empty-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: var(--ps-amber-soft);
+/* Rating + Receipt Expansion */
+.ps-hist-rating {
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin-bottom: 4px;
+  gap: 3px;
+  margin-top: 4px;
 }
 
-.ps-empty-title {
-  margin: 0;
-  font-family: 'Outfit', sans-serif;
-  font-size: 20px;
+.ps-hist-rating-label {
+  font-size: 10.5px;
   font-weight: 800;
-  color: var(--ps-text);
+  color: #D97706;
+  margin-left: 5px;
 }
 
-.ps-empty-sub {
-  margin: 0;
-  font-size: 13px;
-  color: var(--ps-text-muted);
-  max-width: 420px;
-  line-height: 1.5;
-}
-
-.ps-empty-hints {
-  display: flex;
+.ps-hist-expand-btn {
+  display: inline-flex;
   align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px dashed var(--ps-border);
-  width: 100%;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--ps-amber, #EA580C);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+  margin-top: 6px;
+  transition: all 160ms ease;
+}
+.ps-hist-expand-btn:hover {
+  text-decoration: underline;
+  transform: translateY(-1px);
+}
+.ps-hist-expand-btn svg {
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ps-hist-expand-btn svg.is-rotated { transform: rotate(180deg); }
+
+.ps-hist-expanded {
+  margin-top: 12px;
+  padding: 14px 16px;
+  background: var(--ps-surface, #FAF5EE);
+  border-radius: 12px;
+  border: 1.5px solid var(--ps-border, #E8DCCB);
+  animation: psFadeUp 240ms ease both;
 }
 
-.ps-empty-hint {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--ps-text-muted);
+.ps-hist-receipt-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: var(--ps-text-muted, #796D61);
+  padding: 5px 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.ps-hist-receipt-row--discount {
+  color: #047857;
+  font-weight: 800;
+}
+
+.ps-hist-receipt-row--total {
+  font-weight: 900;
+  color: var(--ps-text, #271E16);
+  border-top: 1.5px solid var(--ps-border, #E8DCCB);
+  margin-top: 8px;
+  padding-top: 10px;
+  font-size: 13.5px;
+}
+
+.ps-hist-receipt-meta {
+  font-size: 10.5px;
+  color: var(--ps-text-muted, #796D61);
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--ps-border, #E8DCCB);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ps-hist-card.is-expanded {
+  border-color: var(--ps-amber, #EA580C);
+  box-shadow: 0 6px 20px rgba(234, 88, 12, 0.12);
 }
 
 /* ---------- Responsive ---------- */
@@ -391,7 +431,6 @@
   .ps-hist-summary {
     grid-template-columns: 1fr;
     gap: 14px;
-    text-align: left;
   }
   .ps-hist-summary-divider {
     width: 100%;
@@ -403,9 +442,8 @@
   .ps-hist-card {
     flex-direction: column;
     align-items: stretch;
-    gap: 12px;
+    gap: 14px;
   }
-
   .ps-hist-right {
     flex-direction: row;
     align-items: center;
@@ -413,103 +451,14 @@
     padding-top: 12px;
     border-top: 1px dashed var(--ps-border);
   }
-
-  .ps-hist-fare { font-size: 20px; }
+  .ps-hist-fare { font-size: 22px; }
 }
 
-/* ---------- Reduced motion ---------- */
+/* Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
   .ps-hist-card,
   .ps-hist-filter {
     transition: none !important;
     animation: none !important;
   }
-}
-
-
-/* ============================================================
-   RATING + RECEIPT EXPANSION (NEW)
-   ============================================================ */
-.ps-hist-rating {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  margin-top: 4px;
-}
-
-.ps-hist-rating-label {
-  font-size: 10px;
-  font-weight: 800;
-  color: #D97706;
-  margin-left: 5px;
-}
-
-.ps-hist-expand-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11px;
-  font-weight: 800;
-  color: var(--ps-amber, #EA580C);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 4px 0;
-  margin-top: 6px;
-  transition: color 160ms ease;
-}
-.ps-hist-expand-btn:hover { text-decoration: underline; }
-.ps-hist-expand-btn svg {
-  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-.ps-hist-expand-btn svg.is-rotated { transform: rotate(180deg); }
-
-.ps-hist-expanded {
-  margin-top: 10px;
-  padding: 12px 14px;
-  background: var(--ps-surface, #FAF5EE);
-  border-radius: 10px;
-  border: 1px solid var(--ps-border, #E8DCCB);
-  animation: psFadeUp 260ms ease both;
-}
-
-.ps-hist-receipt-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: var(--ps-text-muted, #796D61);
-  padding: 4px 0;
-  align-items: center;
-  gap: 8px;
-}
-
-.ps-hist-receipt-row--discount {
-  color: #059669;
-  font-weight: 700;
-}
-
-.ps-hist-receipt-row--total {
-  font-weight: 800;
-  color: var(--ps-text, #271E16);
-  border-top: 1px solid var(--ps-border, #E8DCCB);
-  margin-top: 6px;
-  padding-top: 10px;
-  font-size: 13px;
-}
-
-.ps-hist-receipt-meta {
-  font-size: 10px;
-  color: var(--ps-text-muted, #796D61);
-  margin-top: 10px;
-  padding-top: 8px;
-  border-top: 1px dashed var(--ps-border, #E8DCCB);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-/* Card expanded state */
-.ps-hist-card.is-expanded {
-  border-color: var(--ps-amber, #EA580C);
-  box-shadow: 0 4px 16px rgba(234, 88, 12, 0.10);
 }

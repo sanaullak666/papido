@@ -229,7 +229,7 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
             <span className="ps-otp-label">Share OTP with rider</span>
           </div>
           <div className="ps-otp-value">{activeRide.otp || activeRide.otp_code}</div>
-          <div className="ps-otp-note">Verify before sharing.</div>
+          <div className="ps-otp-note">Share this start OTP with rider when you board</div>
         </div>
       )}
 
@@ -239,7 +239,7 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
           <div className="ps-rider-card-head">
             <div className="ps-rider-card-head-left">
               <div className="ps-rider-avatar">
-                <Bike size={22} color="#FFFFFF" />
+                <Bike size={24} color="#FFFFFF" />
               </div>
               <div>
                 <div className="ps-rider-name-row">
@@ -252,8 +252,27 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
                   )}
                 </div>
                 {!(activeRide.rider_is_core || activeRide.is_core_member) && (
-                  <div className="ps-rider-vehicle">
-                    {activeRide.rider_vehicle_model || 'Honda Activa'} · {activeRide.rider_vehicle_number || 'PY 01 AB 1234'}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ps-text-muted, #796D61)' }}>
+                      {activeRide.rider_vehicle_model || 'Honda Activa'}
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: "ui-monospace, 'SF Mono', Menlo, monospace",
+                        fontSize: '11px',
+                        fontWeight: '800',
+                        color: '#1E293B',
+                        background: '#FFFBEB',
+                        border: '1.5px solid #D97706',
+                        padding: '1px 7px',
+                        borderRadius: '5px',
+                        letterSpacing: '0.06em',
+                        display: 'inline-flex',
+                        alignItems: 'center'
+                      }}
+                    >
+                      {activeRide.rider_vehicle_number || 'PY 01 AB 1234'}
+                    </span>
                   </div>
                 )}
               </div>
