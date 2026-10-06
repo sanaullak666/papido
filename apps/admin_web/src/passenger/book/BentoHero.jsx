@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { Bike, Calendar, ArrowRight, ShieldCheck, Users } from 'lucide-react';
+import { Bike, MapPin, Calendar, ArrowRight, Zap, ShieldCheck } from 'lucide-react';
 import { usePassenger } from '../shared/PassengerContext';
 
 /**
- * Compact, purposeful header greeting for the passenger booking workspace.
- * Replaces oversized promotional heroes with a calm "Where are you going?" entry.
+ * Bento-style hero for the booking page.
+ * Enhanced: live rider pulse, fare preview, animated gradient orb.
  */
 export function BentoHero({ user, activeRide, scheduledCount }) {
   const { standardCampusFare, socketRef } = usePassenger();
-  const firstName = (user?.name || 'Passenger').split(' ')[0];
+  const firstName = (user?.name || 'Student').split(' ')[0];
   const [onlineRiders, setOnlineRiders] = useState(0);
 
-  /* Live online rider count from socket */
+  /* Live online rider count from socket (falls back gracefully) */
   useEffect(() => {
     const socket = socketRef?.current;
     if (!socket) return;
@@ -36,35 +36,85 @@ export function BentoHero({ user, activeRide, scheduledCount }) {
   const isLive = (onlineRiders || 0) > 0;
 
   return (
-    <div className="ps-greeting-header ps-fade-up">
-      <div className="ps-greeting-content">
-        <div className="ps-greeting-eyebrow">
-          <span>Good day, {firstName}</span>
-          <span className="ps-greeting-sep" aria-hidden="true">·</span>
-          <span className={`ps-live-indicator ${isLive ? 'is-live' : ''}`}>
-            <span className="ps-live-pulse" aria-hidden="true" />
-            {isLive ? `${onlineRiders} riders on campus` : 'Campus mobility active'}
+    <div className="ps-bento ps-fade-up">
+      {/* Big hero cell */}
+      <div className="ps-bento-cell ps-bento-cell--hero">
+        <div className="ps-bento-hero-eyebrow">
+          <span className="ps-bento-dot" />
+          PAPIDO · CAMPUS MOBILITY
+
+          <span className={`ps-bento-live-pill ${isLive ? 'is-live' : ''}`}>
+            <span className="ps-bento-live-pulse" />
+            {isLive ? `${onlineRiders} online` : 'Live network'}
           </span>
         </div>
-        <h1 className="ps-greeting-title">Where are you going?</h1>
+
+        <h1 className="ps-bento-hero-title">
+          Your campus.<br />
+          Your ride.<br />
+          <span className="ps-bento-hero-accent">Your way.</span>
+        </h1>
+
+        <p className="ps-bento-hero-sub">
+          Hey {firstName} — where are we heading today?
+        </p>
+
+        <div className="ps-bento-hero-cta-row">
+          <a href="#book-form" className="ps-bento-hero-cta">
+            <Zap size={14} />
+            Book a Ride
+            <ArrowRight size={14} />
+          </a>
+
+          <div className="ps-bento-hero-fare-preview">
+            <span className="ps-bento-fare-label">Starting from</span>
+            <span className="ps-bento-fare-value">
+              ₹{standardCampusFare || 25}
+            </span>
+          </div>
+        </div>
       </div>
 
-      <div className="ps-greeting-meta">
-        <div className="ps-greeting-badge">
-          <ShieldCheck size={14} className="ps-badge-icon" />
-          <span>₹{standardCampusFare || 25} flat campus rate</span>
+      {/* Stat cell: scheduled rides */}
+      <div className="ps-bento-cell ps-bento-cell--stat">
+        <div className="ps-bento-stat-icon">
+          <Calendar size={18} />
         </div>
-
+        <div className="ps-bento-stat-value">{scheduledCount}</div>
+        <div className="ps-bento-stat-label">
+          Pre-booked {scheduledCount === 1 ? 'trip' : 'trips'}
+        </div>
         {scheduledCount > 0 && (
-          <a
-            href="/passenger/prebook"
-            className="ps-greeting-link"
-            title="View scheduled trips"
-          >
-            <Calendar size={13} />
-            <span>{scheduledCount} pre-booked</span>
-            <ArrowRight size={11} />
+          <a href="/passenger/prebook" className="ps-bento-stat-link">
+            View all <ArrowRight size={11} />
           </a>
+        )}
+      </div>
+
+      {/* Stat cell: fare / active ride */}
+      <div className="ps-bento-cell ps-bento-cell--stat ps-bento-cell--accent">
+        <div className="ps-bento-stat-icon ps-bento-stat-icon--accent">
+          {activeRide ? <Bike size={18} /> : <MapPin size={18} />}
+        </div>
+        {activeRide ? (
+          <>
+            <div className="ps-bento-stat-value ps-bento-stat-value--sm">
+              {(activeRide.status || '').replace(/_/g, ' ')}
+            </div>
+            <div className="ps-bento-stat-label">
+              Ride #{activeRide.ride_code || activeRide.rideCode || `PAP-${activeRide.id}`}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="ps-bento-stat-value ps-bento-stat-value--sm">
+              ₹{standardCampusFare || 25}
+            </div>
+            <div className="ps-bento-stat-label">Campus flat rate</div>
+            <div className="ps-bento-stat-badge">
+              <ShieldCheck size={9} /> No surge pricing
+            </div>
+          </>
         )}
       </div>
     </div>

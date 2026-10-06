@@ -1,146 +1,132 @@
 /* ============================================================
-   PAPIDO — Passenger Shell & Design System Tokens
-   Design Direction: "Warm Precision"
-   Scope: Exclusively scoped under .passenger-shell
+   PAPIDO — Passenger Shell + Design Tokens (Modern Uber / Rapido Edition)
+   Soft Glass + Crisp Depth · Preserves Papido Warm Beige & Amber Theme
    Prefix: ps-
    ============================================================ */
 
+/* ---------- Motion + Depth Tokens ---------- */
+:root {
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 150ms;
+  --dur-base: 220ms;
+  --dur-slow: 340ms;
+}
+
 .passenger-shell {
-  /* Motion & Easing Tokens */
-  --ps-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ps-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ps-dur-micro: 140ms;
-  --ps-dur-fast: 180ms;
-  --ps-dur-base: 240ms;
-
-  /* Surfaces & Backgrounds (Warm neutral surfaces, preserving brand) */
-  --ps-bg: #FAF5EE;
-  --ps-surface: #FFFFFF;
-  --ps-surface-subtle: #FDFBF7;
-  --ps-surface-warm: #FFF7ED;
-  --ps-surface-hover: #F8F4EE;
-
-  /* Borders & Dividers */
-  --ps-border: #E8DCCB;
-  --ps-border-subtle: #F2E9DD;
-  --ps-border-strong: #D4C5B0;
-
-  /* Typography Colors */
-  --ps-text: #271E16;
-  --ps-text-secondary: #667085;
-  --ps-text-muted: #796D61;
-  --ps-text-dim: #9E9182;
-
-  /* Brand Accents (Preserved Papido amber/orange) */
-  --ps-primary: #C2410C;
-  --ps-primary-hover: #9A3412;
+  /* Warm Theme Surface Tokens (Brand Preserved) */
+  --ps-surface: rgba(255, 255, 255, 0.82);
+  --ps-surface-solid: #FFFFFF;
+  --ps-border: rgba(232, 220, 203, 0.92);
+  --ps-border-strong: #E8DCCB;
+  --ps-shadow-1: 0 2px 8px -2px rgba(39, 30, 22, 0.05), 0 1px 3px rgba(39, 30, 22, 0.03);
+  --ps-shadow-2: 0 8px 24px -4px rgba(39, 30, 22, 0.08), 0 2px 6px -1px rgba(39, 30, 22, 0.04);
+  --ps-shadow-3: 0 24px 48px -8px rgba(39, 30, 22, 0.12), 0 6px 16px -2px rgba(39, 30, 22, 0.05);
   --ps-amber: #EA580C;
   --ps-amber-hover: #D97706;
   --ps-amber-soft: rgba(234, 88, 12, 0.08);
-  --ps-amber-border: rgba(234, 88, 12, 0.28);
+  --ps-text: #271E16;
+  --ps-text-muted: #796D61;
+  --ps-radius-card: 20px;
+  --ps-radius-input: 14px;
+}
 
-  /* Status Colors */
-  --ps-success: #15803D;
-  --ps-success-bg: #F0FDF4;
-  --ps-success-border: #BBF7D0;
-  --ps-error: #B91C1C;
-  --ps-error-bg: #FEF2F2;
-  --ps-error-border: #FECACA;
-  --ps-info: #0369A1;
-  --ps-info-bg: #F0F9FF;
-  --ps-info-border: #BAE6FD;
+/* ---------- Keyframes ---------- */
+@keyframes psFadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes psPageEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes psSlideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes psShake {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-5px); }
+  40%      { transform: translateX(5px); }
+  60%      { transform: translateX(-3px); }
+  80%      { transform: translateX(3px); }
+}
+@keyframes psSpin { to { transform: rotate(360deg); } }
+@keyframes psPulseRing {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.32); }
+  50%      { box-shadow: 0 0 0 10px rgba(234, 88, 12, 0.06); }
+}
+@keyframes psDotPulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22); }
+  50%      { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0.06); }
+}
+@keyframes psSkeleton {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes psModalIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes psOrbFloat {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%      { transform: translate3d(20px, -25px, 0) scale(1.06); }
+}
 
-  /* Spacing Scale (4, 8, 12, 16, 24, 32, 48px) */
-  --ps-space-xs: 4px;
-  --ps-space-sm: 8px;
-  --ps-space-md: 12px;
-  --ps-space-lg: 16px;
-  --ps-space-xl: 24px;
-  --ps-space-2xl: 32px;
-  --ps-space-3xl: 48px;
-
-  /* Radii */
-  --ps-radius-input: 12px;
-  --ps-radius-card: 16px;
-  --ps-radius-panel: 20px;
-  --ps-radius-pill: 9999px;
-
-  /* Shadows (Borders & contrast preferred over heavy drop shadows) */
-  --ps-shadow-1: 0 1px 3px rgba(39, 30, 22, 0.04);
-  --ps-shadow-2: 0 4px 14px -2px rgba(39, 30, 22, 0.06), 0 2px 4px -1px rgba(39, 30, 22, 0.03);
-  --ps-shadow-3: 0 12px 28px -4px rgba(39, 30, 22, 0.08), 0 4px 10px -2px rgba(39, 30, 22, 0.03);
-
-  /* Base Container Attributes */
+/* ---------- Shell ---------- */
+.passenger-shell {
   min-height: 100vh;
-  background-color: var(--ps-bg);
-  color: var(--ps-text);
+  background: #FAF5EE;
+  color: var(--ps-text, #271E16);
   display: flex;
   flex-direction: column;
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   position: relative;
   overflow-x: hidden;
   box-sizing: border-box;
 }
-
 .passenger-shell *,
 .passenger-shell *::before,
-.passenger-shell *::after {
-  box-sizing: border-box;
+.passenger-shell *::after { box-sizing: border-box; }
+
+/* Ambient Orbs */
+.ps-ambient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.ps-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.38;
+}
+.ps-orb--a {
+  width: 380px; height: 380px;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.55), transparent 70%);
+  top: -120px; right: -100px;
+  animation: psOrbFloat 14s ease-in-out infinite;
+}
+.ps-orb--b {
+  width: 320px; height: 320px;
+  background: radial-gradient(circle, rgba(234, 88, 12, 0.38), transparent 70%);
+  bottom: -80px; left: -80px;
+  animation: psOrbFloat 18s ease-in-out infinite reverse;
 }
 
-/* ---------- Purposeful Keyframes ---------- */
-@keyframes psPageEnter {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+/* Utilities */
+.ps-fade-up    { animation: psFadeUp var(--dur-slow) var(--ease-out-soft) both; }
+.ps-slide-down { animation: psSlideDown var(--dur-base) var(--ease-out-soft) both; }
+.ps-shake      { animation: psShake 320ms ease-in-out; }
+.ps-spin       { animation: psSpin 1s linear infinite; }
+.ps-pulse-ring { animation: psPulseRing 1.8s ease-in-out infinite; }
+.ps-modal-in   { animation: psModalIn var(--dur-base) var(--ease-out-soft) both; }
 
-@keyframes psFadeUp {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes psSlideDown {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes psModalIn {
-  from { opacity: 0; transform: translateY(10px) scale(0.98); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@keyframes psShake {
-  0%, 100% { transform: translateX(0); }
-  20%      { transform: translateX(-4px); }
-  40%      { transform: translateX(4px); }
-  60%      { transform: translateX(-2px); }
-  80%      { transform: translateX(2px); }
-}
-
-@keyframes psSpin {
-  to { transform: rotate(360deg); }
-}
-
-@keyframes psPulseDot {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50%      { transform: scale(1.35); opacity: 0.65; }
-}
-
-@keyframes psSkeletonShimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-/* Utility Animation Classes */
-.passenger-shell .ps-fade-up    { animation: psFadeUp var(--ps-dur-fast) var(--ps-ease-out) both; }
-.passenger-shell .ps-slide-down { animation: psSlideDown var(--ps-dur-fast) var(--ps-ease-out) both; }
-.passenger-shell .ps-shake      { animation: psShake 280ms ease-in-out; }
-.passenger-shell .ps-spin       { animation: psSpin 900ms linear infinite; }
-.passenger-shell .ps-modal-in   { animation: psModalIn var(--ps-dur-base) var(--ps-ease-out) both; }
-
-/* Page Transition Wrapper */
-.passenger-shell .ps-page-enter {
-  animation: psPageEnter var(--ps-dur-fast) var(--ps-ease-out) both;
+/* Page Enter Transition */
+.ps-page-enter {
+  animation: psPageEnter var(--dur-base) var(--ease-out-soft) both;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -148,135 +134,145 @@
   z-index: 1;
 }
 
-/* ---------- Restrained, Compact Header ---------- */
-.passenger-shell .ps-header {
+/* ---------- Header (Frosted Glass) ---------- */
+.ps-header {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(250, 245, 238, 0.94);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--ps-border);
-  transition: border-color var(--ps-dur-fast) ease, box-shadow var(--ps-dur-fast) ease;
+  background: rgba(250, 245, 238, 0.86);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-bottom: 1px solid rgba(232, 220, 203, 0.6);
+  transition:
+    border-color var(--dur-base) ease,
+    box-shadow var(--dur-base) ease,
+    background var(--dur-base) ease;
 }
 
 .passenger-shell.is-compact .ps-header {
-  border-bottom-color: var(--ps-border-strong);
-  box-shadow: var(--ps-shadow-1);
+  border-bottom-color: var(--ps-border);
+  box-shadow: 0 4px 16px -2px rgba(39, 30, 22, 0.06);
+  background: rgba(250, 245, 238, 0.94);
 }
 
-.passenger-shell .ps-header-inner {
-  max-width: 1240px;
+.ps-header-inner {
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 12px 24px;
+  padding: 14px 24px;
   display: flex;
   align-items: center;
   gap: 20px;
+  transition: padding var(--dur-base) var(--ease-out-soft);
 }
 
 .passenger-shell.is-compact .ps-header-inner {
-  padding: 9px 24px;
+  padding: 11px 24px;
 }
 
 /* Brand */
-.passenger-shell .ps-brand {
+.ps-brand {
   display: flex;
   align-items: center;
   gap: 12px;
   text-decoration: none;
   flex-shrink: 0;
-  color: var(--ps-text);
-  border-radius: var(--ps-radius-input);
+  transition: transform 160ms ease;
 }
 
-.passenger-shell .ps-brand:focus-visible {
-  outline: 2px solid var(--ps-amber);
-  outline-offset: 3px;
+.ps-brand:hover {
+  transform: translateY(-1px);
 }
 
-.passenger-shell .ps-brand-logo-wrap {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background: var(--ps-surface);
-  border: 1px solid var(--ps-border);
+.ps-brand-logo-wrap {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #FFFFFF;
+  border: 1px solid var(--ps-border-strong);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   box-shadow: var(--ps-shadow-1);
-  overflow: hidden;
+  transition: all var(--dur-base) var(--ease-out-soft);
 }
 
 .passenger-shell.is-compact .ps-brand-logo-wrap {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
 }
 
-.passenger-shell .ps-brand-logo {
+.ps-brand-logo {
   width: 100%;
   height: 100%;
   object-fit: contain;
   padding: 3px;
+  border-radius: 10px;
 }
 
-.passenger-shell .ps-brand-text {
+.ps-brand-text {
   display: flex;
   flex-direction: column;
-  line-height: 1.2;
+  line-height: 1.15;
 }
 
-.passenger-shell .ps-brand-name {
-  font-family: inherit;
-  font-weight: 800;
-  font-size: 15.5px;
+.ps-brand-name {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 900;
+  font-size: 16.5px;
   letter-spacing: -0.02em;
-  color: var(--ps-text);
+  color: var(--ps-text, #271E16);
   display: inline-flex;
   align-items: center;
   gap: 6px;
 }
 
-.passenger-shell .ps-brand-tag {
+.ps-brand-tag {
   font-size: 10px;
   background: var(--ps-amber-soft);
   color: var(--ps-amber);
-  border: 1px solid var(--ps-amber-border);
-  padding: 1px 6px;
-  border-radius: 5px;
-  font-weight: 700;
+  border: 1px solid rgba(234, 88, 12, 0.35);
+  padding: 1px 7px;
+  border-radius: 6px;
+  font-weight: 800;
   letter-spacing: 0.04em;
 }
 
-.passenger-shell .ps-brand-sub {
+.ps-brand-sub {
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--ps-text-muted);
+  max-height: 14px;
+  overflow: hidden;
+  transition: max-height var(--dur-base) ease, opacity var(--dur-base) ease;
 }
 
 .passenger-shell.is-compact .ps-brand-sub {
-  display: none;
+  max-height: 0;
+  opacity: 0;
 }
 
-/* Nav Rail / Tabs: Book Ride is visually primary */
-.passenger-shell .ps-nav {
+/* Nav */
+.ps-nav {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   margin-left: auto;
   padding: 4px;
-  background: var(--ps-surface);
-  border: 1px solid var(--ps-border);
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1.5px solid var(--ps-border);
+  border-radius: 14px;
+  backdrop-filter: blur(10px);
   overflow-x: auto;
   scrollbar-width: none;
+  box-shadow: 0 1px 3px rgba(39, 30, 22, 0.04);
 }
-.passenger-shell .ps-nav::-webkit-scrollbar { display: none; }
+.ps-nav::-webkit-scrollbar { display: none; }
 
-.passenger-shell .ps-nav-tab {
-  padding: 7px 14px;
-  border-radius: 8px;
+.ps-nav-tab {
+  padding: 8px 16px;
+  border-radius: 10px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 800;
   letter-spacing: -0.01em;
   display: inline-flex;
   align-items: center;
@@ -286,206 +282,250 @@
   white-space: nowrap;
   cursor: pointer;
   border: 1px solid transparent;
-  transition: background var(--ps-dur-micro) ease, color var(--ps-dur-micro) ease, border-color var(--ps-dur-micro) ease;
+  transition: all var(--dur-fast) ease;
 }
 
-.passenger-shell .ps-nav-tab:hover {
-  color: var(--ps-text);
-  background: var(--ps-surface-hover);
+.ps-nav-tab:hover {
+  color: var(--ps-amber);
+  background: var(--ps-amber-soft);
 }
 
-.passenger-shell .ps-nav-tab:focus-visible {
+.ps-nav-tab.is-active {
+  background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
+  color: #FFFFFF;
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow:
+    0 4px 14px rgba(234, 88, 12, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.ps-nav-tab:focus-visible {
   outline: 2px solid var(--ps-amber);
   outline-offset: 2px;
 }
 
-/* Active secondary tabs */
-.passenger-shell .ps-nav-tab.is-active {
-  background: var(--ps-surface-warm);
-  color: var(--ps-amber);
-  border-color: var(--ps-amber-border);
-  font-weight: 700;
-}
-
-/* Book Ride primary visual weight */
-.passenger-shell .ps-nav-tab.is-primary-nav {
-  font-weight: 700;
-}
-.passenger-shell .ps-nav-tab.is-primary-nav.is-active {
-  background: var(--ps-primary);
-  color: #FFFFFF;
-  border-color: var(--ps-primary);
-}
-.passenger-shell .ps-nav-tab.is-primary-nav.is-active:hover {
-  background: var(--ps-primary-hover);
-}
-
-/* User Profile / Logout Action */
-.passenger-shell .ps-user-chip {
+/* User Chip */
+.ps-user-chip {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-shrink: 0;
 }
 
-.passenger-shell .ps-user-text {
+.ps-user-text {
   text-align: right;
   display: flex;
   flex-direction: column;
-  line-height: 1.2;
+  line-height: 1.15;
 }
 
-.passenger-shell .ps-user-name {
+.ps-user-name {
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--ps-text);
   letter-spacing: -0.01em;
 }
 
-.passenger-shell .ps-user-email {
+.ps-user-email {
   font-size: 11px;
   color: var(--ps-text-muted);
 }
 
-.passenger-shell .ps-icon-btn {
+.ps-icon-btn {
   width: 38px;
   height: 38px;
-  border-radius: var(--ps-radius-input);
+  border-radius: 12px;
   background: var(--ps-surface);
-  border: 1px solid var(--ps-border);
+  border: 1.5px solid var(--ps-border);
   color: var(--ps-text-muted);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--ps-shadow-1);
-  transition: background var(--ps-dur-micro) ease, color var(--ps-dur-micro) ease, border-color var(--ps-dur-micro) ease;
+  box-shadow: 0 1px 3px rgba(39, 30, 22, 0.04);
+  transition:
+    background var(--dur-base) ease,
+    color var(--dur-base) ease,
+    border-color var(--dur-base) ease,
+    transform var(--dur-fast) ease,
+    box-shadow var(--dur-fast) ease;
 }
 
-.passenger-shell .ps-icon-btn:hover {
-  background: var(--ps-surface-warm);
-  border-color: var(--ps-amber-border);
-  color: var(--ps-amber);
+.ps-icon-btn:hover {
+  background: var(--ps-amber);
+  border-color: var(--ps-amber);
+  color: #FFFFFF;
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.28);
 }
 
-.passenger-shell .ps-icon-btn:active {
-  transform: scale(0.985);
+.ps-icon-btn:active {
+  transform: scale(0.96);
 }
 
-.passenger-shell .ps-icon-btn:focus-visible {
+.ps-icon-btn:focus-visible {
   outline: 2px solid var(--ps-amber);
   outline-offset: 2px;
 }
 
-/* ---------- Purposeful Notification Banner ---------- */
-.passenger-shell .ps-status-banner {
+/* ── Modern Glass Pill Notification ─────────────────────────────────── */
+.ps-status-banner {
   margin: 12px 16px 0;
-  padding: 10px 16px;
-  border-radius: var(--ps-radius-input);
-  max-width: 720px;
+  padding: 12px 18px 12px 16px;
+  border-radius: 16px;
+  max-width: 680px;
   width: calc(100% - 32px);
   align-self: center;
-  background: var(--ps-surface);
-  border: 1px solid var(--ps-border);
-  border-left: 4px solid var(--ps-amber);
-  box-shadow: var(--ps-shadow-2);
+
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.88) 0%,
+    rgba(255, 255, 255, 0.72) 100%
+  );
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow:
+    0 10px 28px -6px rgba(15, 23, 42, 0.15),
+    0 2px 6px -1px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+
   font-size: 13.5px;
-  font-weight: 600;
-  color: var(--ps-text);
-  line-height: 1.4;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #1E293B;
+  line-height: 1.45;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 14px;
   position: relative;
   z-index: 90;
-  animation: psSlideDown var(--ps-dur-fast) var(--ps-ease-out) both;
+  overflow: hidden;
+
+  animation: psSlideDown 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.passenger-shell .ps-status-banner .ps-banner-icon {
+/* Accent bar */
+.ps-status-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4.5px;
+  border-radius: 16px 0 0 16px;
+  background: linear-gradient(180deg, #FBBF24 0%, #F59E0B 100%);
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.55);
+}
+
+/* Corner Glow */
+.ps-status-banner::after {
+  content: "";
+  position: absolute;
+  top: -40%;
+  right: -10%;
+  width: 140px;
+  height: 140px;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.20), transparent 70%);
+  pointer-events: none;
+}
+
+.ps-status-banner .ps-banner-icon {
   flex-shrink: 0;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   display: grid;
   place-items: center;
-  border-radius: 50%;
-  background: var(--ps-amber-soft);
-  color: var(--ps-amber);
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.15);
+  color: #B45309;
 }
 
-.passenger-shell .ps-status-banner .ps-banner-icon svg {
-  width: 13px;
-  height: 13px;
+.ps-status-banner .ps-banner-icon svg {
+  width: 14px;
+  height: 14px;
   stroke: currentColor;
   fill: none;
   stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-.passenger-shell .ps-status-banner .ps-banner-text {
+.ps-status-banner .ps-banner-text {
   flex: 1;
   min-width: 0;
 }
 
-.passenger-shell .ps-status-banner .ps-banner-close {
+.ps-status-banner .ps-banner-close {
   flex-shrink: 0;
   width: 26px;
   height: 26px;
   display: grid;
   place-items: center;
   border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--ps-text-muted);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.06);
+  color: #475569;
   cursor: pointer;
   padding: 0;
-  transition: background var(--ps-dur-micro) ease, color var(--ps-dur-micro) ease;
+  transition: all 150ms ease;
 }
 
-.passenger-shell .ps-status-banner .ps-banner-close svg {
+.ps-status-banner .ps-banner-close svg {
   width: 12px;
   height: 12px;
   stroke: currentColor;
   fill: none;
-  stroke-width: 2.2;
+  stroke-width: 2.4;
+  stroke-linecap: round;
 }
 
-.passenger-shell .ps-status-banner .ps-banner-close:hover {
-  background: var(--ps-surface-hover);
-  color: var(--ps-text);
+.ps-status-banner .ps-banner-close:hover {
+  background: rgba(15, 23, 42, 0.12);
+  color: #0F172A;
+  transform: scale(1.08);
 }
 
-.passenger-shell .ps-status-banner.is-success {
-  border-left-color: var(--ps-success);
-  background: var(--ps-success-bg);
-  border-color: var(--ps-success-border);
+/* Banner Semantic Variants */
+.ps-status-banner.is-success::before {
+  background: linear-gradient(180deg, #34D399 0%, #10B981 100%);
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.55);
 }
-.passenger-shell .ps-status-banner.is-success .ps-banner-icon {
-  background: rgba(21, 128, 61, 0.12);
-  color: var(--ps-success);
+.ps-status-banner.is-success::after {
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.22), transparent 70%);
 }
-
-.passenger-shell .ps-status-banner.is-error {
-  border-left-color: var(--ps-error);
-  background: var(--ps-error-bg);
-  border-color: var(--ps-error-border);
-}
-.passenger-shell .ps-status-banner.is-error .ps-banner-icon {
-  background: rgba(185, 28, 28, 0.12);
-  color: var(--ps-error);
+.ps-status-banner.is-success .ps-banner-icon {
+  background: rgba(16, 185, 129, 0.15);
+  color: #047857;
 }
 
-.passenger-shell .ps-status-banner.is-info {
-  border-left-color: var(--ps-info);
-  background: var(--ps-info-bg);
-  border-color: var(--ps-info-border);
+.ps-status-banner.is-error::before {
+  background: linear-gradient(180deg, #F87171 0%, #EF4444 100%);
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.55);
 }
-.passenger-shell .ps-status-banner.is-info .ps-banner-icon {
-  background: rgba(3, 105, 161, 0.12);
-  color: var(--ps-info);
+.ps-status-banner.is-error::after {
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.22), transparent 70%);
+}
+.ps-status-banner.is-error .ps-banner-icon {
+  background: rgba(239, 68, 68, 0.15);
+  color: #B91C1C;
 }
 
-/* Main Workspace */
-.passenger-shell .ps-main {
+.ps-status-banner.is-info::before {
+  background: linear-gradient(180deg, #60A5FA 0%, #3B82F6 100%);
+  box-shadow: 0 0 14px rgba(59, 130, 246, 0.55);
+}
+.ps-status-banner.is-info::after {
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.22), transparent 70%);
+}
+.ps-status-banner.is-info .ps-banner-icon {
+  background: rgba(59, 130, 246, 0.15);
+  color: #1D4ED8;
+}
+
+/* Main Content Area */
+.ps-main {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -493,38 +533,47 @@
   z-index: 1;
 }
 
-/* Responsive Nav & Header */
+/* ---------- Responsive ---------- */
 @media (max-width: 1023px) {
-  .passenger-shell .ps-nav { display: none; }
-  .passenger-shell .ps-user-email { display: none; }
+  .ps-nav { display: none; }
+  .ps-user-email { display: none; }
 }
 
 @media (max-width: 767px) {
-  .passenger-shell .ps-header-inner { padding: 10px 16px; gap: 12px; }
-  .passenger-shell .ps-brand-sub { display: none; }
-  .passenger-shell.is-compact .ps-header-inner { padding: 8px 16px; }
+  .ps-header-inner { padding: 12px 16px; gap: 12px; }
+  .ps-brand-sub { display: none; }
+  .passenger-shell.is-compact .ps-header-inner { padding: 10px 16px; }
 }
 
 @media (max-width: 479px) {
-  .passenger-shell .ps-header-inner { padding: 8px 12px; }
-  .passenger-shell .ps-brand-logo-wrap { width: 34px; height: 34px; }
-  .passenger-shell .ps-brand-name { font-size: 14.5px; }
-  .passenger-shell .ps-user-text { display: none; }
+  .ps-header-inner { padding: 10px 14px; }
+  .ps-brand-logo-wrap { width: 36px; height: 36px; }
+  .passenger-shell.is-compact .ps-brand-logo-wrap { width: 32px; height: 32px; }
+  .ps-brand-name { font-size: 15px; }
+  .ps-brand-tag { font-size: 9px; padding: 1px 5px; }
+  .ps-user-text { display: none; }
+  .ps-icon-btn { width: 38px; height: 38px; }
+  .ps-status-banner { padding: 10px 14px; font-size: 12.5px; }
 }
 
-/* Reduced Motion Support */
+/* Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
-  .passenger-shell .ps-fade-up,
-  .passenger-shell .ps-slide-down,
-  .passenger-shell .ps-shake,
-  .passenger-shell .ps-spin,
-  .passenger-shell .ps-modal-in,
-  .passenger-shell .ps-page-enter {
+  .ps-fade-up,
+  .ps-slide-down,
+  .ps-shake,
+  .ps-spin,
+  .ps-pulse-ring,
+  .ps-modal-in,
+  .ps-page-enter,
+  .ps-orb,
+  .ps-skeleton-line {
     animation: none !important;
   }
-  .passenger-shell .ps-nav-tab,
-  .passenger-shell .ps-icon-btn,
-  .passenger-shell .ps-header {
+  .ps-nav-tab,
+  .ps-icon-btn,
+  .ps-brand-logo-wrap,
+  .ps-brand-sub,
+  .ps-header-inner {
     transition: none !important;
   }
 }

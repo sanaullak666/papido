@@ -45,13 +45,17 @@ function LayoutInner({ children, currentTab }) {
 
   return (
     <div className={`passenger-shell theme-orange-beige has-bottom-nav ${compact ? 'is-compact' : ''}`}>
+      <div className="ps-ambient" aria-hidden="true">
+        <span className="ps-orb ps-orb--a" />
+        <span className="ps-orb ps-orb--b" />
+      </div>
+
       <header className="ps-header">
         <div className="ps-header-inner">
           <a
             className="ps-brand"
             href="/passenger/book"
             onClick={(e) => { e.preventDefault(); goTo(NAV_ITEMS[0]); }}
-            aria-label="Papido Passenger Home"
           >
             <span className="ps-brand-logo-wrap">
               <img src="/papidologo.jpeg" alt="Papido" className="ps-brand-logo" />
@@ -64,20 +68,18 @@ function LayoutInner({ children, currentTab }) {
             </span>
           </a>
 
-          <nav className="ps-nav" aria-label="Primary Navigation">
+          <nav className="ps-nav" aria-label="Primary">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               const active = currentTab === item.id;
-              const isPrimaryTab = item.id === 'book';
               return (
                 <a
                   key={item.id}
                   href={item.path}
                   onClick={(e) => { e.preventDefault(); goTo(item); }}
-                  className={`ps-nav-tab ${active ? 'is-active' : ''} ${isPrimaryTab ? 'is-primary-nav' : ''}`}
-                  aria-current={active ? 'page' : undefined}
+                  className={`ps-nav-tab ${active ? 'is-active' : ''}`}
                 >
-                  <Icon size={16} aria-hidden="true" />
+                  <Icon size={16} />
                   <span>{item.label}</span>
                 </a>
               );
