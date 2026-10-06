@@ -2,16 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { apiRequest } from '../../api';
 import { usePassenger } from '../shared/PassengerContext';
-import { PSButton, PSCard, PSSwitch } from '../shared/PassengerUI';
+import { PSButton, PSSwitch } from '../shared/PassengerUI';
 import { openCancelWarning, openPenaltyModal } from '../shared/PassengerModals';
 import '../shared/PassengerModals.css';
 import {
-  CAMPUS_HOTSPOTS, formatRideDateTime, getLocationHint
+  CAMPUS_HOTSPOTS, getLocationHint
 } from '../shared/passengerConstants';
 import {
   Bike, Zap, Compass, MapPin, Clock, Plus, X,
   Users, Shield, CreditCard, Check, Calendar, AlertTriangle, AlertCircle,
-  Navigation
+  Navigation, ChevronRight
 } from 'lucide-react';
 
 export function BookingForm({
@@ -148,54 +148,56 @@ export function BookingForm({
       setCheckingPref(true);
       try {
         const res = await apiRequest('/customer/rides/check-availability', 'POST', {
-          vehicleType,
-          femaleRiderOnly: effectiveFemaleOnly
+          vehicleType: vehicleType !== 'ANY' ? vehicleType : null,
+          femaleRiderOnly: effectiveFemaleOnly,
+          pickupLatitude: pickupCoords?.lat,
+          pickupLongitude: pickupCoords?.lng
         }, token);
-        if (!isCancelled && res?.data) {
-          setPrefAvailability(res.data);
+        if (!isCancelled) {
+          setPrefAvailability(res?.data || null);
         }
-      } catch (err) {
+      } catch {
         if (!isCancelled) setPrefAvailability(null);
       } finally {
         if (!isCancelled) setCheckingPref(false);
       }
     };
 
-    checkAvailability();
-    const interval = setInterval(checkAvailability, 15000);
+    const timer = setTimeout(checkAvailability, 300);
     return () => {
       isCancelled = true;
-      clearInterval(interval);
+      clearTimeout(timer);
     };
-  }, [vehicleType, effectiveFemaleOnly, hasPreferences, bookingMode, token]);
+  }, [vehicleType, effectiveFemaleOnly, hasPreferences, bookingMode, pickupCoords, token]);
 
-  /* Execute actual ride request */
-  const executeRequestRide = async (overrides = {}) => {
-    if (!pickupCoords || !destCoords) return;
+  /* Build ISO / target time string for scheduled trip */
+  const buildScheduledTargetTime = () => {
+    if (bookingMode !== 'SCHEDULE') return null;
+    let hour = parseInt(scheduledHour, 10);
+    if (scheduledAmPm === 'PM' && hour !== 12) hour += 12;
+    if (scheduledAmPm === 'AM' && hour === 12) hour = 0;
+    const hh = String(hour).padStart(2, '0');
+    const mm = String(scheduledMinute).padStart(2, '0');
+    return `${scheduledDate || getTodayDateStr()} ${hh}:${mm}:00`;
+  };
+
+  /* Execute request */
+  const executeRequestRide = async (overridePrefs = null) => {
+    if (!pickupAddress || !destAddress) {
+      setStatusMessage({ text: 'Please specify pickup and destination stops.', type: 'error' });
+      return;
+    }
+    if (pickupAddress === destAddress) {
+      setStatusMessage({ text: 'Pickup and drop-off cannot be the same campus stop.', type: 'error' });
+      return;
+    }
+
     onBookingStart();
-
-    const targetVehicle = overrides.vehicleType !== undefined ? overrides.vehicleType : vehicleType;
-    const targetFemaleOnly = overrides.femaleRiderOnly !== undefined
-      ? overrides.femaleRiderOnly
-      : (isFemaleUser ? femaleRiderOnly : false);
-
     try {
-      let targetScheduledTime = null;
       const isSched = bookingMode === 'SCHEDULE';
-      if (isSched) {
-        let h24 = parseInt(scheduledHour, 10);
-        if (scheduledAmPm === 'PM' && h24 < 12) h24 += 12;
-        if (scheduledAmPm === 'AM' && h24 === 12) h24 = 0;
-        const timePart = `${String(h24).padStart(2, '0')}:${scheduledMinute}:00`;
-        targetScheduledTime = `${scheduledDate} ${timePart}`;
-
-        const targetDateObj = new Date(`${scheduledDate}T${timePart}`);
-        if (isNaN(targetDateObj.getTime()) || targetDateObj.getTime() <= Date.now()) {
-          setStatusMessage({ text: 'Please choose a future date and time for pre-booking.', type: 'error' });
-          onBookingEnd();
-          return;
-        }
-      }
+      const targetVehicle = overridePrefs ? overridePrefs.vehicleType : vehicleType;
+      const targetFemaleOnly = overridePrefs ? overridePrefs.femaleRiderOnly : effectiveFemaleOnly;
+      const targetScheduledTime = isSched ? buildScheduledTargetTime() : null;
 
       const payload = {
         pickupLatitude: pickupCoords.lat, pickupLongitude: pickupCoords.lng,
@@ -254,20 +256,6 @@ export function BookingForm({
     await executeRequestRide();
   };
 
-  const displayTime =
-    rideNowTimeOption === 'NOW' ? 'Now' :
-    rideNowTimeOption === '5MIN' ? 'In 5 min' :
-    rideNowTimeOption === '10MIN' ? 'In 10 min' :
-    rideNowTimeOption === '15MIN' ? 'In 15 min' : 'Custom';
-
-  /* ---------- Progress computation for step indicator ---------- */
-  const progressSteps = [
-    { step: 1, label: 'Pickup', icon: MapPin, complete: Boolean(pickupAddress) },
-    { step: 2, label: 'Drop', icon: Navigation, complete: Boolean(destAddress) },
-    { step: 3, label: 'Vehicle', icon: Bike, complete: Boolean(vehicleType) },
-    { step: 4, label: 'Confirm', icon: CreditCard, complete: Boolean(fareEstimate || standardCampusFare) }
-  ];
-
   const currentFare = estimating
     ? null
     : (fareEstimate?.estimatedFare ||
@@ -276,344 +264,380 @@ export function BookingForm({
          : (standardCampusFare || 25)));
 
   return (
-    <div id="book-form" className="ps-booking-form">
+    <div id="book-form" className="ps-booking-card">
 
-      {/* Mode switch */}
-      <div className="ps-mode-switch">
+      {/* ── 1. Restrained Mode Selector (Ride Now vs Pre-Book) ── */}
+      <div className="ps-mode-switch" role="tablist" aria-label="Ride timing mode">
         <button
           type="button"
+          role="tab"
+          aria-selected={bookingMode === 'NOW'}
           onClick={() => setBookingMode('NOW')}
-          className={`ps-mode-btn ${bookingMode === 'NOW' ? 'is-active is-amber' : ''}`}
+          className={`ps-mode-btn ${bookingMode === 'NOW' ? 'is-active' : ''}`}
         >
-          <Zap size={15} /> Ride Now
+          <Zap size={14} aria-hidden="true" />
+          <span>Ride Now</span>
         </button>
         <button
           type="button"
+          role="tab"
+          aria-selected={bookingMode === 'SCHEDULE'}
           onClick={() => setBookingMode('SCHEDULE')}
-          className={`ps-mode-btn ${bookingMode === 'SCHEDULE' ? 'is-active is-blue' : ''}`}
+          className={`ps-mode-btn ${bookingMode === 'SCHEDULE' ? 'is-active' : ''}`}
         >
-          <Calendar size={15} /> Pre-Book
+          <Calendar size={14} aria-hidden="true" />
+          <span>Pre-Book</span>
         </button>
       </div>
 
-      {/* ── Booking Progress Indicator (NEW) ── */}
-      <div className="ps-booking-progress ps-fade-up">
-        {progressSteps.map((s, i) => {
-          const StepIcon = s.icon;
-          const isLast = i === progressSteps.length - 1;
-          return (
-            <React.Fragment key={s.step}>
-              <div
-                className={`ps-progress-step ${s.complete ? 'is-complete' : ''}`}
-                title={s.label}
-              >
-                <div className="ps-progress-dot">
-                  {s.complete ? <Check size={11} strokeWidth={3} /> : <StepIcon size={11} />}
-                </div>
-                <span className="ps-progress-label">{s.label}</span>
-              </div>
-              {!isLast && (
-                <div className={`ps-progress-connector ${s.complete ? 'is-complete' : ''}`} />
-              )}
-            </React.Fragment>
-          );
-        })}
-      </div>
-
-      {/* Now time pills */}
-      {bookingMode === 'NOW' && (
-        <div className="ps-time-card ps-fade-up">
-          <div className="ps-time-card-header">
-            <div className="ps-time-card-label">
-              <Clock size={15} /> Pickup Time
-            </div>
-            <span className="ps-time-display">{displayTime}</span>
-          </div>
+      {/* ── 2. Time Control ── */}
+      {bookingMode === 'NOW' ? (
+        <div className="ps-time-strip" aria-label="Pickup timing">
+          <span className="ps-time-strip-label">
+            <Clock size={13} aria-hidden="true" />
+            <span>Pickup:</span>
+          </span>
           <div className="ps-time-pills">
-            {['NOW', '5MIN', '10MIN', '15MIN'].map(id => (
+            {[
+              { id: 'NOW', label: 'Now' },
+              { id: '5MIN', label: '+5 min' },
+              { id: '10MIN', label: '+10 min' },
+              { id: '15MIN', label: '+15 min' }
+            ].map(t => (
               <button
-                key={id}
+                key={t.id}
                 type="button"
-                onClick={() => setRideNowTimeOption(id)}
-                className={`ps-time-pill ${rideNowTimeOption === id ? 'is-active' : ''}`}
+                onClick={() => setRideNowTimeOption(t.id)}
+                className={`ps-time-pill ${rideNowTimeOption === t.id ? 'is-active' : ''}`}
+                aria-pressed={rideNowTimeOption === t.id}
               >
-                {id === 'NOW' ? 'Now' : `+${id.replace('MIN', '')}m`}
+                {t.label}
               </button>
             ))}
           </div>
         </div>
-      )}
-
-      {/* Schedule date/time */}
-      {bookingMode === 'SCHEDULE' && (
-        <div className="ps-schedule-card ps-fade-up">
-          <div className="ps-schedule-header">
-            <div className="ps-schedule-title">
-              <Calendar size={18} /> Schedule Trip
-            </div>
-            <span className="ps-schedule-tag">ADVANCE</span>
+      ) : (
+        <div className="ps-schedule-panel ps-fade-up">
+          <div className="ps-schedule-label-row">
+            <span className="ps-schedule-panel-title">
+              <Calendar size={14} /> Schedule Date & Time
+            </span>
           </div>
 
-          <div className="ps-schedule-date-pills">
-            <button
-              type="button"
-              onClick={() => setScheduledDate(getTodayDateStr())}
-              className={`ps-schedule-pill ${scheduledDate === getTodayDateStr() ? 'is-active' : ''}`}
-            >
-              Today
-            </button>
-            <button
-              type="button"
-              onClick={() => setScheduledDate(getTomorrowDateStr())}
-              className={`ps-schedule-pill ${scheduledDate === getTomorrowDateStr() ? 'is-active' : ''}`}
-            >
-              Tomorrow
-            </button>
-            <input
-              type="date"
-              min={getTodayDateStr()}
-              value={scheduledDate}
-              onChange={(e) => setScheduledDate(e.target.value)}
-              className="ps-schedule-date-input"
-            />
-          </div>
-
-          <div className="ps-schedule-time-row">
-            <select
-              value={scheduledHour}
-              onChange={(e) => setScheduledHour(e.target.value)}
-              className="ps-select"
-            >
-              {['01','02','03','04','05','06','07','08','09','10','11','12'].map(h =>
-                <option key={h} value={h}>{h}</option>
-              )}
-            </select>
-            <select
-              value={scheduledMinute}
-              onChange={(e) => setScheduledMinute(e.target.value)}
-              className="ps-select"
-            >
-              {['00','05','10','15','20','25','30','35','40','45','50','55'].map(m =>
-                <option key={m} value={m}>{m}</option>
-              )}
-            </select>
-            <div className="ps-schedule-period">
+          <div className="ps-schedule-controls">
+            <div className="ps-schedule-date-group">
               <button
                 type="button"
-                onClick={() => setScheduledAmPm('AM')}
-                className={`ps-period-btn ${scheduledAmPm === 'AM' ? 'is-active' : ''}`}
-              >AM</button>
-              <button
-                type="button"
-                onClick={() => setScheduledAmPm('PM')}
-                className={`ps-period-btn ${scheduledAmPm === 'PM' ? 'is-active' : ''}`}
-              >PM</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* STEP 1: Pickup */}
-      <PSCard className="ps-step-card ps-fade-up">
-        <div className="ps-step-header">
-          <div className="ps-step-left">
-            <div className="ps-step-num ps-step-num--green">1</div>
-            <div>
-              <div className="ps-step-title">Pickup Location</div>
-              <div className="ps-step-sub">Where should the rider meet you?</div>
-            </div>
-          </div>
-          <span className="ps-step-tag ps-step-tag--green">STEP 1</span>
-        </div>
-
-        <select
-          className="ps-select"
-          value={pickupAddress}
-          onChange={(e) => {
-            setPickupAddress(e.target.value);
-            setPickupCoords(findStopCoords(e.target.value));
-          }}
-        >
-          {adminStops.map((s, i) => (
-            <option key={`p-${i}`} value={s}>{s}</option>
-          ))}
-        </select>
-
-        {getLocationHint(pickupAddress) && (
-          <input
-            type="text"
-            className="ps-input"
-            placeholder={getLocationHint(pickupAddress).placeholder}
-            value={pickupDetail}
-            onChange={(e) => setPickupDetail(e.target.value)}
-            style={{ marginTop: 8 }}
-          />
-        )}
-
-        {!showViaStop ? (
-          <button
-            type="button"
-            onClick={() => setShowViaStop(true)}
-            className="ps-via-add"
-          >
-            <Plus size={14} /> Add Via Stop (Optional)
-          </button>
-        ) : (
-          <div className="ps-via-card ps-fade-up">
-            <div className="ps-via-header">
-              <label className="ps-via-label">
-                <MapPin size={14} color="#F59E0B" /> Via Stop
-              </label>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowViaStop(false);
-                  setViaAddress(''); setViaDetail(''); setViaCoords(null);
-                }}
-                className="ps-via-remove"
+                onClick={() => setScheduledDate(getTodayDateStr())}
+                className={`ps-schedule-date-btn ${scheduledDate === getTodayDateStr() ? 'is-active' : ''}`}
               >
-                <X size={12} /> Remove
+                Today
               </button>
+              <button
+                type="button"
+                onClick={() => setScheduledDate(getTomorrowDateStr())}
+                className={`ps-schedule-date-btn ${scheduledDate === getTomorrowDateStr() ? 'is-active' : ''}`}
+              >
+                Tomorrow
+              </button>
+              <input
+                type="date"
+                min={getTodayDateStr()}
+                value={scheduledDate}
+                onChange={(e) => setScheduledDate(e.target.value)}
+                className="ps-input ps-input--date"
+                aria-label="Select date"
+              />
+            </div>
+
+            <div className="ps-schedule-time-group">
+              <select
+                value={scheduledHour}
+                onChange={(e) => setScheduledHour(e.target.value)}
+                className="ps-select ps-select--time"
+                aria-label="Hour"
+              >
+                {['01','02','03','04','05','06','07','08','09','10','11','12'].map(h =>
+                  <option key={h} value={h}>{h}</option>
+                )}
+              </select>
+              <span className="ps-time-colon">:</span>
+              <select
+                value={scheduledMinute}
+                onChange={(e) => setScheduledMinute(e.target.value)}
+                className="ps-select ps-select--time"
+                aria-label="Minute"
+              >
+                {['00','05','10','15','20','25','30','35','40','45','50','55'].map(m =>
+                  <option key={m} value={m}>{m}</option>
+                )}
+              </select>
+              <div className="ps-period-switch">
+                <button
+                  type="button"
+                  onClick={() => setScheduledAmPm('AM')}
+                  className={`ps-period-btn ${scheduledAmPm === 'AM' ? 'is-active' : ''}`}
+                >AM</button>
+                <button
+                  type="button"
+                  onClick={() => setScheduledAmPm('PM')}
+                  className={`ps-period-btn ${scheduledAmPm === 'PM' ? 'is-active' : ''}`}
+                >PM</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 3. Connected Route Block (Pickup & Drop) ── */}
+      <div className="ps-route-block" aria-label="Route Selection">
+        <div className="ps-route-spine" aria-hidden="true">
+          <span className="ps-spine-origin" title="Pickup marker" />
+          <span className="ps-spine-line" />
+          {showViaStop && (
+            <>
+              <span className="ps-spine-via" title="Via marker" />
+              <span className="ps-spine-line" />
+            </>
+          )}
+          <span className="ps-spine-dest" title="Destination marker" />
+        </div>
+
+        <div className="ps-route-fields">
+          {/* Pickup Field */}
+          <div className="ps-route-field">
+            <div className="ps-field-header">
+              <label htmlFor="ps-pickup-input" className="ps-route-field-label">
+                PICKUP LOCATION
+              </label>
             </div>
             <select
-              className="ps-select"
-              value={viaAddress}
+              id="ps-pickup-input"
+              className="ps-select ps-route-select"
+              value={pickupAddress}
               onChange={(e) => {
-                setViaAddress(e.target.value);
-                setViaCoords(findStopCoords(e.target.value));
+                setPickupAddress(e.target.value);
+                setPickupCoords(findStopCoords(e.target.value));
               }}
+              aria-label="Pickup campus stop"
             >
               {adminStops.map((s, i) => (
-                <option key={`v-${i}`} value={s}>{s}</option>
+                <option key={`p-${i}`} value={s}>{s}</option>
               ))}
             </select>
-          </div>
-        )}
-      </PSCard>
 
-      {/* STEP 2: Destination */}
-      <PSCard className="ps-step-card ps-fade-up">
-        <div className="ps-step-header">
-          <div className="ps-step-left">
-            <div className="ps-step-num ps-step-num--amber">2</div>
-            <div>
-              <div className="ps-step-title">Drop-off Destination</div>
-              <div className="ps-step-sub">Your final campus stop</div>
-            </div>
+            {getLocationHint(pickupAddress) && (
+              <input
+                type="text"
+                className="ps-input ps-input--detail"
+                placeholder={getLocationHint(pickupAddress).placeholder}
+                value={pickupDetail}
+                onChange={(e) => setPickupDetail(e.target.value)}
+                aria-label="Pickup landmark or hostel room detail"
+              />
+            )}
           </div>
-          <span className="ps-step-tag ps-step-tag--amber">STEP 2</span>
+
+          {/* Optional Via Stop */}
+          {!showViaStop ? (
+            <div className="ps-via-toggle-row">
+              <button
+                type="button"
+                onClick={() => setShowViaStop(true)}
+                className="ps-via-add-btn"
+              >
+                <Plus size={13} aria-hidden="true" />
+                <span>Add Via Stop (Optional)</span>
+              </button>
+            </div>
+          ) : (
+            <div className="ps-route-field ps-route-field--via ps-fade-up">
+              <div className="ps-field-header">
+                <label htmlFor="ps-via-input" className="ps-route-field-label">
+                  VIA STOP
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowViaStop(false);
+                    setViaAddress(''); setViaDetail(''); setViaCoords(null);
+                  }}
+                  className="ps-via-remove-btn"
+                  aria-label="Remove via stop"
+                >
+                  <X size={12} aria-hidden="true" />
+                  <span>Remove</span>
+                </button>
+              </div>
+              <select
+                id="ps-via-input"
+                className="ps-select ps-route-select"
+                value={viaAddress}
+                onChange={(e) => {
+                  setViaAddress(e.target.value);
+                  setViaCoords(findStopCoords(e.target.value));
+                }}
+                aria-label="Via campus stop"
+              >
+                {adminStops.map((s, i) => (
+                  <option key={`v-${i}`} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Destination Field */}
+          <div className="ps-route-field">
+            <div className="ps-field-header">
+              <label htmlFor="ps-dest-input" className="ps-route-field-label">
+                DROP-OFF DESTINATION
+              </label>
+            </div>
+            <select
+              id="ps-dest-input"
+              className="ps-select ps-route-select"
+              value={destAddress}
+              onChange={(e) => {
+                setDestAddress(e.target.value);
+                setDestCoords(findStopCoords(e.target.value));
+              }}
+              aria-label="Drop-off campus stop"
+            >
+              {adminStops.map((s, i) => (
+                <option key={`d-${i}`} value={s}>{s}</option>
+              ))}
+            </select>
+
+            {getLocationHint(destAddress) && (
+              <input
+                type="text"
+                className="ps-input ps-input--detail"
+                placeholder={getLocationHint(destAddress).placeholder}
+                value={destDetail}
+                onChange={(e) => setDestDetail(e.target.value)}
+                aria-label="Drop-off landmark or hostel room detail"
+              />
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── 4. Clean Full-Width Vehicle Selectable Rows ── */}
+      <div className="ps-vehicle-section">
+        <div className="ps-section-eyebrow">
+          <span>CHOOSE VEHICLE OPTION</span>
         </div>
 
-        <select
-          className="ps-select"
-          value={destAddress}
-          onChange={(e) => {
-            setDestAddress(e.target.value);
-            setDestCoords(findStopCoords(e.target.value));
-          }}
-        >
-          {adminStops.map((s, i) => (
-            <option key={`d-${i}`} value={s}>{s}</option>
-          ))}
-        </select>
-
-        {getLocationHint(destAddress) && (
-          <input
-            type="text"
-            className="ps-input"
-            placeholder={getLocationHint(destAddress).placeholder}
-            value={destDetail}
-            onChange={(e) => setDestDetail(e.target.value)}
-            style={{ marginTop: 8 }}
-          />
-        )}
-      </PSCard>
-
-      {/* STEP 3: Vehicle */}
-      <PSCard className="ps-step-card ps-fade-up">
-        <div className="ps-step-header">
-          <div className="ps-step-left">
-            <div className="ps-step-num ps-step-num--amber">3</div>
-            <div>
-              <div className="ps-step-title">Vehicle Type</div>
-              <div className="ps-step-sub">Choose your ride</div>
-            </div>
-          </div>
-          <span className="ps-step-tag ps-step-tag--amber">STEP 3</span>
-        </div>
-
-        <div className="ps-vehicle-grid">
+        <div className="ps-vehicle-list" role="radiogroup" aria-label="Vehicle type options">
           {[
-            { id: 'ANY', icon: Zap, label: 'Any', sub: 'Fastest' },
-            { id: 'BIKE', icon: Bike, label: 'Bike', sub: 'Standard' },
-            { id: 'SCOOTER', icon: Compass, label: 'Scooter', sub: 'Smooth' }
+            {
+              id: 'ANY',
+              icon: Zap,
+              name: 'Any Available Ride',
+              capacity: '1 Rider',
+              sub: 'Fastest pickup by closest driver'
+            },
+            {
+              id: 'BIKE',
+              icon: Bike,
+              name: 'Standard Bike',
+              capacity: '1 Rider',
+              sub: 'Campus motorcycle standard'
+            },
+            {
+              id: 'SCOOTER',
+              icon: Compass,
+              name: 'Electric / Scooter',
+              capacity: '1 Rider',
+              sub: 'Smooth step-through ride'
+            }
           ].map((v) => {
             const Icon = v.icon;
-            const isActive = vehicleType === v.id;
+            const isSelected = vehicleType === v.id;
             return (
               <button
                 key={v.id}
                 type="button"
+                role="radio"
+                aria-checked={isSelected}
                 onClick={() => setVehicleType(v.id)}
-                className={`ps-vehicle-btn ${isActive ? 'is-active' : ''}`}
+                className={`ps-vehicle-row ${isSelected ? 'is-selected' : ''}`}
               >
-                {isActive && <span className="ps-vehicle-check"><Check size={11} /></span>}
-                <Icon size={22} color={isActive ? '#EA580C' : '#796D61'} />
-                <span className="ps-vehicle-label">{v.label}</span>
-                <span className="ps-vehicle-sub">{v.sub}</span>
+                <div className="ps-vehicle-left">
+                  {/* Explicit selection indicator */}
+                  <div className={`ps-vehicle-radio ${isSelected ? 'is-selected' : ''}`} aria-hidden="true">
+                    {isSelected && <Check size={11} strokeWidth={3} />}
+                  </div>
+
+                  <div className="ps-vehicle-icon-wrap" aria-hidden="true">
+                    <Icon size={18} />
+                  </div>
+
+                  <div className="ps-vehicle-info">
+                    <div className="ps-vehicle-title-row">
+                      <span className="ps-vehicle-name">{v.name}</span>
+                      <span className="ps-vehicle-capacity">{v.capacity}</span>
+                    </div>
+                    <span className="ps-vehicle-sub">{v.sub}</span>
+                  </div>
+                </div>
+
+                <div className="ps-vehicle-right">
+                  <span className="ps-vehicle-fare">
+                    {currentFare ? `₹${currentFare}` : '₹25'}
+                  </span>
+                </div>
               </button>
             );
           })}
         </div>
 
-        <div className="ps-prefs-box">
+        {/* Preferences: Female Rider & Double Ride */}
+        <div className="ps-pref-box">
           {(user?.gender || '').toUpperCase() === 'FEMALE' && (
-            <label className="ps-pref-row ps-pref-row--divider">
+            <label className="ps-pref-row">
               <div className="ps-pref-left">
-                <Shield size={16} color="#EC4899" />
-                <div>
-                  <span className="ps-pref-title">Female Rider Only</span>
-                </div>
+                <Shield size={16} color="#DB2777" aria-hidden="true" />
+                <span className="ps-pref-title">Female Rider Only</span>
               </div>
               <PSSwitch checked={femaleRiderOnly} onChange={setFemaleRiderOnly} tone="pink" />
             </label>
           )}
+
           <label className="ps-pref-row">
             <div className="ps-pref-left">
-              <Users size={16} color="#EA580C" />
+              <Users size={16} color="#EA580C" aria-hidden="true" />
               <div>
                 <span className="ps-pref-title">Double Ride</span>
-                <div className="ps-pref-sub ps-pref-sub--green">Save ₹10</div>
+                <span className="ps-pref-badge">Save ₹10</span>
               </div>
             </div>
             <PSSwitch checked={isDoubleRide} onChange={setIsDoubleRide} tone="amber" />
           </label>
         </div>
 
-        {/* Preference Availability Indicator */}
+        {/* Preference Availability Alert */}
         {hasPreferences && bookingMode === 'NOW' && (
           <div className="ps-pref-status-box ps-fade-up">
             {checkingPref && !prefAvailability ? (
               <div className="ps-pref-status ps-pref-status--checking">
-                <div className="ps-pref-status-dot ps-pref-status-dot--pulse" />
-                <span>Checking driver availability for preferences...</span>
+                <span className="ps-pref-dot" aria-hidden="true" />
+                <span>Checking driver availability for selected preference...</span>
               </div>
             ) : prefAvailability?.isAvailable ? (
               <div className="ps-pref-status ps-pref-status--available">
-                <Check size={16} className="ps-pref-status-icon" />
+                <Check size={15} className="ps-pref-status-icon" aria-hidden="true" />
                 <div className="ps-pref-status-text">
-                  <span className="ps-pref-status-strong">Preference Available!</span>
-                  <span>{prefAvailability.matchingCount} matching driver{prefAvailability.matchingCount > 1 ? 's' : ''} ready nearby.</span>
+                  <span className="ps-pref-status-strong">Preference Available</span>
+                  <span>{prefAvailability.matchingCount} matching driver{prefAvailability.matchingCount > 1 ? 's' : ''} ready on campus.</span>
                 </div>
               </div>
             ) : (
               <div className="ps-pref-status ps-pref-status--unavailable">
                 <div className="ps-pref-status-top">
-                  <div className="ps-pref-status-icon-wrap">
-                    <AlertTriangle size={16} />
-                  </div>
+                  <AlertTriangle size={15} className="ps-pref-status-icon" aria-hidden="true" />
                   <div className="ps-pref-status-text">
-                    <span className="ps-pref-status-strong">Preferred Ride Unavailable</span>
+                    <span className="ps-pref-status-strong">Preference Unavailable</span>
                     <span className="ps-pref-status-desc">
                       {prefAvailability?.unavailableMessage || 'No matching drivers online right now.'}
                     </span>
@@ -622,7 +646,7 @@ export function BookingForm({
                 {prefAvailability?.hasOtherRidersOnline && (
                   <div className="ps-pref-fallback-row">
                     <span className="ps-pref-fallback-note">
-                      {prefAvailability.totalOnlineCount} other driver{prefAvailability.totalOnlineCount > 1 ? 's are' : ' is'} online now.
+                      {prefAvailability.totalOnlineCount} other driver{prefAvailability.totalOnlineCount > 1 ? 's are' : ' is'} online.
                     </span>
                     <button
                       type="button"
@@ -632,7 +656,7 @@ export function BookingForm({
                         setFemaleRiderOnly(false);
                       }}
                     >
-                      <Zap size={13} /> Switch to Any Ride (Fastest)
+                      <Zap size={12} /> Switch to Any Ride (Fastest)
                     </button>
                   </div>
                 )}
@@ -640,58 +664,45 @@ export function BookingForm({
             )}
           </div>
         )}
-      </PSCard>
+      </div>
 
-      {/* STEP 4: Fare */}
-      <PSCard className="ps-fare-card ps-fade-up">
-        <div className="ps-step-header">
-          <div className="ps-step-left">
-            <div className="ps-step-num ps-step-num--amber">4</div>
-            <div>
-              <div className="ps-step-title">Fare & Payment</div>
-              <div className="ps-step-sub">Transparent pricing</div>
-            </div>
-          </div>
-          <span className="ps-step-tag ps-step-tag--amber">STEP 4</span>
-        </div>
-
-        <div className="ps-fare-total">
-          <div className="ps-fare-total-label">Total Fare</div>
-          <div className="ps-fare-value">
-            {currentFare ? `₹${currentFare}` : '...'}
-          </div>
-        </div>
-
-        <div className="ps-payment-row">
-          <span className="ps-payment-label">Payment:</span>
-          <span className="ps-payment-method">
-            <CreditCard size={13} color="#EA580C" /> Cash / UPI on Drop
+      {/* ── 5. Booking Summary & Primary Action ── */}
+      <div className="ps-summary-action-card">
+        <div className="ps-summary-fare-row">
+          <span className="ps-summary-fare-label">Total Estimated Fare</span>
+          <span className="ps-summary-fare-val">
+            {currentFare ? `₹${currentFare}` : '₹25'}
           </span>
         </div>
-      </PSCard>
 
-      {/* Confirm */}
-      <PSButton
-        variant={bookingMode === 'SCHEDULE' ? 'blue' : 'primary'}
-        size="lg"
-        block
-        disabled={bookingLoading || !pickupAddress || !destAddress}
-        onClick={handleRequestRide}
-      >
-        {bookingLoading
-          ? (bookingMode === 'SCHEDULE' ? 'Pre-Booking...' : 'Requesting...')
-          : (bookingMode === 'SCHEDULE'
-              ? 'Confirm & Pre-Book'
-              : 'Confirm & Request Ride')}
-      </PSButton>
+        <div className="ps-payment-method-row">
+          <CreditCard size={13} color="#EA580C" aria-hidden="true" />
+          <span>Payment: Cash or UPI directly to driver on drop</span>
+        </div>
 
-      {/* Preference Unavailable Intercept Modal */}
+        <PSButton
+          variant={bookingMode === 'SCHEDULE' ? 'blue' : 'primary'}
+          size="lg"
+          block
+          disabled={bookingLoading || !pickupAddress || !destAddress}
+          onClick={handleRequestRide}
+          aria-label={bookingMode === 'SCHEDULE' ? 'Confirm and pre-book ride' : 'Confirm and request ride'}
+        >
+          {bookingLoading
+            ? (bookingMode === 'SCHEDULE' ? 'Pre-Booking Ride...' : 'Requesting Ride...')
+            : (bookingMode === 'SCHEDULE'
+                ? 'Confirm & Pre-Book'
+                : 'Confirm & Request Ride')}
+        </PSButton>
+      </div>
+
+      {/* ── Preference Modal (Preserved Contract) ── */}
       {showPreferenceModal && (
         <div className="ps-modal-overlay">
-          <div className="ps-modal ps-modal--md ps-modal-in ps-modal--amber ps-pref-modal">
+          <div className="ps-modal ps-modal--md ps-modal-in ps-pref-modal" role="dialog" aria-modal="true">
             <div className="ps-modal-head">
               <div className="ps-modal-head-icon ps-modal-head-icon--amber">
-                <AlertTriangle size={22} />
+                <AlertTriangle size={20} />
               </div>
               <div>
                 <h3 className="ps-modal-title">Preferred Ride Unavailable</h3>
@@ -701,7 +712,7 @@ export function BookingForm({
                 type="button"
                 className="ps-modal-close"
                 onClick={() => setShowPreferenceModal(false)}
-                aria-label="Close"
+                aria-label="Close dialog"
               >
                 <X size={16} />
               </button>
@@ -709,7 +720,7 @@ export function BookingForm({
 
             <div className="ps-pref-modal-content">
               <div className="ps-pref-modal-alert">
-                <AlertCircle size={20} className="ps-pref-modal-alert-icon" />
+                <AlertCircle size={18} className="ps-pref-modal-alert-icon" />
                 <div>
                   <div className="ps-pref-modal-alert-text">
                     {preferenceModalData?.unavailableMessage || 'No drivers matching your preferences are currently online.'}
@@ -742,7 +753,7 @@ export function BookingForm({
             <div className="ps-pref-modal-actions">
               <button
                 type="button"
-                className="ps-btn ps-btn--primary ps-btn--lg ps-btn--block ps-pref-action-btn"
+                className="ps-btn ps-btn--primary ps-btn--lg ps-btn--block"
                 onClick={() => {
                   setShowPreferenceModal(false);
                   setVehicleType('ANY');
@@ -750,7 +761,7 @@ export function BookingForm({
                   executeRequestRide({ vehicleType: 'ANY', femaleRiderOnly: false });
                 }}
               >
-                <Zap size={16} /> Opt for Available Ride (Fastest)
+                <Zap size={15} /> Opt for Available Ride (Fastest)
               </button>
 
               <div className="ps-pref-secondary-row">
