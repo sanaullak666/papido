@@ -424,8 +424,7 @@
 }
 .ds-table-mono {
   font-size: 11px;
-  font-family: var(--font-heading, 'Outfit', sans-serif);
-  letter-spacing: 0.04em;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-weight: 700;
   color: #F8FAFC;
 }

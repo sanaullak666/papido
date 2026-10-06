@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './advance/advance.css';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api';
@@ -7,7 +7,9 @@ import { PSButton, PSCard, PSSkeleton } from './shared/PassengerUI';
 import { ScheduledRideCard } from './advance/ScheduledRideCard';
 import { RescheduleModal } from './advance/RescheduleModal';
 import { AdvanceEmptyState } from './advance/AdvanceEmptyState';
-import { Calendar, RefreshCw, Clock } from 'lucide-react';
+import {
+  Calendar, RefreshCw, Clock, CheckCircle2, Hourglass, TrendingUp
+} from 'lucide-react';
 
 export function AdvanceBookingsPage() {
   const { token } = useAuth();
@@ -15,6 +17,29 @@ export function AdvanceBookingsPage() {
 
   const [loading, setLoading] = useState(false);
   const [rescheduleTarget, setRescheduleTarget] = useState(null);
+
+  // Auto-sync scheduled rides on mount, tab focus, and active 3s interval
+  useEffect(() => {
+    fetchScheduledRides();
+
+    const interval = setInterval(() => {
+      fetchScheduledRides();
+    }, 3000);
+
+    const handleSync = () => {
+      if (document.visibilityState === 'visible') {
+        fetchScheduledRides();
+      }
+    };
+    window.addEventListener('focus', handleSync);
+    document.addEventListener('visibilitychange', handleSync);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleSync);
+      document.removeEventListener('visibilitychange', handleSync);
+    };
+  }, []);
 
   const handleRefresh = async () => {
     setLoading(true);
@@ -50,6 +75,18 @@ export function AdvanceBookingsPage() {
 
   const safeScheduledRides = scheduledRides || [];
   const isEmpty = safeScheduledRides.length === 0;
+
+  /* Derived: split into confirmed vs pending */
+  const { confirmed, pending } = useMemo(() => {
+    const confirmedList = [];
+    const pendingList = [];
+    safeScheduledRides.forEach(r => {
+      const isAssigned = Boolean(r.rider_name || r.rider_id || r.status === 'ACCEPTED');
+      if (isAssigned) confirmedList.push(r);
+      else pendingList.push(r);
+    });
+    return { confirmed: confirmedList, pending: pendingList };
+  }, [safeScheduledRides]);
 
   return (
     <div className="ps-advance-page">
@@ -88,6 +125,41 @@ export function AdvanceBookingsPage() {
             </a>
           </div>
         </div>
+
+        {/* ── SUMMARY TILES (NEW) ── */}
+        {!isEmpty && (
+          <div className="ps-advance-summary ps-fade-up">
+            <div className="ps-advance-summary-tile">
+              <div className="ps-advance-summary-icon ps-advance-summary-icon--green">
+                <CheckCircle2 size={16} />
+              </div>
+              <div className="ps-advance-summary-body">
+                <div className="ps-advance-summary-value">{confirmed.length}</div>
+                <div className="ps-advance-summary-label">Confirmed</div>
+              </div>
+            </div>
+
+            <div className="ps-advance-summary-tile">
+              <div className="ps-advance-summary-icon ps-advance-summary-icon--amber">
+                <Hourglass size={16} />
+              </div>
+              <div className="ps-advance-summary-body">
+                <div className="ps-advance-summary-value">{pending.length}</div>
+                <div className="ps-advance-summary-label">Awaiting rider</div>
+              </div>
+            </div>
+
+            <div className="ps-advance-summary-tile">
+              <div className="ps-advance-summary-icon ps-advance-summary-icon--blue">
+                <TrendingUp size={16} />
+              </div>
+              <div className="ps-advance-summary-body">
+                <div className="ps-advance-summary-value">{safeScheduledRides.length}</div>
+                <div className="ps-advance-summary-label">Total upcoming</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Body */}
         {loading && isEmpty ? (

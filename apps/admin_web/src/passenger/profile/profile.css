@@ -427,3 +427,320 @@
     animation: none !important;
   }
 }
+
+
+/* ============================================================
+   PROFILE — ACTIVITY STATS + ACHIEVEMENT CARD  (NEW)
+   ============================================================ */
+
+.ps-profile-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.ps-profile-stat-card {
+  background: var(--ps-surface-solid, #FFFFFF);
+  border: 1px solid var(--ps-border, #E8DCCB);
+  border-radius: 14px;
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 2px 8px rgba(39, 30, 22, 0.04);
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 200ms ease;
+}
+.ps-profile-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(39, 30, 22, 0.08);
+}
+
+.ps-profile-stat-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.ps-profile-stat-icon--amber {
+  background: rgba(234, 88, 12, 0.10);
+  color: #EA580C;
+}
+.ps-profile-stat-icon--green {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+.ps-profile-stat-icon--blue {
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563EB;
+}
+.ps-profile-stat-icon--purple {
+  background: rgba(139, 92, 246, 0.12);
+  color: #7C3AED;
+}
+
+.ps-profile-stat-value {
+  font-family: 'Outfit', sans-serif;
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--ps-text, #271E16);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  margin-top: 4px;
+}
+
+.ps-profile-stat-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--ps-text-muted, #796D61);
+  line-height: 1.3;
+}
+
+/* Achievement card */
+.ps-profile-achievement {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background:
+    radial-gradient(circle at 15% 50%, rgba(234, 88, 12, 0.10), transparent 55%),
+    linear-gradient(135deg, #FFF7ED, #FFFFFF);
+  border: 1.5px solid rgba(234, 88, 12, 0.25);
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.08);
+}
+
+.ps-profile-achievement-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #F97316, #EA580C);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.35);
+}
+
+.ps-profile-achievement-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.ps-profile-achievement-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--ps-text, #271E16);
+  letter-spacing: -0.01em;
+}
+
+.ps-profile-achievement-desc {
+  font-size: 12px;
+  color: var(--ps-text-muted, #796D61);
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .ps-profile-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 380px) {
+  .ps-profile-stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .ps-profile-stat-card { padding: 12px 10px; }
+  .ps-profile-stat-value { font-size: 18px; }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .ps-profile-stat-card,
+  .ps-profile-achievement {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+
+/* ============================================================
+   AVATAR — ANIMATED GRADIENT RING  (NEW)
+   ============================================================ */
+
+.ps-avatar-wrap {
+  position: relative;
+  width: 68px;
+  height: 68px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Rotating gradient ring */
+.ps-avatar-ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  padding: 2px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%,
+    rgba(234, 88, 12, 0.65) 25%,
+    transparent 50%,
+    rgba(234, 88, 12, 0.65) 75%,
+    transparent 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: psAvatarRingSpin 6s linear infinite;
+  pointer-events: none;
+}
+.ps-avatar-ring--pink {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%,
+    rgba(236, 72, 153, 0.65) 25%,
+    transparent 50%,
+    rgba(236, 72, 153, 0.65) 75%,
+    transparent 100%
+  );
+}
+.ps-avatar-ring--neutral {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%,
+    rgba(100, 116, 139, 0.55) 25%,
+    transparent 50%,
+    rgba(100, 116, 139, 0.55) 75%,
+    transparent 100%
+  );
+}
+
+@keyframes psAvatarRingSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* Small sparkle badge */
+.ps-avatar-sparkle {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #F97316, #EA580C);
+  color: #FFFFFF;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.35);
+  animation: psAvatarSparklePop 2.4s ease-in-out infinite;
+}
+.ps-avatar-sparkle--pink {
+  background: linear-gradient(135deg, #F472B6, #DB2777);
+  box-shadow: 0 2px 6px rgba(219, 39, 119, 0.35);
+}
+.ps-avatar-sparkle--neutral {
+  background: linear-gradient(135deg, #94A3B8, #475569);
+  box-shadow: 0 2px 6px rgba(71, 85, 105, 0.35);
+}
+
+@keyframes psAvatarSparklePop {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.14); }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .ps-avatar-ring,
+  .ps-avatar-sparkle {
+    animation: none !important;
+  }
+}
+
+
+/* ============================================================
+   SECURITY — INFO STRIP + EXTRA ROWS  (NEW)
+   ============================================================ */
+
+/* Session info strip */
+.ps-security-info-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  background: var(--ps-surface, #FAF5EE);
+  border: 1px solid var(--ps-border, #E8DCCB);
+  border-radius: 12px;
+  margin-bottom: 6px;
+}
+
+.ps-security-info-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--ps-text-muted, #796D61);
+  font-weight: 700;
+}
+.ps-security-info-item + .ps-security-info-item {
+  padding-left: 10px;
+  border-left: 1px solid var(--ps-border, #E8DCCB);
+}
+
+.ps-security-info-label {
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+.ps-security-info-value {
+  font-weight: 800;
+  color: var(--ps-text, #271E16);
+}
+
+/* Icon color variants */
+.ps-security-icon--blue {
+  background: rgba(37, 99, 235, 0.10);
+  color: #2563EB;
+}
+.ps-security-icon--green {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+
+/* Static info rows (non-clickable) */
+.ps-security-row--static {
+  cursor: default;
+  pointer-events: none;
+}
+.ps-security-row--static:hover {
+  transform: none;
+}
+
+/* Responsive */
+@media (max-width: 520px) {
+  .ps-security-info-strip {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .ps-security-info-item + .ps-security-info-item {
+    padding-left: 0;
+    border-left: none;
+  }
+}

@@ -2,16 +2,16 @@ import React, { useState } from 'react';
 import { usePassenger } from '../shared/PassengerContext';
 import { RideStatusStepper } from '../../components/ride/RideStatusStepper';
 import { PSButton, PSCard } from '../shared/PassengerUI';
-import { openCancelWarning } from '../shared/PassengerModals';
+import { openCancelWarning, openPenaltyModal } from '../shared/PassengerModals';
 import {
   Bike, MapPin, Clock, Phone, Search, CheckCircle, Navigation,
   ExternalLink, Star, Award, Sparkles, ShieldCheck, ThumbsUp,
-  QrCode, Copy, Smartphone, CreditCard, Check, Calendar, Users, Zap
+  QrCode, Copy, Smartphone, CreditCard, Check, Calendar, Users, Zap, Download
 } from 'lucide-react';
 
 export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
   const { socketRef, standardCampusFare } = usePassenger();
-  const [showTripQr, setShowTripQr] = useState(false);
+  const [payMode, setPayMode] = useState('QR');
   const [copiedUpi, setCopiedUpi] = useState(false);
 
   const handleCancelClick = () => {
@@ -35,12 +35,34 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
 
   const fare = activeRide.total_fare || activeRide.final_fare || activeRide.estimated_fare || (standardCampusFare || 25);
 
-  /* UPI payment URL */
+  /* UPI payment URL & NPCI Intent Specifications */
   const driverUpi = (activeRide.rider_upi_id || '').trim()
     || (activeRide.rider_phone ? `${activeRide.rider_phone}@upi` : 'driver@upi');
   const driverName = activeRide.rider_name || 'Campus Driver';
-  const upiPayUrl = `upi://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${fare}&tn=Papido_${activeRide.ride_code || activeRide.id}&cu=INR`;
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiPayUrl)}`;
+  const rawFare = activeRide.total_fare || activeRide.final_fare || activeRide.estimated_fare || (standardCampusFare || 25);
+  const formattedFare = Number(rawFare).toFixed(2);
+
+  const gpayUrl = `gpay://upi/pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${formattedFare}&cu=INR`;
+  const phonepeUrl = `phonepe://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${formattedFare}&cu=INR`;
+  const upiPayUrl = `upi://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${formattedFare}&cu=INR`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(upiPayUrl)}`;
+
+  const handleDownloadQr = async () => {
+    try {
+      const response = await fetch(qrCodeUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Papido_QR_${driverName.replace(/\s+/g, '_')}_Rs${formattedFare}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (_) {
+      window.open(qrCodeUrl, '_blank');
+    }
+  };
 
   return (
     <div className="ps-live-trip ps-fade-up">
@@ -62,6 +84,40 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
           {activeRide.status === 'RIDER_REACHED' && <><MapPin size={18} /> {statusLabel}</>}
           {activeRide.status === 'STARTED' && <><Navigation size={18} /> {statusLabel}</>}
           {activeRide.status === 'PENDING_ADMIN_QUOTE' && <><Clock size={18} /> {statusLabel}</>}
+        </div>
+      </div>
+
+      {/* ── Live Map Preview (NEW) ── */}
+      <div className="ps-route-map-preview ps-fade-up">
+        <div className="ps-route-map-placeholder">
+          <div className="ps-map-grid" />
+          <div className="ps-map-marker ps-map-marker--pickup" title="Pickup">
+            <MapPin size={16} color="#FFFFFF" />
+          </div>
+          <div className="ps-map-marker ps-map-marker--driver" title="Driver">
+            <Bike size={14} color="#FFFFFF" />
+          </div>
+          <div className="ps-map-marker ps-map-marker--drop" title="Drop">
+            <Navigation size={16} color="#FFFFFF" />
+          </div>
+          <div className="ps-map-route-line" />
+        </div>
+        <div className="ps-route-map-info">
+          <span className="ps-route-map-eta">
+            <Clock size={12} />
+            {activeRide.status === 'STARTED' ? 'In progress' :
+             activeRide.status === 'RIDER_REACHED' ? 'Arrived' :
+             activeRide.status === 'RIDER_ARRIVING' ? 'En route' :
+             'Realtime tracking'}
+          </span>
+          <a
+            href={`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(activeRide.pickup_address)}&destination=${encodeURIComponent(activeRide.destination_address)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ps-route-map-link"
+          >
+            <ExternalLink size={12} /> Open in Maps
+          </a>
         </div>
       </div>
 
@@ -120,7 +176,7 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
       </div>
 
       {/* Scheduled confirmed banner */}
-      {activeRide.status === 'ACCEPTED' && activeRide.scheduled_time && (
+      {activeRide.status === 'ACCEPTED' && Boolean(activeRide.scheduled_time) && (
         <div className="ps-confirmed-banner ps-fade-up">
           <div className="ps-confirmed-left">
             <div className="ps-confirmed-icon">
@@ -136,7 +192,7 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
       )}
 
       {/* Waiting banner */}
-      {activeRide.is_waiting && (
+      {Boolean(activeRide.is_waiting) && (
         <div className="ps-waiting-banner ps-pulse-soft">
           <div className="ps-waiting-left">
             <div className="ps-waiting-icon"><Clock size={15} /></div>
@@ -208,6 +264,42 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
               </a>
             )}
           </div>
+
+          {(Number(activeRide.rider_total_rides) >= 15 && Number(activeRide.rider_rating || 5.0) >= 4.6) ? (
+            <div className="ps-top-badge ps-top-badge--amber">
+              <div className="ps-top-badge-icon ps-top-badge-icon--amber">
+                <Award size={18} />
+              </div>
+              <div className="ps-top-badge-body">
+                <div className="ps-top-badge-head">
+                  <span className="ps-top-badge-title ps-top-badge-title--amber">Most Chosen Rider</span>
+                  <span className="ps-top-badge-chip ps-top-badge-chip--amber">
+                    <Sparkles size={10} /> Top Rated
+                  </span>
+                </div>
+                <div className="ps-top-badge-sub">
+                  Consistently chosen by passengers with a {Number(activeRide.rider_rating || 5.0).toFixed(1)} rating.
+                </div>
+              </div>
+            </div>
+          ) : (Number(activeRide.rider_rating || 5.0) >= 4.7) ? (
+            <div className="ps-top-badge ps-top-badge--emerald">
+              <div className="ps-top-badge-icon ps-top-badge-icon--emerald">
+                <ShieldCheck size={18} />
+              </div>
+              <div className="ps-top-badge-body">
+                <div className="ps-top-badge-head">
+                  <span className="ps-top-badge-title ps-top-badge-title--emerald">Top Rated Campus Rider</span>
+                  <span className="ps-top-badge-chip ps-top-badge-chip--emerald">
+                    <ThumbsUp size={9} /> High Satisfaction
+                  </span>
+                </div>
+                <div className="ps-top-badge-sub">
+                  Verified trusted rider with excellent passenger feedback ({Number(activeRide.rider_rating || 5.0).toFixed(1)} rating).
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
       )}
 
@@ -228,51 +320,126 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
             </div>
           </div>
 
-          <div className="ps-upi-actions">
-            <a href={upiPayUrl} className="ps-upi-action ps-upi-action--gpay">
-              <Smartphone size={15} /> GPay
-            </a>
-            <a href={upiPayUrl} className="ps-upi-action ps-upi-action--phonepe">
-              <Zap size={15} /> PhonePe
-            </a>
-          </div>
-
-          <div className="ps-upi-copy-row">
-            <div>
-              <div className="ps-upi-copy-label">Driver UPI</div>
-              <div className="ps-upi-copy-value">{driverUpi}</div>
-            </div>
+          <div className="ps-pay-tabs">
             <button
               type="button"
-              onClick={() => {
-                navigator.clipboard?.writeText(driverUpi);
-                setCopiedUpi(true);
-                setTimeout(() => setCopiedUpi(false), 2500);
-              }}
-              className={`ps-upi-copy-btn ${copiedUpi ? 'is-copied' : ''}`}
+              onClick={() => setPayMode('QR')}
+              className={`ps-pay-tab ${payMode === 'QR' ? 'is-active' : ''}`}
             >
-              {copiedUpi ? <Check size={12} /> : <Copy size={12} />}
-              {copiedUpi ? 'Copied' : 'Copy'}
+              <QrCode size={14} /> Scan QR (100% Works)
+            </button>
+            <button
+              type="button"
+              onClick={() => setPayMode('APPS')}
+              className={`ps-pay-tab ${payMode === 'APPS' ? 'is-active' : ''}`}
+            >
+              <Smartphone size={14} /> 1-Tap UPI Apps
             </button>
           </div>
 
-          <div className="ps-qr-toggle-wrap">
-            <button
-              type="button"
-              onClick={() => setShowTripQr(!showTripQr)}
-              className="ps-qr-toggle"
-            >
-              <QrCode size={14} />
-              {showTripQr ? 'Hide QR' : 'Show Payment QR'}
-            </button>
-            {showTripQr && (
-              <div className="ps-qr-box ps-fade-up">
+          {payMode === 'QR' ? (
+            <div className="ps-fade-up" style={{ textAlign: 'center' }}>
+              <div className="ps-qr-box" style={{ marginTop: '0', marginBottom: '10px' }}>
                 <div className="ps-qr-inner">
                   <img src={qrCodeUrl} alt="Payment QR" className="ps-qr-img" />
                 </div>
+                <div className="ps-qr-note" style={{ color: '#059669', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginTop: '8px' }}>
+                  <ShieldCheck size={14} /> 100% Bank Approved: Scan with GPay, PhonePe, Paytm
+                </div>
               </div>
-            )}
-          </div>
+
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '12px' }}>
+                <button
+                  type="button"
+                  onClick={handleDownloadQr}
+                  className="ps-upi-copy-btn"
+                  style={{ background: '#FFF7ED', borderColor: '#FDBA74', color: '#EA580C', fontWeight: 700 }}
+                >
+                  <Download size={13} /> Save QR Image
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(driverUpi);
+                    setCopiedUpi(true);
+                    setTimeout(() => setCopiedUpi(false), 2500);
+                  }}
+                  className={`ps-upi-copy-btn ${copiedUpi ? 'is-copied' : ''}`}
+                >
+                  {copiedUpi ? <Check size={12} /> : <Copy size={12} />}
+                  {copiedUpi ? 'UPI ID Copied' : 'Copy UPI ID'}
+                </button>
+              </div>
+
+              <div className="ps-upi-help-tip" style={{ textAlign: 'center', fontSize: '11px' }}>
+                📸 <strong>Single Phone?</strong> Tap <strong>Save QR Image</strong> above, open Google Pay, tap the <strong>Scan QR</strong> icon, then tap the gallery icon to select this image!
+              </div>
+            </div>
+          ) : (
+            <div className="ps-fade-up">
+              <div className="ps-upi-actions">
+                <a
+                  href={gpayUrl}
+                  onClick={() => {
+                    navigator.clipboard?.writeText(driverUpi);
+                    setCopiedUpi(true);
+                    setTimeout(() => setCopiedUpi(false), 3000);
+                  }}
+                  className="ps-upi-action ps-upi-action--gpay"
+                  rel="noopener noreferrer"
+                >
+                  <Smartphone size={15} /> GPay
+                </a>
+                <a
+                  href={phonepeUrl}
+                  onClick={() => {
+                    navigator.clipboard?.writeText(driverUpi);
+                    setCopiedUpi(true);
+                    setTimeout(() => setCopiedUpi(false), 3000);
+                  }}
+                  className="ps-upi-action ps-upi-action--phonepe"
+                  rel="noopener noreferrer"
+                >
+                  <Zap size={15} /> PhonePe
+                </a>
+                <a
+                  href={upiPayUrl}
+                  onClick={() => {
+                    navigator.clipboard?.writeText(driverUpi);
+                    setCopiedUpi(true);
+                    setTimeout(() => setCopiedUpi(false), 3000);
+                  }}
+                  className="ps-upi-action ps-upi-action--generic"
+                  rel="noopener noreferrer"
+                >
+                  <ExternalLink size={14} /> Any UPI
+                </a>
+              </div>
+
+              <div className="ps-upi-copy-row">
+                <div>
+                  <div className="ps-upi-copy-label">Driver UPI (KYC Verified)</div>
+                  <div className="ps-upi-copy-value">{driverUpi}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(driverUpi);
+                    setCopiedUpi(true);
+                    setTimeout(() => setCopiedUpi(false), 2500);
+                  }}
+                  className={`ps-upi-copy-btn ${copiedUpi ? 'is-copied' : ''}`}
+                >
+                  {copiedUpi ? <Check size={12} /> : <Copy size={12} />}
+                  {copiedUpi ? 'Copied' : 'Copy'}
+                </button>
+              </div>
+
+              <div className="ps-upi-help-tip">
+                ⚠️ <strong>Bank Note:</strong> If your bank shows <em>"exceeded bank limit"</em> on the GPay link, it is because banks restrict web-initiated links to personal accounts. Tap <strong>Copy</strong> above, open Google Pay &gt; <strong>Pay UPI ID</strong> to pay directly, or switch to the <strong>Scan QR</strong> tab.
+              </div>
+            </div>
+          )}
         </div>
       )}
 

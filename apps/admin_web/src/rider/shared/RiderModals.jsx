@@ -206,7 +206,7 @@ export function AdminQrModal({ isOpen, onClose, shiftSettlement, selectedDate })
             justifyContent: 'space-between'
           }}>
             <div style={{ fontSize: '13px', fontWeight: 600, color: '#1E293B' }}>
-              UPI ID: <span style={{ fontFamily: "var(--font-sans, 'Plus Jakarta Sans', sans-serif)", fontWeight: 700, color: '#EA580C' }}>{adminUpiId}</span>
+              UPI ID: <span style={{ fontFamily: 'monospace', color: '#EA580C' }}>{adminUpiId}</span>
             </div>
             <RPButton type="button" size="sm" variant="secondary" onClick={handleCopy}>
               {copied ? <Check size={13} color="#10B981" /> : <Copy size={13} />}

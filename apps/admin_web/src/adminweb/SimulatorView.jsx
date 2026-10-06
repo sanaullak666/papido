@@ -484,7 +484,7 @@ export function SimulatorView() {
                     <span className={`badge ${customerRide.status === 'COMPLETED' ? 'badge-success' : customerRide.status === 'PENDING_ADMIN_QUOTE' ? 'badge-info' : 'badge-warning'}`} style={{ fontSize: '12px', marginBottom: '8px' }}>
                       {customerRide.status === 'PENDING_ADMIN_QUOTE' ? 'AWAITING ADMIN QUOTE' : customerRide.status}
                     </span>
-                    <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--primary)', fontFamily: "var(--font-heading, 'Outfit', sans-serif)", letterSpacing: '0.04em' }}>
+                    <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--primary)', fontFamily: 'monospace' }}>
                       {customerRide.ride_code}
                     </div>
 

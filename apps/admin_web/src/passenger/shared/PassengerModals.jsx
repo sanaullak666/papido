@@ -34,7 +34,9 @@ export function PenaltyPaymentModal({ penalty, onClose }) {
 
   const riderUpi = penalty.rider_upi || penalty.rider_upi_id || `${penalty.rider_phone || 'driver'}@upi`;
   const riderName = penalty.rider_name || penalty.rider_name_full || 'Driver';
-  const upiUri = penalty.upiPayUrl || `upi://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&tn=Papido_Compensation&cu=INR`;
+  const gpayUri = `gpay://upi/pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&cu=INR`;
+  const phonepeUri = `phonepe://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&cu=INR`;
+  const upiUri = penalty.upiPayUrl || `upi://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&cu=INR`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(upiUri)}`;
 
   const handleSettle = async () => {
@@ -127,8 +129,29 @@ export function PenaltyPaymentModal({ penalty, onClose }) {
             )}
 
             {payMode === 'APPS' && (
-              <div className="ps-pay-apps ps-fade-up">
-                <a href={upiUri} className="ps-upi-action ps-upi-action--primary">
+              <div className="ps-pay-apps ps-fade-up" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <a
+                  href={gpayUri}
+                  onClick={() => navigator.clipboard?.writeText(riderUpi)}
+                  className="ps-upi-action ps-upi-action--gpay"
+                  rel="noopener noreferrer"
+                >
+                  <Smartphone size={16} /> Pay ₹15 via Google Pay
+                </a>
+                <a
+                  href={phonepeUri}
+                  onClick={() => navigator.clipboard?.writeText(riderUpi)}
+                  className="ps-upi-action ps-upi-action--phonepe"
+                  rel="noopener noreferrer"
+                >
+                  <Zap size={16} /> Pay ₹15 via PhonePe
+                </a>
+                <a
+                  href={upiUri}
+                  onClick={() => navigator.clipboard?.writeText(riderUpi)}
+                  className="ps-upi-action ps-upi-action--generic"
+                  rel="noopener noreferrer"
+                >
                   <ExternalLink size={16} /> Pay ₹15 with Any UPI App
                 </a>
               </div>

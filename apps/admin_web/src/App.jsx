@@ -466,7 +466,7 @@ export function App() {
               Access Denied: Security Violation
             </h2>
             <p style={{ fontSize: '15px', color: '#94a3b8', maxWidth: '440px', margin: '0 0 24px', lineHeight: '1.6' }}>
-              Passenger accounts cannot access Driver portals. Your session has been safely closed for security.
+              Passenger accounts cannot access Driver portals (<code style={{ color: '#fca5a5', background: 'rgba(239,68,68,0.1)', padding: '2px 6px', borderRadius: '4px' }}>/driver/</code>). Your session has been terminated for security.
             </p>
             <button
               onClick={() => logout('/login?reason=unauthorized_role&role=rider')}

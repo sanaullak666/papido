@@ -116,7 +116,7 @@ export function DriverCard({
           {vehicleType === 'AUTO' || vehicleType === 'CAB' ? <Car size={14} /> : <Bike size={14} />}
           <span>{driver.vehicle_model || vehicleType}</span>
         </div>
-        <div style={{ fontFamily: "var(--font-heading, 'Outfit', sans-serif)", letterSpacing: '0.06em', fontWeight: 800, color: 'var(--text-primary, #F8FAFC)' }}>
+        <div style={{ fontFamily: 'var(--font-mono, monospace)', fontWeight: 700, color: 'var(--text-primary, #F8FAFC)' }}>
           {driver.vehicle_number || driver.vehicle_plate || 'No Plate'}
         </div>
       </div>

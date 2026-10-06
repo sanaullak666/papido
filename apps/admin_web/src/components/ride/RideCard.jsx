@@ -51,9 +51,8 @@ export function RideCard({
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
           <span
             style={{
-              fontFamily: "var(--font-heading, 'Outfit', sans-serif)",
-              letterSpacing: '0.04em',
-              fontWeight: 800,
+              fontFamily: 'var(--font-mono, monospace)',
+              fontWeight: 700,
               fontSize: '13px',
               color: 'var(--primary, #F59E0B)'
             }}
@@ -95,8 +94,7 @@ export function RideCard({
                 border: `1px solid ${['STARTED', 'COMPLETED'].includes(ride.status)
                   ? 'rgba(16, 185, 129, 0.3)'
                   : 'rgba(245, 158, 11, 0.3)'}`,
-                fontFamily: "var(--font-heading, 'Outfit', sans-serif)",
-                letterSpacing: '0.04em'
+                fontFamily: 'ui-monospace, SFMono-Regular, Consolas, monospace'
               }}
               title={['STARTED', 'COMPLETED'].includes(ride.status) ? "Verified Start OTP" : "Active Start OTP"}
             >

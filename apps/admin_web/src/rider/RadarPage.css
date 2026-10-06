@@ -137,6 +137,16 @@
 .rp-sound-bar.is-off {
   color: #64748B;
 }
+.rp-sound-bar.is-ringing {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #DC2626;
+  animation: rpRingtonePulse 1.2s ease-in-out infinite;
+}
+@keyframes rpRingtonePulse {
+  0%, 100% { border-color: rgba(239, 68, 68, 0.4); }
+  50% { border-color: rgba(239, 68, 68, 0.9); box-shadow: 0 0 10px rgba(239, 68, 68, 0.2); }
+}
 .rp-sound-bar-left {
   display: flex;
   align-items: center;

@@ -425,3 +425,91 @@
     animation: none !important;
   }
 }
+
+
+/* ============================================================
+   RATING + RECEIPT EXPANSION (NEW)
+   ============================================================ */
+.ps-hist-rating {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.ps-hist-rating-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: #D97706;
+  margin-left: 5px;
+}
+
+.ps-hist-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ps-amber, #EA580C);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+  margin-top: 6px;
+  transition: color 160ms ease;
+}
+.ps-hist-expand-btn:hover { text-decoration: underline; }
+.ps-hist-expand-btn svg {
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ps-hist-expand-btn svg.is-rotated { transform: rotate(180deg); }
+
+.ps-hist-expanded {
+  margin-top: 10px;
+  padding: 12px 14px;
+  background: var(--ps-surface, #FAF5EE);
+  border-radius: 10px;
+  border: 1px solid var(--ps-border, #E8DCCB);
+  animation: psFadeUp 260ms ease both;
+}
+
+.ps-hist-receipt-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--ps-text-muted, #796D61);
+  padding: 4px 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.ps-hist-receipt-row--discount {
+  color: #059669;
+  font-weight: 700;
+}
+
+.ps-hist-receipt-row--total {
+  font-weight: 800;
+  color: var(--ps-text, #271E16);
+  border-top: 1px solid var(--ps-border, #E8DCCB);
+  margin-top: 6px;
+  padding-top: 10px;
+  font-size: 13px;
+}
+
+.ps-hist-receipt-meta {
+  font-size: 10px;
+  color: var(--ps-text-muted, #796D61);
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--ps-border, #E8DCCB);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Card expanded state */
+.ps-hist-card.is-expanded {
+  border-color: var(--ps-amber, #EA580C);
+  box-shadow: 0 4px 16px rgba(234, 88, 12, 0.10);
+}
