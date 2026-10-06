@@ -133,14 +133,15 @@
 }
 
 .ps-sched-code {
-  font-family: monospace;
+  font-family: var(--font-heading, 'Outfit', sans-serif);
   font-size: 12px;
   font-weight: 800;
   background: var(--ps-surface, #FAF5EE);
   border: 1px solid var(--ps-border);
-  padding: 2px 6px;
+  padding: 2px 7px;
   border-radius: 6px;
   color: var(--ps-text);
+  letter-spacing: 0.04em;
 }
 
 .ps-sched-time {

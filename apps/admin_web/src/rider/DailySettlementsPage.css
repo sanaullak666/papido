@@ -196,7 +196,7 @@
   font-weight: 600;
 }
 .rp-upi-copy-value {
-  font-family: monospace;
+  font-family: var(--font-sans, 'Plus Jakarta Sans', sans-serif);
   font-size: 14px;
   font-weight: 700;
   color: #EA580C;
@@ -299,7 +299,7 @@
   gap: 10px;
 }
 .rp-input--mono {
-  font-family: monospace;
+  font-family: var(--font-heading, 'Outfit', sans-serif);
   font-size: 15px;
   letter-spacing: 0.04em;
 }

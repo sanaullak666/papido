@@ -165,14 +165,16 @@
    TABLE CELL HELPERS
    ============================================================ */
 .pv-table-mono {
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-heading, 'Outfit', sans-serif);
+  letter-spacing: 0.04em;
   font-size: 13px;
   font-weight: 600;
   color: #94A3B8;
 }
 .pv-table-code {
   color: #F59E0B;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-heading, 'Outfit', sans-serif);
+  letter-spacing: 0.04em;
   font-weight: 700;
   font-size: 13px;
 }

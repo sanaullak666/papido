@@ -870,7 +870,7 @@
   color: #796D61;
 }
 .ps-status-ride-code-badge {
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-heading, 'Outfit', sans-serif);
   font-size: 12px;
   font-weight: 800;
   color: #EA580C;
@@ -878,7 +878,7 @@
   border: 1px solid rgba(234, 88, 12, 0.3);
   padding: 3px 9px;
   border-radius: 8px;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 .ps-status-badge-card-text {
@@ -1106,7 +1106,7 @@
   color: #92400E;
 }
 .ps-otp-ride-chip {
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-heading, 'Outfit', sans-serif);
   font-size: 11.5px;
   font-weight: 800;
   color: #92400E;
@@ -1114,7 +1114,7 @@
   border: 1px solid rgba(180, 83, 9, 0.25);
   padding: 2px 8px;
   border-radius: 6px;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
 }
 .ps-otp-value {
   font-family: 'Outfit', -apple-system, sans-serif;
@@ -1385,7 +1385,7 @@
 }
 .ps-upi-copy-label { font-size: 10px; font-weight: 800; color: var(--ps-text-muted); text-transform: uppercase; }
 .ps-upi-copy-value {
-  font-family: monospace;
+  font-family: var(--font-sans, 'Plus Jakarta Sans', sans-serif);
   font-size: 13.5px;
   font-weight: 800;
   color: var(--ps-text, #271E16);
@@ -1460,7 +1460,7 @@
 .ps-thanks-icon { margin-bottom: 10px; }
 .ps-thanks-ride-code {
   display: inline-block;
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-heading, 'Outfit', sans-serif);
   font-size: 13px;
   font-weight: 800;
   color: #EA580C;

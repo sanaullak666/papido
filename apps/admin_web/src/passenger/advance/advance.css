@@ -106,7 +106,7 @@
 }
 
 .ps-sched-code {
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-heading, 'Outfit', sans-serif);
   font-size: 12px;
   font-weight: 800;
   background: var(--ps-surface, #FAF5EE);
@@ -114,7 +114,7 @@
   padding: 3px 8px;
   border-radius: 6px;
   color: var(--ps-text);
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
 }
 
 .ps-sched-time {

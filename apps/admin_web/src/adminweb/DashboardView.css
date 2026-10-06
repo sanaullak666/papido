@@ -365,7 +365,8 @@
 /* Table cell styling helpers (used via className on cells) */
 .dv-table-code {
   color: #F59E0B;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-heading, 'Outfit', sans-serif);
+  letter-spacing: 0.04em;
   font-weight: 700;
   font-size: 13px;
 }

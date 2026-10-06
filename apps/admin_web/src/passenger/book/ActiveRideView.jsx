@@ -28,8 +28,10 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
     ACCEPTED: 'Rider accepted your trip',
     RIDER_ARRIVING: 'Rider is on the way',
     RIDER_REACHED: 'Rider has arrived',
-    STARTED: 'Trip in progress'
-  }[activeRide.status] || activeRide.status;
+    STARTED: 'Trip in progress',
+    COMPLETED: 'Trip completed successfully',
+    CANCELLED: 'Trip cancelled'
+  }[activeRide.status] || String(activeRide.status || '').replace(/_/g, ' ');
 
   const isEm = ['ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED'].includes(activeRide.status);
 
@@ -71,10 +73,10 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
       <div className={`ps-status-badge-card ${isEm ? 'is-emerald' : 'is-amber'}`}>
         <div className="ps-status-badge-card-header">
           <div className="ps-status-badge-card-label">
-            STATUS: {activeRide.status}
+            LIVE TRIP STATUS
           </div>
           <span className="ps-status-ride-code-badge">
-            Ride #{activeRide.ride_code || activeRide.rideCode || `PAP-${activeRide.id}`}
+            Ride #{activeRide.ride_code || activeRide.rideCode || activeRide.id}
           </span>
         </div>
         <div className="ps-status-badge-card-text">
@@ -84,6 +86,9 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
           {activeRide.status === 'RIDER_REACHED' && <><MapPin size={18} /> {statusLabel}</>}
           {activeRide.status === 'STARTED' && <><Navigation size={18} /> {statusLabel}</>}
           {activeRide.status === 'PENDING_ADMIN_QUOTE' && <><Clock size={18} /> {statusLabel}</>}
+          {!['REQUESTED', 'ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED', 'PENDING_ADMIN_QUOTE'].includes(activeRide.status) && (
+            <><CheckCircle size={18} color="#059669" /> {statusLabel}</>
+          )}
         </div>
       </div>
 
@@ -258,15 +263,15 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
                     </span>
                     <span
                       style={{
-                        fontFamily: "ui-monospace, 'SF Mono', Menlo, monospace",
-                        fontSize: '11px',
+                        fontFamily: "var(--font-heading, 'Outfit', sans-serif)",
+                        fontSize: '11.5px',
                         fontWeight: '800',
                         color: '#1E293B',
                         background: '#FFFBEB',
                         border: '1.5px solid #D97706',
                         padding: '1px 7px',
                         borderRadius: '5px',
-                        letterSpacing: '0.06em',
+                        letterSpacing: '0.08em',
                         display: 'inline-flex',
                         alignItems: 'center'
                       }}

@@ -1901,10 +1901,10 @@ export function RiderPortalView() {
                 {/* Trip Code & Status Bar */}
                 <div className="rp-trip-code-bar">
                   <div className="rp-trip-code-left">
-                    <span className="rp-trip-code-label">TRIP CODE</span>
-                    <span className="rp-trip-code-val">#{activeRide.ride_code || activeRide.rideCode || `PAP-${activeRide.id}`}</span>
+                    <span className="rp-trip-code-label">TRIP</span>
+                    <span className="rp-trip-code-val">#{activeRide.ride_code || activeRide.rideCode || activeRide.id}</span>
                   </div>
-                  <span className="rp-trip-status-tag">{String(activeRide.status || '').replace('_', ' ')}</span>
+                  <span className="rp-trip-status-tag">{String(activeRide.status || '').replace(/_/g, ' ')}</span>
                 </div>
 
                 {/* Cash to collect */}

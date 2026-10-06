@@ -1373,7 +1373,7 @@
 }
 .rp-otp-input {
   text-align: center;
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-heading, 'Outfit', sans-serif);
   font-size: 28px;
   letter-spacing: 12px;
   font-weight: 900;
@@ -1730,7 +1730,8 @@
 .rp-table-rose { color: #EF4444; font-weight: 800; }
 .rp-table-muted { color: #78716C; }
 .rp-table-mono {
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-heading, 'Outfit', sans-serif);
+  letter-spacing: 0.04em;
   font-size: 12px;
   color: #645543;
 }
@@ -1992,7 +1993,7 @@
   font-size: 14px;
   font-weight: 800;
   color: #271E16;
-  font-family: monospace;
+  font-family: var(--font-sans, 'Plus Jakarta Sans', sans-serif);
 }
 .rp-upi-copy-btn {
   display: inline-flex;
@@ -2103,7 +2104,7 @@
   box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.12);
 }
 .rp-input--mono {
-  font-family: monospace;
+  font-family: var(--font-heading, 'Outfit', sans-serif);
   letter-spacing: 0.05em;
 }
 .rp-utr-note {

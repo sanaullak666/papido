@@ -315,11 +315,11 @@
   flex-wrap: wrap;
 }
 .ot-card-code {
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-heading, 'Outfit', sans-serif);
   font-weight: 800;
   font-size: 15px;
   color: #F59E0B;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.04em;
 }
 .ot-vehicle-badge {
   display: inline-flex;
@@ -625,7 +625,8 @@
 /* Table cell helpers */
 .ot-table-code {
   color: #F59E0B;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-heading, 'Outfit', sans-serif);
+  letter-spacing: 0.04em;
   font-weight: 700;
   font-size: 13px;
 }

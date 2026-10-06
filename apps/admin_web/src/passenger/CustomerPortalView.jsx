@@ -2263,9 +2263,9 @@ export function CustomerPortalView() {
 
                     <div className={`cp-status-badge-card ${activeRide.status === 'ACCEPTED' ? 'is-emerald' : 'is-amber'}`}>
                       <div className="cp-status-badge-card-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span>STATUS: {activeRide.status}</span>
-                        <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#EA580C', background: '#FFF7ED', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(234, 88, 12, 0.25)' }}>
-                          #{activeRide.ride_code || activeRide.rideCode || `PAP-${activeRide.id}`}
+                        <span>LIVE TRIP STATUS</span>
+                        <span style={{ fontFamily: "var(--font-heading, 'Outfit', sans-serif)", letterSpacing: '0.04em', fontWeight: 800, color: '#EA580C', background: '#FFF7ED', padding: '2px 8px', borderRadius: '6px', border: '1px solid rgba(234, 88, 12, 0.25)' }}>
+                          #{activeRide.ride_code || activeRide.rideCode || activeRide.id}
                         </span>
                       </div>
                       <div className="cp-status-badge-card-text">
@@ -2397,8 +2397,8 @@ export function CustomerPortalView() {
                       <div className="cp-otp-card cp-fade-up">
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '6px' }}>
                           <span className="cp-otp-label">Share this 4-Digit Ride OTP:</span>
-                          <span style={{ fontFamily: 'monospace', fontWeight: 800, background: '#FDE68A', color: '#92400E', padding: '2px 6px', borderRadius: '4px', fontSize: '11px' }}>
-                            #{activeRide.ride_code || activeRide.rideCode || `PAP-${activeRide.id}`}
+                          <span style={{ fontFamily: "var(--font-heading, 'Outfit', sans-serif)", letterSpacing: '0.04em', fontWeight: 800, background: '#FDE68A', color: '#92400E', padding: '2px 8px', borderRadius: '6px', fontSize: '11px' }}>
+                            #{activeRide.ride_code || activeRide.rideCode || activeRide.id}
                           </span>
                         </div>
                         <div className="cp-otp-value">

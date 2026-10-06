@@ -407,7 +407,7 @@ export function DailySettlementsPage() {
                           <span className="rp-status-chip rp-status-chip--rose">DUE</span>
                         )}
                       </td>
-                      <td style={{ fontFamily: 'monospace' }}>{s.utrReference || '—'}</td>
+                      <td style={{ fontFamily: "var(--font-heading, 'Outfit', sans-serif)", fontWeight: 700, letterSpacing: '0.04em' }}>{s.utrReference || '—'}</td>
                       <td style={{ textAlign: 'right' }}>
                         <RPButton
                           type="button"

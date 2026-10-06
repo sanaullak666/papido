@@ -134,17 +134,31 @@ export function getRideStatus(rawStatus) {
     return RIDE_STATUSES.cancelled;
   }
 
+  if (s === 'pending_admin_quote' || s === 'quote_pending') {
+    return {
+      key: 'pending_admin_quote',
+      label: 'Dispatch Review',
+      tone: 'warning',
+      icon: Clock,
+      badgeClass: 'badge-warning',
+      color: '#F59E0B',
+      bgColor: 'rgba(245, 158, 11, 0.12)',
+      borderColor: 'rgba(245, 158, 11, 0.35)',
+      description: 'Submitted to Dispatch for Fare Quotation'
+    };
+  }
+
   // Fallback
   return {
     key: s,
-    label: rawStatus.replace(/_/g, ' '),
+    label: String(rawStatus || '').replace(/_/g, ' '),
     tone: 'warning',
     icon: AlertCircle,
     badgeClass: 'badge-warning',
     color: '#F59E0B',
     bgColor: 'rgba(245, 158, 11, 0.12)',
     borderColor: 'rgba(245, 158, 11, 0.35)',
-    description: rawStatus
+    description: String(rawStatus || '').replace(/_/g, ' ')
   };
 }
 

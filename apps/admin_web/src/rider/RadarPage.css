@@ -324,7 +324,7 @@
 .rp-tag--core { background: linear-gradient(135deg, #FEF08A, #FBBF24); color: #78350F; }
 .rp-tag--amber-border { background: transparent; border: 1px solid #F59E0B; color: #B45309; }
 .rp-tag--code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family: var(--font-heading, 'Outfit', sans-serif);
   background: #FFF7ED;
   color: #EA580C;
   border: 1px solid rgba(234, 88, 12, 0.28);

@@ -70,7 +70,7 @@
   letter-spacing: 0.05em;
 }
 .rp-trip-code-val {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family: var(--font-heading, 'Outfit', sans-serif);
   font-size: 14px;
   font-weight: 800;
   color: #EA580C;
@@ -315,7 +315,7 @@
 .rp-otp-input {
   width: 200px;
   height: 54px;
-  font-family: 'Outfit', monospace;
+  font-family: 'Outfit', sans-serif;
   font-size: 28px;
   font-weight: 900;
   letter-spacing: 16px;
