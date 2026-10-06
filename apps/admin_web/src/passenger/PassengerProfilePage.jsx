@@ -1,19 +1,15 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import './profile/profile.css';
 import { useAuth } from '../context/AuthContext';
-import { usePassenger } from './shared/PassengerContext';
 import { PSButton, PSCard } from './shared/PassengerUI';
 import { AvatarCard } from './profile/AvatarCard';
 import { ProfileForm } from './profile/ProfileForm';
 import { SecuritySection } from './profile/SecuritySection';
 import { ChangePasswordModal } from './profile/ChangePasswordModal';
-import {
-  User, Bike, Calendar, Star
-} from 'lucide-react';
+import { User } from 'lucide-react';
 
 export function PassengerProfilePage() {
   const { user, updateProfile, changePassword, logout } = useAuth();
-  const { pastRides = [], scheduledRides = [], loadingHistory, fetchRideHistory } = usePassenger();
 
   const [feedback, setFeedback] = useState(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -24,35 +20,6 @@ export function PassengerProfilePage() {
     const t = setTimeout(() => setFeedback(null), 4000);
     return () => clearTimeout(t);
   }, [feedback]);
-
-  /* Load history once on mount so stats are populated */
-  useEffect(() => {
-    if (typeof fetchRideHistory === 'function') {
-      fetchRideHistory();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  /* Derived: quick activity stats */
-  const stats = useMemo(() => {
-    const safeRides = Array.isArray(pastRides) ? pastRides : [];
-    const completed = safeRides.filter(r => r.status === 'COMPLETED');
-    const totalSpent = completed.reduce((sum, r) => {
-      const fare = parseFloat(r.total_fare || r.final_fare || r.estimated_fare || 0);
-      return sum + (isNaN(fare) ? 0 : fare);
-    }, 0);
-    const rated = completed.filter(r => r.rating);
-    const avgRating = rated.length
-      ? rated.reduce((sum, r) => sum + Number(r.rating), 0) / rated.length
-      : 0;
-
-    return {
-      totalRides: completed.length,
-      totalSpent: Math.round(totalSpent),
-      avgRating: avgRating ? Number(avgRating.toFixed(1)) : 0,
-      upcoming: Array.isArray(scheduledRides) ? scheduledRides.length : 0
-    };
-  }, [pastRides, scheduledRides]);
 
   const handleSaveProfile = async (payload) => {
     try {
@@ -137,39 +104,6 @@ export function PassengerProfilePage() {
         {/* IDENTITY CARD */}
         <AvatarCard user={user} />
 
-        {/* ── ACTIVITY STATS (NEW) ── */}
-        <div className="ps-profile-stats-grid ps-fade-up">
-          <div className="ps-profile-stat-card">
-            <div className="ps-profile-stat-icon ps-profile-stat-icon--amber">
-              <Bike size={16} />
-            </div>
-            <div className="ps-profile-stat-value">
-              {loadingHistory && !stats.totalRides ? '—' : stats.totalRides}
-            </div>
-            <div className="ps-profile-stat-label">Rides completed</div>
-          </div>
-
-
-          <div className="ps-profile-stat-card">
-            <div className="ps-profile-stat-icon ps-profile-stat-icon--blue">
-              <Star size={16} />
-            </div>
-            <div className="ps-profile-stat-value">
-              {stats.avgRating ? stats.avgRating.toFixed(1) : '—'}
-            </div>
-            <div className="ps-profile-stat-label">Your rating given</div>
-          </div>
-
-          <div className="ps-profile-stat-card">
-            <div className="ps-profile-stat-icon ps-profile-stat-icon--purple">
-              <Calendar size={16} />
-            </div>
-            <div className="ps-profile-stat-value">{stats.upcoming}</div>
-            <div className="ps-profile-stat-label">Upcoming trips</div>
-          </div>
-        </div>
-
-
         {/* PERSONAL DETAILS */}
         <ProfileForm
           user={user}
@@ -178,7 +112,6 @@ export function PassengerProfilePage() {
 
         {/* SECURITY */}
         <SecuritySection
-          user={user}
           onChangePassword={() => setShowPasswordModal(true)}
           onSignOut={handleLogout}
         />

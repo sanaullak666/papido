@@ -2104,21 +2104,16 @@
 
 .cp-upi-actions {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
   margin-bottom: 12px;
-}
-@media (max-width: 400px) {
-  .cp-upi-actions {
-    grid-template-columns: 1fr;
-  }
 }
 .cp-upi-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 10px;
+  padding: 10px 14px;
   border-radius: 10px;
   font-size: 12px;
   font-weight: 700;
@@ -2138,13 +2133,6 @@
 }
 .cp-upi-action--phonepe:hover {
   background: #5B21B6;
-}
-.cp-upi-action--generic {
-  background: #059669;
-  color: #FFFFFF;
-}
-.cp-upi-action--generic:hover {
-  background: #047857;
 }
 .cp-upi-action--green {
   background: #059669;
@@ -2181,7 +2169,7 @@
   font-size: 13px;
   font-weight: 800;
   color: #1E3A8A;
-  font-family: var(--font-sans, 'Plus Jakarta Sans', sans-serif);
+  font-family: monospace;
 }
 .cp-upi-copy-btn {
   display: inline-flex;
@@ -2198,18 +2186,6 @@
 }
 .cp-upi-copy-btn.is-copied {
   background: #059669;
-}
-
-.cp-upi-help-tip {
-  margin-bottom: 12px;
-  background: #FFFBEB;
-  border: 1px solid #FDE68A;
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 11px;
-  line-height: 1.45;
-  color: #92400E;
-  text-align: left;
 }
 
 .cp-qr-toggle-wrap {
@@ -2506,8 +2482,7 @@
 .cp-ride-code {
   font-size: 11px;
   font-weight: 800;
-  font-family: var(--font-heading, 'Outfit', sans-serif);
-  letter-spacing: 0.04em;
+  font-family: monospace;
   background: #FAF5EE;
   color: #271E16;
   border: 1px solid #EAE2D7;
@@ -3367,7 +3342,7 @@
   font-size: 14px;
   font-weight: 800;
   color: #271E16;
-  font-family: var(--font-sans, 'Plus Jakarta Sans', sans-serif);
+  font-family: monospace;
 }
 .cp-pay-upiid-note {
   font-size: 11px;

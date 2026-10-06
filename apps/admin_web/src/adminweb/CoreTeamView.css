@@ -213,9 +213,8 @@
   flex-shrink: 0;
 }
 .ct-invite-link-text {
-  font-family: var(--font-sans, 'Plus Jakarta Sans', sans-serif);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-size: 13px;
-  font-weight: 600;
   color: #FBBF24;
   overflow: hidden;
   text-overflow: ellipsis;

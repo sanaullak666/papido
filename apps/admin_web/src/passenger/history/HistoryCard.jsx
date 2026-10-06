@@ -1,15 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { usePassenger } from '../shared/PassengerContext';
 import { formatRideDateTime } from '../shared/passengerConstants';
 import {
-  CheckCircle2, XCircle, Clock, Calendar, Bike,
-  Star, Receipt, ChevronDown, Users, Sparkles
+  CheckCircle2, XCircle, Clock, Calendar, Bike
 } from 'lucide-react';
 
 export function HistoryCard({ ride, index }) {
   const { standardCampusFare } = usePassenger();
-  const [expanded, setExpanded] = useState(false);
-
   const isPrebooked = Boolean(
     ride.is_scheduled || ride.isScheduled || ride.scheduled_time
   );
@@ -25,16 +22,11 @@ export function HistoryCard({ ride, index }) {
         ride.accepted_at || ride.completed_at
       );
 
-  const hasReceiptBreakdown =
-    ride.base_fare ||
-    ride.double_discount ||
-    ride.waiting_fare;
-
   return (
     <article
       className={`ps-hist-card ps-fade-up ${
         isPrebooked ? 'is-prebooked' : ''
-      } ${isCancelled ? 'is-cancelled' : ''} ${expanded ? 'is-expanded' : ''}`}
+      } ${isCancelled ? 'is-cancelled' : ''}`}
       style={{ animationDelay: `${index * 40}ms` }}
     >
       {/* LEFT: body */}
@@ -54,9 +46,7 @@ export function HistoryCard({ ride, index }) {
           )}
 
           {Boolean(ride.is_double_ride) && (
-            <span className="ps-hist-double-tag">
-              <Users size={9} /> DOUBLE
-            </span>
+            <span className="ps-hist-double-tag">DOUBLE</span>
           )}
         </div>
 
@@ -106,76 +96,6 @@ export function HistoryCard({ ride, index }) {
             {ride.vehicle_type || 'BIKE'}
           </span>
         </div>
-
-        {/* Rating display */}
-        {Boolean(ride.rating) && (
-          <div className="ps-hist-rating">
-            {[1, 2, 3, 4, 5].map(star => (
-              <Star
-                key={star}
-                size={11}
-                fill={star <= ride.rating ? '#D97706' : 'none'}
-                color={star <= ride.rating ? '#D97706' : '#D1D5DB'}
-              />
-            ))}
-            <span className="ps-hist-rating-label">
-              {Number(ride.rating).toFixed(1)} rated
-            </span>
-          </div>
-        )}
-
-        {/* Expand toggle */}
-        {isCompleted && (
-          <button
-            type="button"
-            className="ps-hist-expand-btn"
-            onClick={() => setExpanded(v => !v)}
-          >
-            <Receipt size={12} />
-            {expanded ? 'Hide details' : 'View receipt'}
-            <ChevronDown size={12} className={expanded ? 'is-rotated' : ''} />
-          </button>
-        )}
-
-        {expanded && isCompleted && (
-          <div className="ps-hist-expanded ps-fade-up">
-            {hasReceiptBreakdown ? (
-              <>
-                <div className="ps-hist-receipt-row">
-                  <span>Base fare</span>
-                  <span>₹{ride.base_fare || fare}</span>
-                </div>
-                {Boolean(ride.double_discount) && (
-                  <div className="ps-hist-receipt-row ps-hist-receipt-row--discount">
-                    <span><Sparkles size={10} /> Double ride discount</span>
-                    <span>-₹{ride.double_discount}</span>
-                  </div>
-                )}
-                {Boolean(ride.waiting_fare) && (
-                  <div className="ps-hist-receipt-row">
-                    <span>Waiting charge</span>
-                    <span>+₹{ride.waiting_fare}</span>
-                  </div>
-                )}
-                <div className="ps-hist-receipt-row ps-hist-receipt-row--total">
-                  <span>Total</span>
-                  <span>₹{fare}</span>
-                </div>
-              </>
-            ) : (
-              <div className="ps-hist-receipt-row ps-hist-receipt-row--total">
-                <span>Total fare</span>
-                <span>₹{fare}</span>
-              </div>
-            )}
-
-            <div className="ps-hist-receipt-meta">
-              Payment: {ride.payment_method || 'CASH'} ·
-              {' '}
-              {ride.completed_at ? formatRideDateTime(ride.completed_at) : 'N/A'}
-            </div>
-          </div>
-        )}
 
       </div>
 

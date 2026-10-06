@@ -1,6 +1,6 @@
 import React from 'react';
 import { PSCard } from '../shared/PassengerUI';
-import { Mail, Shield, GraduationCap, Sparkles } from 'lucide-react';
+import { Mail, Shield, GraduationCap } from 'lucide-react';
 
 export function AvatarCard({ user }) {
   const name = user?.name || 'Passenger';
@@ -24,15 +24,8 @@ export function AvatarCard({ user }) {
 
   return (
     <PSCard className="ps-avatar-card ps-fade-up">
-      {/* ── Avatar with animated gradient ring (NEW) ── */}
-      <div className="ps-avatar-wrap">
-        <div className={`ps-avatar-ring ps-avatar-ring--${accent}`} aria-hidden="true" />
-        <div className={`ps-avatar-circle ps-avatar-circle--${accent}`}>
-          <span className="ps-avatar-initials">{initials || 'P'}</span>
-        </div>
-        <div className={`ps-avatar-sparkle ps-avatar-sparkle--${accent}`} aria-hidden="true">
-          <Sparkles size={10} />
-        </div>
+      <div className={`ps-avatar-circle ps-avatar-circle--${accent}`}>
+        <span className="ps-avatar-initials">{initials || 'P'}</span>
       </div>
 
       <div className="ps-avatar-info">

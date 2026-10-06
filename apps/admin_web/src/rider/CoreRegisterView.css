@@ -273,7 +273,7 @@
 .cr-input--mono {
   letter-spacing: 1px;
   font-weight: 600;
-  font-family: var(--font-heading, 'Outfit', sans-serif);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
 }
 .cr-input--select {
   padding-left: 12px;

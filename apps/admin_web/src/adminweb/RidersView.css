@@ -737,9 +737,7 @@
 }
 .rd-vehicle-plate {
   font-size: 11px;
-  font-family: var(--font-heading, 'Outfit', sans-serif);
-  letter-spacing: 0.05em;
-  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   color: #64748B;
   margin-top: 2px;
 }

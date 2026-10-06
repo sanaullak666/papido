@@ -1,22 +1,17 @@
 import React from 'react';
 import { PSCard } from '../shared/PassengerUI';
-import { Calendar, Clock, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
+import { Calendar, Clock, ArrowRight } from 'lucide-react';
 
 export function AdvanceEmptyState() {
   return (
-    <PSCard className="ps-animated-empty ps-fade-up">
-      <div className="ps-animated-empty-visual">
-        <div className="ps-animated-empty-icon-ring">
-          <Calendar size={36} color="#EA580C" />
-        </div>
-        <div className="ps-animated-empty-pulse" />
+    <PSCard className="ps-empty-card ps-fade-up">
+      <div className="ps-empty-icon">
+        <Calendar size={36} color="#EA580C" />
       </div>
 
-      <h3 className="ps-animated-empty-title">
-        No upcoming pre-booked rides
-      </h3>
+      <h3 className="ps-empty-title">No upcoming pre-booked rides</h3>
 
-      <p className="ps-animated-empty-desc">
+      <p className="ps-empty-sub">
         Catch an early class, reach Gate 1 for a bus, or plan a trip
         across campus later. Pre-book ahead to guarantee a rider.
       </p>
@@ -30,15 +25,14 @@ export function AdvanceEmptyState() {
         <ArrowRight size={14} />
       </a>
 
-      <div className="ps-animated-empty-hints">
-        <div className="ps-animated-empty-hint">
-          <Clock size={11} /> Dispatch 15 min before pickup
+      {/* Hint row */}
+      <div className="ps-empty-hints">
+        <div className="ps-empty-hint">
+          <Clock size={12} />
+          Dispatch 15 min before pickup
         </div>
-        <div className="ps-animated-empty-hint">
-          <ShieldCheck size={11} /> Zero cancellation fee
-        </div>
-        <div className="ps-animated-empty-hint">
-          <Zap size={11} /> Instant rider match
+        <div className="ps-empty-hint">
+          Zero cancellation fee
         </div>
       </div>
     </PSCard>

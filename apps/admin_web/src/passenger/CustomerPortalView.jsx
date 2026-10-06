@@ -43,8 +43,7 @@ import {
   ThumbsUp,
   Calendar,
   MapPinned,
-  Hourglass,
-  Download
+  Hourglass
 } from 'lucide-react';
 import { BottomNavigation } from '../components/layout/BottomNavigation';
 import { RatingControl } from '../components/passenger/RatingControl';
@@ -434,24 +433,6 @@ export function CustomerPortalView() {
   const [flashClaimMsg, setFlashClaimMsg] = useState(null);
 
   const [showTripQr, setShowTripQr] = useState(false);
-  const [tripPayMode, setTripPayMode] = useState('QR');
-
-  const handleDownloadTripQr = async (qrUrl, dName, fareAmt) => {
-    try {
-      const response = await fetch(qrUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Papido_QR_${(dName || 'Driver').replace(/\s+/g, '_')}_Rs${fareAmt}.png`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-    } catch (_) {
-      window.open(qrUrl, '_blank');
-    }
-  };
 
   const getLocationHint = (stopName) => {
     if (!stopName) return null;
@@ -1274,7 +1255,7 @@ export function CustomerPortalView() {
           rider_name: fallbackName,
           rider_upi: fallbackUpi,
           rider_phone: currentActiveRide.rider_phone || '',
-          upiPayUrl: `upi://pay?pa=${encodeURIComponent(fallbackUpi)}&pn=${encodeURIComponent(fallbackName)}&am=15.00&cu=INR`
+          upiPayUrl: `upi://pay?pa=${encodeURIComponent(fallbackUpi)}&pn=${encodeURIComponent(fallbackName)}&am=15.00&tn=Papido_Rider_Compensation_${currentActiveRide.ride_code || 'Trip'}&cu=INR`
         };
         setPendingPenalty(fallbackObj);
         setShowPenaltyModal(true);
@@ -2082,6 +2063,11 @@ export function CustomerPortalView() {
                     <div className="cp-fare-total">
                       <div>
                         <div className="cp-fare-total-label">Total Trip Fare:</div>
+                        {fareEstimate?.isRouteBased && (
+                          <div className="cp-fare-tag cp-fare-tag--amber">
+                            <MapPinned size={12} /> {fareEstimate.routeName || 'Configured Campus Route'}
+                          </div>
+                        )}
                         {isDoubleRide && (
                           <div className="cp-fare-tag cp-fare-tag--green">
                             <Users size={12} /> Double Ride (₹10 Discount Applied)
@@ -2263,9 +2249,9 @@ export function CustomerPortalView() {
 
                     <div className={`cp-status-badge-card ${activeRide.status === 'ACCEPTED' ? 'is-emerald' : 'is-amber'}`}>
                       <div className="cp-status-badge-card-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span>LIVE TRIP STATUS</span>
-                        <span style={{ fontFamily: "var(--font-heading, 'Outfit', sans-serif)", letterSpacing: '0.04em', fontWeight: 800, color: '#EA580C', background: '#FFF7ED', padding: '2px 8px', borderRadius: '6px', border: '1px solid rgba(234, 88, 12, 0.25)' }}>
-                          #{activeRide.ride_code || activeRide.rideCode || activeRide.id}
+                        <span>STATUS: {activeRide.status}</span>
+                        <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#EA580C', background: '#FFF7ED', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(234, 88, 12, 0.25)' }}>
+                          #{activeRide.ride_code || activeRide.rideCode || `PAP-${activeRide.id}`}
                         </span>
                       </div>
                       <div className="cp-status-badge-card-text">
@@ -2397,8 +2383,8 @@ export function CustomerPortalView() {
                       <div className="cp-otp-card cp-fade-up">
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '6px' }}>
                           <span className="cp-otp-label">Share this 4-Digit Ride OTP:</span>
-                          <span style={{ fontFamily: "var(--font-heading, 'Outfit', sans-serif)", letterSpacing: '0.04em', fontWeight: 800, background: '#FDE68A', color: '#92400E', padding: '2px 8px', borderRadius: '6px', fontSize: '11px' }}>
-                            #{activeRide.ride_code || activeRide.rideCode || activeRide.id}
+                          <span style={{ fontFamily: 'monospace', fontWeight: 800, background: '#FDE68A', color: '#92400E', padding: '2px 6px', borderRadius: '4px', fontSize: '11px' }}>
+                            #{activeRide.ride_code || activeRide.rideCode || `PAP-${activeRide.id}`}
                           </span>
                         </div>
                         <div className="cp-otp-value">
@@ -2490,11 +2476,8 @@ export function CustomerPortalView() {
                         const driverFare = parseFloat(activeRide.final_fare || activeRide.total_fare || activeRide.estimated_fare || 20).toFixed(2);
                         const driverUpi = (activeRide.rider_upi_id || '').trim() || (activeRide.rider_phone ? `${activeRide.rider_phone}@upi` : 'driver@upi');
                         const driverName = activeRide.rider_name || 'Campus Driver';
-
-                        const gpayUrl = `gpay://upi/pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${driverFare}&cu=INR`;
-                        const phonepeUrl = `phonepe://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${driverFare}&cu=INR`;
-                        const upiPayUrl = `upi://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${driverFare}&cu=INR`;
-                        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(upiPayUrl)}`;
+                        const upiPayUrl = `upi://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${driverFare}&tn=Papido_Ride_${activeRide.ride_code || activeRide.id}&cu=INR`;
+                        const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiPayUrl)}`;
 
                         return (
                           <div className="cp-upi-card cp-fade-up">
@@ -2512,125 +2495,53 @@ export function CustomerPortalView() {
                               </div>
                             </div>
 
-                            {/* Payment Tabs: QR (Default, 100% Works) vs 1-Tap UPI Apps */}
-                            <div className="cp-pay-tabs" style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: '14px' }}>
+                            <div className="cp-upi-actions">
+                              <a href={upiPayUrl} className="cp-upi-action cp-upi-action--gpay">
+                                <Smartphone size={15} /> Pay with GPay
+                              </a>
+                              <a href={upiPayUrl} className="cp-upi-action cp-upi-action--phonepe">
+                                <Zap size={15} /> PhonePe / Any UPI
+                              </a>
+                            </div>
+
+                            <div className="cp-upi-copy-row">
+                              <div>
+                                <div className="cp-upi-copy-label">Driver UPI ID (KYC Verified)</div>
+                                <div className="cp-upi-copy-value">{driverUpi}</div>
+                              </div>
                               <button
                                 type="button"
-                                onClick={() => setTripPayMode('QR')}
-                                className={`cp-pay-tab ${tripPayMode === 'QR' ? 'is-active' : ''}`}
+                                onClick={() => {
+                                  navigator.clipboard?.writeText(driverUpi);
+                                  setCopiedUpi(true);
+                                  setTimeout(() => setCopiedUpi(false), 3000);
+                                }}
+                                className={`cp-upi-copy-btn ${copiedUpi ? 'is-copied' : ''}`}
                               >
-                                <QrCode size={14} /> Scan QR (100% Works)
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setTripPayMode('APPS')}
-                                className={`cp-pay-tab ${tripPayMode === 'APPS' ? 'is-active' : ''}`}
-                              >
-                                <Smartphone size={14} /> 1-Tap UPI Apps
+                                {copiedUpi ? <Check size={12} /> : <Copy size={12} />}
+                                {copiedUpi ? 'Copied' : 'Copy'}
                               </button>
                             </div>
 
-                            {tripPayMode === 'QR' ? (
-                              <div className="cp-fade-up" style={{ textAlign: 'center' }}>
-                                <div className="cp-pay-qr-box" style={{ margin: '0 auto 10px auto' }}>
-                                  <img src={qrCodeUrl} alt="Driver Payment QR" className="cp-pay-qr-img" />
-                                </div>
-                                <div style={{ color: '#059669', fontSize: '11px', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginBottom: '10px' }}>
-                                  <ShieldCheck size={14} /> 100% Bank Approved: Scan with GPay, PhonePe, Paytm
-                                </div>
-
-                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '12px' }}>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDownloadTripQr(qrCodeUrl, driverName, driverFare)}
-                                    className="cp-upi-copy-btn"
-                                    style={{ background: '#FFF7ED', borderColor: '#FDBA74', color: '#EA580C', fontWeight: 700 }}
-                                  >
-                                    <Download size={13} /> Save QR Image
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      navigator.clipboard?.writeText(driverUpi);
-                                      setCopiedUpi(true);
-                                      setTimeout(() => setCopiedUpi(false), 2500);
-                                    }}
-                                    className={`cp-upi-copy-btn ${copiedUpi ? 'is-copied' : ''}`}
-                                  >
-                                    {copiedUpi ? <Check size={12} /> : <Copy size={12} />}
-                                    {copiedUpi ? 'UPI ID Copied' : 'Copy UPI ID'}
-                                  </button>
-                                </div>
-
-                                <div className="cp-upi-help-tip" style={{ textAlign: 'center', fontSize: '11px' }}>
-                                  📸 <strong>Single Phone?</strong> Tap <strong>Save QR Image</strong> above, open Google Pay, tap the <strong>Scan QR</strong> icon, then tap the gallery icon to select this image!
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="cp-fade-up">
-                                <div className="cp-upi-actions">
-                                  <a
-                                    href={gpayUrl}
-                                    onClick={() => {
-                                      navigator.clipboard?.writeText(driverUpi);
-                                      setCopiedUpi(true);
-                                      setTimeout(() => setCopiedUpi(false), 3000);
-                                    }}
-                                    className="cp-upi-action cp-upi-action--gpay"
-                                    rel="noopener noreferrer"
-                                  >
-                                    <Smartphone size={15} /> GPay
-                                  </a>
-                                  <a
-                                    href={phonepeUrl}
-                                    onClick={() => {
-                                      navigator.clipboard?.writeText(driverUpi);
-                                      setCopiedUpi(true);
-                                      setTimeout(() => setCopiedUpi(false), 3000);
-                                    }}
-                                    className="cp-upi-action cp-upi-action--phonepe"
-                                    rel="noopener noreferrer"
-                                  >
-                                    <Zap size={15} /> PhonePe
-                                  </a>
-                                  <a
-                                    href={upiPayUrl}
-                                    onClick={() => {
-                                      navigator.clipboard?.writeText(driverUpi);
-                                      setCopiedUpi(true);
-                                      setTimeout(() => setCopiedUpi(false), 3000);
-                                    }}
-                                    className="cp-upi-action cp-upi-action--generic"
-                                    rel="noopener noreferrer"
-                                  >
-                                    <ExternalLink size={14} /> Any UPI
-                                  </a>
-                                </div>
-
-                                <div className="cp-upi-copy-row">
-                                  <div>
-                                    <div className="cp-upi-copy-label">Driver UPI ID (KYC Verified)</div>
-                                    <div className="cp-upi-copy-value">{driverUpi}</div>
+                            <div className="cp-qr-toggle-wrap">
+                              <button
+                                type="button"
+                                onClick={() => setShowTripQr(!showTripQr)}
+                                className="cp-qr-toggle"
+                              >
+                                <QrCode size={14} /> {showTripQr ? 'Hide Driver Payment QR Code' : 'Show Driver Payment QR Code (Scan to Pay)'}
+                              </button>
+                              {showTripQr && (
+                                <div className="cp-qr-box cp-fade-up">
+                                  <div className="cp-qr-inner">
+                                    <img src={qrCodeUrl} alt="Driver Payment QR" className="cp-qr-img" />
                                   </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      navigator.clipboard?.writeText(driverUpi);
-                                      setCopiedUpi(true);
-                                      setTimeout(() => setCopiedUpi(false), 3000);
-                                    }}
-                                    className={`cp-upi-copy-btn ${copiedUpi ? 'is-copied' : ''}`}
-                                  >
-                                    {copiedUpi ? <Check size={12} /> : <Copy size={12} />}
-                                    {copiedUpi ? 'Copied' : 'Copy'}
-                                  </button>
+                                  <div className="cp-qr-note">
+                                    Scan using Google Pay, PhonePe, Paytm, or BHIM
+                                  </div>
                                 </div>
-
-                                <div className="cp-upi-help-tip">
-                                  ⚠️ <strong>Bank Note:</strong> If your bank shows <em>"bank limit exceeded"</em> on the GPay link, it is because banks restrict web-initiated links to personal UPI. Tap <strong>Copy</strong> above, open Google Pay &gt; <strong>Pay UPI ID</strong> to pay directly, or switch to the <strong>Scan QR</strong> tab.
-                                </div>
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </div>
                         );
                       })()
@@ -3503,7 +3414,7 @@ export function CustomerPortalView() {
       {showPenaltyModal && pendingPenalty && (() => {
         const riderUpi = pendingPenalty.rider_upi || pendingPenalty.rider_upi_id || `${pendingPenalty.rider_phone || 'driver'}@upi`;
         const riderName = pendingPenalty.rider_name || pendingPenalty.rider_name_full || 'Driver';
-        const upiUri = pendingPenalty.upiPayUrl || `upi://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&cu=INR`;
+        const upiUri = pendingPenalty.upiPayUrl || `upi://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&tn=Papido_Driver_Compensation_${pendingPenalty.ride_code || 'Trip'}&cu=INR`;
         const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(upiUri)}`;
 
         const handleCopyUpi = () => {
@@ -3604,10 +3515,10 @@ export function CustomerPortalView() {
                       <a href={upiUri} className="cp-upi-action cp-upi-action--green">
                         <ExternalLink size={16} /> Pay ₹15 with Any Installed UPI App
                       </a>
-                      <a href={`gpay://upi/pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&cu=INR`} className="cp-upi-action cp-upi-action--ghost">
+                      <a href={`gpay://upi/pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&tn=Papido_Comp&cu=INR`} className="cp-upi-action cp-upi-action--ghost">
                         <Smartphone size={15} color="#2563EB" /> Google Pay
                       </a>
-                      <a href={`phonepe://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&cu=INR`} className="cp-upi-action cp-upi-action--ghost">
+                      <a href={`phonepe://pay?pa=${encodeURIComponent(riderUpi)}&pn=${encodeURIComponent(riderName)}&am=15.00&tn=Papido_Comp&cu=INR`} className="cp-upi-action cp-upi-action--ghost">
                         <Smartphone size={15} color="#7C3AED" /> PhonePe
                       </a>
                     </div>
