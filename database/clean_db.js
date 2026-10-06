@@ -45,6 +45,45 @@ async function cleanDatabase() {
   `, [hash]);
   console.log('✓ Created clean Master Admin (pupapido@gmail.com / Papido@669669#)');
 
+  // Bootstrap clean Riders and Customers
+  const userPassHash = await bcrypt.hash('Password@123', 10);
+  
+  // Seed Riders (Sanaulla, Rahul, Priya)
+  await query(`
+    INSERT INTO users (id, name, email, phone, gender, password_hash, role, status, is_core_member) VALUES
+    (2, 'SANAULLA K', 'sanaullak294@gmail.com', '9495105852', 'MALE', ?, 'RIDER', 'ACTIVE', 1),
+    (3, 'RAHUL SHARMA', 'rider.rahul@papido.com', '9876543214', 'MALE', ?, 'RIDER', 'ACTIVE', 1),
+    (4, 'PRIYA SHARMA', 'rider.priya@papido.com', '9876543216', 'FEMALE', ?, 'RIDER', 'ACTIVE', 1)
+    ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash), status = 'ACTIVE'
+  `, [userPassHash, userPassHash, userPassHash]);
+
+  await query(`
+    INSERT INTO rider_profiles (id, user_id, vehicle_type, vehicle_number, vehicle_model, license_number, verification_status, rating, total_ratings_count, total_rides, is_online, is_core_member, upi_id) VALUES
+    (1, 2, 'SCOOTER', 'PY-01-SC-2002', 'Honda Activa 6G', 'DL-PY-DM-5', 'APPROVED', 5.00, 12, 45, 1, 1, 'sanaulla@upi'),
+    (2, 3, 'BIKE', 'PY-01-BK-1001', 'Hero Splendor Plus', 'DL-PY-DM-4', 'APPROVED', 5.00, 8, 30, 1, 1, 'rahul@upi'),
+    (3, 4, 'SCOOTER', 'PY-01-FM-3003', 'TVS Jupiter 125', 'DL-PY-DM-6', 'APPROVED', 5.00, 15, 52, 1, 1, 'priya@upi')
+    ON DUPLICATE KEY UPDATE verification_status = 'APPROVED', is_online = 1
+  `);
+  console.log('✓ Created clean Riders: Sanaulla K, Rahul Sharma, Priya Sharma');
+
+  // Seed Customers (Amal E, Ananya Sen, Rohan Mehta)
+  await query(`
+    INSERT INTO users (id, name, email, phone, gender, password_hash, role, status, is_core_member) VALUES
+    (5, 'AMAL E', 'amalanoj00700@gmail.com', '7356617891', 'MALE', ?, 'CUSTOMER', 'ACTIVE', 0),
+    (6, 'ANANYA SEN', 'customer.ananya@papido.com', '9876543211', 'FEMALE', ?, 'CUSTOMER', 'ACTIVE', 0),
+    (7, 'ROHAN MEHTA', 'customer.rohan@papido.com', '9876543213', 'MALE', ?, 'CUSTOMER', 'ACTIVE', 0)
+    ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash), status = 'ACTIVE'
+  `, [userPassHash, userPassHash, userPassHash]);
+
+  await query(`
+    INSERT INTO customer_profiles (id, user_id, rating, total_ratings_count, total_rides, wallet_balance) VALUES
+    (1, 5, 5.00, 4, 12, 200.00),
+    (2, 6, 5.00, 0, 0, 100.00),
+    (3, 7, 5.00, 0, 0, 100.00)
+    ON DUPLICATE KEY UPDATE wallet_balance = VALUES(wallet_balance)
+  `);
+  console.log('✓ Created clean Customers: Amal E, Ananya Sen, Rohan Mehta');
+
   await query(`
     INSERT INTO fare_configurations (vehicle_type, base_fare, base_distance_km, per_km_fare, per_minute_fare, minimum_fare, cancellation_fee, is_active)
     VALUES 

@@ -99,9 +99,14 @@ const CustomerController = {
         return error(res, 'Complete pickup and destination details are required.', 400);
       }
 
-      let finalPickup = pickupAddress.trim();
-      let finalVia = viaAddress ? viaAddress.trim() : null;
-      let finalDest = destinationAddress.trim();
+      const sanitizeAddress = (str) => {
+        if (!str || typeof str !== 'string') return '';
+        return str.replace(/<[^>]*>?/gm, '').replace(/[\r\n\t]/g, ' ').trim();
+      };
+
+      let finalPickup = sanitizeAddress(pickupAddress);
+      let finalVia = viaAddress ? sanitizeAddress(viaAddress) : null;
+      let finalDest = sanitizeAddress(destinationAddress);
       let pLat = parseFloat(pickupLatitude) || 12.0240;
       let pLng = parseFloat(pickupLongitude) || 79.8530;
       let vLat = viaLatitude ? parseFloat(viaLatitude) : null;

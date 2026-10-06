@@ -175,6 +175,12 @@ const AuthService = {
       user = await UserModel.findByEmail('pupapido@gmail.com');
     }
     if (!user) {
+      const cleanPhone = cleanIdentifier.replace(/\D/g, '');
+      if (cleanPhone.length >= 10) {
+        user = (await UserModel.findByPhone(cleanIdentifier)) || (await UserModel.findByPhone(cleanPhone)) || (await UserModel.findByPhone('+91' + cleanPhone));
+      }
+    }
+    if (!user) {
       throw new Error('Invalid email or password.');
     }
 

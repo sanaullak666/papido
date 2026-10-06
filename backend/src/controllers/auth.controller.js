@@ -31,7 +31,7 @@ const AuthController = {
         return error(res, 'Public registration is only permitted for CUSTOMER or RIDER roles.', 400);
       }
 
-      const cleanName = name.trim().toUpperCase();
+      const cleanName = (name || '').replace(/<[^>]*>?/gm, '').trim().toUpperCase();
       if (cleanName.length < 2) {
         return error(res, 'Full Name must be at least 2 characters.', 400);
       }
