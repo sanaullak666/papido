@@ -12,8 +12,10 @@ dist/
 */dist/
 build/
 */build/
-public/
-*/public/
+public/*
+!public/sitemap.xml
+!public/robots.txt
+
 
 # Database files
 backend/data/*.db
