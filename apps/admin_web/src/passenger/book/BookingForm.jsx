@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { apiRequest } from '../../api';
 import { usePassenger } from '../shared/PassengerContext';
@@ -13,7 +13,8 @@ import {
 import {
   Bike, Zap, Compass, MapPin, Clock, Plus, X,
   Users, Shield, CreditCard, Check, Calendar, AlertTriangle, AlertCircle,
-  Navigation, ArrowRight, ArrowUpDown, LocateFixed, Eye, VolumeX
+  Navigation, ArrowRight, ArrowUpDown, LocateFixed, Eye, VolumeX,
+  Search, ChevronDown
 } from 'lucide-react';
 
 export function BookingForm({
@@ -32,17 +33,27 @@ export function BookingForm({
 
   /* ---------- Pickup / Drop / Via ---------- */
   const [pickupAddress, setPickupAddress] = useState('');
+  const [pickupSearchQuery, setPickupSearchQuery] = useState('');
+  const [pickupMenuOpen, setPickupMenuOpen] = useState(false);
   const [pickupDetail, setPickupDetail] = useState('');
   const [pickupCoords, setPickupCoords] = useState(null);
 
   const [destAddress, setDestAddress] = useState('');
+  const [destSearchQuery, setDestSearchQuery] = useState('');
+  const [destMenuOpen, setDestMenuOpen] = useState(false);
   const [destDetail, setDestDetail] = useState('');
   const [destCoords, setDestCoords] = useState(null);
 
   const [showViaStop, setShowViaStop] = useState(false);
   const [viaAddress, setViaAddress] = useState('');
+  const [viaSearchQuery, setViaSearchQuery] = useState('');
+  const [viaMenuOpen, setViaMenuOpen] = useState(false);
   const [viaDetail, setViaDetail] = useState('');
   const [viaCoords, setViaCoords] = useState(null);
+
+  const pickupWrapRef = useRef(null);
+  const destWrapRef = useRef(null);
+  const viaWrapRef = useRef(null);
 
   /* ---------- Transit Mode (ANY, BIKE, SCOOTER) + prefs ---------- */
   const [vehicleType, setVehicleType] = useState('ANY');
@@ -104,6 +115,27 @@ export function BookingForm({
     const id = setInterval(loadAdminRoutes, 15000);
     return () => clearInterval(id);
   }, [token]);
+
+  /* Close floating dropdown menus when clicking outside */
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (pickupWrapRef.current && !pickupWrapRef.current.contains(e.target)) {
+        setPickupMenuOpen(false);
+      }
+      if (destWrapRef.current && !destWrapRef.current.contains(e.target)) {
+        setDestMenuOpen(false);
+      }
+      if (viaWrapRef.current && !viaWrapRef.current.contains(e.target)) {
+        setViaMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, []);
 
   const findStopCoords = (name) => {
     if (!name) return { lat: 12.0228681, lng: 79.8509415 };
@@ -342,9 +374,11 @@ export function BookingForm({
     const pDet = pickupDetail;
     const pCoord = pickupCoords;
     setPickupAddress(destAddress);
+    setPickupSearchQuery(destAddress);
     setPickupDetail(destDetail);
     setPickupCoords(destCoords);
     setDestAddress(pAddr);
+    setDestSearchQuery(pAddr);
     setDestDetail(pDet);
     setDestCoords(pCoord);
   };
@@ -353,8 +387,11 @@ export function BookingForm({
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          setPickupCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setPickupCoords(coords);
           setPickupAddress('Current Location');
+          setPickupSearchQuery('Current Location');
+          setPickupMenuOpen(false);
           setStatusMessage({ text: 'Pickup set to your current GPS position.', type: 'success' });
         },
         () => {
@@ -362,6 +399,52 @@ export function BookingForm({
         }
       );
     }
+  };
+
+  /* Flexible word/letter search filter */
+  const filterStopsByQuery = (stops, query) => {
+    if (!query || !query.trim()) return stops;
+    const q = query.trim().toLowerCase();
+    const qTokens = q.split(/\s+/).filter(Boolean);
+
+    return stops.filter(stop => {
+      const s = stop.toLowerCase();
+      // 1. Direct match or substring contains query
+      if (s.includes(q)) return true;
+      // 2. All tokens match
+      if (qTokens.every(token => s.includes(token))) return true;
+      // 3. Any token matches
+      if (qTokens.some(token => s.includes(token))) return true;
+      return false;
+    });
+  };
+
+  const filteredPickupStops = filterStopsByQuery(adminStops, pickupSearchQuery);
+  const filteredDestStops = filterStopsByQuery(adminStops, destSearchQuery);
+  const filteredViaStops = filterStopsByQuery(
+    adminStops.filter(s => s !== pickupAddress && s !== destAddress),
+    viaSearchQuery
+  );
+
+  const handleSelectPickup = (stopName) => {
+    setPickupAddress(stopName);
+    setPickupSearchQuery(stopName);
+    setPickupCoords(findStopCoords(stopName));
+    setPickupMenuOpen(false);
+  };
+
+  const handleSelectDest = (stopName) => {
+    setDestAddress(stopName);
+    setDestSearchQuery(stopName);
+    setDestCoords(findStopCoords(stopName));
+    setDestMenuOpen(false);
+  };
+
+  const handleSelectVia = (stopName) => {
+    setViaAddress(stopName);
+    setViaSearchQuery(stopName);
+    setViaCoords(findStopCoords(stopName));
+    setViaMenuOpen(false);
   };
 
   return (
@@ -473,7 +556,7 @@ export function BookingForm({
           </div>
         )}
 
-        {/* STEP 1: Pickup Location (Admin Routes Only) */}
+        {/* STEP 1: Searchable Pickup Location */}
         <div className="ps-flow-step">
           <div className="ps-flow-step-head">
             <label className="font-label-md ps-flow-label">
@@ -489,29 +572,77 @@ export function BookingForm({
             </button>
           </div>
 
-          <div className="ps-pill-input-wrap">
-            <span className="ps-pill-input-icon ps-pill-input-icon--primary">
-              <MapPin size={18} />
-            </span>
-            <select
-              className="ps-pill-input cursor-pointer"
-              value={pickupAddress}
-              onChange={(e) => {
-                const val = e.target.value;
-                setPickupAddress(val);
-                setPickupCoords(findStopCoords(val));
-              }}
-            >
-              <option value="">-- Choose Pickup Stop (Admin Routes) --</option>
-              {pickupAddress === 'Current Location' && (
-                <option value="Current Location">📍 Current GPS Location</option>
+          <div className="ps-searchable-stop-wrap" ref={pickupWrapRef}>
+            <div className="ps-pill-input-wrap">
+              <span className="ps-pill-input-icon ps-pill-input-icon--primary">
+                <MapPin size={18} />
+              </span>
+              <input
+                type="text"
+                className="ps-pill-input"
+                placeholder="Type letter or search pickup stop..."
+                value={pickupSearchQuery}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setPickupSearchQuery(val);
+                  setPickupAddress(val);
+                  setPickupCoords(findStopCoords(val));
+                  setPickupMenuOpen(true);
+                }}
+                onFocus={() => setPickupMenuOpen(true)}
+              />
+              {pickupSearchQuery ? (
+                <button
+                  type="button"
+                  className="ps-pill-clear-btn"
+                  title="Clear search"
+                  onClick={() => {
+                    setPickupSearchQuery('');
+                    setPickupAddress('');
+                    setPickupCoords(null);
+                    setPickupMenuOpen(true);
+                  }}
+                >
+                  <X size={15} />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="ps-pill-clear-btn"
+                  title="Browse stops"
+                  onClick={() => setPickupMenuOpen(!pickupMenuOpen)}
+                >
+                  <ChevronDown size={16} />
+                </button>
               )}
-              {adminStops.map(stopName => (
-                <option key={`p-${stopName}`} value={stopName}>
-                  {stopName}
-                </option>
-              ))}
-            </select>
+            </div>
+
+            {/* Floating Suggestions List matching similar letters/words */}
+            {pickupMenuOpen && (
+              <div className="ps-suggestions-menu ps-fade-up">
+                {filteredPickupStops.length > 0 ? (
+                  filteredPickupStops.map((stopName) => (
+                    <div
+                      key={`p-sug-${stopName}`}
+                      className={`ps-suggestion-item ${pickupAddress === stopName ? 'is-selected' : ''}`}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        handleSelectPickup(stopName);
+                      }}
+                    >
+                      <MapPin size={15} className="ps-suggestion-icon" />
+                      <span className="ps-suggestion-text">{stopName}</span>
+                      {pickupAddress === stopName && <Check size={14} className="ps-suggestion-check" />}
+                    </div>
+                  ))
+                ) : (
+                  <div className="ps-suggestion-empty">
+                    <Search size={14} />
+                    <span>No campus stop matching "{pickupSearchQuery}"</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Specific room/wing detail hint if stop has known hint */}
@@ -531,16 +662,13 @@ export function BookingForm({
           {/* Quick Pick stops from Admin routes */}
           {adminStops.length > 0 && (
             <div className="ps-hotspots-bar">
-              <span className="font-label-sm ps-hotspots-label">Campus Stops:</span>
+              <span className="font-label-sm ps-hotspots-label">Stops:</span>
               {adminStops.map((stopName) => (
                 <button
                   key={`chip-${stopName}`}
                   type="button"
                   className={`ps-hotspot-chip ${pickupAddress === stopName ? 'is-active' : ''}`}
-                  onClick={() => {
-                    setPickupAddress(stopName);
-                    setPickupCoords(findStopCoords(stopName));
-                  }}
+                  onClick={() => handleSelectPickup(stopName)}
                 >
                   <span>{stopName}</span>
                 </button>
@@ -551,7 +679,7 @@ export function BookingForm({
 
         <div className="ps-flow-divider" />
 
-        {/* STEP 2: Destination (Admin Routes Only) */}
+        {/* STEP 2: Searchable Destination */}
         <div className="ps-flow-step">
           <div className="ps-flow-step-head">
             <label className="font-label-md ps-flow-label">
@@ -567,36 +695,85 @@ export function BookingForm({
             </button>
           </div>
 
-          <div className="ps-pill-input-wrap">
-            <span className="ps-pill-input-icon ps-pill-input-icon--dest">
-              <Navigation size={18} />
-            </span>
-            <select
-              className="ps-pill-input cursor-pointer"
-              value={destAddress}
-              onChange={(e) => {
-                const val = e.target.value;
-                setDestAddress(val);
-                setDestCoords(findStopCoords(val));
-              }}
-            >
-              <option value="">-- Select Campus Drop-off Destination --</option>
-              {adminStops && adminStops.length > 0 ? (
-                adminStops.map((stopName, i) => (
-                  <option key={`d-stop-${i}`} value={stopName}>{stopName}</option>
-                ))
+          <div className="ps-searchable-stop-wrap" ref={destWrapRef}>
+            <div className="ps-pill-input-wrap">
+              <span className="ps-pill-input-icon ps-pill-input-icon--dest">
+                <Navigation size={18} />
+              </span>
+              <input
+                type="text"
+                className="ps-pill-input"
+                placeholder="Type letter or search drop-off destination..."
+                value={destSearchQuery}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setDestSearchQuery(val);
+                  setDestAddress(val);
+                  setDestCoords(findStopCoords(val));
+                  setDestMenuOpen(true);
+                }}
+                onFocus={() => setDestMenuOpen(true)}
+              />
+              {destSearchQuery ? (
+                <button
+                  type="button"
+                  className="ps-pill-clear-btn ps-pill-clear-btn--with-swap"
+                  title="Clear search"
+                  onClick={() => {
+                    setDestSearchQuery('');
+                    setDestAddress('');
+                    setDestCoords(null);
+                    setDestMenuOpen(true);
+                  }}
+                >
+                  <X size={15} />
+                </button>
               ) : (
-                <option value="" disabled>No drop-off locations added by Admin</option>
+                <button
+                  type="button"
+                  className="ps-pill-clear-btn ps-pill-clear-btn--with-swap"
+                  title="Browse stops"
+                  onClick={() => setDestMenuOpen(!destMenuOpen)}
+                >
+                  <ChevronDown size={16} />
+                </button>
               )}
-            </select>
-            <button
-              type="button"
-              className="ps-pill-swap-btn"
-              title="Swap pickup and destination"
-              onClick={handleSwap}
-            >
-              <ArrowUpDown size={16} />
-            </button>
+              <button
+                type="button"
+                className="ps-pill-swap-btn"
+                title="Swap pickup and destination"
+                onClick={handleSwap}
+              >
+                <ArrowUpDown size={16} />
+              </button>
+            </div>
+
+            {/* Floating Suggestions List matching similar letters/words */}
+            {destMenuOpen && (
+              <div className="ps-suggestions-menu ps-fade-up">
+                {filteredDestStops.length > 0 ? (
+                  filteredDestStops.map((stopName) => (
+                    <div
+                      key={`d-sug-${stopName}`}
+                      className={`ps-suggestion-item ${destAddress === stopName ? 'is-selected' : ''}`}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        handleSelectDest(stopName);
+                      }}
+                    >
+                      <Navigation size={15} className="ps-suggestion-icon" />
+                      <span className="ps-suggestion-text">{stopName}</span>
+                      {destAddress === stopName && <Check size={14} className="ps-suggestion-check" />}
+                    </div>
+                  ))
+                ) : (
+                  <div className="ps-suggestion-empty">
+                    <Search size={14} />
+                    <span>No campus stop matching "{destSearchQuery}"</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Specific room/wing detail hint if destination has known hint */}
@@ -613,41 +790,68 @@ export function BookingForm({
             </div>
           )}
 
-          {/* Via Stop (Admin Routes Only) */}
+          {/* Searchable Via Stop */}
           {showViaStop && (
-            <div className="ps-pill-input-wrap mt-2 ps-fade-up">
-              <span className="ps-pill-input-icon" style={{ color: '#0058BE' }}>
-                <Clock size={16} />
-              </span>
-              <select
-                className="ps-pill-input cursor-pointer"
-                value={viaAddress}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setViaAddress(val);
-                  setViaCoords(findStopCoords(val));
-                }}
-              >
-                <option value="">-- Choose Intermediate Stop (Optional) --</option>
-                {adminStops && adminStops.length > 0 ? (
-                  adminStops.map((stopName, i) => (
-                    <option key={`v-stop-${i}`} value={stopName}>{stopName}</option>
-                  ))
-                ) : (
-                  <option value="" disabled>No locations available</option>
-                )}
-              </select>
-              <button
-                type="button"
-                className="ps-pill-swap-btn"
-                onClick={() => {
-                  setShowViaStop(false);
-                  setViaAddress('');
-                  setViaCoords(null);
-                }}
-              >
-                <X size={15} />
-              </button>
+            <div className="ps-searchable-stop-wrap mt-2 ps-fade-up" ref={viaWrapRef}>
+              <div className="ps-pill-input-wrap">
+                <span className="ps-pill-input-icon" style={{ color: '#0058BE' }}>
+                  <Clock size={16} />
+                </span>
+                <input
+                  type="text"
+                  className="ps-pill-input"
+                  placeholder="Type letter or search via stop (Optional)..."
+                  value={viaSearchQuery}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setViaSearchQuery(val);
+                    setViaAddress(val);
+                    setViaCoords(findStopCoords(val));
+                    setViaMenuOpen(true);
+                  }}
+                  onFocus={() => setViaMenuOpen(true)}
+                />
+                <button
+                  type="button"
+                  className="ps-pill-swap-btn"
+                  title="Remove via stop"
+                  onClick={() => {
+                    setShowViaStop(false);
+                    setViaAddress('');
+                    setViaSearchQuery('');
+                    setViaCoords(null);
+                    setViaMenuOpen(false);
+                  }}
+                >
+                  <X size={15} />
+                </button>
+              </div>
+
+              {viaMenuOpen && (
+                <div className="ps-suggestions-menu ps-fade-up">
+                  {filteredViaStops.length > 0 ? (
+                    filteredViaStops.map((stopName) => (
+                      <div
+                        key={`v-sug-${stopName}`}
+                        className={`ps-suggestion-item ${viaAddress === stopName ? 'is-selected' : ''}`}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleSelectVia(stopName);
+                        }}
+                      >
+                        <Clock size={15} className="ps-suggestion-icon" />
+                        <span className="ps-suggestion-text">{stopName}</span>
+                        {viaAddress === stopName && <Check size={14} className="ps-suggestion-check" />}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="ps-suggestion-empty">
+                      <Search size={14} />
+                      <span>No intermediate stop matching "{viaSearchQuery}"</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -663,7 +867,7 @@ export function BookingForm({
             <div className="ps-route-pending-content">
               <h3 className="ps-route-pending-title">
                 {!pickupAddress && !destAddress
-                  ? 'Select Admin Route Pickup & Destination'
+                  ? 'Select Pickup & Destination'
                   : !pickupAddress
                   ? 'Choose Pickup Stop'
                   : !destAddress
@@ -672,11 +876,11 @@ export function BookingForm({
               </h3>
               <p className="ps-route-pending-desc">
                 {!pickupAddress && !destAddress
-                  ? 'Select your campus departure and destination stops from active admin routes above to preview the route, travel duration, and synced fare.'
+                  ? 'Type letters or search your campus pickup and destination stops above to view route preview, transit modes, and synced fare.'
                   : !pickupAddress
-                  ? 'Select where the driver partner should meet you on campus to preview route and synced fare.'
+                  ? 'Search and select where the driver partner should meet you on campus to preview route and synced fare.'
                   : !destAddress
-                  ? 'Select your destination campus stop above to calculate distance, travel time, and synced fare.'
+                  ? 'Search and select your destination campus stop above to calculate distance, travel time, and synced fare.'
                   : 'Pickup and drop-off cannot be the same stop. Please pick a different destination.'}
               </p>
             </div>
