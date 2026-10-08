@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { usePassenger } from '../shared/PassengerContext';
 import { Navigation, Share2, Shield, Timer, Radio } from 'lucide-react';
 
-export function LiveRadarCard({ pickupAddress, destAddress, distanceKm, etaMins }) {
+export function LiveRadarCard({ pickupAddress, destAddress, distanceKm, etaMins, isRouteReady }) {
   const { socketRef, onlineDriversCount } = usePassenger();
   const [onlineCount, setOnlineCount] = useState(onlineDriversCount || 0);
 
@@ -33,10 +33,11 @@ export function LiveRadarCard({ pickupAddress, destAddress, distanceKm, etaMins 
     };
   }, [socketRef]);
 
-  const pShort = (pickupAddress || 'Gate 1 Main Entrance').split('(')[0].trim();
-  const dShort = (destAddress || 'Central Library').split('(')[0].trim();
-  const dist = distanceKm ? Number(distanceKm).toFixed(1) : '1.4';
-  const eta = etaMins ? Math.round(Number(etaMins)) : '4';
+  const hasRoute = Boolean(isRouteReady && pickupAddress && destAddress);
+  const pShort = (pickupAddress || '').split('(')[0].trim();
+  const dShort = (destAddress || '').split('(')[0].trim();
+  const dist = distanceKm ? Number(distanceKm).toFixed(1) : '--';
+  const eta = etaMins ? Math.round(Number(etaMins)) : '--';
 
   return (
     <div className="ps-radar-card ps-fade-up">
@@ -67,10 +68,10 @@ export function LiveRadarCard({ pickupAddress, destAddress, distanceKm, etaMins 
 
         <div className="ps-radar-route-badge">
           <span className="ps-radar-route-text truncate">
-            {pShort} → {dShort}
+            {hasRoute ? `${pShort} → ${dShort}` : 'Select Route Above'}
           </span>
           <span className="ps-radar-route-eta">
-            {distanceKm} km ({etaMins} min)
+            {hasRoute ? `${dist} km (${eta} min)` : 'Awaiting Stops'}
           </span>
         </div>
       </div>

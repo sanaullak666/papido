@@ -21,10 +21,11 @@ export function BookRidePage() {
 
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingRouteInfo, setBookingRouteInfo] = useState({
-    pickupAddress: 'Gate 1 Main Entrance',
-    destAddress: 'Central Library',
-    distanceKm: 1.4,
-    etaMins: 4
+    pickupAddress: '',
+    destAddress: '',
+    distanceKm: null,
+    etaMins: null,
+    isRouteReady: false
   });
 
   /* ---------- Claim Flash Free Ride ---------- */

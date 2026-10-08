@@ -1519,3 +1519,87 @@
   border-color: #DC2626;
 }
 
+/* Route Pending Placeholder Box */
+.ps-route-pending-box {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 22px;
+  border-radius: 20px;
+  background: var(--surface-container-low, #FFF1E8);
+  border: 1.5px dashed rgba(234, 88, 12, 0.4);
+  margin-top: 18px;
+}
+.ps-route-pending-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--surface-container, #FDEBDD);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.12);
+}
+.ps-route-pending-content {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.ps-route-pending-title {
+  font-family: 'Manrope', 'Outfit', sans-serif;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--ps-text, #271E16);
+  margin: 0;
+}
+.ps-route-pending-desc {
+  font-size: 12px;
+  color: var(--ps-text-muted, #796D61);
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* Departure Time Selector Pills */
+.ps-time-selector-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.ps-time-pills-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.ps-time-pill-btn {
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: var(--surface-container, #FDEBDD);
+  border: 1px solid transparent;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ps-text-muted, #796D61);
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+.ps-time-pill-btn:hover {
+  background: var(--surface-container-high, #F7E5D8);
+  color: var(--ps-text, #271E16);
+}
+.ps-time-pill-btn.is-active {
+  background: var(--primary, #EA580C);
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.25);
+}
+
+/* Field Hint Box for Specific Stop Details */
+.ps-field-hint-box {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
