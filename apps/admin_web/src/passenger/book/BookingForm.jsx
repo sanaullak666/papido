@@ -6,7 +6,6 @@ import { PSSwitch } from '../shared/PassengerUI';
 import { openCancelWarning, openPenaltyModal } from '../shared/PassengerModals';
 import '../shared/PassengerModals.css';
 import {
-  DEFAULT_GROUPED_CAMPUS_STOPS,
   CAMPUS_HOTSPOTS,
   formatRideDateTime,
   getLocationHint
@@ -17,15 +16,6 @@ import {
   Navigation, ArrowRight, ArrowUpDown, LocateFixed, Eye, VolumeX
 } from 'lucide-react';
 
-const HOTSPOTS = [
-  { name: 'PU Main Gate (Gate 1)', icon: 'near_me' },
-  { name: 'Madame Curie Girls Hostel', icon: 'apartment' },
-  { name: 'Silver Jubilee Hostel (SJC)', icon: 'apartment' },
-  { name: 'Central Library', icon: 'local_library' },
-  { name: 'Science Complex / Physics Dept', icon: 'biotech' },
-  { name: 'University Canteen & Food Court', icon: 'restaurant' }
-];
-
 export function BookingForm({
   user, token,
   onBookingStart, onBookingEnd, bookingLoading,
@@ -35,6 +25,10 @@ export function BookingForm({
     activeRide, setActiveRide, scheduledRides, fetchScheduledRides,
     setPendingPenalty, setStatusMessage, standardCampusFare
   } = usePassenger();
+
+  /* ---------- Admin Routes & Stops (Source of Truth) ---------- */
+  const [adminRoutes, setAdminRoutes] = useState([]);
+  const [adminStops, setAdminStops] = useState([]);
 
   /* ---------- Pickup / Drop / Via ---------- */
   const [pickupAddress, setPickupAddress] = useState('');
@@ -50,8 +44,8 @@ export function BookingForm({
   const [viaDetail, setViaDetail] = useState('');
   const [viaCoords, setViaCoords] = useState(null);
 
-  /* ---------- Vehicle + prefs ---------- */
-  const [vehicleType, setVehicleType] = useState('BIKE');
+  /* ---------- Transit Mode (ANY, BIKE, SCOOTER) + prefs ---------- */
+  const [vehicleType, setVehicleType] = useState('ANY');
   const [femaleRiderOnly, setFemaleRiderOnly] = useState(false);
   const [isQuietRide, setIsQuietRide] = useState(false);
   const [isDoubleRide, setIsDoubleRide] = useState(false);
@@ -74,9 +68,6 @@ export function BookingForm({
   const [fareEstimate, setFareEstimate] = useState(null);
   const [estimating, setEstimating] = useState(false);
 
-  /* ---------- Admin stops ---------- */
-  const [adminStops, setAdminStops] = useState([]);
-
   const getLocalDateString = (d = new Date()) => {
     try {
       return new Intl.DateTimeFormat('en-CA', {
@@ -90,43 +81,53 @@ export function BookingForm({
     setScheduledDate(getLocalDateString(new Date(Date.now() + 3600000)));
   }, []);
 
-  /* Load admin routes/stops */
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await apiRequest('/fares/routes', 'GET', null, token);
-        if (Array.isArray(res?.data)) {
-          const active = res.data.filter(r => r.is_active);
-          const stops = Array.from(new Set(
-            active.flatMap(r => [r.pickup_stop, r.destination_stop])
-              .map(s => (s || '').trim()).filter(Boolean)
-          ));
-          if (stops.length > 0) {
-            setAdminStops(stops);
-          } else {
-            setAdminStops(CAMPUS_HOTSPOTS.map(s => s.name));
-          }
-        } else {
-          setAdminStops(CAMPUS_HOTSPOTS.map(s => s.name));
-        }
-      } catch {
-        setAdminStops(CAMPUS_HOTSPOTS.map(s => s.name));
+  /* Load only routes & stops added by Admin */
+  const loadAdminRoutes = async () => {
+    try {
+      const res = await apiRequest('/fares/routes', 'GET', null, token);
+      if (Array.isArray(res?.data)) {
+        const active = res.data.filter(r => r.is_active);
+        setAdminRoutes(active);
+        const stops = Array.from(new Set(
+          active.flatMap(r => [r.pickup_stop, r.destination_stop])
+            .map(s => (s || '').trim()).filter(Boolean)
+        ));
+        setAdminStops(stops);
       }
-    };
-    load();
-    const id = setInterval(load, 30000);
+    } catch (err) {
+      console.warn('Failed to fetch admin routes:', err);
+    }
+  };
+
+  useEffect(() => {
+    loadAdminRoutes();
+    const id = setInterval(loadAdminRoutes, 15000);
     return () => clearInterval(id);
   }, [token]);
 
   const findStopCoords = (name) => {
-    if (!name) return null;
+    if (!name) return { lat: 12.0228681, lng: 79.8509415 };
     const n = name.trim().toLowerCase();
+
+    // Specific campus landmarks coordinates
+    if (n.includes('gate 1') || n.includes('main gate')) return { lat: 12.0228681, lng: 79.8509415 };
+    if (n.includes('gate 2') || n.includes('ecr')) return { lat: 12.0295, lng: 79.8580 };
+    if (n.includes('sjc') || n.includes('silver jubilee')) return { lat: 12.0280, lng: 79.8520 };
+    if (n.includes('girl')) return { lat: 12.0215, lng: 79.8565 };
+    if (n.includes('boy')) return { lat: 12.0275, lng: 79.8515 };
+    if (n.includes('library')) return { lat: 12.0245, lng: 79.8532 };
+    if (n.includes('canteen') || n.includes('food')) return { lat: 12.0238, lng: 79.8541 };
+    if (n.includes('science') || n.includes('physics')) return { lat: 12.0261, lng: 79.8550 };
+    if (n.includes('management') || n.includes('som')) return { lat: 12.0255, lng: 79.8540 };
+
     const found = CAMPUS_HOTSPOTS.find(s => s.name.toLowerCase() === n);
     if (found) return { lat: found.lat, lng: found.lng };
+
     const partial = CAMPUS_HOTSPOTS.find(s =>
       s.name.toLowerCase().includes(n) || n.includes(s.name.toLowerCase())
     );
     if (partial) return { lat: partial.lat, lng: partial.lng };
+
     return { lat: 12.0228681, lng: 79.8509415 };
   };
 
@@ -137,7 +138,34 @@ export function BookingForm({
     pickupAddress.trim().toLowerCase() !== destAddress.trim().toLowerCase()
   );
 
-  /* Fare estimate - strictly runs only when route is ready */
+  /* Exact Admin Route matching */
+  const matchedAdminRoute = adminRoutes.find(r =>
+    (r.pickup_stop?.trim().toLowerCase() === pickupAddress?.trim().toLowerCase() &&
+     r.destination_stop?.trim().toLowerCase() === destAddress?.trim().toLowerCase()) ||
+    (r.is_bidirectional &&
+     r.destination_stop?.trim().toLowerCase() === pickupAddress?.trim().toLowerCase() &&
+     r.pickup_stop?.trim().toLowerCase() === destAddress?.trim().toLowerCase())
+  );
+
+  const adminRouteFare = matchedAdminRoute ? parseFloat(matchedAdminRoute.fare_amount) : null;
+  const adminRouteDist = matchedAdminRoute ? parseFloat(matchedAdminRoute.distance_km) : null;
+
+  /* Synchronized Fare Calculation */
+  const baseSingleFare = adminRouteFare !== null
+    ? adminRouteFare
+    : (fareEstimate?.estimatedFare || standardCampusFare || 25);
+
+  const currentFare = isDoubleRide
+    ? Math.max(baseSingleFare, (baseSingleFare * 2) - 10)
+    : baseSingleFare;
+
+  const displayDistance = adminRouteDist !== null
+    ? adminRouteDist
+    : (fareEstimate?.distanceKm || 1.8);
+
+  const displayDuration = fareEstimate?.durationMinutes || Math.round((displayDistance / 25) * 60) || 4;
+
+  /* Fare estimate from backend - runs when route is selected */
   useEffect(() => {
     const run = async () => {
       if (!isRouteReady || !pickupCoords || !destCoords) {
@@ -151,9 +179,11 @@ export function BookingForm({
           pickupAddress, destinationAddress: destAddress,
           vehicleType, isDoubleRide
         }, token);
-        setFareEstimate(res.data);
+        if (res?.data) {
+          setFareEstimate(res.data);
+        }
       } catch {
-        /* silent */
+        /* silent - synced admin route fallback active */
       } finally {
         setEstimating(false);
       }
@@ -161,18 +191,18 @@ export function BookingForm({
     run();
   }, [isRouteReady, pickupCoords, destCoords, pickupAddress, destAddress, vehicleType, isDoubleRide, token]);
 
-  /* Broadcast real route to LiveRadarCard and page */
+  /* Broadcast real synced route to LiveRadarCard and page */
   useEffect(() => {
     if (typeof onRouteUpdate === 'function') {
       onRouteUpdate({
         pickupAddress: isRouteReady ? pickupAddress : '',
         destAddress: isRouteReady ? destAddress : '',
-        distanceKm: isRouteReady ? (fareEstimate?.distanceKm || 1.4) : null,
-        etaMins: isRouteReady ? (fareEstimate?.durationMinutes || 4) : null,
+        distanceKm: isRouteReady ? displayDistance : null,
+        etaMins: isRouteReady ? displayDuration : null,
         isRouteReady
       });
     }
-  }, [pickupAddress, destAddress, isRouteReady, fareEstimate, onRouteUpdate]);
+  }, [pickupAddress, destAddress, isRouteReady, displayDistance, displayDuration, onRouteUpdate]);
 
   const isFemaleUser = (user?.gender || '').toUpperCase() === 'FEMALE';
   const effectiveFemaleOnly = isFemaleUser && Boolean(femaleRiderOnly);
@@ -334,14 +364,25 @@ export function BookingForm({
     }
   };
 
-  // Known stops set to avoid duplication in optgroups
-  const knownNames = new Set(CAMPUS_HOTSPOTS.map(s => s.name.toLowerCase()));
-  const extraAdminStops = (adminStops || []).filter(s => !knownNames.has((s || '').toLowerCase()));
+  // Find reachable destinations connected to the selected pickup stop via admin routes
+  const availableDestinations = pickupAddress
+    ? Array.from(new Set(
+        adminRoutes
+          .filter(r =>
+            r.pickup_stop?.trim().toLowerCase() === pickupAddress?.trim().toLowerCase() ||
+            (r.is_bidirectional && r.destination_stop?.trim().toLowerCase() === pickupAddress?.trim().toLowerCase())
+          )
+          .map(r =>
+            r.pickup_stop?.trim().toLowerCase() === pickupAddress?.trim().toLowerCase()
+              ? r.destination_stop
+              : r.pickup_stop
+          )
+      ))
+    : adminStops;
 
-  const currentFare = estimating
-    ? null
-    : (fareEstimate?.estimatedFare ||
-       (vehicleType === 'AUTO' ? 40 : vehicleType === 'SHUTTLE' ? 15 : (isDoubleRide ? 30 : (standardCampusFare || 20))));
+  const validDestList = availableDestinations.length > 0
+    ? availableDestinations
+    : adminStops.filter(s => s.toLowerCase() !== pickupAddress.toLowerCase());
 
   return (
     <div id="book-form" className="ps-booking-flow">
@@ -452,7 +493,7 @@ export function BookingForm({
           </div>
         )}
 
-        {/* STEP 1: Pickup Location */}
+        {/* STEP 1: Pickup Location (Admin Routes Only) */}
         <div className="ps-flow-step">
           <div className="ps-flow-step-head">
             <label className="font-label-md ps-flow-label">
@@ -481,26 +522,15 @@ export function BookingForm({
                 setPickupCoords(findStopCoords(val));
               }}
             >
-              <option value="">-- Choose Pickup Stop or Gate --</option>
+              <option value="">-- Choose Pickup Stop (Admin Routes) --</option>
               {pickupAddress === 'Current Location' && (
                 <option value="Current Location">📍 Current GPS Location</option>
               )}
-              {DEFAULT_GROUPED_CAMPUS_STOPS.map(group => (
-                <optgroup key={`p-${group.key}`} label={group.label}>
-                  {group.stops.map(stop => (
-                    <option key={`p-stop-${stop.id}`} value={stop.name}>
-                      {stop.name}
-                    </option>
-                  ))}
-                </optgroup>
+              {adminStops.map(stopName => (
+                <option key={`p-${stopName}`} value={stopName}>
+                  {stopName}
+                </option>
               ))}
-              {extraAdminStops.length > 0 && (
-                <optgroup label="Other Campus Stops">
-                  {extraAdminStops.map((name, i) => (
-                    <option key={`p-extra-${i}`} value={name}>{name}</option>
-                  ))}
-                </optgroup>
-              )}
             </select>
           </div>
 
@@ -518,28 +548,30 @@ export function BookingForm({
             </div>
           )}
 
-          {/* Hotspots chips for quick 1-click select */}
-          <div className="ps-hotspots-bar">
-            <span className="font-label-sm ps-hotspots-label">Quick Pick:</span>
-            {HOTSPOTS.map((spot) => (
-              <button
-                key={spot.name}
-                type="button"
-                className={`ps-hotspot-chip ${pickupAddress === spot.name ? 'is-active' : ''}`}
-                onClick={() => {
-                  setPickupAddress(spot.name);
-                  setPickupCoords(findStopCoords(spot.name));
-                }}
-              >
-                <span>{spot.name}</span>
-              </button>
-            ))}
-          </div>
+          {/* Quick Pick stops from Admin routes */}
+          {adminStops.length > 0 && (
+            <div className="ps-hotspots-bar">
+              <span className="font-label-sm ps-hotspots-label">Campus Stops:</span>
+              {adminStops.map((stopName) => (
+                <button
+                  key={`chip-${stopName}`}
+                  type="button"
+                  className={`ps-hotspot-chip ${pickupAddress === stopName ? 'is-active' : ''}`}
+                  onClick={() => {
+                    setPickupAddress(stopName);
+                    setPickupCoords(findStopCoords(stopName));
+                  }}
+                >
+                  <span>{stopName}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="ps-flow-divider" />
 
-        {/* STEP 2: Destination */}
+        {/* STEP 2: Destination (Admin Routes Only) */}
         <div className="ps-flow-step">
           <div className="ps-flow-step-head">
             <label className="font-label-md ps-flow-label">
@@ -568,23 +600,21 @@ export function BookingForm({
                 setDestCoords(findStopCoords(val));
               }}
             >
-              <option value="">-- Choose Drop-off Destination --</option>
-              {DEFAULT_GROUPED_CAMPUS_STOPS.map(group => (
-                <optgroup key={`d-${group.key}`} label={group.label}>
-                  {group.stops.map(stop => (
-                    <option key={`d-stop-${stop.id}`} value={stop.name}>
-                      {stop.name}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-              {extraAdminStops.length > 0 && (
-                <optgroup label="Other Campus Stops">
-                  {extraAdminStops.map((name, i) => (
-                    <option key={`d-extra-${i}`} value={name}>{name}</option>
-                  ))}
-                </optgroup>
-              )}
+              <option value="">-- Choose Drop-off Destination (Admin Routes) --</option>
+              {validDestList.map(stopName => {
+                const direct = adminRoutes.find(r =>
+                  (r.pickup_stop?.trim().toLowerCase() === pickupAddress?.trim().toLowerCase() &&
+                   r.destination_stop?.trim().toLowerCase() === stopName.trim().toLowerCase()) ||
+                  (r.is_bidirectional &&
+                   r.destination_stop?.trim().toLowerCase() === pickupAddress?.trim().toLowerCase() &&
+                   r.pickup_stop?.trim().toLowerCase() === stopName.trim().toLowerCase())
+                );
+                return (
+                  <option key={`d-${stopName}`} value={stopName}>
+                    {stopName} {direct ? `(₹${Math.round(direct.fare_amount)})` : ''}
+                  </option>
+                );
+              })}
             </select>
             <button
               type="button"
@@ -610,7 +640,7 @@ export function BookingForm({
             </div>
           )}
 
-          {/* Optional Via Stop row */}
+          {/* Via Stop (Admin Routes Only) */}
           {showViaStop && (
             <div className="ps-pill-input-wrap mt-2 ps-fade-up">
               <span className="ps-pill-input-icon" style={{ color: '#0058BE' }}>
@@ -625,12 +655,14 @@ export function BookingForm({
                   setViaCoords(findStopCoords(val));
                 }}
               >
-                <option value="">-- Choose Intermediate Stop (Optional) --</option>
-                {CAMPUS_HOTSPOTS.map(stop => (
-                  <option key={`v-stop-${stop.id || stop.name}`} value={stop.name}>
-                    {stop.name}
-                  </option>
-                ))}
+                <option value="">-- Choose Intermediate Stop from Admin Routes (Optional) --</option>
+                {adminStops
+                  .filter(s => s !== pickupAddress && s !== destAddress)
+                  .map(stopName => (
+                    <option key={`v-${stopName}`} value={stopName}>
+                      {stopName}
+                    </option>
+                  ))}
               </select>
               <button
                 type="button"
@@ -658,20 +690,20 @@ export function BookingForm({
             <div className="ps-route-pending-content">
               <h3 className="ps-route-pending-title">
                 {!pickupAddress && !destAddress
-                  ? 'Select Pickup and Drop-off Stops'
+                  ? 'Select Admin Route Pickup & Destination'
                   : !pickupAddress
-                  ? 'Choose Pickup Location'
+                  ? 'Choose Pickup Stop'
                   : !destAddress
                   ? 'Choose Drop-off Destination'
                   : 'Pickup and Destination Must Differ'}
               </h3>
               <p className="ps-route-pending-desc">
                 {!pickupAddress && !destAddress
-                  ? 'Select both your campus pickup stop and drop-off destination above to view route preview, transit modes, and calculated fare.'
+                  ? 'Select your campus departure and destination stops from active admin routes above to preview the route, travel duration, and synced fare.'
                   : !pickupAddress
-                  ? 'Select where the driver partner should meet you on campus to preview route and fare.'
+                  ? 'Select where the driver partner should meet you on campus to preview route and synced fare.'
                   : !destAddress
-                  ? 'Select your destination campus stop above to calculate distance, travel time, and fare.'
+                  ? 'Select your destination campus stop above to calculate distance, travel time, and synced fare.'
                   : 'Pickup and drop-off cannot be the same stop. Please pick a different destination.'}
               </p>
             </div>
@@ -680,7 +712,7 @@ export function BookingForm({
           <>
             <div className="ps-flow-divider" />
 
-            {/* STEP 3: Vehicle Type Grid */}
+            {/* STEP 3: Vehicle Type Grid (Any, Bike, Scooter) */}
             <div className="ps-flow-step ps-fade-up">
               <div className="ps-flow-step-head">
                 <label className="font-label-md ps-flow-label">
@@ -693,7 +725,25 @@ export function BookingForm({
               </div>
 
               <div className="ps-vehicle-card-grid">
-                {/* Vehicle 1: Bike */}
+                {/* Vehicle 1: Any Transit */}
+                <div
+                  className={`ps-vehicle-pill-card ${vehicleType === 'ANY' ? 'is-active' : ''}`}
+                  onClick={() => setVehicleType('ANY')}
+                >
+                  <div className="ps-vehicle-pill-top">
+                    <div className="ps-vehicle-pill-icon">
+                      <Zap size={20} />
+                    </div>
+                    <span className="ps-vehicle-pill-price">₹{currentFare}</span>
+                  </div>
+                  <h2 className="ps-vehicle-pill-title">Any Transit</h2>
+                  <p className="ps-vehicle-pill-desc">Any vehicle • Fastest instant pickup</p>
+                  <span className="ps-vehicle-pill-feature">
+                    <Zap size={12} /> Fastest Dispatch
+                  </span>
+                </div>
+
+                {/* Vehicle 2: Campus Bike */}
                 <div
                   className={`ps-vehicle-pill-card ${vehicleType === 'BIKE' ? 'is-active' : ''}`}
                   onClick={() => setVehicleType('BIKE')}
@@ -702,57 +752,37 @@ export function BookingForm({
                     <div className="ps-vehicle-pill-icon">
                       <Bike size={20} />
                     </div>
-                    <span className="ps-vehicle-pill-price">
-                      ₹{isDoubleRide ? 30 : (fareEstimate?.estimatedFare || 20)}
-                    </span>
+                    <span className="ps-vehicle-pill-price">₹{currentFare}</span>
                   </div>
-                  <h2 className="ps-vehicle-pill-title">Papido Bike</h2>
-                  <p className="ps-vehicle-pill-desc">Single rider • Instant 2 min</p>
+                  <h2 className="ps-vehicle-pill-title">Campus Bike</h2>
+                  <p className="ps-vehicle-pill-desc">Standard commute • Single rider</p>
                   <span className="ps-vehicle-pill-feature">
                     <Zap size={12} /> 100% Electric
                   </span>
                 </div>
 
-                {/* Vehicle 2: Auto */}
+                {/* Vehicle 3: Campus Scooter */}
                 <div
-                  className={`ps-vehicle-pill-card ${vehicleType === 'AUTO' ? 'is-active' : ''}`}
-                  onClick={() => setVehicleType('AUTO')}
-                >
-                  <div className="ps-vehicle-pill-top">
-                    <div className="ps-vehicle-pill-icon">
-                      <Users size={20} />
-                    </div>
-                    <span className="ps-vehicle-pill-price">₹40</span>
-                  </div>
-                  <h2 className="ps-vehicle-pill-title">Papido Auto</h2>
-                  <p className="ps-vehicle-pill-desc">Up to 3 seats • 4 mins away</p>
-                  <span className="ps-vehicle-pill-feature" style={{ color: '#5A4138' }}>
-                    Luggage friendly
-                  </span>
-                </div>
-
-                {/* Vehicle 3: Shuttle */}
-                <div
-                  className={`ps-vehicle-pill-card ${vehicleType === 'SHUTTLE' ? 'is-active' : ''}`}
-                  onClick={() => setVehicleType('SHUTTLE')}
+                  className={`ps-vehicle-pill-card ${vehicleType === 'SCOOTER' ? 'is-active' : ''}`}
+                  onClick={() => setVehicleType('SCOOTER')}
                 >
                   <div className="ps-vehicle-pill-top">
                     <div className="ps-vehicle-pill-icon">
                       <Compass size={20} />
                     </div>
-                    <span className="ps-vehicle-pill-price">₹15</span>
+                    <span className="ps-vehicle-pill-price">₹{currentFare}</span>
                   </div>
-                  <h2 className="ps-vehicle-pill-title">PU Shuttle</h2>
-                  <p className="ps-vehicle-pill-desc">Campus Fixed Route • 5 mins</p>
-                  <span className="ps-vehicle-pill-feature" style={{ color: '#00855B' }}>
-                    Shared Pass
+                  <h2 className="ps-vehicle-pill-title">Campus Scooter</h2>
+                  <p className="ps-vehicle-pill-desc">Smooth ride • Single rider</p>
+                  <span className="ps-vehicle-pill-feature" style={{ color: '#0058BE' }}>
+                    Comfort Ride
                   </span>
                 </div>
               </div>
 
               {/* Rider Safety & Experience Toggles */}
               <div className="ps-toggles-bar">
-                {/* Double Ride Toggle (from previous codebase) */}
+                {/* Double Ride Toggle */}
                 <label className="ps-toggle-card">
                   <span className="ps-toggle-card-label">
                     <Users size={16} color="#EA580C" />
@@ -810,16 +840,17 @@ export function BookingForm({
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-headline-xl ps-fare-dock-amount">
-                    {estimating ? '...' : `₹${currentFare}`}
+                    ₹{currentFare}
                   </span>
                   <span className="ps-student-fare-badge">
-                    {isDoubleRide ? 'Double Ride · ₹10 Bundled Discount' : 'Standard Student Fare'}
+                    {matchedAdminRoute ? 'Admin Fixed Route Fare' : 'Standard Student Fare'}
+                    {isDoubleRide ? ' · ₹10 Bundled Discount Applied' : ''}
                   </span>
                 </div>
                 <p className="font-body-sm ps-fare-dock-meta">
-                  <span>Trip Distance: <strong>{fareEstimate?.distanceKm || 1.4} km</strong></span>
+                  <span>Trip Distance: <strong>{displayDistance} km</strong></span>
                   <span>•</span>
-                  <span>Estimated Time: <strong>{fareEstimate?.durationMinutes || 4} mins</strong></span>
+                  <span>Estimated Time: <strong>{displayDuration} mins</strong></span>
                 </p>
               </div>
             </div>
@@ -901,9 +932,9 @@ export function BookingForm({
                 className="ps-heroic-book-btn w-full"
                 onClick={() => {
                   setShowPreferenceModal(false);
-                  setVehicleType('BIKE');
+                  setVehicleType('ANY');
                   setFemaleRiderOnly(false);
-                  executeRequestRide({ vehicleType: 'BIKE', femaleRiderOnly: false });
+                  executeRequestRide({ vehicleType: 'ANY', femaleRiderOnly: false });
                 }}
               >
                 <Zap size={16} /> Opt for Available Ride (Fastest)
