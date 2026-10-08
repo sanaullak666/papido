@@ -364,26 +364,6 @@ export function BookingForm({
     }
   };
 
-  // Find reachable destinations connected to the selected pickup stop via admin routes
-  const availableDestinations = pickupAddress
-    ? Array.from(new Set(
-        adminRoutes
-          .filter(r =>
-            r.pickup_stop?.trim().toLowerCase() === pickupAddress?.trim().toLowerCase() ||
-            (r.is_bidirectional && r.destination_stop?.trim().toLowerCase() === pickupAddress?.trim().toLowerCase())
-          )
-          .map(r =>
-            r.pickup_stop?.trim().toLowerCase() === pickupAddress?.trim().toLowerCase()
-              ? r.destination_stop
-              : r.pickup_stop
-          )
-      ))
-    : adminStops;
-
-  const validDestList = availableDestinations.length > 0
-    ? availableDestinations
-    : adminStops.filter(s => s.toLowerCase() !== pickupAddress.toLowerCase());
-
   return (
     <div id="book-form" className="ps-booking-flow">
 
@@ -600,21 +580,14 @@ export function BookingForm({
                 setDestCoords(findStopCoords(val));
               }}
             >
-              <option value="">-- Choose Drop-off Destination (Admin Routes) --</option>
-              {validDestList.map(stopName => {
-                const direct = adminRoutes.find(r =>
-                  (r.pickup_stop?.trim().toLowerCase() === pickupAddress?.trim().toLowerCase() &&
-                   r.destination_stop?.trim().toLowerCase() === stopName.trim().toLowerCase()) ||
-                  (r.is_bidirectional &&
-                   r.destination_stop?.trim().toLowerCase() === pickupAddress?.trim().toLowerCase() &&
-                   r.pickup_stop?.trim().toLowerCase() === stopName.trim().toLowerCase())
-                );
-                return (
-                  <option key={`d-${stopName}`} value={stopName}>
-                    {stopName} {direct ? `(₹${Math.round(direct.fare_amount)})` : ''}
-                  </option>
-                );
-              })}
+              <option value="">-- Select Campus Drop-off Destination --</option>
+              {adminStops && adminStops.length > 0 ? (
+                adminStops.map((stopName, i) => (
+                  <option key={`d-stop-${i}`} value={stopName}>{stopName}</option>
+                ))
+              ) : (
+                <option value="" disabled>No drop-off locations added by Admin</option>
+              )}
             </select>
             <button
               type="button"
@@ -655,14 +628,14 @@ export function BookingForm({
                   setViaCoords(findStopCoords(val));
                 }}
               >
-                <option value="">-- Choose Intermediate Stop from Admin Routes (Optional) --</option>
-                {adminStops
-                  .filter(s => s !== pickupAddress && s !== destAddress)
-                  .map(stopName => (
-                    <option key={`v-${stopName}`} value={stopName}>
-                      {stopName}
-                    </option>
-                  ))}
+                <option value="">-- Choose Intermediate Stop (Optional) --</option>
+                {adminStops && adminStops.length > 0 ? (
+                  adminStops.map((stopName, i) => (
+                    <option key={`v-stop-${i}`} value={stopName}>{stopName}</option>
+                  ))
+                ) : (
+                  <option value="" disabled>No locations available</option>
+                )}
               </select>
               <button
                 type="button"
