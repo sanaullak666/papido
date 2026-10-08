@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { apiRequest } from '../../api';
 import { usePassenger } from '../shared/PassengerContext';
-import { PSButton, PSCard, PSSwitch } from '../shared/PassengerUI';
+import { PSSwitch } from '../shared/PassengerUI';
 import { openCancelWarning, openPenaltyModal } from '../shared/PassengerModals';
 import '../shared/PassengerModals.css';
 import {
@@ -11,8 +11,15 @@ import {
 import {
   Bike, Zap, Compass, MapPin, Clock, Plus, X,
   Users, Shield, CreditCard, Check, Calendar, AlertTriangle, AlertCircle,
-  Navigation
+  Navigation, ArrowRight, ArrowUpDown, LocateFixed, Eye, VolumeX
 } from 'lucide-react';
+
+const HOTSPOTS = [
+  { name: 'Gate 1 Main Entrance', icon: 'near_me' },
+  { name: 'Silver Jubilee Hostel', icon: 'apartment' },
+  { name: 'Library Roundabout', icon: 'local_library' },
+  { name: 'Science Block Complex', icon: 'biotech' }
+];
 
 export function BookingForm({
   user, token,
@@ -24,11 +31,11 @@ export function BookingForm({
   } = usePassenger();
 
   /* ---------- Pickup / Drop / Via ---------- */
-  const [pickupAddress, setPickupAddress] = useState('PU Main Gate (Gate 1)');
+  const [pickupAddress, setPickupAddress] = useState('Gate 1 Main Entrance');
   const [pickupDetail, setPickupDetail] = useState('');
   const [pickupCoords, setPickupCoords] = useState({ lat: 12.0228681, lng: 79.8509415 });
 
-  const [destAddress, setDestAddress] = useState('Madame Curie Girls Hostel');
+  const [destAddress, setDestAddress] = useState('Management Studies Dept');
   const [destDetail, setDestDetail] = useState('');
   const [destCoords, setDestCoords] = useState({ lat: 12.0215, lng: 79.8565 });
 
@@ -38,8 +45,9 @@ export function BookingForm({
   const [viaCoords, setViaCoords] = useState(null);
 
   /* ---------- Vehicle + prefs ---------- */
-  const [vehicleType, setVehicleType] = useState('ANY');
+  const [vehicleType, setVehicleType] = useState('BIKE');
   const [femaleRiderOnly, setFemaleRiderOnly] = useState(false);
+  const [isQuietRide, setIsQuietRide] = useState(false);
   const [isDoubleRide, setIsDoubleRide] = useState(false);
 
   /* ---------- Preference live availability & modal ---------- */
@@ -50,7 +58,6 @@ export function BookingForm({
 
   /* ---------- Mode + time ---------- */
   const [bookingMode, setBookingMode] = useState('NOW');
-  const [rideNowTimeOption, setRideNowTimeOption] = useState('NOW');
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledHour, setScheduledHour] = useState('09');
   const [scheduledMinute, setScheduledMinute] = useState('00');
@@ -71,8 +78,6 @@ export function BookingForm({
       }).format(d);
     } catch { return d.toISOString().slice(0, 10); }
   };
-  const getTodayDateStr = () => getLocalDateString(new Date());
-  const getTomorrowDateStr = () => getLocalDateString(new Date(Date.now() + 86400000));
 
   useEffect(() => {
     setScheduledDate(getLocalDateString(new Date(Date.now() + 3600000)));
@@ -91,8 +96,6 @@ export function BookingForm({
           ));
           if (stops.length > 0) {
             setAdminStops(stops);
-            setPickupAddress(p => (stops.includes(p) ? p : stops[0]));
-            setDestAddress(p => (stops.includes(p) ? p : (stops[1] || stops[0])));
           } else {
             setAdminStops(CAMPUS_HOTSPOTS.map(s => s.name));
           }
@@ -137,7 +140,7 @@ export function BookingForm({
   const effectiveFemaleOnly = isFemaleUser && Boolean(femaleRiderOnly);
   const hasPreferences = (vehicleType && vehicleType !== 'ANY') || effectiveFemaleOnly;
 
-  /* Check real-time driver availability when preferences are selected */
+  /* Check real-time driver availability */
   useEffect(() => {
     let isCancelled = false;
     const checkAvailability = async () => {
@@ -211,7 +214,8 @@ export function BookingForm({
         femaleRiderOnly: targetFemaleOnly,
         isDoubleRide, paymentMethod: 'CASH',
         isScheduled: isSched,
-        scheduledTime: isSched ? targetScheduledTime : null
+        scheduledTime: isSched ? targetScheduledTime : null,
+        notes: isQuietRide ? 'Quiet Ride requested' : ''
       };
 
       const res = await apiRequest('/customer/rides', 'POST', payload, token);
@@ -241,7 +245,6 @@ export function BookingForm({
     }
   };
 
-  /* Intercept request if preferred ride is unavailable */
   const handleRequestRide = async () => {
     if (!pickupCoords || !destCoords) return;
 
@@ -254,436 +257,402 @@ export function BookingForm({
     await executeRequestRide();
   };
 
-  const displayTime =
-    rideNowTimeOption === 'NOW' ? 'Now' :
-    rideNowTimeOption === '5MIN' ? 'In 5 min' :
-    rideNowTimeOption === '10MIN' ? 'In 10 min' :
-    rideNowTimeOption === '15MIN' ? 'In 15 min' : 'Custom';
+  const handleSwap = () => {
+    const pAddr = pickupAddress;
+    const pDet = pickupDetail;
+    const pCoord = pickupCoords;
+    setPickupAddress(destAddress);
+    setPickupDetail(destDetail);
+    setPickupCoords(destCoords);
+    setDestAddress(pAddr);
+    setDestDetail(pDet);
+    setDestCoords(pCoord);
+  };
 
-  /* ---------- Progress computation for step indicator ---------- */
-  const progressSteps = [
-    { step: 1, label: 'Pickup', icon: MapPin, complete: Boolean(pickupAddress) },
-    { step: 2, label: 'Drop', icon: Navigation, complete: Boolean(destAddress) },
-    { step: 3, label: 'Vehicle', icon: Bike, complete: Boolean(vehicleType) },
-    { step: 4, label: 'Confirm', icon: CreditCard, complete: Boolean(fareEstimate || standardCampusFare) }
-  ];
+  const handleCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setPickupCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          setPickupAddress('Current Location');
+          setStatusMessage({ text: 'Pickup set to your current GPS position.', type: 'success' });
+        },
+        () => {
+          setStatusMessage({ text: 'Could not access GPS. Please select from campus hotspots.', type: 'error' });
+        }
+      );
+    }
+  };
 
   const currentFare = estimating
     ? null
     : (fareEstimate?.estimatedFare ||
-       (isDoubleRide
-         ? Math.max(standardCampusFare || 25, (standardCampusFare || 25) * 2 - 10)
-         : (standardCampusFare || 25)));
+       (vehicleType === 'AUTO' ? 40 : vehicleType === 'SHUTTLE' ? 15 : (standardCampusFare || 20)));
 
   return (
-    <div id="book-form" className="ps-booking-form">
+    <div id="book-form" className="ps-booking-flow">
 
-      {/* Mode switch */}
-      <div className="ps-mode-switch">
-        <button
-          type="button"
-          onClick={() => setBookingMode('NOW')}
-          className={`ps-mode-btn ${bookingMode === 'NOW' ? 'is-active is-amber' : ''}`}
-        >
-          <Zap size={15} /> Ride Now
-        </button>
-        <button
-          type="button"
-          onClick={() => setBookingMode('SCHEDULE')}
-          className={`ps-mode-btn ${bookingMode === 'SCHEDULE' ? 'is-active is-blue' : ''}`}
-        >
-          <Calendar size={15} /> Pre-Book
-        </button>
-      </div>
-
-      {/* ── Booking Progress Indicator (NEW) ── */}
-      <div className="ps-booking-progress ps-fade-up">
-        {progressSteps.map((s, i) => {
-          const StepIcon = s.icon;
-          const isLast = i === progressSteps.length - 1;
-          return (
-            <React.Fragment key={s.step}>
-              <div
-                className={`ps-progress-step ${s.complete ? 'is-complete' : ''}`}
-                title={s.label}
-              >
-                <div className="ps-progress-dot">
-                  {s.complete ? <Check size={11} strokeWidth={3} /> : <StepIcon size={11} />}
-                </div>
-                <span className="ps-progress-label">{s.label}</span>
-              </div>
-              {!isLast && (
-                <div className={`ps-progress-connector ${s.complete ? 'is-complete' : ''}`} />
-              )}
-            </React.Fragment>
-          );
-        })}
-      </div>
-
-      {/* Now time pills */}
-      {bookingMode === 'NOW' && (
-        <div className="ps-time-card ps-fade-up">
-          <div className="ps-time-card-header">
-            <div className="ps-time-card-label">
-              <Clock size={15} /> Pickup Time
+      {/* Top Mode Switch & Stepper Header (Stitch Design) */}
+      <div className="ps-terminal-box ps-fade-up">
+        <div className="ps-terminal-head">
+          <div>
+            <div className="ps-tag-pill-row">
+              <span className="ps-tag-pill-accent">Fast Transit</span>
+              <span className="ps-tag-pill-sub">Instant PU Dispatch</span>
             </div>
-            <span className="ps-time-display">{displayTime}</span>
+            <h1 className="font-headline-lg ps-terminal-title">Book Campus Transit</h1>
           </div>
-          <div className="ps-time-pills">
-            {['NOW', '5MIN', '10MIN', '15MIN'].map(id => (
+
+          {/* Mode Switch Toggle: Ride Now vs Schedule */}
+          <div className="ps-mode-pill-toggle">
+            <button
+              type="button"
+              className={`ps-mode-pill-btn ${bookingMode === 'NOW' ? 'is-active' : ''}`}
+              onClick={() => setBookingMode('NOW')}
+            >
+              <Zap size={16} />
+              <span>Ride Now</span>
+            </button>
+            <button
+              type="button"
+              className={`ps-mode-pill-btn ${bookingMode === 'SCHEDULE' ? 'is-active' : ''}`}
+              onClick={() => setBookingMode('SCHEDULE')}
+            >
+              <Calendar size={16} />
+              <span>Schedule</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Schedule Time Selector Drawer (if Pre-Book is active) */}
+        {bookingMode === 'SCHEDULE' && (
+          <div className="ps-schedule-drawer ps-fade-up">
+            <div className="ps-schedule-row">
+              <div className="ps-schedule-field flex-1">
+                <label className="font-label-sm ps-field-label">Trip Date</label>
+                <input
+                  type="date"
+                  className="ps-input-pill"
+                  value={scheduledDate}
+                  min={getLocalDateString()}
+                  onChange={(e) => setScheduledDate(e.target.value)}
+                />
+              </div>
+              <div className="ps-schedule-field flex-1">
+                <label className="font-label-sm ps-field-label">Time</label>
+                <div className="flex gap-2">
+                  <select
+                    className="ps-input-pill flex-1"
+                    value={scheduledHour}
+                    onChange={(e) => setScheduledHour(e.target.value)}
+                  >
+                    {Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0')).map(h => (
+                      <option key={h} value={h}>{h}</option>
+                    ))}
+                  </select>
+                  <select
+                    className="ps-input-pill flex-1"
+                    value={scheduledMinute}
+                    onChange={(e) => setScheduledMinute(e.target.value)}
+                  >
+                    {['00', '15', '30', '45'].map(m => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                  <select
+                    className="ps-input-pill"
+                    style={{ width: '70px' }}
+                    value={scheduledAmPm}
+                    onChange={(e) => setScheduledAmPm(e.target.value)}
+                  >
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 1: Pickup Location */}
+        <div className="ps-flow-step">
+          <div className="ps-flow-step-head">
+            <label className="font-label-md ps-flow-label">
+              <span className="ps-circle-badge">1</span>
+              <span>Pickup Location</span>
+            </label>
+            <button
+              type="button"
+              className="ps-link-btn"
+              onClick={handleCurrentLocation}
+            >
+              <LocateFixed size={14} /> Current Location
+            </button>
+          </div>
+
+          <div className="ps-pill-input-wrap">
+            <span className="ps-pill-input-icon ps-pill-input-icon--primary">
+              <MapPin size={18} />
+            </span>
+            <input
+              type="text"
+              className="ps-pill-input"
+              value={pickupAddress}
+              onChange={(e) => {
+                setPickupAddress(e.target.value);
+                setPickupCoords(findStopCoords(e.target.value));
+              }}
+              placeholder="Enter pickup spot or choose below..."
+            />
+          </div>
+
+          {/* Hotspots chips matching Stitch */}
+          <div className="ps-hotspots-bar">
+            <span className="font-label-sm ps-hotspots-label">Hotspots:</span>
+            {HOTSPOTS.map((spot) => (
               <button
-                key={id}
+                key={spot.name}
                 type="button"
-                onClick={() => setRideNowTimeOption(id)}
-                className={`ps-time-pill ${rideNowTimeOption === id ? 'is-active' : ''}`}
+                className={`ps-hotspot-chip ${pickupAddress === spot.name ? 'is-active' : ''}`}
+                onClick={() => {
+                  setPickupAddress(spot.name);
+                  setPickupCoords(findStopCoords(spot.name));
+                }}
               >
-                {id === 'NOW' ? 'Now' : `+${id.replace('MIN', '')}m`}
+                <span>{spot.name}</span>
               </button>
             ))}
           </div>
         </div>
-      )}
 
-      {/* Schedule date/time */}
-      {bookingMode === 'SCHEDULE' && (
-        <div className="ps-schedule-card ps-fade-up">
-          <div className="ps-schedule-header">
-            <div className="ps-schedule-title">
-              <Calendar size={18} /> Schedule Trip
-            </div>
-            <span className="ps-schedule-tag">ADVANCE</span>
+        <div className="ps-flow-divider" />
+
+        {/* STEP 2: Destination */}
+        <div className="ps-flow-step">
+          <div className="ps-flow-step-head">
+            <label className="font-label-md ps-flow-label">
+              <span className="ps-circle-badge ps-circle-badge--muted">2</span>
+              <span>Destination</span>
+            </label>
+            <button
+              type="button"
+              className="ps-link-btn ps-link-btn--secondary"
+              onClick={() => setShowViaStop(!showViaStop)}
+            >
+              <Plus size={14} /> {showViaStop ? 'Remove via stop' : 'Add via stop'}
+            </button>
           </div>
 
-          <div className="ps-schedule-date-pills">
-            <button
-              type="button"
-              onClick={() => setScheduledDate(getTodayDateStr())}
-              className={`ps-schedule-pill ${scheduledDate === getTodayDateStr() ? 'is-active' : ''}`}
-            >
-              Today
-            </button>
-            <button
-              type="button"
-              onClick={() => setScheduledDate(getTomorrowDateStr())}
-              className={`ps-schedule-pill ${scheduledDate === getTomorrowDateStr() ? 'is-active' : ''}`}
-            >
-              Tomorrow
-            </button>
+          <div className="ps-pill-input-wrap">
+            <span className="ps-pill-input-icon ps-pill-input-icon--dest">
+              <Navigation size={18} />
+            </span>
             <input
-              type="date"
-              min={getTodayDateStr()}
-              value={scheduledDate}
-              onChange={(e) => setScheduledDate(e.target.value)}
-              className="ps-schedule-date-input"
+              type="text"
+              className="ps-pill-input"
+              value={destAddress}
+              onChange={(e) => {
+                setDestAddress(e.target.value);
+                setDestCoords(findStopCoords(e.target.value));
+              }}
+              placeholder="Enter campus destination..."
             />
-          </div>
-
-          <div className="ps-schedule-time-row">
-            <select
-              value={scheduledHour}
-              onChange={(e) => setScheduledHour(e.target.value)}
-              className="ps-select"
+            <button
+              type="button"
+              className="ps-pill-swap-btn"
+              title="Swap pickup and destination"
+              onClick={handleSwap}
             >
-              {['01','02','03','04','05','06','07','08','09','10','11','12'].map(h =>
-                <option key={h} value={h}>{h}</option>
-              )}
-            </select>
-            <select
-              value={scheduledMinute}
-              onChange={(e) => setScheduledMinute(e.target.value)}
-              className="ps-select"
-            >
-              {['00','05','10','15','20','25','30','35','40','45','50','55'].map(m =>
-                <option key={m} value={m}>{m}</option>
-              )}
-            </select>
-            <div className="ps-schedule-period">
-              <button
-                type="button"
-                onClick={() => setScheduledAmPm('AM')}
-                className={`ps-period-btn ${scheduledAmPm === 'AM' ? 'is-active' : ''}`}
-              >AM</button>
-              <button
-                type="button"
-                onClick={() => setScheduledAmPm('PM')}
-                className={`ps-period-btn ${scheduledAmPm === 'PM' ? 'is-active' : ''}`}
-              >PM</button>
-            </div>
+              <ArrowUpDown size={16} />
+            </button>
           </div>
-        </div>
-      )}
 
-      {/* STEP 1: Pickup */}
-      <PSCard className="ps-step-card ps-fade-up">
-        <div className="ps-step-header">
-          <div className="ps-step-left">
-            <div className="ps-step-num ps-step-num--green">1</div>
-            <div>
-              <div className="ps-step-title">Pickup Location</div>
-              <div className="ps-step-sub">Where should the rider meet you?</div>
-            </div>
-          </div>
-          <span className="ps-step-tag ps-step-tag--green">STEP 1</span>
-        </div>
-
-        <select
-          className="ps-select"
-          value={pickupAddress}
-          onChange={(e) => {
-            setPickupAddress(e.target.value);
-            setPickupCoords(findStopCoords(e.target.value));
-          }}
-        >
-          {adminStops.map((s, i) => (
-            <option key={`p-${i}`} value={s}>{s}</option>
-          ))}
-        </select>
-
-        {getLocationHint(pickupAddress) && (
-          <input
-            type="text"
-            className="ps-input"
-            placeholder={getLocationHint(pickupAddress).placeholder}
-            value={pickupDetail}
-            onChange={(e) => setPickupDetail(e.target.value)}
-            style={{ marginTop: 8 }}
-          />
-        )}
-
-        {!showViaStop ? (
-          <button
-            type="button"
-            onClick={() => setShowViaStop(true)}
-            className="ps-via-add"
-          >
-            <Plus size={14} /> Add Via Stop (Optional)
-          </button>
-        ) : (
-          <div className="ps-via-card ps-fade-up">
-            <div className="ps-via-header">
-              <label className="ps-via-label">
-                <MapPin size={14} color="#F59E0B" /> Via Stop
-              </label>
+          {/* Optional Via Stop row */}
+          {showViaStop && (
+            <div className="ps-pill-input-wrap mt-2 ps-fade-up">
+              <span className="ps-pill-input-icon" style={{ color: '#0058BE' }}>
+                <Clock size={16} />
+              </span>
+              <input
+                type="text"
+                className="ps-pill-input"
+                placeholder="Via Stop: (e.g. Student Canteen #2)"
+                value={viaAddress}
+                onChange={(e) => {
+                  setViaAddress(e.target.value);
+                  setViaCoords(findStopCoords(e.target.value));
+                }}
+              />
               <button
                 type="button"
+                className="ps-pill-swap-btn"
                 onClick={() => {
                   setShowViaStop(false);
-                  setViaAddress(''); setViaDetail(''); setViaCoords(null);
+                  setViaAddress('');
                 }}
-                className="ps-via-remove"
               >
-                <X size={12} /> Remove
+                <X size={15} />
               </button>
             </div>
-            <select
-              className="ps-select"
-              value={viaAddress}
-              onChange={(e) => {
-                setViaAddress(e.target.value);
-                setViaCoords(findStopCoords(e.target.value));
-              }}
-            >
-              {adminStops.map((s, i) => (
-                <option key={`v-${i}`} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
-        )}
-      </PSCard>
-
-      {/* STEP 2: Destination */}
-      <PSCard className="ps-step-card ps-fade-up">
-        <div className="ps-step-header">
-          <div className="ps-step-left">
-            <div className="ps-step-num ps-step-num--amber">2</div>
-            <div>
-              <div className="ps-step-title">Drop-off Destination</div>
-              <div className="ps-step-sub">Your final campus stop</div>
-            </div>
-          </div>
-          <span className="ps-step-tag ps-step-tag--amber">STEP 2</span>
-        </div>
-
-        <select
-          className="ps-select"
-          value={destAddress}
-          onChange={(e) => {
-            setDestAddress(e.target.value);
-            setDestCoords(findStopCoords(e.target.value));
-          }}
-        >
-          {adminStops.map((s, i) => (
-            <option key={`d-${i}`} value={s}>{s}</option>
-          ))}
-        </select>
-
-        {getLocationHint(destAddress) && (
-          <input
-            type="text"
-            className="ps-input"
-            placeholder={getLocationHint(destAddress).placeholder}
-            value={destDetail}
-            onChange={(e) => setDestDetail(e.target.value)}
-            style={{ marginTop: 8 }}
-          />
-        )}
-      </PSCard>
-
-      {/* STEP 3: Vehicle */}
-      <PSCard className="ps-step-card ps-fade-up">
-        <div className="ps-step-header">
-          <div className="ps-step-left">
-            <div className="ps-step-num ps-step-num--amber">3</div>
-            <div>
-              <div className="ps-step-title">Vehicle Type</div>
-              <div className="ps-step-sub">Choose your ride</div>
-            </div>
-          </div>
-          <span className="ps-step-tag ps-step-tag--amber">STEP 3</span>
-        </div>
-
-        <div className="ps-vehicle-grid">
-          {[
-            { id: 'ANY', icon: Zap, label: 'Any', sub: 'Fastest' },
-            { id: 'BIKE', icon: Bike, label: 'Bike', sub: 'Standard' },
-            { id: 'SCOOTER', icon: Compass, label: 'Scooter', sub: 'Smooth' }
-          ].map((v) => {
-            const Icon = v.icon;
-            const isActive = vehicleType === v.id;
-            return (
-              <button
-                key={v.id}
-                type="button"
-                onClick={() => setVehicleType(v.id)}
-                className={`ps-vehicle-btn ${isActive ? 'is-active' : ''}`}
-              >
-                {isActive && <span className="ps-vehicle-check"><Check size={11} /></span>}
-                <Icon size={22} color={isActive ? '#EA580C' : '#796D61'} />
-                <span className="ps-vehicle-label">{v.label}</span>
-                <span className="ps-vehicle-sub">{v.sub}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="ps-prefs-box">
-          {(user?.gender || '').toUpperCase() === 'FEMALE' && (
-            <label className="ps-pref-row ps-pref-row--divider">
-              <div className="ps-pref-left">
-                <Shield size={16} color="#EC4899" />
-                <div>
-                  <span className="ps-pref-title">Female Rider Only</span>
-                </div>
-              </div>
-              <PSSwitch checked={femaleRiderOnly} onChange={setFemaleRiderOnly} tone="pink" />
-            </label>
           )}
-          <label className="ps-pref-row">
-            <div className="ps-pref-left">
-              <Users size={16} color="#EA580C" />
-              <div>
-                <span className="ps-pref-title">Double Ride</span>
-                <div className="ps-pref-sub ps-pref-sub--green">Save ₹10</div>
-              </div>
-            </div>
-            <PSSwitch checked={isDoubleRide} onChange={setIsDoubleRide} tone="amber" />
-          </label>
         </div>
 
-        {/* Preference Availability Indicator */}
-        {hasPreferences && bookingMode === 'NOW' && (
-          <div className="ps-pref-status-box ps-fade-up">
-            {checkingPref && !prefAvailability ? (
-              <div className="ps-pref-status ps-pref-status--checking">
-                <div className="ps-pref-status-dot ps-pref-status-dot--pulse" />
-                <span>Checking driver availability for preferences...</span>
-              </div>
-            ) : prefAvailability?.isAvailable ? (
-              <div className="ps-pref-status ps-pref-status--available">
-                <Check size={16} className="ps-pref-status-icon" />
-                <div className="ps-pref-status-text">
-                  <span className="ps-pref-status-strong">Preference Available!</span>
-                  <span>{prefAvailability.matchingCount} matching driver{prefAvailability.matchingCount > 1 ? 's' : ''} ready nearby.</span>
+        <div className="ps-flow-divider" />
+
+        {/* STEP 3: Vehicle Type Grid */}
+        <div className="ps-flow-step">
+          <div className="ps-flow-step-head">
+            <label className="font-label-md ps-flow-label">
+              <span className="ps-circle-badge ps-circle-badge--muted">3</span>
+              <span>Select Transit Mode</span>
+            </label>
+            <span className="ps-subsidized-badge">
+              <Shield size={13} color="#00855B" /> Subsidized Student Fares
+            </span>
+          </div>
+
+          <div className="ps-vehicle-card-grid">
+            {/* Vehicle 1: Bike */}
+            <div
+              className={`ps-vehicle-pill-card ${vehicleType === 'BIKE' ? 'is-active' : ''}`}
+              onClick={() => setVehicleType('BIKE')}
+            >
+              <div className="ps-vehicle-pill-top">
+                <div className="ps-vehicle-pill-icon">
+                  <Bike size={20} />
                 </div>
+                <span className="ps-vehicle-pill-price">₹20</span>
               </div>
-            ) : (
-              <div className="ps-pref-status ps-pref-status--unavailable">
-                <div className="ps-pref-status-top">
-                  <div className="ps-pref-status-icon-wrap">
-                    <AlertTriangle size={16} />
-                  </div>
-                  <div className="ps-pref-status-text">
-                    <span className="ps-pref-status-strong">Preferred Ride Unavailable</span>
-                    <span className="ps-pref-status-desc">
-                      {prefAvailability?.unavailableMessage || 'No matching drivers online right now.'}
-                    </span>
-                  </div>
+              <h2 className="ps-vehicle-pill-title">Papido Bike</h2>
+              <p className="ps-vehicle-pill-desc">Single rider • Instant 2 min</p>
+              <span className="ps-vehicle-pill-feature">
+                <Zap size={12} /> 100% Electric
+              </span>
+            </div>
+
+            {/* Vehicle 2: Auto */}
+            <div
+              className={`ps-vehicle-pill-card ${vehicleType === 'AUTO' ? 'is-active' : ''}`}
+              onClick={() => setVehicleType('AUTO')}
+            >
+              <div className="ps-vehicle-pill-top">
+                <div className="ps-vehicle-pill-icon">
+                  <Users size={20} />
                 </div>
-                {prefAvailability?.hasOtherRidersOnline && (
-                  <div className="ps-pref-fallback-row">
-                    <span className="ps-pref-fallback-note">
-                      {prefAvailability.totalOnlineCount} other driver{prefAvailability.totalOnlineCount > 1 ? 's are' : ' is'} online now.
-                    </span>
-                    <button
-                      type="button"
-                      className="ps-pref-opt-link"
-                      onClick={() => {
-                        setVehicleType('ANY');
-                        setFemaleRiderOnly(false);
-                      }}
-                    >
-                      <Zap size={13} /> Switch to Any Ride (Fastest)
-                    </button>
-                  </div>
-                )}
+                <span className="ps-vehicle-pill-price">₹40</span>
               </div>
+              <h2 className="ps-vehicle-pill-title">Papido Auto</h2>
+              <p className="ps-vehicle-pill-desc">Up to 3 seats • 4 mins away</p>
+              <span className="ps-vehicle-pill-feature" style={{ color: '#5A4138' }}>
+                Luggage friendly
+              </span>
+            </div>
+
+            {/* Vehicle 3: Shuttle */}
+            <div
+              className={`ps-vehicle-pill-card ${vehicleType === 'SHUTTLE' || vehicleType === 'ANY' ? 'is-active' : ''}`}
+              onClick={() => setVehicleType('SHUTTLE')}
+            >
+              <div className="ps-vehicle-pill-top">
+                <div className="ps-vehicle-pill-icon">
+                  <Compass size={20} />
+                </div>
+                <span className="ps-vehicle-pill-price">₹15</span>
+              </div>
+              <h2 className="ps-vehicle-pill-title">PU Shuttle</h2>
+              <p className="ps-vehicle-pill-desc">Campus Fixed Route • 5 mins</p>
+              <span className="ps-vehicle-pill-feature" style={{ color: '#00855B' }}>
+                Shared Pass
+              </span>
+            </div>
+          </div>
+
+          {/* Rider Safety & Experience Toggles */}
+          <div className="ps-toggles-bar">
+            {isFemaleUser && (
+              <label className="ps-toggle-card">
+                <span className="ps-toggle-card-label">
+                  <Shield size={16} color="#EA580C" />
+                  <span>Women Passenger Preference</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={femaleRiderOnly}
+                  onChange={(e) => setFemaleRiderOnly(e.target.checked)}
+                  className="ps-checkbox-accent"
+                />
+              </label>
             )}
-          </div>
-        )}
-      </PSCard>
 
-      {/* STEP 4: Fare */}
-      <PSCard className="ps-fare-card ps-fade-up">
-        <div className="ps-step-header">
-          <div className="ps-step-left">
-            <div className="ps-step-num ps-step-num--amber">4</div>
+            <label className="ps-toggle-card">
+              <span className="ps-toggle-card-label">
+                <VolumeX size={16} color="#0058BE" />
+                <span>Quiet Ride Option</span>
+              </span>
+              <input
+                type="checkbox"
+                checked={isQuietRide}
+                onChange={(e) => setIsQuietRide(e.target.checked)}
+                className="ps-checkbox-accent"
+              />
+            </label>
+          </div>
+        </div>
+      </div>
+
+      {/* STEP 4: Fare Summary Card & CTA Dock */}
+      <div className="ps-fare-dock-card ps-fade-up">
+        <div className="ps-fare-dock-row">
+          <div className="flex items-center gap-4">
+            <div className="ps-fare-receipt-icon">
+              <CreditCard size={28} />
+            </div>
             <div>
-              <div className="ps-step-title">Fare & Payment</div>
-              <div className="ps-step-sub">Transparent pricing</div>
+              <div className="flex items-center gap-2">
+                <span className="font-headline-xl ps-fare-dock-amount">
+                  ₹{currentFare || 20}
+                </span>
+                <span className="ps-student-fare-badge">Standard Student Fare</span>
+              </div>
+              <p className="font-body-sm ps-fare-dock-meta">
+                <span>Trip Distance: <strong>1.4 km</strong></span>
+                <span>•</span>
+                <span>Estimated Time: <strong>4 mins</strong></span>
+              </p>
             </div>
           </div>
-          <span className="ps-step-tag ps-step-tag--amber">STEP 4</span>
-        </div>
 
-        <div className="ps-fare-total">
-          <div className="ps-fare-total-label">Total Fare</div>
-          <div className="ps-fare-value">
-            {currentFare ? `₹${currentFare}` : '...'}
+          {/* Payment Method Pill */}
+          <div className="ps-payment-pill">
+            <span className="ps-payment-pill-label">Pay with:</span>
+            <div className="ps-payment-pill-val">
+              <Zap size={14} color="#EA580C" />
+              <span>UPI / Campus Pass</span>
+            </div>
           </div>
         </div>
 
-        <div className="ps-payment-row">
-          <span className="ps-payment-label">Payment:</span>
-          <span className="ps-payment-method">
-            <CreditCard size={13} color="#EA580C" /> Cash / UPI on Drop
-          </span>
-        </div>
-      </PSCard>
+        <div className="ps-fare-dock-action-row">
+          <div className="ps-insured-note">
+            <Shield size={16} color="#00855B" />
+            <span>Insured PU Campus Trip · Direct emergency dispatcher connection enabled</span>
+          </div>
 
-      {/* Confirm */}
-      <PSButton
-        variant={bookingMode === 'SCHEDULE' ? 'blue' : 'primary'}
-        size="lg"
-        block
-        disabled={bookingLoading || !pickupAddress || !destAddress}
-        onClick={handleRequestRide}
-      >
-        {bookingLoading
-          ? (bookingMode === 'SCHEDULE' ? 'Pre-Booking...' : 'Requesting...')
-          : (bookingMode === 'SCHEDULE'
-              ? 'Confirm & Pre-Book'
-              : 'Confirm & Request Ride')}
-      </PSButton>
+          <button
+            type="button"
+            className="ps-heroic-book-btn"
+            disabled={bookingLoading || !pickupAddress || !destAddress}
+            onClick={handleRequestRide}
+          >
+            <span>
+              {bookingLoading
+                ? (bookingMode === 'SCHEDULE' ? 'Scheduling...' : 'Dispatching...')
+                : (bookingMode === 'SCHEDULE' ? 'Schedule Campus Ride' : 'Book Campus Ride Now')}
+            </span>
+            <ArrowRight size={20} />
+          </button>
+        </div>
+      </div>
 
       {/* Preference Unavailable Intercept Modal */}
       {showPreferenceModal && (
@@ -721,42 +690,26 @@ export function BookingForm({
                   )}
                 </div>
               </div>
-
-              <div className="ps-pref-summary-card">
-                <div className="ps-pref-summary-item">
-                  <span className="ps-pref-summary-label">Requested Preference</span>
-                  <span className="ps-pref-summary-val ps-pref-summary-val--tag">
-                    {vehicleType !== 'ANY' ? vehicleType : 'Any Vehicle'}
-                    {effectiveFemaleOnly ? ' · Female Driver' : ''}
-                  </span>
-                </div>
-                <div className="ps-pref-summary-item">
-                  <span className="ps-pref-summary-label">Matching Drivers</span>
-                  <span className="ps-pref-summary-val ps-pref-summary-val--red">
-                    0 Online Nearby
-                  </span>
-                </div>
-              </div>
             </div>
 
             <div className="ps-pref-modal-actions">
               <button
                 type="button"
-                className="ps-btn ps-btn--primary ps-btn--lg ps-btn--block ps-pref-action-btn"
+                className="ps-heroic-book-btn w-full"
                 onClick={() => {
                   setShowPreferenceModal(false);
-                  setVehicleType('ANY');
+                  setVehicleType('BIKE');
                   setFemaleRiderOnly(false);
-                  executeRequestRide({ vehicleType: 'ANY', femaleRiderOnly: false });
+                  executeRequestRide({ vehicleType: 'BIKE', femaleRiderOnly: false });
                 }}
               >
                 <Zap size={16} /> Opt for Available Ride (Fastest)
               </button>
 
-              <div className="ps-pref-secondary-row">
+              <div className="flex gap-2 mt-2">
                 <button
                   type="button"
-                  className="ps-btn ps-btn--secondary ps-btn--block"
+                  className="flex-1 py-2 rounded-full bg-surface-container font-label-md"
                   onClick={() => {
                     setShowPreferenceModal(false);
                     executeRequestRide();
@@ -766,7 +719,7 @@ export function BookingForm({
                 </button>
                 <button
                   type="button"
-                  className="ps-btn ps-btn--ghost ps-btn--block"
+                  className="flex-1 py-2 rounded-full bg-surface-container-low font-label-md"
                   onClick={() => setShowPreferenceModal(false)}
                 >
                   Adjust Preferences
@@ -776,6 +729,7 @@ export function BookingForm({
           </div>
         </div>
       )}
+
     </div>
   );
 }

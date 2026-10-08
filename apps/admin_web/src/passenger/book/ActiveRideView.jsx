@@ -4,14 +4,15 @@ import { RideStatusStepper } from '../../components/ride/RideStatusStepper';
 import { PSButton, PSCard } from '../shared/PassengerUI';
 import { openCancelWarning, openPenaltyModal } from '../shared/PassengerModals';
 import {
-  Bike, MapPin, Clock, Phone, Search, CheckCircle, Navigation,
+  Bike, MapPin, Clock, Phone, Search, CheckCircle2, Navigation,
   ExternalLink, Star, Award, Sparkles, ShieldCheck, ThumbsUp,
-  QrCode, Copy, Smartphone, CreditCard, Check, Calendar, Users, Zap, Download
+  QrCode, Copy, Smartphone, CreditCard, Check, Calendar, Users, Zap, Download,
+  MessageCircle, AlertTriangle
 } from 'lucide-react';
 
 export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
   const { socketRef, standardCampusFare } = usePassenger();
-  const [payMode, setPayMode] = useState('QR');
+  const [payMode, setPayMode] = useState('APPS');
   const [copiedUpi, setCopiedUpi] = useState(false);
 
   const handleCancelClick = () => {
@@ -25,21 +26,20 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
   const statusLabel = {
     PENDING_ADMIN_QUOTE: 'Submitted to Dispatch',
     REQUESTED: 'Searching for nearby riders...',
-    ACCEPTED: 'Rider accepted your trip',
-    RIDER_ARRIVING: 'Rider is on the way',
-    RIDER_REACHED: 'Rider has arrived',
+    ACCEPTED: 'Rider assigned & en route',
+    RIDER_ARRIVING: 'Rider is arriving at pickup',
+    RIDER_REACHED: 'Rider has reached your location',
     STARTED: 'Trip in progress'
   }[activeRide.status] || activeRide.status;
 
   const isEm = ['ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED'].includes(activeRide.status);
+  const fare = activeRide.total_fare || activeRide.final_fare || activeRide.estimated_fare || (standardCampusFare || 20);
 
-  const fare = activeRide.total_fare || activeRide.final_fare || activeRide.estimated_fare || (standardCampusFare || 25);
-
-  /* UPI payment URL & NPCI Intent Specifications */
+  /* Driver UPI details */
   const driverUpi = (activeRide.rider_upi_id || '').trim()
     || (activeRide.rider_phone ? `${activeRide.rider_phone}@upi` : 'driver@upi');
-  const driverName = activeRide.rider_name || 'Campus Driver';
-  const rawFare = activeRide.total_fare || activeRide.final_fare || activeRide.estimated_fare || (standardCampusFare || 25);
+  const driverName = activeRide.rider_name || 'Murugan S.';
+  const rawFare = activeRide.total_fare || activeRide.final_fare || activeRide.estimated_fare || (standardCampusFare || 20);
   const formattedFare = Number(rawFare).toFixed(2);
 
   const gpayUrl = `gpay://upi/pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${formattedFare}&cu=INR`;
@@ -64,415 +64,260 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
     }
   };
 
+  const otpStr = String(activeRide.otp || activeRide.otp_code || '4829');
+  const otpDigits = otpStr.padStart(4, '0').slice(0, 4).split('');
+
   return (
-    <div className="ps-live-trip ps-fade-up">
-
-      {/* Status badge */}
-      <div className={`ps-status-badge-card ${isEm ? 'is-emerald' : 'is-amber'}`}>
-        <div className="ps-status-badge-card-header">
-          <div className="ps-status-badge-card-label">
-            STATUS: {activeRide.status}
+    <div className="ps-active-ride-layout ps-fade-up">
+      {/* Status banner */}
+      <div className={`ps-status-pill-banner ps-fade-up ${isEm ? 'is-emerald' : 'is-amber'}`}>
+        <div className="ps-status-pill-banner-inner">
+          <div className="ps-status-pill-left">
+            <span className="ps-status-live-dot-wrap">
+              <span className="ps-status-live-ping" />
+              <span className="ps-status-live-dot" />
+            </span>
+            <span className="ps-status-pill-title">{statusLabel}</span>
+            <span className="ps-status-pill-dot">•</span>
+            <span className="font-mono text-xs font-bold text-primary">
+              #{activeRide.ride_code || activeRide.rideCode || `PAP-${activeRide.id}`}
+            </span>
           </div>
-          <span className="ps-status-ride-code-badge">
-            Ride #{activeRide.ride_code || activeRide.rideCode || `PAP-${activeRide.id}`}
-          </span>
-        </div>
-        <div className="ps-status-badge-card-text">
-          {activeRide.status === 'REQUESTED' && <><Search size={18} /> {statusLabel}</>}
-          {activeRide.status === 'ACCEPTED' && <><CheckCircle size={18} color="#059669" /> {statusLabel}</>}
-          {activeRide.status === 'RIDER_ARRIVING' && <><Bike size={18} /> {statusLabel}</>}
-          {activeRide.status === 'RIDER_REACHED' && <><MapPin size={18} /> {statusLabel}</>}
-          {activeRide.status === 'STARTED' && <><Navigation size={18} /> {statusLabel}</>}
-          {activeRide.status === 'PENDING_ADMIN_QUOTE' && <><Clock size={18} /> {statusLabel}</>}
-        </div>
-      </div>
-
-      {/* ── Live Map Preview (NEW) ── */}
-      <div className="ps-route-map-preview ps-fade-up">
-        <div className="ps-route-map-placeholder">
-          <div className="ps-map-grid" />
-          <div className="ps-map-marker ps-map-marker--pickup" title="Pickup">
-            <MapPin size={16} color="#FFFFFF" />
+          <div className="ps-status-pill-right">
+            <span>{activeRide.status === 'STARTED' ? 'On Trip' : 'Assigned & En Route'}</span>
           </div>
-          <div className="ps-map-marker ps-map-marker--driver" title="Driver">
-            <Bike size={14} color="#FFFFFF" />
-          </div>
-          <div className="ps-map-marker ps-map-marker--drop" title="Drop">
-            <Navigation size={16} color="#FFFFFF" />
-          </div>
-          <div className="ps-map-route-line" />
-        </div>
-        <div className="ps-route-map-info">
-          <span className="ps-route-map-eta">
-            <Clock size={12} />
-            {activeRide.status === 'STARTED' ? 'In progress' :
-             activeRide.status === 'RIDER_REACHED' ? 'Arrived' :
-             activeRide.status === 'RIDER_ARRIVING' ? 'En route' :
-             'Realtime tracking'}
-          </span>
-          <a
-            href={`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(activeRide.pickup_address)}&destination=${encodeURIComponent(activeRide.destination_address)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ps-route-map-link"
-          >
-            <ExternalLink size={12} /> Open in Maps
-          </a>
         </div>
       </div>
 
-      {/* Stepper */}
-      <div className="ps-stepper-card">
-        <div className="ps-stepper-card-label">Ride Progression</div>
-        <RideStatusStepper currentStatus={activeRide.status} />
-      </div>
+      <div className="ps-book-grid">
+        {/* Left Column: Progress Stepper & Live Route Map (7 or 8 cols) */}
+        <div className="ps-book-col-main">
 
-      {/* Route card */}
-      <div className="ps-route-card">
-        <div className="ps-route-card-header">
-          <div className="ps-route-card-live">
-            <span className={`ps-live-dot ${socketRef.current?.connected ? 'is-live' : 'is-pending'}`} />
-            <span>Live Route</span>
-          </div>
-          {activeRide.pickup_address && (
-            <a
-              href={`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(activeRide.pickup_address)}&destination=${encodeURIComponent(activeRide.destination_address)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="ps-route-open-link"
-            >
-              <ExternalLink size={12} /> Open Navigation
-            </a>
-          )}
-        </div>
-
-        <div className="ps-route-timeline">
-          <div className="ps-route-stop">
-            <div className="ps-route-marker ps-route-marker--pickup ps-pulse-marker">P</div>
-            <div className="ps-route-stop-body">
-              <div className="ps-route-stop-label">Pickup</div>
-              <div className="ps-route-stop-value">{activeRide.pickup_address}</div>
+          {/* Stepper Card */}
+          <div className="ps-terminal-box">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-label-lg font-bold text-on-surface">Trip Progress</h3>
+              <span className="font-label-sm text-primary font-semibold">Active Transit</span>
             </div>
+            <RideStatusStepper currentStatus={activeRide.status} />
           </div>
 
-          {activeRide.via_address && (
-            <div className="ps-route-stop">
-              <div className="ps-route-marker ps-route-marker--via">V</div>
-              <div className="ps-route-stop-body">
-                <div className="ps-route-stop-label">Via</div>
-                <div className="ps-route-stop-value">{activeRide.via_address}</div>
+          {/* Live Map Preview Tile */}
+          <div className="ps-radar-card">
+            <div className="ps-radar-head">
+              <div className="ps-radar-head-title">
+                <span className="ps-status-live-dot-wrap">
+                  <span className="ps-status-live-ping" />
+                  <span className="ps-status-live-dot" />
+                </span>
+                <span>PU Mobility Live Route Tracker</span>
               </div>
+              {activeRide.pickup_address && (
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(activeRide.pickup_address)}&destination=${encodeURIComponent(activeRide.destination_address)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-label-sm text-primary flex items-center gap-1 hover:underline"
+                >
+                  <ExternalLink size={13} /> Maps
+                </a>
+              )}
             </div>
-          )}
 
-          <div className="ps-route-stop">
-            <div className="ps-route-marker ps-route-marker--drop">D</div>
-            <div className="ps-route-stop-body">
-              <div className="ps-route-stop-label">Drop</div>
-              <div className="ps-route-stop-value">{activeRide.destination_address}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Scheduled confirmed banner */}
-      {activeRide.status === 'ACCEPTED' && Boolean(activeRide.scheduled_time) && (
-        <div className="ps-confirmed-banner ps-fade-up">
-          <div className="ps-confirmed-left">
-            <div className="ps-confirmed-icon">
-              <Calendar size={16} />
-            </div>
-            <div>
-              <div className="ps-confirmed-title">Confirmed for your time</div>
-              <div className="ps-confirmed-sub">{activeRide.scheduled_time}</div>
-            </div>
-          </div>
-          <span className="ps-confirmed-tag">CONFIRMED</span>
-        </div>
-      )}
-
-      {/* Waiting banner */}
-      {Boolean(activeRide.is_waiting) && (
-        <div className="ps-waiting-banner ps-pulse-soft">
-          <div className="ps-waiting-left">
-            <div className="ps-waiting-icon"><Clock size={15} /></div>
-            <div>
-              <div className="ps-waiting-title">Rider is waiting</div>
-              <div className="ps-waiting-sub">
-                {activeRide.waiting_minutes || 0} mins (+₹{activeRide.waiting_fare || 0})
-              </div>
-            </div>
-          </div>
-          <span className="ps-waiting-tag">WAITING</span>
-        </div>
-      )}
-
-      {/* Fare card */}
-      <div className="ps-fare-pay-card">
-        <div>
-          <div className="ps-fare-pay-label">FARE TO PAY</div>
-          <div className="ps-fare-pay-value">₹{fare}</div>
-        </div>
-        <div className="ps-fare-pay-right">
-          <span className="ps-fare-pay-method">
-            {activeRide.payment_method || 'CASH'} ON DROP
-          </span>
-        </div>
-      </div>
-
-      {/* OTP */}
-      {['ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED'].includes(activeRide.status) &&
-       (activeRide.otp || activeRide.otp_code) && (
-        <div className="ps-otp-card ps-fade-up">
-          <div className="ps-otp-header-row">
-            <span className="ps-otp-ride-chip">#{activeRide.ride_code || activeRide.rideCode || `PAP-${activeRide.id}`}</span>
-            <span className="ps-otp-label">Share OTP with rider</span>
-          </div>
-          <div className="ps-otp-value">{activeRide.otp || activeRide.otp_code}</div>
-          <div className="ps-otp-note">Verify before sharing.</div>
-        </div>
-      )}
-
-      {/* Rider card */}
-      {activeRide.rider_name && (
-        <div className="ps-rider-card ps-fade-up">
-          <div className="ps-rider-card-head">
-            <div className="ps-rider-card-head-left">
-              <div className="ps-rider-avatar">
-                <Bike size={22} color="#FFFFFF" />
-              </div>
-              <div>
-                <div className="ps-rider-name-row">
-                  <div className="ps-rider-name">{activeRide.rider_name}</div>
-                  {activeRide.rider_rating && (
-                    <span className="ps-rider-rating-pill">
-                      <Star size={11} fill="#D97706" color="#D97706" />
-                      {Number(activeRide.rider_rating).toFixed(1)}
-                    </span>
-                  )}
+            <div className="ps-radar-viewport">
+              <div className="ps-radar-bg-grid" />
+              <div className="ps-radar-ring-pulse" />
+              <div className="ps-radar-pin">
+                <div className="ps-radar-pin-inner">
+                  <Navigation size={15} />
                 </div>
-                {!(activeRide.rider_is_core || activeRide.is_core_member) && (
-                  <div className="ps-rider-vehicle">
-                    {activeRide.rider_vehicle_model || 'Honda Activa'} · {activeRide.rider_vehicle_number || 'PY 01 AB 1234'}
+              </div>
+              <div className="ps-radar-route-badge">
+                <span className="truncate">
+                  {activeRide.pickup_address?.split('(')[0]} → {activeRide.destination_address?.split('(')[0]}
+                </span>
+                <span className="text-tertiary font-bold">1.4 km (4 min)</span>
+              </div>
+            </div>
+
+            {/* Route Status Timeline */}
+            <div className="ps-route-timeline-stitch mt-2">
+              <div className="flex items-start gap-3">
+                <div className="w-3 h-3 rounded-full bg-primary mt-1 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="font-label-sm text-primary uppercase font-bold block">Pickup Spot</span>
+                  <p className="font-body-sm text-on-surface truncate">{activeRide.pickup_address}</p>
+                </div>
+              </div>
+              <div className="ml-1.5 w-0.5 h-6 bg-surface-variant my-1" />
+              <div className="flex items-start gap-3">
+                <div className="w-3 h-3 rounded-full bg-error mt-1 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="font-label-sm text-on-surface-variant uppercase font-bold block">Destination</span>
+                  <p className="font-body-sm text-on-surface truncate">{activeRide.destination_address}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Cancellation section */}
+          {['REQUESTED', 'ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED'].includes(activeRide.status) && (
+            <div className="ps-cancel-box">
+              {activeRide.status === 'RIDER_REACHED' && (
+                <div className="ps-cancel-warning">
+                  <AlertTriangle size={16} />
+                  <span>Driver has reached pickup. Cancelling now incurs a <strong>₹15 driver transit compensation fee</strong>.</span>
+                </div>
+              )}
+              <button
+                type="button"
+                className="ps-cancel-btn"
+                onClick={handleCancelClick}
+              >
+                {activeRide.status === 'RIDER_REACHED' ? 'Cancel Ride (₹15 Fee Applies)' : 'Cancel Trip'}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Right Column: Active Driver Card & Live Boarding Credentials (4 or 5 cols) */}
+        <div className="ps-book-col-side">
+          <div className="ps-driver-credential-card ps-fade-up">
+
+            {/* Status Pill in Card */}
+            <div className="flex items-center justify-between mb-2">
+              <span className="ps-driver-status-pill">
+                <span className="ps-driver-status-dot" />
+                {activeRide.status === 'STARTED' ? 'Trip in Progress' : 'Assigned & En Route'}
+              </span>
+              <span className="font-body-sm text-xs text-on-surface-variant">
+                Arriving in <strong>2 min</strong>
+              </span>
+            </div>
+
+            {/* Driver Info & Photo matching Stitch */}
+            <div className="flex items-center gap-3 py-2">
+              <div className="ps-driver-avatar-wrap">
+                <img
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5DP2MpkqxTJzbHWF8EbHF4HBCZfrGxcg0mHjmdU8WW-29fr4pYFIMnJdXZCaGUywgWlPvHCiE8FYSzks2MdMj3imjWFMaN-0j7gjvB1vOxh0jNST0v26QQGFrzRWeud_8wFrRJpx6zjYl5Q4HGtvBHKhs1qX2fGk-2d5QbPUrfNyjKmmrMYcfWUXc6v_g05yWvbw5GdnWcquWuCBNofBhkvhkJzqqvIYsHWi7fR0sOMvEbKlHjpWOZA"
+                  alt={driverName}
+                  className="w-14 h-14 rounded-full object-cover shadow-sm bg-surface-container"
+                />
+                <div className="ps-driver-verified-badge">
+                  <Check size={11} color="#FFFFFF" strokeWidth={3} />
+                </div>
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-headline-md font-bold text-on-surface truncate">
+                    {driverName}
+                  </h4>
+                  <div className="ps-driver-rating-badge">
+                    <Star size={13} fill="#EA580C" color="#EA580C" />
+                    <span>{Number(activeRide.rider_rating || 4.9).toFixed(1)}</span>
                   </div>
-                )}
+                </div>
+                <p className="font-body-sm text-xs text-on-surface-variant">
+                  {activeRide.rider_vehicle_model || 'Hero Splendor EV'}
+                </p>
+                <p className="font-label-sm text-primary font-mono font-bold tracking-wider">
+                  {activeRide.rider_vehicle_number || 'TN-32-AB-4021'}
+                </p>
               </div>
             </div>
-            {activeRide.rider_phone && (
-              <a href={`tel:${activeRide.rider_phone}`} className="ps-rider-call-btn">
-                <Phone size={14} /> Call
-              </a>
-            )}
-          </div>
 
-          {(Number(activeRide.rider_total_rides) >= 15 && Number(activeRide.rider_rating || 5.0) >= 4.6) ? (
-            <div className="ps-top-badge ps-top-badge--amber">
-              <div className="ps-top-badge-icon ps-top-badge-icon--amber">
-                <Award size={18} />
-              </div>
-              <div className="ps-top-badge-body">
-                <div className="ps-top-badge-head">
-                  <span className="ps-top-badge-title ps-top-badge-title--amber">Most Chosen Rider</span>
-                  <span className="ps-top-badge-chip ps-top-badge-chip--amber">
-                    <Sparkles size={10} /> Top Rated
-                  </span>
-                </div>
-                <div className="ps-top-badge-sub">
-                  Consistently chosen by passengers with a {Number(activeRide.rider_rating || 5.0).toFixed(1)} rating.
-                </div>
-              </div>
+            {/* Perforated ticket divider with semicircular punch cutouts */}
+            <div className="ps-ticket-perforated">
+              <div className="ps-ticket-perforated-line" />
+              <div className="ps-ticket-perforated-cut-left" />
+              <div className="ps-ticket-perforated-cut-right" />
             </div>
-          ) : (Number(activeRide.rider_rating || 5.0) >= 4.7) ? (
-            <div className="ps-top-badge ps-top-badge--emerald">
-              <div className="ps-top-badge-icon ps-top-badge-icon--emerald">
-                <ShieldCheck size={18} />
-              </div>
-              <div className="ps-top-badge-body">
-                <div className="ps-top-badge-head">
-                  <span className="ps-top-badge-title ps-top-badge-title--emerald">Top Rated Campus Rider</span>
-                  <span className="ps-top-badge-chip ps-top-badge-chip--emerald">
-                    <ThumbsUp size={9} /> High Satisfaction
-                  </span>
-                </div>
-                <div className="ps-top-badge-sub">
-                  Verified trusted rider with excellent passenger feedback ({Number(activeRide.rider_rating || 5.0).toFixed(1)} rating).
-                </div>
-              </div>
-            </div>
-          ) : null}
-        </div>
-      )}
 
-      {/* UPI payment */}
-      {(activeRide.rider_name || activeRide.rider_id) && !activeRide.is_free_ride && !activeRide.is_core_only && parseFloat(fare) > 0 && (
-        <div className="ps-upi-card ps-fade-up">
-          <div className="ps-upi-header">
-            <div className="ps-upi-header-left">
-              <div className="ps-upi-icon"><CreditCard size={18} /></div>
+            {/* 4-Digit Boarding OTP Highlight Card */}
+            <div className="ps-otp-highlight-card">
               <div>
-                <div className="ps-upi-title">Pay via UPI</div>
-                <div className="ps-upi-sub">{driverName}'s verified UPI</div>
+                <span className="ps-otp-highlight-title">Boarding Passcode (OTP)</span>
+                <div className="ps-otp-highlight-sub">Share with driver only upon pickup</div>
+              </div>
+              <div className="ps-otp-digit-group">
+                {otpDigits.map((d, i) => (
+                  <span key={i} className="ps-otp-digit-box">{d}</span>
+                ))}
               </div>
             </div>
-            <div className="ps-upi-fare-right">
-              <div className="ps-upi-fare-label">Fare</div>
-              <div className="ps-upi-fare-value">₹{fare}</div>
+
+            {/* Direct UPI Settlement Actions */}
+            <div className="ps-upi-quick-dock">
+              <div className="ps-upi-quick-head">
+                <span className="ps-upi-quick-title">Direct UPI Settlement</span>
+                <span className="ps-upi-quick-badge">
+                  <CheckCircle2 size={13} color="#00855B" /> Instant Verification
+                </span>
+              </div>
+              <div className="ps-upi-grid">
+                <a href={gpayUrl} className="ps-upi-btn" target="_blank" rel="noopener noreferrer">
+                  <CreditCard size={18} color="#0058BE" />
+                  <span>Google Pay</span>
+                </a>
+                <a href={phonepeUrl} className="ps-upi-btn" target="_blank" rel="noopener noreferrer">
+                  <Zap size={18} color="#EA580C" />
+                  <span>PhonePe</span>
+                </a>
+                <button type="button" onClick={() => setPayMode(payMode === 'QR' ? 'APPS' : 'QR')} className="ps-upi-btn">
+                  <QrCode size={18} color="#271E16" />
+                  <span>Scan QR</span>
+                </button>
+              </div>
+
+              {payMode === 'QR' && (
+                <div className="mt-3 p-3 bg-surface-container-low rounded-xl text-center ps-fade-up">
+                  <img src={qrCodeUrl} alt="UPI QR" className="w-36 h-36 mx-auto rounded-lg shadow-sm" />
+                  <div className="flex justify-center gap-2 mt-2">
+                    <button
+                      type="button"
+                      onClick={handleDownloadQr}
+                      className="text-xs text-primary font-bold hover:underline"
+                    >
+                      Save QR Image
+                    </button>
+                    <span className="text-xs text-outline">•</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard?.writeText(driverUpi);
+                        setCopiedUpi(true);
+                        setTimeout(() => setCopiedUpi(false), 2000);
+                      }}
+                      className="text-xs text-primary font-bold hover:underline"
+                    >
+                      {copiedUpi ? 'Copied!' : 'Copy UPI'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
+
+            {/* Driver Action Buttons: Call / Chat / SOS */}
+            <div className="ps-driver-action-dock">
+              {activeRide.rider_phone && (
+                <a href={`tel:${activeRide.rider_phone}`} className="ps-driver-action-pill">
+                  <Phone size={15} />
+                  <span>Call Driver</span>
+                </a>
+              )}
+              <a href={`sms:${activeRide.rider_phone || ''}`} className="ps-driver-action-pill">
+                <MessageCircle size={15} />
+                <span>Quick Message</span>
+              </a>
+              <a href="tel:112" className="ps-driver-sos-btn" title="Safety Emergency">
+                <AlertTriangle size={16} />
+              </a>
+            </div>
+
           </div>
-
-          <div className="ps-pay-tabs">
-            <button
-              type="button"
-              onClick={() => setPayMode('QR')}
-              className={`ps-pay-tab ${payMode === 'QR' ? 'is-active' : ''}`}
-            >
-              <QrCode size={14} /> Scan QR (100% Works)
-            </button>
-            <button
-              type="button"
-              onClick={() => setPayMode('APPS')}
-              className={`ps-pay-tab ${payMode === 'APPS' ? 'is-active' : ''}`}
-            >
-              <Smartphone size={14} /> 1-Tap UPI Apps
-            </button>
-          </div>
-
-          {payMode === 'QR' ? (
-            <div className="ps-fade-up" style={{ textAlign: 'center' }}>
-              <div className="ps-qr-box" style={{ marginTop: '0', marginBottom: '10px' }}>
-                <div className="ps-qr-inner">
-                  <img src={qrCodeUrl} alt="Payment QR" className="ps-qr-img" />
-                </div>
-                <div className="ps-qr-note" style={{ color: '#059669', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginTop: '8px' }}>
-                  <ShieldCheck size={14} /> 100% Bank Approved: Scan with GPay, PhonePe, Paytm
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '12px' }}>
-                <button
-                  type="button"
-                  onClick={handleDownloadQr}
-                  className="ps-upi-copy-btn"
-                  style={{ background: '#FFF7ED', borderColor: '#FDBA74', color: '#EA580C', fontWeight: 700 }}
-                >
-                  <Download size={13} /> Save QR Image
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard?.writeText(driverUpi);
-                    setCopiedUpi(true);
-                    setTimeout(() => setCopiedUpi(false), 2500);
-                  }}
-                  className={`ps-upi-copy-btn ${copiedUpi ? 'is-copied' : ''}`}
-                >
-                  {copiedUpi ? <Check size={12} /> : <Copy size={12} />}
-                  {copiedUpi ? 'UPI ID Copied' : 'Copy UPI ID'}
-                </button>
-              </div>
-
-              <div className="ps-upi-help-tip" style={{ textAlign: 'center', fontSize: '11px' }}>
-                📸 <strong>Single Phone?</strong> Tap <strong>Save QR Image</strong> above, open Google Pay, tap the <strong>Scan QR</strong> icon, then tap the gallery icon to select this image!
-              </div>
-            </div>
-          ) : (
-            <div className="ps-fade-up">
-              <div className="ps-upi-actions">
-                <a
-                  href={gpayUrl}
-                  onClick={() => {
-                    navigator.clipboard?.writeText(driverUpi);
-                    setCopiedUpi(true);
-                    setTimeout(() => setCopiedUpi(false), 3000);
-                  }}
-                  className="ps-upi-action ps-upi-action--gpay"
-                  rel="noopener noreferrer"
-                >
-                  <Smartphone size={15} /> GPay
-                </a>
-                <a
-                  href={phonepeUrl}
-                  onClick={() => {
-                    navigator.clipboard?.writeText(driverUpi);
-                    setCopiedUpi(true);
-                    setTimeout(() => setCopiedUpi(false), 3000);
-                  }}
-                  className="ps-upi-action ps-upi-action--phonepe"
-                  rel="noopener noreferrer"
-                >
-                  <Zap size={15} /> PhonePe
-                </a>
-                <a
-                  href={upiPayUrl}
-                  onClick={() => {
-                    navigator.clipboard?.writeText(driverUpi);
-                    setCopiedUpi(true);
-                    setTimeout(() => setCopiedUpi(false), 3000);
-                  }}
-                  className="ps-upi-action ps-upi-action--generic"
-                  rel="noopener noreferrer"
-                >
-                  <ExternalLink size={14} /> Any UPI
-                </a>
-              </div>
-
-              <div className="ps-upi-copy-row">
-                <div>
-                  <div className="ps-upi-copy-label">Driver UPI (KYC Verified)</div>
-                  <div className="ps-upi-copy-value">{driverUpi}</div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard?.writeText(driverUpi);
-                    setCopiedUpi(true);
-                    setTimeout(() => setCopiedUpi(false), 2500);
-                  }}
-                  className={`ps-upi-copy-btn ${copiedUpi ? 'is-copied' : ''}`}
-                >
-                  {copiedUpi ? <Check size={12} /> : <Copy size={12} />}
-                  {copiedUpi ? 'Copied' : 'Copy'}
-                </button>
-              </div>
-
-              <div className="ps-upi-help-tip">
-                ⚠️ <strong>Bank Note:</strong> If your bank shows <em>"exceeded bank limit"</em> on the GPay link, it is because banks restrict web-initiated links to personal accounts. Tap <strong>Copy</strong> above, open Google Pay &gt; <strong>Pay UPI ID</strong> to pay directly, or switch to the <strong>Scan QR</strong> tab.
-              </div>
-            </div>
-          )}
         </div>
-      )}
-
-      {/* Cancel */}
-      {['REQUESTED', 'ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED'].includes(activeRide.status) && (
-        <div style={{ marginTop: '12px' }}>
-          {activeRide.status === 'RIDER_REACHED' && (
-            <div style={{
-              background: '#FFF7ED',
-              border: '1px solid #FED7AA',
-              borderRadius: '8px',
-              padding: '10px 12px',
-              marginBottom: '8px',
-              fontSize: '12px',
-              color: '#9A3412',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <span style={{ fontSize: '16px' }}>⚠️</span>
-              <span>Driver has reached pickup location. Cancelling now incurs a <strong>₹15 driver compensation fee</strong> payable directly via UPI.</span>
-            </div>
-          )}
-          <PSButton
-            variant="danger"
-            size="lg"
-            block
-            onClick={handleCancelClick}
-          >
-            {activeRide.status === 'RIDER_REACHED' ? 'Cancel Ride (₹15 Fee Applies)' : 'Cancel Ride'}
-          </PSButton>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

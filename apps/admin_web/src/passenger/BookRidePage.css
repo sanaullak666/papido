@@ -12,10 +12,10 @@
 
 .ps-book-container {
   width: 100%;
-  max-width: 680px;
+  max-width: 1280px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
 }
 
 /* Headings */

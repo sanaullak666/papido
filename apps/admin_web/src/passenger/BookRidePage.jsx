@@ -4,10 +4,12 @@ import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api';
 import { usePassenger } from './shared/PassengerContext';
 import { openPenaltyModal } from './shared/PassengerModals';
-import { BentoHero } from './book/BentoHero';
 import { BookingForm } from './book/BookingForm';
 import { ActiveRideView } from './book/ActiveRideView';
 import { CompletedRideView } from './book/CompletedRideView';
+import { LiveRadarCard } from './book/LiveRadarCard';
+import { FleetConciergeCard } from './book/FleetConciergeCard';
+import { Clock, Zap, AlertTriangle, ShieldCheck } from 'lucide-react';
 
 export function BookRidePage() {
   const { user, token } = useAuth();
@@ -68,6 +70,28 @@ export function BookRidePage() {
     <div className="ps-book-page">
       <div className="ps-book-container">
 
+        {/* Top Notification Status Banner (Stitch Template) */}
+        <div className="ps-status-pill-banner ps-fade-up">
+          <div className="ps-status-pill-banner-inner">
+            <div className="ps-status-pill-left">
+              <span className="ps-status-live-dot-wrap">
+                <span className="ps-status-live-ping" />
+                <span className="ps-status-live-dot" />
+              </span>
+              <span className="ps-status-pill-title">Campus transit network operational</span>
+              <span className="ps-status-pill-dot">•</span>
+              <span className="ps-status-pill-sub">
+                <Clock size={14} color="#EA580C" />
+                Average pickup in <strong>3 mins</strong>
+              </span>
+            </div>
+            <div className="ps-status-pill-right">
+              <Zap size={13} />
+              <span>Low Campus Congestion</span>
+            </div>
+          </div>
+        </div>
+
         {/* Pending penalty banner (always on top) */}
         {pendingPenalty && showBookingView && (
           <div
@@ -77,7 +101,7 @@ export function BookRidePage() {
           >
             <div className="ps-penalty-banner-left">
               <div className="ps-penalty-banner-icon">
-                <span>!</span>
+                <AlertTriangle size={18} />
               </div>
               <div>
                 <div className="ps-penalty-banner-title">
@@ -124,26 +148,27 @@ export function BookRidePage() {
           </div>
         )}
 
-        {/* ================= MAIN VIEWS ================= */}
+        {/* ================= MAIN 12-COLUMN BENTO WORKSPACE ================= */}
 
         {showBookingView && (
-          <>
-            {/* ✨ Bento Hero (spec §9) */}
-            <BentoHero
-              user={user}
-              activeRide={activeRide}
-              scheduledCount={scheduledRides?.length || 0}
-            />
+          <div className="ps-book-grid">
+            {/* Left Column (8 cols): Interactive Booking Form */}
+            <div className="ps-book-col-main">
+              <BookingForm
+                user={user}
+                token={token}
+                onBookingStart={() => setBookingLoading(true)}
+                onBookingEnd={() => setBookingLoading(false)}
+                bookingLoading={bookingLoading}
+              />
+            </div>
 
-            {/* Booking form */}
-            <BookingForm
-              user={user}
-              token={token}
-              onBookingStart={() => setBookingLoading(true)}
-              onBookingEnd={() => setBookingLoading(false)}
-              bookingLoading={bookingLoading}
-            />
-          </>
+            {/* Right Column (4 cols): Live Radar & Safety Concierge */}
+            <div className="ps-book-col-side">
+              <LiveRadarCard />
+              <FleetConciergeCard />
+            </div>
+          </div>
         )}
 
         {activeRide && activeRide.status === 'COMPLETED' && (

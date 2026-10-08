@@ -3,12 +3,12 @@ import './advance/advance.css';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api';
 import { usePassenger } from './shared/PassengerContext';
-import { PSButton, PSCard, PSSkeleton } from './shared/PassengerUI';
 import { ScheduledRideCard } from './advance/ScheduledRideCard';
 import { RescheduleModal } from './advance/RescheduleModal';
 import { AdvanceEmptyState } from './advance/AdvanceEmptyState';
+import { AdvancePolicyCard } from './advance/AdvancePolicyCard';
 import {
-  Calendar, RefreshCw, Clock, CheckCircle2, Hourglass, TrendingUp
+  Calendar, RefreshCw, Plus, Clock, CheckCircle2, ShieldCheck
 } from 'lucide-react';
 
 export function AdvanceBookingsPage() {
@@ -17,14 +17,14 @@ export function AdvanceBookingsPage() {
 
   const [loading, setLoading] = useState(false);
   const [rescheduleTarget, setRescheduleTarget] = useState(null);
+  const [filterTab, setFilterTab] = useState('upcoming');
 
-  // Auto-sync scheduled rides on mount, tab focus, and active 3s interval
   useEffect(() => {
     fetchScheduledRides();
 
     const interval = setInterval(() => {
       fetchScheduledRides();
-    }, 3000);
+    }, 4000);
 
     const handleSync = () => {
       if (document.visibilityState === 'visible') {
@@ -58,7 +58,7 @@ export function AdvanceBookingsPage() {
         'POST', {}, token
       );
       fetchScheduledRides();
-      setStatusMessage('Pre-booked ride cancelled. No charge applied.');
+      setStatusMessage({ text: 'Pre-booked ride cancelled. No charge applied.', type: 'info' });
     } catch (err) {
       setStatusMessage({
         text: err.message || 'Failed to cancel ride.',
@@ -70,120 +70,112 @@ export function AdvanceBookingsPage() {
   const handleRescheduled = () => {
     setRescheduleTarget(null);
     fetchScheduledRides();
-    setStatusMessage('Ride rescheduled successfully.');
+    setStatusMessage({ text: 'Ride rescheduled successfully.', type: 'success' });
   };
 
   const safeScheduledRides = scheduledRides || [];
   const isEmpty = safeScheduledRides.length === 0;
 
-  /* Derived: split into confirmed vs pending */
-  const { confirmed, pending } = useMemo(() => {
-    const confirmedList = [];
-    const pendingList = [];
-    safeScheduledRides.forEach(r => {
-      const isAssigned = Boolean(r.rider_name || r.rider_id || r.status === 'ACCEPTED');
-      if (isAssigned) confirmedList.push(r);
-      else pendingList.push(r);
-    });
-    return { confirmed: confirmedList, pending: pendingList };
-  }, [safeScheduledRides]);
-
   return (
     <div className="ps-advance-page">
       <div className="ps-advance-container">
 
-        {/* Header */}
-        <div className="ps-tab-header">
-          <div>
-            <h1 className="ps-heading ps-heading--icon">
-              <Calendar size={22} color="#EA580C" />
-              Pre-Booked Campus Rides
-            </h1>
-            <p className="ps-subheading">
-              Track, reschedule, and manage your advance trips.
-            </p>
+        {/* Top Management Header (Stitch Design) */}
+        <div className="ps-advance-header-card ps-fade-up">
+          <div className="flex items-start gap-4">
+            <div className="ps-advance-header-icon">
+              <Calendar size={28} color="#EA580C" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="ps-tag-pill-sub">Concierge Desk</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                <span className="font-label-md text-primary font-semibold">
+                  {safeScheduledRides.length} Active Reservation{safeScheduledRides.length === 1 ? '' : 's'}
+                </span>
+              </div>
+              <h1 className="font-headline-lg ps-advance-header-title">Pre-Booked Campus Rides</h1>
+              <p className="font-body-md ps-advance-header-sub">
+                Track, reschedule, and manage your advance trips across Pondicherry University departments.
+              </p>
+            </div>
           </div>
 
-          <div className="ps-tab-actions">
-            <PSButton
-              variant="ghost"
-              size="sm"
+          <div className="flex items-center gap-2 self-start md:self-auto">
+            <button
+              type="button"
+              className="ps-advance-action-btn ps-advance-action-btn--refresh"
               onClick={handleRefresh}
               disabled={loading}
             >
-              <RefreshCw size={13} className={loading ? 'ps-spin' : ''} />
-              {loading ? 'Refreshing...' : 'Refresh'}
-            </PSButton>
-
+              <RefreshCw size={15} className={loading ? 'ps-spin' : ''} />
+              <span>Refresh</span>
+            </button>
             <a
               href="/passenger/book"
-              className="ps-btn ps-btn--primary ps-btn--sm"
-              style={{ textDecoration: 'none' }}
+              className="ps-advance-action-btn ps-advance-action-btn--primary"
             >
-              <Clock size={13} />
-              Pre-Book New
+              <Plus size={16} />
+              <span>Pre-Book New</span>
             </a>
           </div>
         </div>
 
-        {/* ── SUMMARY TILES (NEW) ── */}
-        {!isEmpty && (
-          <div className="ps-advance-summary ps-fade-up">
-            <div className="ps-advance-summary-tile">
-              <div className="ps-advance-summary-icon ps-advance-summary-icon--green">
-                <CheckCircle2 size={16} />
-              </div>
-              <div className="ps-advance-summary-body">
-                <div className="ps-advance-summary-value">{confirmed.length}</div>
-                <div className="ps-advance-summary-label">Confirmed</div>
-              </div>
+        {/* 12-Column Responsive Bento Layout */}
+        <div className="ps-book-grid">
+          {/* Left Column: Itinerary list (8 cols) */}
+          <div className="ps-book-col-main">
+
+            {/* Filter Tabs */}
+            <div className="ps-advance-tabs ps-fade-up">
+              <button
+                type="button"
+                className={`ps-advance-tab-btn ${filterTab === 'upcoming' ? 'is-active' : ''}`}
+                onClick={() => setFilterTab('upcoming')}
+              >
+                Upcoming ({safeScheduledRides.length})
+              </button>
+              <button
+                type="button"
+                className={`ps-advance-tab-btn ${filterTab === 'past' ? 'is-active' : ''}`}
+                onClick={() => setFilterTab('past')}
+              >
+                Past Terminals
+              </button>
+              <button
+                type="button"
+                className={`ps-advance-tab-btn ${filterTab === 'passes' ? 'is-active' : ''}`}
+                onClick={() => setFilterTab('passes')}
+              >
+                Recurring Passes
+              </button>
             </div>
 
-            <div className="ps-advance-summary-tile">
-              <div className="ps-advance-summary-icon ps-advance-summary-icon--amber">
-                <Hourglass size={16} />
+            {/* Body */}
+            {isEmpty ? (
+              <AdvanceEmptyState />
+            ) : (
+              <div className="ps-rides-list">
+                {safeScheduledRides.map((ride, idx) => (
+                  <ScheduledRideCard
+                    key={ride.id}
+                    ride={ride}
+                    index={idx}
+                    onReschedule={() => setRescheduleTarget(ride)}
+                    onCancel={() => handleCancel(ride.id)}
+                  />
+                ))}
               </div>
-              <div className="ps-advance-summary-body">
-                <div className="ps-advance-summary-value">{pending.length}</div>
-                <div className="ps-advance-summary-label">Awaiting rider</div>
-              </div>
-            </div>
-
-            <div className="ps-advance-summary-tile">
-              <div className="ps-advance-summary-icon ps-advance-summary-icon--blue">
-                <TrendingUp size={16} />
-              </div>
-              <div className="ps-advance-summary-body">
-                <div className="ps-advance-summary-value">{safeScheduledRides.length}</div>
-                <div className="ps-advance-summary-label">Total upcoming</div>
-              </div>
-            </div>
+            )}
           </div>
-        )}
 
-        {/* Body */}
-        {loading && isEmpty ? (
-          <div className="ps-skeleton-list">
-            <PSSkeleton lines={3} />
-            <PSSkeleton lines={3} />
+          {/* Right Column: Policies & Quick Hotline (4 cols) */}
+          <div className="ps-book-col-side">
+            <AdvancePolicyCard />
           </div>
-        ) : isEmpty ? (
-          <AdvanceEmptyState />
-        ) : (
-          <div className="ps-rides-list">
-            {safeScheduledRides.map((ride, idx) => (
-              <ScheduledRideCard
-                key={ride.id}
-                ride={ride}
-                index={idx}
-                onReschedule={() => setRescheduleTarget(ride)}
-                onCancel={() => handleCancel(ride.id)}
-              />
-            ))}
-          </div>
-        )}
+        </div>
 
-        {/* Reschedule Modal */}
+        {/* Reschedule Interactive Modal */}
         {rescheduleTarget && (
           <RescheduleModal
             ride={rescheduleTarget}

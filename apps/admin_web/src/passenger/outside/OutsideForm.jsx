@@ -1,17 +1,23 @@
 import React, { useState } from 'react';
-import { PSButton } from '../shared/PassengerUI';
-import { LocationInput } from './LocationInput';
-import { PopularSpots } from './PopularSpots';
-import { POPULAR_OUTSIDE_SPOTS } from '../shared/passengerConstants';
-import { usePassenger } from '../shared/PassengerContext';
 import {
-  Bike, Zap, Compass, Clock, Send, Check, History, ArrowRight, Calendar
+  Compass, MapPin, Search, X, Calendar, Clock,
+  Luggage, Info, Send, CheckCircle2, ChevronRight, Lock
 } from 'lucide-react';
+import { LocationInput } from './LocationInput';
 
-const VEHICLE_OPTIONS = [
-  { id: 'ANY',     icon: Zap,     label: 'Any',     sub: 'Fastest' },
-  { id: 'BIKE',    icon: Bike,    label: 'Bike',    sub: 'Standard' },
-  { id: 'SCOOTER', icon: Compass, label: 'Scooter', sub: 'Smooth' }
+const QUICK_PICK_DESTS = [
+  { name: 'White Town (Heritage)', lat: 11.9333, lng: 79.8333, icon: '🏛️' },
+  { name: 'Rock Beach / Promenade', lat: 11.9338, lng: 79.8359, icon: '🌊' },
+  { name: 'JIPMER Hospital', lat: 11.9546, lng: 79.7997, icon: '🏥' },
+  { name: 'Puducherry Railway Station', lat: 11.9288, lng: 79.8286, icon: '🚂' },
+  { name: 'Auroville Visitors Centre', lat: 12.0069, lng: 79.8105, icon: '🌳' },
+  { name: 'ECR Bus Stop', lat: 12.0235, lng: 79.8512, icon: '🚌' }
+];
+
+const GATES = [
+  'Campus Gate 1 (Main Entrance)',
+  'Campus Gate 2 (Beach Road Gate)',
+  'University Health Centre Outpost'
 ];
 
 const getLocalDateString = (d = new Date()) => {
@@ -25,101 +31,58 @@ const getLocalDateString = (d = new Date()) => {
 const getTodayDateStr = () => getLocalDateString(new Date());
 const getTomorrowDateStr = () => getLocalDateString(new Date(Date.now() + 86400000));
 
-/**
- * Extract a compact "recent outside trips" list from ride history.
- * Filters only outside trips (destination not in campus hotspots)
- * and dedupes by destination.
- */
-function useRecentDestinations() {
-  const { pastRides = [] } = usePassenger();
+export function OutsideForm({
+  onSubmit,
+  token,
+  destination,
+  setDestination,
+  destinationCoords,
+  setDestinationCoords
+}) {
+  const [pickup, setPickup] = useState(GATES[0]);
+  const [pickupCoords, setPickupCoords] = useState({ lat: 12.0228681, lng: 79.8509415 });
+  const [gateIndex, setGateIndex] = useState(0);
 
-  return React.useMemo(() => {
-    const safeRides = Array.isArray(pastRides) ? pastRides : [];
-    const seen = new Set();
-    const list = [];
-
-    for (const r of safeRides) {
-      const dest = (r?.destination_address || '').trim();
-      if (!dest) continue;
-      const key = dest.toLowerCase();
-      if (seen.has(key)) continue;
-      seen.add(key);
-      list.push({
-        name: dest,
-        lat: parseFloat(r.destination_latitude) || null,
-        lng: parseFloat(r.destination_longitude) || null
-      });
-      if (list.length >= 3) break;
-    }
-
-    return list;
-  }, [pastRides]);
-}
-
-export function OutsideForm({ onSubmit, token }) {
-  const [pickup, setPickup] = useState('PU Main Gate (Gate 1)');
-  const [pickupCoords, setPickupCoords] = useState({
-    lat: 12.0228681, lng: 79.8509415
-  });
-
-  const [dest, setDest] = useState('');
-  const [destCoords, setDestCoords] = useState(null);
-
-  const [vehicleType, setVehicleType] = useState('ANY');
+  const [departureSchedule, setDepartureSchedule] = useState('immediate'); // 'immediate' or 'scheduled'
+  const [scheduledDate, setScheduledDate] = useState(() => getTomorrowDateStr());
+  const [scheduledTime, setScheduledTime] = useState('09:30');
+  const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
-  /* Mode and Date/Time for pre-booking */
-  const [bookingMode, setBookingMode] = useState('NOW'); // 'NOW' or 'SCHEDULE'
-  const [scheduledDate, setScheduledDate] = useState(() => getLocalDateString(new Date(Date.now() + 3600000)));
-  const [scheduledHour, setScheduledHour] = useState('09');
-  const [scheduledMinute, setScheduledMinute] = useState('00');
-  const [scheduledAmPm, setScheduledAmPm] = useState('AM');
-  const [dateError, setDateError] = useState('');
+  const cycleGate = () => {
+    const nextIdx = (gateIndex + 1) % GATES.length;
+    setGateIndex(nextIdx);
+    setPickup(GATES[nextIdx]);
+  };
 
-  /* Recent outside trips (auto-derived from history) */
-  const recentDestinations = useRecentDestinations();
-
-  const formatScheduledPreview = () => {
-    let h24 = parseInt(scheduledHour, 10);
-    if (scheduledAmPm === 'PM' && h24 < 12) h24 += 12;
-    if (scheduledAmPm === 'AM' && h24 === 12) h24 = 0;
-    const timePart = `${String(h24).padStart(2, '0')}:${scheduledMinute}:00`;
-    try {
-      const d = new Date(`${scheduledDate}T${timePart}`);
-      if (isNaN(d.getTime())) return null;
-      return d.toLocaleString('en-IN', {
-        weekday: 'short',
-        day: 'numeric',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-      });
-    } catch {
-      return null;
-    }
+  const handleSelectQuickPick = (item) => {
+    setDestination(item.name);
+    setDestinationCoords({ lat: item.lat, lng: item.lng });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!dest.trim()) return;
+    if (!destination.trim()) {
+      setErrorMsg('Please specify or pick a drop destination.');
+      return;
+    }
+    setErrorMsg('');
 
-    const isSched = bookingMode === 'SCHEDULE';
+    const isSched = departureSchedule === 'scheduled';
     let targetScheduledTime = null;
 
     if (isSched) {
-      let h24 = parseInt(scheduledHour, 10);
-      if (scheduledAmPm === 'PM' && h24 < 12) h24 += 12;
-      if (scheduledAmPm === 'AM' && h24 === 12) h24 = 0;
-      const timePart = `${String(h24).padStart(2, '0')}:${scheduledMinute}:00`;
-      targetScheduledTime = `${scheduledDate} ${timePart}`;
-
-      const targetDateObj = new Date(`${scheduledDate}T${timePart}`);
-      if (isNaN(targetDateObj.getTime()) || targetDateObj.getTime() <= Date.now()) {
-        setDateError('Please choose a future date and time for pre-booking.');
+      if (!scheduledDate || !scheduledTime) {
+        setErrorMsg('Please select a valid date and time slot.');
         return;
       }
-      setDateError('');
+      targetScheduledTime = `${scheduledDate} ${scheduledTime}:00`;
+      const targetDateObj = new Date(`${scheduledDate}T${scheduledTime}:00`);
+      if (isNaN(targetDateObj.getTime()) || targetDateObj.getTime() <= Date.now()) {
+        setErrorMsg('Please choose a future departure time slot.');
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -127,263 +90,261 @@ export function OutsideForm({ onSubmit, token }) {
       pickupAddress: pickup,
       pickupLatitude: pickupCoords.lat,
       pickupLongitude: pickupCoords.lng,
-      destinationAddress: dest,
-      destinationLatitude: destCoords?.lat ?? 11.9338,
-      destinationLongitude: destCoords?.lng ?? 79.8359,
-      vehicleType,
+      destinationAddress: destination,
+      destinationLatitude: destinationCoords?.lat ?? 11.9338,
+      destinationLongitude: destinationCoords?.lng ?? 79.8359,
+      vehicleType: 'ANY',
       isDoubleRide: false,
       isOutside: true,
       isScheduled: isSched,
-      scheduledTime: targetScheduledTime
+      scheduledTime: targetScheduledTime,
+      passengerNotes: notes.trim() || undefined
     });
     setSubmitting(false);
     if (ok) {
-      setDest('');
-      setDestCoords(null);
+      setDestination('');
+      setDestinationCoords(null);
+      setNotes('');
     }
   };
-
-  const handleSelectPopular = (spot) => {
-    setDest(spot.name);
-    setDestCoords({ lat: spot.lat, lng: spot.lng });
-  };
-
-  const handleSelectRecent = (spot) => {
-    setDest(spot.name);
-    if (spot.lat && spot.lng) {
-      setDestCoords({ lat: spot.lat, lng: spot.lng });
-    }
-  };
-
-  const scheduledPreviewText = formatScheduledPreview();
 
   return (
-    <form onSubmit={handleSubmit} className="ps-outside-form">
+    <form onSubmit={handleSubmit} className="ps-outside-card-form ps-fade-up">
 
-      {/* ── BOOKING MODE TOGGLE (NOW vs PRE-BOOK) ── */}
-      <div className="ps-mode-pills ps-fade-up">
-        <button
-          type="button"
-          onClick={() => { setBookingMode('NOW'); setDateError(''); }}
-          className={`ps-mode-pill ${bookingMode === 'NOW' ? 'is-active' : ''}`}
-        >
-          <Zap size={14} /> Leave Now
-        </button>
-        <button
-          type="button"
-          onClick={() => setBookingMode('SCHEDULE')}
-          className={`ps-mode-pill ${bookingMode === 'SCHEDULE' ? 'is-active' : ''}`}
-        >
-          <Calendar size={14} /> Pre-Book / Advance
-        </button>
+      {/* STEP 1: Pickup Location */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <label className="font-label-md uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5 font-bold">
+            <span className="w-2.5 h-2.5 rounded-full bg-tertiary" />
+            Origin (Pickup Point)
+          </label>
+          <button
+            type="button"
+            className="font-label-sm text-primary hover:text-primary-container font-semibold transition-colors flex items-center gap-1 bg-transparent border-0 cursor-pointer"
+            onClick={cycleGate}
+          >
+            <MapPin size={14} />
+            <span>Switch Campus Gate</span>
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between p-4 bg-surface-container-low rounded-xl border border-outline-variant/30">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary shrink-0">
+              <Compass size={20} color="#EA580C" />
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <span className="font-label-lg font-bold text-on-surface">{pickup}</span>
+                <span className="bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded-full font-label-sm text-[10px] font-bold">
+                  Default
+                </span>
+              </div>
+              <span className="font-body-sm text-xs text-on-surface-variant">
+                Pondicherry University · Kalapet, ECR Highway
+              </span>
+            </div>
+          </div>
+          <Lock size={16} className="text-outline-variant hidden sm:block" />
+        </div>
       </div>
 
-      {/* ── SCHEDULE DATE & TIME (ACTIVE WHEN PRE-BOOK) ── */}
-      {bookingMode === 'SCHEDULE' && (
-        <div className="ps-schedule-card ps-fade-up">
-          <div className="ps-schedule-header">
-            <div className="ps-schedule-title">
-              <Calendar size={18} color="#EA580C" /> Schedule Outside Trip
-            </div>
-            <span className="ps-schedule-tag">ADVANCE DISPATCH</span>
+      {/* STEP 2: Drop Destination */}
+      <div className="flex flex-col gap-2">
+        <label className="font-label-md uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5 font-bold">
+          <span className="w-2.5 h-2.5 rounded-full bg-primary" />
+          Drop Destination
+        </label>
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-primary">
+            <Search size={18} color="#EA580C" />
           </div>
-
-          <div className="ps-schedule-date-pills">
+          <input
+            type="text"
+            className="ps-outside-dest-input"
+            placeholder="Search destination, hotel, beach, station, or landmark..."
+            value={destination}
+            onChange={(e) => {
+              setDestination(e.target.value);
+              setDestinationCoords(null);
+            }}
+            required
+          />
+          {destination && (
             <button
               type="button"
-              onClick={() => { setScheduledDate(getTodayDateStr()); setDateError(''); }}
-              className={`ps-schedule-pill ${scheduledDate === getTodayDateStr() ? 'is-active' : ''}`}
+              className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-outline hover:text-on-surface bg-transparent border-0 cursor-pointer"
+              onClick={() => {
+                setDestination('');
+                setDestinationCoords(null);
+              }}
             >
-              Today
+              <X size={18} />
             </button>
-            <button
-              type="button"
-              onClick={() => { setScheduledDate(getTomorrowDateStr()); setDateError(''); }}
-              className={`ps-schedule-pill ${scheduledDate === getTomorrowDateStr() ? 'is-active' : ''}`}
-            >
-              Tomorrow
-            </button>
-            <input
-              type="date"
-              min={getTodayDateStr()}
-              value={scheduledDate}
-              onChange={(e) => { setScheduledDate(e.target.value); setDateError(''); }}
-              className="ps-schedule-date-input"
-              title="Select custom date"
-            />
-          </div>
-
-          <div className="ps-schedule-time-row">
-            <select
-              value={scheduledHour}
-              onChange={(e) => { setScheduledHour(e.target.value); setDateError(''); }}
-              className="ps-select"
-              title="Select hour"
-            >
-              {['01','02','03','04','05','06','07','08','09','10','11','12'].map(h =>
-                <option key={h} value={h}>{h}</option>
-              )}
-            </select>
-            <select
-              value={scheduledMinute}
-              onChange={(e) => { setScheduledMinute(e.target.value); setDateError(''); }}
-              className="ps-select"
-              title="Select minute"
-            >
-              {['00','05','10','15','20','25','30','35','40','45','50','55'].map(m =>
-                <option key={m} value={m}>{m}</option>
-              )}
-            </select>
-            <div className="ps-schedule-period">
-              <button
-                type="button"
-                onClick={() => { setScheduledAmPm('AM'); setDateError(''); }}
-                className={`ps-period-btn ${scheduledAmPm === 'AM' ? 'is-active' : ''}`}
-              >AM</button>
-              <button
-                type="button"
-                onClick={() => { setScheduledAmPm('PM'); setDateError(''); }}
-                className={`ps-period-btn ${scheduledAmPm === 'PM' ? 'is-active' : ''}`}
-              >PM</button>
-            </div>
-          </div>
-
-          {scheduledPreviewText && (
-            <div className="ps-schedule-preview">
-              <Clock size={13} />
-              <span>Pickup on: <strong>{scheduledPreviewText}</strong></span>
-            </div>
-          )}
-
-          {dateError && (
-            <div className="ps-schedule-error">
-              {dateError}
-            </div>
           )}
         </div>
-      )}
 
-      {/* PICKUP */}
-      <LocationInput
-        label="Pickup Location"
-        accent="green"
-        value={pickup}
-        onChange={setPickup}
-        coords={pickupCoords}
-        onCoordsChange={setPickupCoords}
-        placeholder="Type campus gate, hostel, or paste Google Maps link..."
-        token={token}
-        target="pickup"
-      />
-
-      {/* DESTINATION */}
-      <LocationInput
-        label="Drop-off Destination"
-        accent="amber"
-        value={dest}
-        onChange={setDest}
-        coords={destCoords}
-        onCoordsChange={setDestCoords}
-        placeholder="Type destination, choose on map, or paste link..."
-        token={token}
-        target="dest"
-        required
-      />
-
-      {/* ── RECENT DESTINATIONS (NEW) ── */}
-      {recentDestinations.length > 0 && (
-        <div className="ps-recent-wrap ps-fade-up">
-          <div className="ps-recent-header">
-            <History size={12} />
-            <span className="ps-recent-title">Recent trips</span>
-            <span className="ps-recent-hint">1-tap refill</span>
-          </div>
-          <div className="ps-recent-grid">
-            {recentDestinations.map((spot) => {
-              const isActive = dest === spot.name;
+        {/* Quick-Pick Chips */}
+        <div className="flex flex-col gap-1.5 mt-1">
+          <span className="font-label-sm text-outline font-semibold uppercase tracking-wider text-[11px]">
+            Popular destinations outside campus
+          </span>
+          <div className="flex flex-wrap gap-2 pt-1">
+            {QUICK_PICK_DESTS.map((item) => {
+              const isSelected = destination === item.name;
               return (
                 <button
-                  key={spot.name}
+                  key={item.name}
                   type="button"
-                  onClick={() => handleSelectRecent(spot)}
-                  className={`ps-recent-pill ${isActive ? 'is-active' : ''}`}
-                  title={spot.name}
+                  className={`ps-quick-chip ${isSelected ? 'is-selected' : ''}`}
+                  onClick={() => handleSelectQuickPick(item)}
                 >
-                  <ArrowRight size={10} />
-                  <span className="ps-recent-pill-text">{spot.name}</span>
+                  <span>{item.icon}</span>
+                  <span>{item.name}</span>
                 </button>
               );
             })}
           </div>
         </div>
-      )}
+      </div>
 
-      {/* POPULAR SPOTS */}
-      <PopularSpots
-        spots={POPULAR_OUTSIDE_SPOTS}
-        activeName={dest}
-        onSelect={handleSelectPopular}
-      />
+      {/* STEP 3: Trip Schedule Type */}
+      <div className="flex flex-col gap-2">
+        <label className="font-label-md uppercase tracking-wider text-on-surface-variant font-bold">
+          Departure Preference
+        </label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Depart Immediately */}
+          <label
+            className={`ps-schedule-radio-card ${departureSchedule === 'immediate' ? 'is-selected' : ''}`}
+            onClick={() => setDepartureSchedule('immediate')}
+          >
+            <input
+              type="radio"
+              name="departure_schedule"
+              value="immediate"
+              checked={departureSchedule === 'immediate'}
+              onChange={() => setDepartureSchedule('immediate')}
+              className="sr-only"
+            />
+            <div className="ps-radio-circle">
+              {departureSchedule === 'immediate' && <div className="ps-radio-inner" />}
+            </div>
+            <div className="flex flex-col">
+              <span className="font-label-lg font-bold text-on-surface">Depart Immediately</span>
+              <span className="font-body-sm text-xs text-on-surface-variant">
+                Dispatch assigns nearest campus car (~5-8 mins)
+              </span>
+            </div>
+          </label>
 
-      {/* VEHICLE */}
-      <div className="ps-field">
-        <label className="ps-field-label">Vehicle Preference</label>
-        <div className="ps-vehicle-grid">
-          {VEHICLE_OPTIONS.map((v) => {
-            const Icon = v.icon;
-            const isActive = vehicleType === v.id;
-            return (
-              <button
-                key={v.id}
-                type="button"
-                onClick={() => setVehicleType(v.id)}
-                className={`ps-vehicle-btn ${isActive ? 'is-active' : ''}`}
-              >
-                {isActive && (
-                  <span className="ps-vehicle-check">
-                    <Check size={11} />
-                  </span>
-                )}
-                <Icon size={20} color={isActive ? '#EA580C' : '#796D61'} />
-                <span className="ps-vehicle-label">{v.label}</span>
-                <span className="ps-vehicle-sub">{v.sub}</span>
-              </button>
-            );
-          })}
+          {/* Schedule for Later */}
+          <label
+            className={`ps-schedule-radio-card ${departureSchedule === 'scheduled' ? 'is-selected' : ''}`}
+            onClick={() => setDepartureSchedule('scheduled')}
+          >
+            <input
+              type="radio"
+              name="departure_schedule"
+              value="scheduled"
+              checked={departureSchedule === 'scheduled'}
+              onChange={() => setDepartureSchedule('scheduled')}
+              className="sr-only"
+            />
+            <div className="ps-radio-circle">
+              {departureSchedule === 'scheduled' && <div className="ps-radio-inner" />}
+            </div>
+            <div className="flex flex-col">
+              <span className="font-label-lg font-bold text-on-surface">Schedule for Later</span>
+              <span className="font-body-sm text-xs text-on-surface-variant">
+                Reserve dispatch slot up to 48 hours ahead
+              </span>
+            </div>
+          </label>
+        </div>
+
+        {/* Schedule Inputs Drawer */}
+        {departureSchedule === 'scheduled' && (
+          <div className="flex flex-col sm:flex-row gap-3 p-3.5 bg-surface-container rounded-xl mt-1 ps-fade-up">
+            <div className="flex-1">
+              <label className="font-label-sm text-on-surface-variant block mb-1">Pick Date</label>
+              <input
+                type="date"
+                min={getTodayDateStr()}
+                value={scheduledDate}
+                onChange={(e) => setScheduledDate(e.target.value)}
+                className="w-full px-3 py-2 rounded-full bg-surface-container-lowest font-body-md text-on-surface text-sm border border-outline-variant/40 outline-none"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="font-label-sm text-on-surface-variant block mb-1">Preferred Time</label>
+              <input
+                type="time"
+                value={scheduledTime}
+                onChange={(e) => setScheduledTime(e.target.value)}
+                className="w-full px-3 py-2 rounded-full bg-surface-container-lowest font-body-md text-on-surface text-sm border border-outline-variant/40 outline-none"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* STEP 4: Passenger & Luggage Notes */}
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between">
+          <label className="font-label-md uppercase tracking-wider text-on-surface-variant font-bold">
+            Passenger &amp; Luggage Notes (Optional)
+          </label>
+          <span className="font-label-sm text-outline text-[11px]">Max 140 chars</span>
+        </div>
+        <div className="relative">
+          <textarea
+            rows="2"
+            maxLength={140}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            className="w-full p-3 pr-10 bg-surface-container-low rounded-xl font-body-md text-sm text-on-surface placeholder:text-outline border border-outline-variant/30 outline-none resize-none transition-all focus:bg-surface-container-lowest"
+            placeholder="e.g., carrying 1 suitcase, traveling with 2 friends, stopping at SBI ATM first"
+          />
+          <div className="absolute bottom-3 right-3 text-outline-variant pointer-events-none">
+            <Luggage size={16} />
+          </div>
         </div>
       </div>
 
-      {/* INFO */}
-      <div className="ps-info-box ps-fade-up">
-        <Clock size={16} color="#EA580C" />
-        <span>
-          Dispatch will calculate an official distance-based fare. Review the
-          quote on your live trip card before payment.
-        </span>
+      {/* Pricing Policy Callout Notice */}
+      <div className="flex items-start gap-3 p-3.5 rounded-xl bg-surface-container-high/60 border border-outline-variant/40">
+        <Info size={20} color="#EA580C" className="shrink-0 mt-0.5" />
+        <div className="flex flex-col">
+          <span className="font-label-md font-bold text-on-surface">Transparent Fare Policy</span>
+          <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed mt-0.5">
+            Dispatch calculates standard fare @ ₹12/km with zero surge. You'll receive instant driver confirmation and quote. Driver will present the university transit meter breakdown upon arrival.
+          </p>
+        </div>
       </div>
 
-      {/* SUBMIT */}
-      <PSButton
+      {errorMsg && (
+        <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-semibold">
+          {errorMsg}
+        </div>
+      )}
+
+      {/* Submission CTA Button */}
+      <button
         type="submit"
-        variant="primary"
-        size="lg"
-        block
-        disabled={submitting || !pickup.trim() || !dest.trim()}
+        disabled={submitting || !destination.trim()}
+        className="ps-outside-submit-btn"
       >
-        {submitting ? (
-          bookingMode === 'SCHEDULE' ? 'Submitting Pre-Booking...' : 'Submitting Request...'
-        ) : bookingMode === 'SCHEDULE' ? (
-          <>
-            Pre-Book for Dispatch Quote
-            <Calendar size={15} />
-          </>
-        ) : (
-          <>
-            Submit for Dispatch Quote
-            <Send size={15} />
-          </>
-        )}
-      </PSButton>
+        <Send size={18} />
+        <span>
+          {submitting
+            ? 'Contacting Central Campus Dispatch...'
+            : departureSchedule === 'scheduled'
+            ? 'Pre-Book Outside Campus Ride'
+            : 'Submit Outside Campus Request'}
+        </span>
+      </button>
+
     </form>
   );
 }

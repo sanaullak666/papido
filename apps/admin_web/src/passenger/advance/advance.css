@@ -13,10 +13,10 @@
 
 .ps-advance-container {
   width: 100%;
-  max-width: 800px;
+  max-width: 1280px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
 /* ---------- Header ---------- */
@@ -435,3 +435,387 @@
     transition: none !important;
   }
 }
+
+/* ============================================================
+   STITCH ADVANCE BOOKINGS DESIGN UPGRADE
+   ============================================================ */
+
+/* Top Management Header Card */
+.ps-advance-header-card {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--outline-variant, #E2BFB2);
+  border-radius: 1.5rem;
+  padding: 24px 28px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  box-shadow: 0 4px 20px -2px rgba(35, 26, 18, 0.05);
+}
+
+.ps-advance-header-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 9999px;
+  background: var(--primary-fixed, #FFDBCE);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.ps-tag-pill-sub {
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background: var(--surface-container, #FDEBDD);
+  color: var(--on-surface-variant, #5A4138);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.ps-advance-header-title {
+  font-family: 'Manrope', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--on-surface, #231A12);
+  letter-spacing: -0.02em;
+  margin: 4px 0 2px;
+}
+
+.ps-advance-header-sub {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  color: var(--on-surface-variant, #5A4138);
+  margin: 0;
+  max-width: 600px;
+}
+
+.ps-advance-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 700;
+  transition: all 180ms ease;
+  cursor: pointer;
+  text-decoration: none;
+  border: none;
+}
+
+.ps-advance-action-btn--refresh {
+  background: var(--surface-container, #FDEBDD);
+  color: var(--on-surface, #231A12);
+}
+.ps-advance-action-btn--refresh:hover {
+  background: var(--surface-container-high, #F7E5D8);
+}
+
+.ps-advance-action-btn--primary {
+  background: linear-gradient(135deg, #EA580C, #C2410C);
+  color: #FFFFFF;
+  box-shadow: 0 8px 20px -4px rgba(234, 88, 12, 0.35);
+}
+.ps-advance-action-btn--primary:hover {
+  background: linear-gradient(135deg, #DC2626, #9A3412);
+  transform: translateY(-1px);
+}
+
+/* Tabs */
+.ps-advance-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(253, 235, 221, 0.7);
+  padding: 5px;
+  border-radius: 9999px;
+  margin-bottom: 8px;
+}
+
+.ps-advance-tab-btn {
+  padding: 6px 16px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--on-surface-variant, #5A4138);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+
+.ps-advance-tab-btn.is-active {
+  background: #FFFFFF;
+  color: var(--on-surface, #231A12);
+  box-shadow: 0 2px 6px rgba(35, 26, 18, 0.08);
+  font-weight: 700;
+}
+
+/* Itinerary Card */
+.ps-sched-itinerary-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border-radius: 1.5rem;
+  padding: 22px 24px;
+  border: 1px solid var(--outline-variant, #E2BFB2);
+  box-shadow: 0 4px 16px -2px rgba(35, 26, 18, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: transform 220ms ease, box-shadow 220ms ease;
+}
+.ps-sched-itinerary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -4px rgba(35, 26, 18, 0.09);
+}
+
+.ps-sched-itinerary-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--surface-container-high, #F7E5D8);
+}
+
+.ps-sched-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.ps-sched-status-badge--confirmed {
+  background: #D1FAE5;
+  color: #065F46;
+  border: 1px solid #A7F3D0;
+}
+.ps-sched-status-badge--dispatching {
+  background: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #FDE68A;
+}
+
+.ps-sched-timeframe-badge {
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--surface-container-low, #FFF1E8);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ps-sched-snippet-map {
+  position: relative;
+  width: 100%;
+  height: 120px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #E8D7CA;
+}
+
+.ps-sched-snippet-bg {
+  width: 100%;
+  height: 100%;
+  background: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDT6DN8o9HTUz0RYedJtQ455SyDNjVvTcD3gXRpASdWn_zPhtAAXJ28RsnNjajCz4Kju5xIqeoa5z78_qkyBLB131L21_IAx2jQpkSOtgQL4HcgV5obVy9DrbwXSLY9F66Y0BIGabisMebzQ5hSSnUN_4Hf-qksaJ9uYFwlXyanW8q-lhxwqtD7kOkDosmnRhmxy0HmmT683cqM1UdsQCiw2Qcr-NFodGD5Mw-r54GQLnV-gEexXokQvw') center/cover no-repeat;
+  filter: saturate(0.9);
+}
+
+.ps-sched-snippet-pill {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(4px);
+  font-size: 11px;
+  font-weight: 700;
+  color: #231A12;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.ps-sched-driver-segment {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--surface-container-low, #FFF1E8);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+@media (min-width: 640px) {
+  .ps-sched-driver-segment {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.ps-driver-rating-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: #FFFFFF;
+  font-weight: 800;
+  color: #231A12;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.ps-sched-action-btn {
+  padding: 8px 14px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 160ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+}
+.ps-sched-action-btn--call {
+  background: #FFFFFF;
+  color: #231A12;
+  border: 1px solid var(--outline-variant, #E2BFB2);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+.ps-sched-action-btn--resched {
+  background: #D8E2FF;
+  color: #003273;
+}
+.ps-sched-action-btn--resched:hover {
+  background: #ADC6FF;
+}
+.ps-sched-action-btn--cancel {
+  background: transparent;
+  color: #DC2626;
+}
+.ps-sched-action-btn--cancel:hover {
+  background: #FEE2E2;
+}
+
+.ps-sched-pending-segment {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--surface-container-low, #FFF1E8);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Policy Card & Right Column */
+.ps-advance-side-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ps-policy-card {
+  background: linear-gradient(145deg, #FFFFFF, var(--surface-container-low, #FFF1E8));
+  padding: 22px 24px;
+  border-radius: 1.5rem;
+  border: 1px solid var(--outline-variant, #E2BFB2);
+  box-shadow: 0 4px 16px -2px rgba(35, 26, 18, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ps-policy-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  background: #D1FAE5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ps-policy-title {
+  font-family: 'Manrope', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--on-surface, #231A12);
+  margin: 0;
+}
+
+.ps-policy-sub {
+  font-size: 13px;
+  color: var(--on-surface-variant, #5A4138);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.ps-policy-terms {
+  background: #FFFFFF;
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--surface-container-high, #F7E5D8);
+}
+
+.ps-policy-term-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12.5px;
+}
+
+.ps-policy-radial-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-top: 6px;
+}
+
+.ps-policy-radial-wrap {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+}
+
+.ps-policy-radial-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--on-surface, #231A12);
+}
+
+.ps-concierge-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  padding: 22px 24px;
+  border-radius: 1.5rem;
+  border: 1px solid var(--outline-variant, #E2BFB2);
+  box-shadow: 0 4px 16px -2px rgba(35, 26, 18, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+

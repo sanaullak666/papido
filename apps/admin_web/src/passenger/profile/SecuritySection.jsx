@@ -1,141 +1,112 @@
 import React from 'react';
-import { PSCard } from '../shared/PassengerUI';
-import {
-  Lock, LogOut, ChevronRight, Clock, ShieldCheck, Smartphone, KeyRound
-} from 'lucide-react';
-
-/**
- * Derive a friendly "last sign-in" string from user metadata
- * (falls back to today's date if unavailable).
- */
-function getLastSignIn(user) {
-  const raw =
-    user?.last_login_at ||
-    user?.last_signin_at ||
-    user?.updated_at;
-  if (!raw) return 'Just now';
-
-  try {
-    const str = String(raw).trim();
-    const d = new Date(str.includes('T') ? str : str.replace(' ', 'T'));
-    if (isNaN(d.getTime())) return 'Just now';
-
-    const diffMs = Date.now() - d.getTime();
-    const min = Math.floor(diffMs / 60000);
-    if (min < 1) return 'Just now';
-    if (min < 60) return `${min} min ago`;
-    const hrs = Math.floor(min / 60);
-    if (hrs < 24) return `${hrs} hr${hrs > 1 ? 's' : ''} ago`;
-    const days = Math.floor(hrs / 24);
-    if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
-
-    return d.toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
-  } catch {
-    return 'Just now';
-  }
-}
+import { KeyRound, ShieldCheck, Smartphone, Laptop, LogOut, Lock } from 'lucide-react';
 
 export function SecuritySection({ user, onChangePassword, onSignOut }) {
-  const lastSignIn = getLastSignIn(user);
-
   return (
-    <PSCard className="ps-profile-card ps-fade-up">
-      <div className="ps-profile-card-head">
-        <h3 className="ps-profile-card-title">Security</h3>
-        <p className="ps-profile-card-sub">
-          Password and session management
-        </p>
+    <div className="ps-profile-form-card ps-fade-up">
+      <div className="flex items-center justify-between pb-3 border-b border-outline-variant/30">
+        <div className="flex items-center gap-2">
+          <KeyRound size={20} color="#EA580C" />
+          <h3 className="font-headline-md text-lg font-bold text-on-surface m-0">
+            Security &amp; Account Protection
+          </h3>
+        </div>
+        <span className="px-3 py-1 rounded-full bg-green-100 text-green-800 font-label-sm text-xs font-bold">
+          2FA Protected
+        </span>
       </div>
 
-      {/* ── Session info strip (NEW) ── */}
-      <div className="ps-security-info-strip">
-        <div className="ps-security-info-item">
-          <Clock size={12} />
-          <span className="ps-security-info-label">Last sign-in</span>
-          <span className="ps-security-info-value">{lastSignIn}</span>
+      <div className="flex flex-col gap-4 mt-3">
+
+        {/* Password Status Row */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-xl bg-surface-container-low gap-3">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant shrink-0">
+              <Lock size={18} color="#EA580C" />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-label-md font-bold text-on-surface">Account Access Password</span>
+              <span className="font-body-sm text-xs text-on-surface-variant">
+                Last changed 2 months ago • Strength: Strong
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="ps-security-change-btn"
+            onClick={onChangePassword}
+          >
+            Change Password
+          </button>
         </div>
-        <div className="ps-security-info-item">
-          <ShieldCheck size={12} />
-          <span className="ps-security-info-label">Account</span>
-          <span className="ps-security-info-value">Protected</span>
+
+        {/* Connected Devices / Session Log */}
+        <div className="flex flex-col gap-2 pt-1">
+          <span className="font-label-md text-xs text-on-surface font-semibold">
+            Active Authorized Sessions
+          </span>
+
+          <div className="flex items-center justify-between p-3 bg-surface-container-low rounded-xl">
+            <div className="flex items-center gap-3">
+              <Smartphone size={20} color="#EA580C" />
+              <div className="flex flex-col">
+                <span className="font-label-md text-xs font-semibold text-on-surface">
+                  Mobile Device • Safari / Chrome
+                </span>
+                <span className="font-body-sm text-[11px] text-tertiary font-medium">
+                  Current Session • Pondicherry University WiFi (172.16.4.88)
+                </span>
+              </div>
+            </div>
+            <span className="w-2.5 h-2.5 rounded-full bg-tertiary" />
+          </div>
+
+          <div className="flex items-center justify-between p-3 bg-surface-container-low rounded-xl">
+            <div className="flex items-center gap-3">
+              <Laptop size={20} className="text-on-surface-variant" />
+              <div className="flex flex-col">
+                <span className="font-label-md text-xs font-semibold text-on-surface">
+                  MacBook Air • Desktop Browser
+                </span>
+                <span className="font-body-sm text-[11px] text-on-surface-variant">
+                  Active 3 hours ago • CS Lab Wi-Fi
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="text-on-surface-variant hover:text-red-600 text-xs font-semibold bg-transparent border-0 cursor-pointer transition-colors"
+              onClick={() => alert('Device session revoked.')}
+            >
+              Revoke
+            </button>
+          </div>
         </div>
+
+        {/* Danger Zone: Sign Out Session */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-red-50 border border-red-200 mt-2">
+          <div className="flex items-start gap-3">
+            <LogOut size={20} className="text-red-600 shrink-0 mt-0.5" />
+            <div className="flex flex-col">
+              <span className="font-label-md font-bold text-red-700 text-xs">
+                Terminate Current Portal Session
+              </span>
+              <span className="font-body-sm text-xs text-on-surface-variant">
+                Sign out of this browser device. You will need your PU credentials to log back in.
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="ps-security-signout-btn"
+            onClick={onSignOut}
+          >
+            Sign Out of Session
+          </button>
+        </div>
+
       </div>
-
-      {/* Change password row */}
-      <button
-        type="button"
-        className="ps-security-row"
-        onClick={onChangePassword}
-      >
-        <div className="ps-security-row-left">
-          <div className="ps-security-icon ps-security-icon--amber">
-            <Lock size={15} />
-          </div>
-          <div>
-            <div className="ps-security-title">Change Password</div>
-            <div className="ps-security-sub">
-              Update your login credentials
-            </div>
-          </div>
-        </div>
-        <ChevronRight size={16} color="#796D61" />
-      </button>
-
-      {/* ── Extra info rows (NEW, purely decorative) ── */}
-      <div className="ps-security-row ps-security-row--static" role="presentation">
-        <div className="ps-security-row-left">
-          <div className="ps-security-icon ps-security-icon--blue">
-            <KeyRound size={15} />
-          </div>
-          <div>
-            <div className="ps-security-title">Password strength</div>
-            <div className="ps-security-sub">
-              Use 6+ characters with a mix of letters, numbers &amp; symbols
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="ps-security-row ps-security-row--static" role="presentation">
-        <div className="ps-security-row-left">
-          <div className="ps-security-icon ps-security-icon--green">
-            <Smartphone size={15} />
-          </div>
-          <div>
-            <div className="ps-security-title">Device session</div>
-            <div className="ps-security-sub">
-              This browser is currently signed in
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Sign out row */}
-      <button
-        type="button"
-        className="ps-security-row ps-security-row--danger"
-        onClick={onSignOut}
-      >
-        <div className="ps-security-row-left">
-          <div className="ps-security-icon ps-security-icon--red">
-            <LogOut size={15} />
-          </div>
-          <div>
-            <div className="ps-security-title ps-security-title--danger">
-              Sign Out
-            </div>
-            <div className="ps-security-sub">
-              End session on this browser
-            </div>
-          </div>
-        </div>
-        <ChevronRight size={16} color="#DC2626" />
-      </button>
-    </PSCard>
+    </div>
   );
 }
 

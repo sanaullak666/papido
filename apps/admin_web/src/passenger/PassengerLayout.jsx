@@ -87,9 +87,14 @@ function LayoutInner({ children, currentTab }) {
           </nav>
 
           <div className="ps-user-chip">
-            <div className="ps-user-text">
-              <div className="ps-user-name">{user?.name || 'Passenger'}</div>
-              <div className="ps-user-email">{user?.email}</div>
+            <div className="ps-user-pill">
+              <div className="ps-user-avatar">
+                <User size={15} />
+              </div>
+              <div className="ps-user-text">
+                <div className="ps-user-name">{user?.name || 'Passenger'}</div>
+                <div className="ps-user-email">{user?.email}</div>
+              </div>
             </div>
             <button
               onClick={logout}

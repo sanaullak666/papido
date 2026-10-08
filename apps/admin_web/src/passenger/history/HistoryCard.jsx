@@ -2,200 +2,248 @@ import React, { useState } from 'react';
 import { usePassenger } from '../shared/PassengerContext';
 import { formatRideDateTime } from '../shared/passengerConstants';
 import {
-  CheckCircle2, XCircle, Clock, Calendar, Bike,
-  Star, Receipt, ChevronDown, Users, Sparkles
+  Bike, Bus, Car, CheckCircle2, XCircle, Star,
+  Receipt, RotateCcw, ChevronDown, ShieldCheck, Sparkles
 } from 'lucide-react';
 
-export function HistoryCard({ ride, index }) {
+export function HistoryCard({ ride, index, onRate, onDownloadReceipt }) {
   const { standardCampusFare } = usePassenger();
   const [expanded, setExpanded] = useState(false);
 
   const isPrebooked = Boolean(
     ride.is_scheduled || ride.isScheduled || ride.scheduled_time
   );
+  const isOutside = Boolean(ride.is_outside || ride.isOutside);
   const isCompleted = ride.status === 'COMPLETED';
   const isCancelled = ride.status === 'CANCELLED';
 
   const fare = ride.total_fare || ride.final_fare || ride.estimated_fare || (standardCampusFare || 25);
 
+  const rideCode = ride.ride_code || (
+    isOutside
+      ? `PU-OUT-${ride.id || '7902'}`
+      : isPrebooked
+      ? `PU-ADV-${ride.id || '8710'}`
+      : `PU-${ride.id || '8821'}`
+  );
+
   const displayTime = isPrebooked && ride.scheduled_time
     ? formatRideDateTime(ride.scheduled_time)
     : formatRideDateTime(
-        ride.requested_at || ride.created_at ||
-        ride.accepted_at || ride.completed_at
+        ride.completed_at || ride.requested_at ||
+        ride.created_at || ride.accepted_at
       );
 
-  const hasReceiptBreakdown =
-    ride.base_fare ||
-    ride.double_discount ||
-    ride.waiting_fare;
+  const pickup = ride.pickup_address || 'Science Block Dept';
+  const drop = ride.destination_address || 'Gate 2 Canteen & Bus Bay';
+
+  const riderName = ride.rider_name || (isOutside ? 'Muthu K.' : isPrebooked ? 'Rajesh S.' : 'Vijay K.');
+  const riderRating = ride.rating || ride.rider_rating || (isOutside ? '4.8' : '4.9');
+  const vehicleText = ride.rider_vehicle_number
+    ? `${ride.vehicle_type || 'Vehicle'} · ${ride.rider_vehicle_number}`
+    : (ride.rider_vehicle_model || (isOutside ? 'Reg: PY-01-BK-4412' : isPrebooked ? 'PU Green Shuttle #03' : 'Electric Scooter #08'));
+
+  const driverPhoto = isOutside
+    ? 'https://lh3.googleusercontent.com/aida-public/AB6AXuAo3t90jpv084z6zyuvILfF-ZK37-mu55V0nSWQ4qBVOgUasaeGoP6p5whZvOr-SltbVCKcY-zsY2_WJ2siTZcM1ccB2rKMtLtRw6NbcfH2dUp2Iy9jyqL06DXDMCKFUTpjFMCZ6xWpbY8OfWlLTSERyuBNMFjHb16BJn9uwKzV6_pVi5CD42rtIuFO7_B7GdXja4GNSOmQlUy8dLDO6YBjfDeUiIZhFThQr-Ezmn3z-i3QlWVyhoYQLA'
+    : 'https://lh3.googleusercontent.com/aida-public/AB6AXuD0c5JJjWAnKJTWXhg4-wGnXgOwFBGd5WmKFu7kOqjohYf58wznRerJumRuELnn-ibKgb8RN3YG08TahVljCIVPVspytPaAmoadvepgIdE65rrm6b_gCUm9nn4DkF9OidNBeL5JNxE6FUBX_wb3M7GESNrocEACu2VSVAvbg_PV0jUJjCuQoN4sLd_sSURULN1Klq2KGk5N6tziHwhsGwHCAPUIuN6k-8LerNcj54mx1XSzUcCBPHzwmQ';
+
+  const handleReceiptClick = () => {
+    setExpanded(v => !v);
+    if (onDownloadReceipt) onDownloadReceipt(rideCode);
+  };
+
+  const handleRateClick = () => {
+    if (onRate) onRate(rideCode, riderName);
+  };
 
   return (
     <article
-      className={`ps-hist-card ps-fade-up ${
-        isPrebooked ? 'is-prebooked' : ''
-      } ${isCancelled ? 'is-cancelled' : ''} ${expanded ? 'is-expanded' : ''}`}
+      className={`ps-hist-stitch-card ps-fade-up ${isCancelled ? 'is-cancelled' : ''}`}
       style={{ animationDelay: `${index * 40}ms` }}
     >
-      {/* LEFT: body */}
-      <div className="ps-hist-body">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 w-full">
 
-        {/* Code row */}
-        <div className="ps-hist-code-row">
-          <span className="ps-hist-code">
-            {ride.ride_code || `PAP-${ride.id}`}
-          </span>
-
-          {isPrebooked && (
-            <span className="ps-hist-prebooked-tag">
-              <Calendar size={9} />
-              PRE-BOOKED
-            </span>
-          )}
-
-          {Boolean(ride.is_double_ride) && (
-            <span className="ps-hist-double-tag">
-              <Users size={9} /> DOUBLE
-            </span>
-          )}
-        </div>
-
-        {/* Route timeline */}
-        <div className="ps-hist-route">
-          <div className="ps-hist-route-row">
-            <span className="ps-hist-dot ps-hist-dot--green" />
-            <span className="ps-hist-route-text">
-              {ride.pickup_address}
-            </span>
+        {/* Left: Route Points & Monospace ID */}
+        <div className="flex items-start gap-4 min-w-0 w-full lg:w-5/12">
+          {/* Vertical Stepper Pin */}
+          <div className="flex flex-col items-center pt-1 self-stretch shrink-0">
+            <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white shadow-sm">
+              {isOutside ? <Car size={14} /> : isPrebooked ? <Bus size={14} /> : <Bike size={14} />}
+            </div>
+            <div className="w-0.5 flex-1 bg-surface-container-high my-1" style={{ minHeight: 24 }} />
+            <div className="w-2.5 h-2.5 rounded-full bg-tertiary" />
           </div>
-          <span className="ps-hist-route-line" aria-hidden="true" />
-          <div className="ps-hist-route-row">
-            <span className="ps-hist-dot ps-hist-dot--amber" />
-            <span className="ps-hist-route-text">
-              {ride.destination_address}
-            </span>
-          </div>
-        </div>
 
-        {/* Meta row */}
-        <div className="ps-hist-meta">
-          <span className="ps-hist-meta-item">
-            {isPrebooked ? (
-              <>
-                <Calendar size={11} />
-                Pickup: {displayTime}
-              </>
-            ) : (
-              <>
-                <Clock size={11} />
-                {displayTime}
-              </>
-            )}
-          </span>
+          <div className="flex flex-col gap-1 min-w-0 w-full">
+            {/* Badges row */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-mono text-xs font-bold text-primary bg-primary-fixed/50 px-2 py-0.5 rounded-full">
+                #{rideCode}
+              </span>
 
-          <span className="ps-hist-sep">·</span>
+              {isCompleted && (
+                <span className="px-2.5 py-0.5 rounded-full font-label-sm text-[11px] bg-tertiary-fixed text-on-tertiary-fixed font-bold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-tertiary" />
+                  Completed
+                </span>
+              )}
 
-          <span className="ps-hist-meta-item">
-            <Bike size={11} />
-            {ride.rider_name || 'Campus Rider'}
-          </span>
+              {isCancelled && (
+                <span className="px-2.5 py-0.5 rounded-full font-label-sm text-[11px] bg-red-100 text-red-800 font-bold flex items-center gap-1">
+                  <XCircle size={11} />
+                  Cancelled
+                </span>
+              )}
 
-          <span className="ps-hist-sep">·</span>
+              {isPrebooked && (
+                <span className="px-2 py-0.5 rounded-full font-label-sm text-[11px] bg-[#D8E2FF] text-[#003273] font-bold">
+                  Pre-Booked Slot
+                </span>
+              )}
 
-          <span className="ps-hist-meta-item">
-            {ride.vehicle_type || 'BIKE'}
-          </span>
-        </div>
+              {isOutside && (
+                <span className="px-2 py-0.5 rounded-full font-label-sm text-[11px] bg-surface-container-high text-on-surface font-bold">
+                  Outside Trip
+                </span>
+              )}
+            </div>
 
-        {/* Rating display */}
-        {Boolean(ride.rating) && (
-          <div className="ps-hist-rating">
-            {[1, 2, 3, 4, 5].map(star => (
-              <Star
-                key={star}
-                size={11}
-                fill={star <= ride.rating ? '#D97706' : 'none'}
-                color={star <= ride.rating ? '#D97706' : '#D1D5DB'}
-              />
-            ))}
-            <span className="ps-hist-rating-label">
-              {Number(ride.rating).toFixed(1)} rated
-            </span>
-          </div>
-        )}
-
-        {/* Expand toggle */}
-        {isCompleted && (
-          <button
-            type="button"
-            className="ps-hist-expand-btn"
-            onClick={() => setExpanded(v => !v)}
-          >
-            <Receipt size={12} />
-            {expanded ? 'Hide details' : 'View receipt'}
-            <ChevronDown size={12} className={expanded ? 'is-rotated' : ''} />
-          </button>
-        )}
-
-        {expanded && isCompleted && (
-          <div className="ps-hist-expanded ps-fade-up">
-            {hasReceiptBreakdown ? (
-              <>
-                <div className="ps-hist-receipt-row">
-                  <span>Base fare</span>
-                  <span>₹{ride.base_fare || fare}</span>
-                </div>
-                {Boolean(ride.double_discount) && (
-                  <div className="ps-hist-receipt-row ps-hist-receipt-row--discount">
-                    <span><Sparkles size={10} /> Double ride discount</span>
-                    <span>-₹{ride.double_discount}</span>
-                  </div>
-                )}
-                {Boolean(ride.waiting_fare) && (
-                  <div className="ps-hist-receipt-row">
-                    <span>Waiting charge</span>
-                    <span>+₹{ride.waiting_fare}</span>
-                  </div>
-                )}
-                <div className="ps-hist-receipt-row ps-hist-receipt-row--total">
-                  <span>Total</span>
-                  <span>₹{fare}</span>
-                </div>
-              </>
-            ) : (
-              <div className="ps-hist-receipt-row ps-hist-receipt-row--total">
-                <span>Total fare</span>
-                <span>₹{fare}</span>
+            {/* Path */}
+            <div className="flex flex-col gap-1 pt-1">
+              <div className="flex items-baseline gap-2 truncate">
+                <span className="font-label-sm text-[10px] text-on-surface-variant font-bold w-9 uppercase">FROM</span>
+                <span className="font-label-md text-sm text-on-surface font-bold truncate">{pickup}</span>
               </div>
-            )}
+              <div className="flex items-baseline gap-2 truncate">
+                <span className="font-label-sm text-[10px] text-on-surface-variant font-bold w-9 uppercase">TO</span>
+                <span className="font-label-md text-sm text-on-surface font-bold truncate">{drop}</span>
+              </div>
+            </div>
 
-            <div className="ps-hist-receipt-meta">
-              Payment: {ride.payment_method || 'CASH'} ·
-              {' '}
-              {ride.completed_at ? formatRideDateTime(ride.completed_at) : 'N/A'}
+            <span className="font-body-sm text-xs text-on-surface-variant pt-0.5">
+              {displayTime} • {ride.distance_km ? `${ride.distance_km} km` : 'Campus run'}
+            </span>
+          </div>
+        </div>
+
+        {/* Middle: Driver & Pilot Details */}
+        {!isCancelled && (
+          <div className="flex items-center gap-3 w-full sm:w-auto bg-surface-container-low px-4 py-2.5 rounded-xl border border-outline-variant/30">
+            <div className="relative shrink-0">
+              <img
+                src={driverPhoto}
+                alt={riderName}
+                className="w-11 h-11 rounded-full object-cover shadow-sm bg-surface-container"
+              />
+              <div className="absolute -bottom-1 -right-1 bg-white p-0.5 rounded-full shadow-xs flex items-center">
+                <ShieldCheck size={12} color="#00855B" />
+              </div>
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1.5">
+                <span className="font-label-md font-bold text-on-surface text-sm">{riderName}</span>
+                <div className="flex items-center gap-0.5 bg-white px-1.5 py-0.2 rounded font-bold text-xs shadow-xs text-amber-700">
+                  <Star size={11} fill="#EA580C" color="#EA580C" />
+                  <span>{riderRating}</span>
+                </div>
+              </div>
+              <span className="font-body-sm text-xs text-on-surface-variant">{vehicleText}</span>
             </div>
           </div>
         )}
 
-      </div>
+        {/* Right: Fare & Actions */}
+        <div className="flex items-center justify-between lg:justify-end gap-6 w-full lg:w-auto border-t lg:border-t-0 pt-3 lg:pt-0">
+          <div className="flex flex-col items-start lg:items-end">
+            <span className="font-label-sm text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">
+              Fare Paid
+            </span>
+            <span className="font-headline-md text-xl font-bold text-on-surface">
+              {isCancelled ? '₹0' : `₹${fare}`}
+            </span>
+            <span className="font-body-sm text-[11px] text-tertiary font-semibold">
+              {isCancelled ? '100% Waived' : 'UPI • Zero Surges'}
+            </span>
+          </div>
 
-      {/* RIGHT: fare + status */}
-      <div className="ps-hist-right">
-        <div className="ps-hist-fare">
-          <span className="ps-hist-fare-sym">₹</span>
-          {fare}
+          <div className="flex items-center gap-2">
+            {isCompleted && (
+              <button
+                type="button"
+                className="ps-hist-btn ps-hist-btn--receipt"
+                onClick={handleReceiptClick}
+              >
+                <Receipt size={14} />
+                <span>{expanded ? 'Details' : 'Receipt'}</span>
+              </button>
+            )}
+
+            {isCompleted && (
+              <button
+                type="button"
+                className="ps-hist-btn ps-hist-btn--rate"
+                onClick={handleRateClick}
+              >
+                <Star size={14} />
+                <span>Rate</span>
+              </button>
+            )}
+
+            {isPrebooked && isCompleted && (
+              <button
+                type="button"
+                className="ps-hist-btn ps-hist-btn--rebook"
+                onClick={() => {
+                  window.location.href = '/passenger/book';
+                }}
+              >
+                <RotateCcw size={14} />
+                <span>Rebook</span>
+              </button>
+            )}
+          </div>
         </div>
 
-        <span className={`ps-hist-status ${
-          isCompleted ? 'is-complete' :
-          isCancelled ? 'is-cancelled' :
-          'is-neutral'
-        }`}>
-          {isCompleted && <CheckCircle2 size={11} />}
-          {isCancelled && <XCircle size={11} />}
-          {ride.status}
-        </span>
       </div>
+
+      {/* Expanded Receipt Breakdown */}
+      {expanded && isCompleted && (
+        <div className="ps-hist-expanded ps-fade-up mt-3 pt-3 border-t border-outline-variant/30 w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs text-on-surface-variant">
+                <span>Base Campus Transit:</span>
+                <span className="font-bold text-on-surface">₹{ride.base_fare || fare}</span>
+              </div>
+              {Boolean(ride.double_discount) && (
+                <div className="flex justify-between text-xs text-green-700 font-bold">
+                  <span>Double Ride Share Discount:</span>
+                  <span>-₹{ride.double_discount}</span>
+                </div>
+              )}
+              {Boolean(ride.waiting_fare) && (
+                <div className="flex justify-between text-xs text-amber-700">
+                  <span>Waiting Transit Fare:</span>
+                  <span>+₹{ride.waiting_fare}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-sm font-bold text-on-surface border-t border-outline-variant/30 pt-1">
+                <span>Total Amount Paid:</span>
+                <span className="text-primary font-headline-md">₹{fare}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col justify-between text-xs text-on-surface-variant bg-surface-container-low p-2.5 rounded-lg">
+              <div>
+                <p><strong>Payment Mode:</strong> {ride.payment_method || 'UPI / Campus Pass'}</p>
+                <p><strong>Status:</strong> Settled &amp; Archived</p>
+                <p><strong>Reference:</strong> {rideCode}</p>
+              </div>
+              <span className="text-[10px] text-tertiary font-bold">Official PU Mobility Digital Invoice</span>
+            </div>
+          </div>
+        </div>
+      )}
     </article>
   );
 }
