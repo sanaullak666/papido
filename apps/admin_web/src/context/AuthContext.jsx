@@ -32,23 +32,55 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const handleUnauthorized = (e) => {
       const isAdmin = e.detail?.isAdmin;
+      const reason = e.detail?.reason;
       if (isAdmin) {
         setAdminToken(null);
         setAdminUser(null);
         localStorage.removeItem('papido_admin_token');
         localStorage.removeItem('papido_admin_user');
+        if (reason === 'unauthorized_role') {
+          window.location.replace('/AdminLogin?reason=unauthorized_role');
+        }
       } else {
         setToken(null);
         setUser(null);
         localStorage.removeItem('papido_user_token');
         localStorage.removeItem('papido_user');
-        if (e.detail?.reason === 'unauthorized_role') {
+        if (reason === 'unauthorized_role') {
           window.location.replace('/login?reason=unauthorized_role');
         }
       }
     };
+
+    const handleSessionExpired = (e) => {
+      const isAdmin = e.detail?.isAdmin;
+      if (isAdmin) {
+        setAdminToken(null);
+        setAdminUser(null);
+        localStorage.removeItem('papido_admin_token');
+        localStorage.removeItem('papido_admin_user');
+        const curPath = (window.location.pathname || '').toLowerCase();
+        if (curPath.startsWith('/admin') && curPath !== '/adminlogin') {
+          window.location.replace('/AdminLogin?reason=session_expired');
+        }
+      } else {
+        setToken(null);
+        setUser(null);
+        localStorage.removeItem('papido_user_token');
+        localStorage.removeItem('papido_user');
+        const curPath = (window.location.pathname || '').toLowerCase();
+        if (curPath !== '/login' && curPath !== '/' && curPath !== '/welcome') {
+          window.location.replace('/login?reason=session_expired');
+        }
+      }
+    };
+
     window.addEventListener('auth:unauthorized', handleUnauthorized);
-    return () => window.removeEventListener('auth:unauthorized', handleUnauthorized);
+    window.addEventListener('auth:session_expired', handleSessionExpired);
+    return () => {
+      window.removeEventListener('auth:unauthorized', handleUnauthorized);
+      window.removeEventListener('auth:session_expired', handleSessionExpired);
+    };
   }, []);
 
   // Load User & Admin profiles on start in the background
@@ -72,12 +104,10 @@ export function AuthProvider({ children }) {
             setUser(null);
           }
         } catch (err) {
-          if (err.status === 401 || err.status === 403 || err.message?.includes('token') || err.message?.includes('expired') || err.message?.includes('not found')) {
-            localStorage.removeItem('papido_user_token');
-            localStorage.removeItem('papido_user');
-            setToken(null);
-            setUser(null);
-          }
+          localStorage.removeItem('papido_user_token');
+          localStorage.removeItem('papido_user');
+          setToken(null);
+          setUser(null);
         }
       }
 
@@ -95,12 +125,10 @@ export function AuthProvider({ children }) {
             setAdminUser(null);
           }
         } catch (err) {
-          if (err.status === 401 || err.status === 403 || err.message?.includes('token') || err.message?.includes('expired') || err.message?.includes('not found')) {
-            localStorage.removeItem('papido_admin_token');
-            localStorage.removeItem('papido_admin_user');
-            setAdminToken(null);
-            setAdminUser(null);
-          }
+          localStorage.removeItem('papido_admin_token');
+          localStorage.removeItem('papido_admin_user');
+          setAdminToken(null);
+          setAdminUser(null);
         }
       }
     }
@@ -109,10 +137,11 @@ export function AuthProvider({ children }) {
   }, [token, adminToken]);
 
   // Customer / Rider Login (Strictly rejects ADMIN role)
-  const login = async (email, password) => {
+  const login = async (email, password, expectedRole = null) => {
     const res = await apiRequest('/auth/login', 'POST', {
       email,
-      password
+      password,
+      expectedRole: expectedRole || null
     });
     const { user: userData, accessToken } = res.data;
     if (userData.role === 'ADMIN') {

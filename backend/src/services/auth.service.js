@@ -206,7 +206,11 @@ const AuthService = {
 
     // Role check if expectedRole specified
     if (expectedRole && user.role !== expectedRole) {
-      throw new Error(`Unauthorized: Account role is ${user.role}, but ${expectedRole} login was requested.`);
+      const err = new Error('Please select the correct account type and try again.');
+      err.code = 'ROLE_MISMATCH';
+      err.statusCode = 400;
+      err.role = user.role;
+      throw err;
     }
 
     // Fetch role profile

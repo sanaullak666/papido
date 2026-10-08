@@ -11,11 +11,13 @@ const requireRole = (allowedRole) => {
     }
 
     if (req.user.role !== allowedRole) {
-      return error(
-        res,
-        `Access denied: '${req.user.role}' is not authorized to access this resource. Requires '${allowedRole}'.`,
-        403
-      );
+      return res.status(403).json({
+        success: false,
+        code: 'ROLE_VIOLATION',
+        message: 'This account cannot access this portal.',
+        statusCode: 403,
+        timestamp: new Date().toISOString()
+      });
     }
 
     next();
@@ -32,11 +34,13 @@ const requireAnyRole = (allowedRoles = []) => {
     }
 
     if (!allowedRoles.includes(req.user.role)) {
-      return error(
-        res,
-        `Access denied: Role '${req.user.role}' is not authorized. Allowed roles: [${allowedRoles.join(', ')}].`,
-        403
-      );
+      return res.status(403).json({
+        success: false,
+        code: 'ROLE_VIOLATION',
+        message: 'This account cannot access this portal.',
+        statusCode: 403,
+        timestamp: new Date().toISOString()
+      });
     }
 
     next();

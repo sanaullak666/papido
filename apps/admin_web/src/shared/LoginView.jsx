@@ -74,12 +74,24 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess }) {
 
       if (reason === 'unauthorized_role') {
         setError(paramMsg || 'Access Denied: Cross-portal access detected. Your session has been terminated for security.');
+      } else if (reason === 'session_expired') {
+        setError(paramMsg || 'Your session has expired. Please log in again.');
       } else {
         const sessionMsg = sessionStorage.getItem('papido_auth_error');
         if (sessionMsg) {
           sessionStorage.removeItem('papido_auth_error');
           setError(sessionMsg);
         }
+      }
+
+      // Clean the URL using history.replaceState so ?reason= and ?message= do not remain in the address bar
+      if (reason || paramMsg) {
+        const cleanParams = new URLSearchParams(window.location.search);
+        cleanParams.delete('reason');
+        cleanParams.delete('message');
+        const cleanQuery = cleanParams.toString();
+        const cleanUrl = window.location.pathname + (cleanQuery ? `?${cleanQuery}` : '');
+        window.history.replaceState({}, '', cleanUrl);
       }
 
       if (mode === 'register' || screenParam === 'register' || path === '/register' || path === '/signup') {
@@ -161,6 +173,9 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess }) {
       if (reason === 'unauthorized_role') {
         return paramMsg || 'Access Denied: Cross-portal access detected. Your session has been terminated for security.';
       }
+      if (reason === 'session_expired') {
+        return paramMsg || 'Your session has expired. Please log in again.';
+      }
       const sessionMsg = sessionStorage.getItem('papido_auth_error');
       if (sessionMsg) {
         sessionStorage.removeItem('papido_auth_error');
@@ -227,7 +242,13 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess }) {
       setResendTimer(RESEND_SECONDS);
       goTo(SCREEN.OTP, 'forward');
     } catch (err) {
-      setError(err.message || 'Failed to send verification code.');
+      const msg = err.message || 'Failed to send verification code.';
+      const lower = msg.toLowerCase();
+      if (err.code === 'ROLE_MISMATCH' || lower.includes('account type') || lower.includes('tab to continue')) {
+        setError(msg.includes('tab to continue') ? msg : 'Please select the correct account type and try again.');
+      } else {
+        setError(msg);
+      }
       shake();
     } finally {
       setLoading(false);
@@ -238,6 +259,8 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess }) {
      OTP INPUT HANDLERS
      ============================================================ */
   const handleOtpChange = (index, value) => {
+    setError('');
+    setSuccessMsg('');
     const digit = value.replace(/\D/g, '').slice(-1);
 
     /* Handle paste of full OTP into one box */
@@ -303,19 +326,20 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess }) {
       const loggedUser = await verifyLoginOtp(cleanDigits, code, role);
       setSuccessMsg('Verification successful! Welcome back.');
 
-      setTimeout(() => {
-        if (typeof onLoginSuccess === 'function') {
-          onLoginSuccess(loggedUser);
-        } else {
-          const dest = loggedUser?.role === 'RIDER' ? '/rider' : '/passenger';
-          window.history.pushState({}, '', dest);
-          window.location.href = dest;
-        }
-      }, 400);
+      // Immediate authoritative redirect to avoid race conditions
+      const dest = loggedUser?.role === 'RIDER' ? '/rider' : '/passenger';
+      if (typeof onLoginSuccess === 'function') {
+        onLoginSuccess(loggedUser);
+      } else {
+        window.history.replaceState({}, '', dest);
+        window.location.href = dest;
+      }
     } catch (err) {
       const msg = err.message || 'Verification failed.';
       const lower = msg.toLowerCase();
-      if (lower.includes('pending') || lower.includes('kyc')) {
+      if (err.code === 'ROLE_MISMATCH' || lower.includes('account type') || lower.includes('tab to continue')) {
+        setError(msg.includes('tab to continue') ? msg : 'Please select the correct account type and try again.');
+      } else if (lower.includes('pending') || lower.includes('kyc')) {
         setError('Your rider account is under review. Contact campus admin.');
       } else {
         setError(msg);
@@ -365,25 +389,31 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess }) {
     }
 
     setLoading(true);
+    setError('');
     try {
-      const loggedUser = await login(trimmedEmail, password);
+      const loggedUser = await login(trimmedEmail, password, role);
+      setSuccessMsg('Verification successful! Welcome back.');
+
+      // Immediate authoritative redirect to avoid race conditions
+      const dest = loggedUser?.role === 'RIDER' ? '/rider' : '/passenger';
       if (typeof onLoginSuccess === 'function') {
         onLoginSuccess(loggedUser);
       } else {
-        const dest = loggedUser?.role === 'RIDER' ? '/rider' : '/passenger';
-        window.history.pushState({}, '', dest);
+        window.history.replaceState({}, '', dest);
         window.location.href = dest;
       }
     } catch (err) {
       const msg = err.message || '';
       const lower = msg.toLowerCase();
-      if (
+      if (err.code === 'ROLE_MISMATCH' || lower.includes('account type') || lower.includes('select the correct')) {
+        setError('Please select the correct account type and try again.');
+      } else if (
         lower.includes('credential') ||
         lower.includes('invalid') ||
         lower.includes('password') ||
         lower.includes('not found')
       ) {
-        setError('Incorrect email or password.');
+        setError('Invalid email or password.');
       } else if (lower.includes('pending') || lower.includes('kyc')) {
         setError('Your rider account is under review.');
       } else {

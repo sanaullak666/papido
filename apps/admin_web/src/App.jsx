@@ -199,17 +199,42 @@ export function App() {
     }
   }, [adminUser]);
 
-  // Security Enforcement: Immediate role cross-access detection & session termination
+  // 0a. Route Guard for Unauthenticated Users: Redirect protected routes to /login without triggering security alarms
+  useEffect(() => {
+    if (user || adminUser) return;
+    const cleanPath = (currentPath || '').toLowerCase().replace(/\/+$/, '');
+    if (isDriverRoute(cleanPath)) {
+      window.history.replaceState({}, '', '/login?mode=rider');
+      setCurrentPath('/login');
+    } else if (isPassengerRoute(cleanPath)) {
+      window.history.replaceState({}, '', '/login');
+      setCurrentPath('/login');
+    }
+  }, [user, adminUser, currentPath]);
+
+  // Security Enforcement: Immediate role cross-access detection & session termination for authenticated users
   useEffect(() => {
     if (!user) return;
 
-    if (user.role === 'CUSTOMER' && isDriverRoute(currentPath)) {
+    const cleanPath = (currentPath || '').toLowerCase().replace(/\/+$/, '');
+
+    // Seamlessly forward authenticated users on public / login paths to their authoritative portal
+    if (cleanPath === '' || cleanPath === '/' || cleanPath === '/welcome' || cleanPath === '/login') {
+      const homeDest = user.role === 'RIDER' ? '/rider' : (user.role === 'ADMIN' ? '/admin/dashboard' : '/passenger');
+      if (window.location.pathname !== homeDest) {
+        window.history.replaceState({}, '', homeDest);
+      }
+      setCurrentPath(homeDest);
+      return;
+    }
+
+    if (user.role === 'CUSTOMER' && isDriverRoute(cleanPath)) {
       const msg = 'Access Denied: Passenger accounts cannot access Driver routes. You have been logged out of your session.';
       try {
         sessionStorage.setItem('papido_auth_error', msg);
       } catch (_) {}
       logout('/login?reason=unauthorized_role&role=rider&message=' + encodeURIComponent(msg));
-    } else if (user.role === 'RIDER' && isPassengerRoute(currentPath)) {
+    } else if (user.role === 'RIDER' && isPassengerRoute(cleanPath)) {
       const msg = 'Access Denied: Driver accounts cannot access Passenger routes. You have been logged out of your session.';
       try {
         sessionStorage.setItem('papido_auth_error', msg);
@@ -555,8 +580,11 @@ export function App() {
   return (
     <LoginView
       onLoginSuccess={(loggedInUser) => {
-        const dest = loggedInUser?.role === 'RIDER' ? '/rider' : '/passenger';
-        navigateTo(dest);
+        const dest = loggedInUser?.role === 'RIDER' ? '/rider' : (loggedInUser?.role === 'ADMIN' ? '/admin/dashboard' : '/passenger');
+        if (window.location.pathname !== dest) {
+          window.history.replaceState({}, '', dest);
+        }
+        setCurrentPath(dest);
       }}
     />
   );

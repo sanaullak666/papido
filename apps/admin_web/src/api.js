@@ -81,16 +81,43 @@ export async function apiRequest(endpoint, method = 'GET', body = null, token = 
       error.status = res.status;
       error.data = data;
 
-      if (res.status === 401 || (res.status === 403 && typeof data?.message === 'string' && data.message.toLowerCase().includes('access denied'))) {
+      const isAuthAction = endpoint.startsWith('/auth/login') ||
+        endpoint.startsWith('/auth/verify-login-otp') ||
+        endpoint.startsWith('/auth/send-login-otp') ||
+        endpoint.startsWith('/auth/forgot-password') ||
+        endpoint.startsWith('/auth/verify-otp') ||
+        endpoint.startsWith('/auth/reset-password') ||
+        endpoint.startsWith('/auth/register');
+
+      if (res.status === 401) {
+        // 401: Normal authentication/session failure (expired JWT, invalid/missing token).
+        // If an explicit login attempt failed with 401, let the caller show the credential error.
+        // For general API calls, clear stale auth data and dispatch a session_expired event.
+        if (!isAuthAction) {
+          if (isAdminCall) {
+            localStorage.removeItem('papido_admin_token');
+            localStorage.removeItem('papido_admin_user');
+            window.dispatchEvent(new CustomEvent('auth:session_expired', { detail: { isAdmin: true } }));
+          } else {
+            localStorage.removeItem('papido_user_token');
+            localStorage.removeItem('papido_user');
+            try {
+              sessionStorage.setItem('papido_auth_error', 'Your session has expired. Please log in again.');
+            } catch (_) {}
+            window.dispatchEvent(new CustomEvent('auth:session_expired', { detail: { isAdmin: false } }));
+          }
+        }
+      } else if (res.status === 403 && data?.code === 'ROLE_VIOLATION') {
+        // 403 with explicit code === 'ROLE_VIOLATION': Genuine authenticated portal role breach
         if (isAdminCall) {
           localStorage.removeItem('papido_admin_token');
           localStorage.removeItem('papido_admin_user');
-          window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: { isAdmin: true } }));
+          window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: { isAdmin: true, reason: 'unauthorized_role' } }));
         } else {
           localStorage.removeItem('papido_user_token');
           localStorage.removeItem('papido_user');
           try {
-            sessionStorage.setItem('papido_auth_error', 'Access Denied: Cross-portal role violation detected. Your session has been terminated for security.');
+            sessionStorage.setItem('papido_auth_error', 'Access Denied: Cross-portal access detected. Your session has been terminated for security.');
           } catch (_) {}
           window.dispatchEvent(new CustomEvent('auth:unauthorized', { detail: { isAdmin: false, reason: 'unauthorized_role' } }));
         }

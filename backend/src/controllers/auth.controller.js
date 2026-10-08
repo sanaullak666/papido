@@ -205,6 +205,14 @@ const AuthController = {
           statusCode: 403
         });
       }
+      if (err.code === 'ROLE_MISMATCH') {
+        return res.status(400).json({
+          success: false,
+          code: 'ROLE_MISMATCH',
+          message: err.message,
+          statusCode: 400
+        });
+      }
       return error(res, err.message, 401);
     }
   },
