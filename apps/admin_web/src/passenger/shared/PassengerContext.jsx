@@ -19,6 +19,29 @@ export function PassengerProvider({ children }) {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [standardCampusFare, setStandardCampusFare] = useState(25);
   const [fareConfigs, setFareConfigs] = useState([]);
+  const [customerProfile, setCustomerProfile] = useState(null);
+  const [onlineDriversCount, setOnlineDriversCount] = useState(0);
+
+  const fetchCustomerProfile = async () => {
+    if (!token) return;
+    try {
+      const res = await apiRequest('/customer/profile', 'GET', null, token);
+      if (res?.data) {
+        setCustomerProfile(res.data);
+      }
+    } catch (_) {}
+  };
+
+  const fetchOnlineDriversCount = async () => {
+    if (!token) return;
+    try {
+      const res = await apiRequest('/customer/rides/check-availability', 'GET', null, token);
+      const count = res?.data?.totalOnlineCount ?? res?.data?.count;
+      if (typeof count === 'number') {
+        setOnlineDriversCount(count);
+      }
+    } catch (_) {}
+  };
 
   const fetchFareConfigs = async () => {
     try {
@@ -97,9 +120,12 @@ export function PassengerProvider({ children }) {
     }
   };
 
-  /* ---------- Fetch fare configs once on mount ---------- */
+  /* ---------- Fetch initial data on mount ---------- */
   useEffect(() => {
     fetchFareConfigs();
+    fetchCustomerProfile();
+    fetchOnlineDriversCount();
+    fetchRideHistory();
   }, [token]);
 
   /* ---------- Dynamic fast polling for active ride status (1.8s active, 6s idle) ---------- */
@@ -122,11 +148,17 @@ export function PassengerProvider({ children }) {
     if (!token) return;
     const handleRefresh = () => {
       fetchActiveRide(true);
+      fetchCustomerProfile();
+      fetchOnlineDriversCount();
+      fetchRideHistory();
     };
     window.addEventListener('focus', handleRefresh);
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
         fetchActiveRide(true);
+        fetchCustomerProfile();
+        fetchOnlineDriversCount();
+        fetchRideHistory();
       }
     };
     document.addEventListener('visibilitychange', handleVisibility);
@@ -136,17 +168,19 @@ export function PassengerProvider({ children }) {
     };
   }, [token]);
 
-  /* ---------- Background polling for secondary data (every 25s) ---------- */
+  /* ---------- Background polling for secondary data (every 8s) ---------- */
   useEffect(() => {
     if (!token) return;
     fetchScheduledRides();
     fetchPendingPenalty();
     fetchFlashFreeRide();
+    fetchOnlineDriversCount();
 
     const interval = setInterval(() => {
       fetchScheduledRides();
       fetchPendingPenalty();
       fetchFlashFreeRide();
+      fetchOnlineDriversCount();
     }, 8000);
 
     return () => clearInterval(interval);
@@ -163,7 +197,22 @@ export function PassengerProvider({ children }) {
       fetchActiveRide(true);
       fetchFareConfigs();
       fetchScheduledRides();
+      fetchCustomerProfile();
+      fetchOnlineDriversCount();
+      fetchRideHistory();
     });
+
+    const handleDriversOnline = (data) => {
+      const count = data?.totalOnlineCount ?? data?.count ?? (Array.isArray(data?.riders) ? data.riders.length : null);
+      if (typeof count === 'number') {
+        setOnlineDriversCount(count);
+      } else {
+        fetchOnlineDriversCount();
+      }
+    };
+    socket.on('riders:online_update', handleDriversOnline);
+    socket.on('driver:online_update', handleDriversOnline);
+    socket.on('driver:status_change', handleDriversOnline);
 
     socket.on('flash_free_ride:new', (d) => setFlashFreeRide(d));
     socket.on('flash_free_ride:claimed', () => setFlashFreeRide(null));
@@ -284,7 +333,9 @@ export function PassengerProvider({ children }) {
     pendingPenalty, setPendingPenalty, fetchPendingPenalty,
     flashFreeRide, setFlashFreeRide, fetchFlashFreeRide,
     pastRides, setPastRides, loadingHistory, fetchRideHistory,
-    standardCampusFare, setStandardCampusFare, fareConfigs, fetchFareConfigs
+    standardCampusFare, setStandardCampusFare, fareConfigs, fetchFareConfigs,
+    customerProfile, setCustomerProfile, fetchCustomerProfile,
+    onlineDriversCount, setOnlineDriversCount, fetchOnlineDriversCount
   };
 
   return <PassengerContext.Provider value={value}>{children}</PassengerContext.Provider>;

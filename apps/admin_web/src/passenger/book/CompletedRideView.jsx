@@ -6,7 +6,7 @@ import { RatingControl } from '../../components/passenger/RatingControl';
 import { CheckCircle2, Phone, Bike } from 'lucide-react';
 
 export function CompletedRideView({ activeRide, token, onClose, setStatusMessage }) {
-  const { standardCampusFare } = usePassenger();
+  const { standardCampusFare, fetchRideHistory } = usePassenger();
   const [ratingVal, setRatingVal] = useState(5);
   const [ratingReview, setRatingReview] = useState('');
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
@@ -25,6 +25,7 @@ export function CompletedRideView({ activeRide, token, onClose, setStatusMessage
       );
       sessionStorage.setItem(`skipped_feedback_${activeRide.id}`, 'true');
       setRatingSubmitted(true);
+      if (typeof fetchRideHistory === 'function') fetchRideHistory();
       setTimeout(onClose, 2000);
     } catch (err) {
       setStatusMessage({ text: err.message || 'Failed to submit rating.', type: 'error' });
@@ -35,6 +36,7 @@ export function CompletedRideView({ activeRide, token, onClose, setStatusMessage
 
   const handleSkip = () => {
     sessionStorage.setItem(`skipped_feedback_${activeRide.id}`, 'true');
+    if (typeof fetchRideHistory === 'function') fetchRideHistory();
     onClose();
   };
 

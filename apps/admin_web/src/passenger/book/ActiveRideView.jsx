@@ -33,21 +33,23 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
   }[activeRide.status] || activeRide.status;
 
   const isEm = ['ACCEPTED', 'RIDER_ARRIVING', 'RIDER_REACHED', 'STARTED'].includes(activeRide.status);
-  const fare = activeRide.total_fare || activeRide.final_fare || activeRide.estimated_fare || (standardCampusFare || 20);
+  const hasRider = Boolean(activeRide.rider_name || activeRide.rider_id);
+  const fare = activeRide.total_fare || activeRide.final_fare || activeRide.estimated_fare || (standardCampusFare || 25);
 
   /* Driver UPI details */
+  const driverName = activeRide.rider_name || 'Assigned Driver';
   const driverUpi = (activeRide.rider_upi_id || '').trim()
-    || (activeRide.rider_phone ? `${activeRide.rider_phone}@upi` : 'driver@upi');
-  const driverName = activeRide.rider_name || 'Murugan S.';
-  const rawFare = activeRide.total_fare || activeRide.final_fare || activeRide.estimated_fare || (standardCampusFare || 20);
+    || (activeRide.rider_phone ? `${activeRide.rider_phone}@upi` : '');
+  const rawFare = activeRide.total_fare || activeRide.final_fare || activeRide.estimated_fare || (standardCampusFare || 25);
   const formattedFare = Number(rawFare).toFixed(2);
 
-  const gpayUrl = `gpay://upi/pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${formattedFare}&cu=INR`;
-  const phonepeUrl = `phonepe://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${formattedFare}&cu=INR`;
-  const upiPayUrl = `upi://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${formattedFare}&cu=INR`;
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(upiPayUrl)}`;
+  const gpayUrl = driverUpi ? `gpay://upi/pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${formattedFare}&cu=INR` : '#';
+  const phonepeUrl = driverUpi ? `phonepe://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${formattedFare}&cu=INR` : '#';
+  const upiPayUrl = driverUpi ? `upi://pay?pa=${encodeURIComponent(driverUpi)}&pn=${encodeURIComponent(driverName)}&am=${formattedFare}&cu=INR` : '#';
+  const qrCodeUrl = driverUpi ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(upiPayUrl)}` : null;
 
   const handleDownloadQr = async () => {
+    if (!qrCodeUrl) return;
     try {
       const response = await fetch(qrCodeUrl);
       const blob = await response.blob();
@@ -64,7 +66,7 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
     }
   };
 
-  const otpStr = String(activeRide.otp || activeRide.otp_code || '4829');
+  const otpStr = activeRide.otp ? String(activeRide.otp) : (activeRide.otp_code ? String(activeRide.otp_code) : '----');
   const otpDigits = otpStr.padStart(4, '0').slice(0, 4).split('');
 
   return (
@@ -187,45 +189,81 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
             {/* Status Pill in Card */}
             <div className="flex items-center justify-between mb-2">
               <span className="ps-driver-status-pill">
-                <span className="ps-driver-status-dot" />
-                {activeRide.status === 'STARTED' ? 'Trip in Progress' : 'Assigned & En Route'}
+                <span className={`ps-driver-status-dot ${!hasRider ? 'animate-pulse' : ''}`} />
+                {hasRider
+                  ? (activeRide.status === 'STARTED' ? 'Trip in Progress' : 'Assigned & En Route')
+                  : 'Searching for Riders'}
               </span>
               <span className="font-body-sm text-xs text-on-surface-variant">
-                Arriving in <strong>2 min</strong>
+                {hasRider ? (activeRide.status === 'STARTED' ? 'On Campus Run' : 'En Route') : 'Fleet Radar Active'}
               </span>
             </div>
 
             {/* Driver Info & Photo matching Stitch */}
-            <div className="flex items-center gap-3 py-2">
-              <div className="ps-driver-avatar-wrap">
-                <img
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5DP2MpkqxTJzbHWF8EbHF4HBCZfrGxcg0mHjmdU8WW-29fr4pYFIMnJdXZCaGUywgWlPvHCiE8FYSzks2MdMj3imjWFMaN-0j7gjvB1vOxh0jNST0v26QQGFrzRWeud_8wFrRJpx6zjYl5Q4HGtvBHKhs1qX2fGk-2d5QbPUrfNyjKmmrMYcfWUXc6v_g05yWvbw5GdnWcquWuCBNofBhkvhkJzqqvIYsHWi7fR0sOMvEbKlHjpWOZA"
-                  alt={driverName}
-                  className="w-14 h-14 rounded-full object-cover shadow-sm bg-surface-container"
-                />
-                <div className="ps-driver-verified-badge">
-                  <Check size={11} color="#FFFFFF" strokeWidth={3} />
-                </div>
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-headline-md font-bold text-on-surface truncate">
-                    {driverName}
-                  </h4>
-                  <div className="ps-driver-rating-badge">
-                    <Star size={13} fill="#EA580C" color="#EA580C" />
-                    <span>{Number(activeRide.rider_rating || 4.9).toFixed(1)}</span>
+            {hasRider ? (
+              <div className="flex items-center gap-3 py-2">
+                <div className="ps-driver-avatar-wrap">
+                  {activeRide.rider_avatar ? (
+                    <img
+                      src={activeRide.rider_avatar}
+                      alt={driverName}
+                      className="w-14 h-14 rounded-full object-cover shadow-sm bg-surface-container"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-xl shadow-xs border border-primary/20">
+                      {(driverName.trim()[0] || 'D').toUpperCase()}
+                    </div>
+                  )}
+                  <div className="ps-driver-verified-badge">
+                    <Check size={11} color="#FFFFFF" strokeWidth={3} />
                   </div>
                 </div>
-                <p className="font-body-sm text-xs text-on-surface-variant">
-                  {activeRide.rider_vehicle_model || 'Hero Splendor EV'}
-                </p>
-                <p className="font-label-sm text-primary font-mono font-bold tracking-wider">
-                  {activeRide.rider_vehicle_number || 'TN-32-AB-4021'}
-                </p>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-headline-md font-bold text-on-surface truncate">
+                      {driverName}
+                    </h4>
+                    {activeRide.rider_rating && (
+                      <div className="ps-driver-rating-badge">
+                        <Star size={13} fill="#EA580C" color="#EA580C" />
+                        <span>{Number(activeRide.rider_rating).toFixed(1)}</span>
+                      </div>
+                    )}
+                  </div>
+                  <p className="font-body-sm text-xs text-on-surface-variant">
+                    {activeRide.rider_vehicle_model || activeRide.vehicle_type || 'Campus Vehicle'}
+                  </p>
+                  {activeRide.rider_vehicle_number && (
+                    <p className="font-label-sm text-primary font-mono font-bold tracking-wider">
+                      {activeRide.rider_vehicle_number}
+                    </p>
+                  )}
+                  {activeRide.rider_phone && (
+                    <a
+                      href={`tel:${activeRide.rider_phone}`}
+                      className="inline-flex items-center gap-1 text-xs text-primary font-semibold hover:underline mt-1"
+                    >
+                      <Phone size={12} /> Call Driver
+                    </a>
+                  )}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex items-center gap-3 py-3">
+                <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <Bike size={24} className="animate-pulse" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-headline-md text-sm font-bold text-on-surface">
+                    Paging Campus Drivers
+                  </h4>
+                  <p className="font-body-sm text-xs text-on-surface-variant">
+                    Alerting active riders nearby. Vehicle will be confirmed shortly.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Perforated ticket divider with semicircular punch cutouts */}
             <div className="ps-ticket-perforated">

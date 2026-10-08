@@ -2,13 +2,14 @@ import React from 'react';
 import { Camera, QrCode, ShieldCheck, BadgeCheck, User } from 'lucide-react';
 
 export function IdentityTerminalCard({ user, stats, onViewQr }) {
-  const name = user?.name || 'Ananya Sharma';
-  const rollNo = user?.roll_no || user?.rollNo || 'PU/2023/MSC/1042';
-  const dept = user?.department || 'M.Sc. Computer Science • Department of Computer Science, Silver Jubilee Campus';
-  const avatarUrl = user?.avatar_url || 'https://lh3.googleusercontent.com/aida-public/AB6AXuAH9866E_WmpeK0_t6E8AYkBOBIHZ91bDvlpdeWeEo9gwCiFqI0xXL41U6qCdKyVH8Y4K4B5NxGwjK8L3n6zJKJF62FNn1vHLdj-hhWX01huBRrreKcYlevVDF56JpwLPpxKvMAIle3-RAzBMhVbbtGjpvnz3YSIl1jqt1Lm3zQLt_gxzi5fHMByWaGfPtvAIKSFHbdvFv_7Z8pAZHXSFKa5nbk2EflkcyfPRDtFTo4COND6Gw1aH8aOQ';
+  const name = user?.name || 'Passenger';
+  const rollNo = user?.roll_no || user?.rollNo || (user?.id ? `PU-${user.id}` : 'PU Member');
+  const dept = user?.department || user?.college || 'Pondicherry University Campus Community';
+  const avatarUrl = user?.profile_image || user?.avatar_url || null;
+  const initialLetter = (name.trim()[0] || 'P').toUpperCase();
 
-  const ridesCount = stats?.totalRides ?? 38;
-  const rating = stats?.avgRating ? stats.avgRating.toFixed(1) : '4.9';
+  const ridesCount = typeof stats?.totalRides === 'number' ? stats.totalRides : 0;
+  const rating = stats?.avgRating ? Number(stats.avgRating).toFixed(1) : '5.0';
 
   return (
     <div className="ps-identity-card ps-fade-up">
@@ -18,26 +19,24 @@ export function IdentityTerminalCard({ user, stats, onViewQr }) {
       {/* Verified Badge */}
       <div className="ps-identity-verified-badge">
         <ShieldCheck size={14} color="#00855B" />
-        <span>Verified Student</span>
+        <span>Verified Campus Member</span>
       </div>
 
       {/* Passenger Avatar with Ring */}
       <div className="relative mt-2 mb-3">
-        <div className="w-24 h-24 rounded-full overflow-hidden p-1 bg-surface-container-high shadow-md">
-          <img
-            src={avatarUrl}
-            alt={name}
-            className="w-full h-full rounded-full object-cover"
-          />
+        <div className="w-24 h-24 rounded-full overflow-hidden p-1 bg-surface-container-high shadow-md flex items-center justify-center">
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt={name}
+              className="w-full h-full rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full rounded-full bg-primary flex items-center justify-center text-white text-3xl font-bold font-headline-lg shadow-inner">
+              {initialLetter}
+            </div>
+          )}
         </div>
-        <button
-          type="button"
-          className="ps-avatar-camera-btn"
-          title="Change Avatar"
-          onClick={() => alert('Profile photo is synchronized with Pondicherry University Samarth Portal.')}
-        >
-          <Camera size={14} />
-        </button>
       </div>
 
       {/* Identity Typography */}

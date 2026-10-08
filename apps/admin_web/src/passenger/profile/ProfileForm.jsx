@@ -13,10 +13,10 @@ const CAMPUS_PICKUP_STATIONS = [
 
 export function ProfileForm({ user, onSave }) {
   const initial = useMemo(() => ({
-    name: user?.name || 'Ananya Sharma',
-    phone: user?.phone || '+91 98765 43210',
-    pickupStation: user?.pickupStation || 'hostel-curie',
-    emergencyContact: user?.emergency_contact || user?.emergencyContact || '+91 94421 87654'
+    name: user?.name || '',
+    phone: user?.phone || '',
+    pickupStation: user?.pickupStation || localStorage.getItem('papido_pref_pickup') || 'gate-main',
+    emergencyContact: user?.emergency_contact || user?.emergencyContact || ''
   }), [user]);
 
   const [form, setForm] = useState(initial);

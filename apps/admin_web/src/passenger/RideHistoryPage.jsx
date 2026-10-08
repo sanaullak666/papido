@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import './history/history.css';
+import { useAuth } from '../context/AuthContext';
+import { apiRequest } from '../api';
 import { usePassenger } from './shared/PassengerContext';
 import { HistoryCard } from './history/HistoryCard';
 import { HistoryEmptyState } from './history/HistoryEmptyState';
@@ -16,6 +18,7 @@ const FILTERS = [
 ];
 
 export function RideHistoryPage() {
+  const { token } = useAuth();
   const { pastRides = [], loadingHistory, fetchRideHistory } = usePassenger();
   const [activeFilter, setActiveFilter] = useState('all');
   const [rateModalTarget, setRateModalTarget] = useState(null); // { tripId, driverName }
@@ -45,15 +48,15 @@ export function RideHistoryPage() {
     return list;
   }, [safePastRides, activeFilter]);
 
-  /* Stats metrics */
+  /* Stats metrics strictly from real data */
   const stats = useMemo(() => {
     const completed = safePastRides.filter(r => r.status === 'COMPLETED');
-    const totalDist = completed.reduce((acc, r) => acc + (parseFloat(r.distance_km) || 1.8), 0);
-    const savings = completed.length * 30; // ₹30 saved per ride vs outside auto
+    const totalDist = completed.reduce((acc, r) => acc + (parseFloat(r.distance_km || r.estimated_distance) || 0), 0);
+    const savings = completed.length * 30;
     return {
-      tripsCount: safePastRides.length || 28,
-      distanceKm: Math.round(totalDist) || 42,
-      savedTaxi: savings || 840
+      tripsCount: safePastRides.length,
+      distanceKm: Math.round(totalDist),
+      savedTaxi: savings
     };
   }, [safePastRides]);
 
@@ -88,8 +91,20 @@ export function RideHistoryPage() {
     showToast(`Exported ${safePastRides.length} ride records to CSV.`);
   };
 
-  const handleRateSubmit = () => {
-    showToast(`Thank you! ${selectedStars}-star rating submitted for ${rateModalTarget?.driverName || 'driver'}.`);
+  const handleRateSubmit = async () => {
+    if (!rateModalTarget?.tripId) return;
+    try {
+      await apiRequest(`/customer/rides/${rateModalTarget.tripId}/rating`, 'POST', {
+        rating: selectedStars,
+        review: feedbackNotes
+      }, token);
+      showToast(`Thank you! ${selectedStars}-star rating submitted.`);
+      if (typeof fetchRideHistory === 'function') {
+        fetchRideHistory();
+      }
+    } catch (err) {
+      showToast(err.message || 'Failed to submit rating.');
+    }
     setRateModalTarget(null);
     setFeedbackNotes('');
   };

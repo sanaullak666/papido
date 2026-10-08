@@ -40,46 +40,25 @@ export function SecuritySection({ user, onChangePassword, onSignOut }) {
           </button>
         </div>
 
-        {/* Connected Devices / Session Log */}
+        {/* Session Status Log */}
         <div className="flex flex-col gap-2 pt-1">
           <span className="font-label-md text-xs text-on-surface font-semibold">
-            Active Authorized Sessions
+            Active Verified Session
           </span>
 
           <div className="flex items-center justify-between p-3 bg-surface-container-low rounded-xl">
             <div className="flex items-center gap-3">
-              <Smartphone size={20} color="#EA580C" />
+              <ShieldCheck size={20} color="#00855B" />
               <div className="flex flex-col">
                 <span className="font-label-md text-xs font-semibold text-on-surface">
-                  Mobile Device • Safari / Chrome
+                  {user?.email || 'Logged In Account'}
                 </span>
                 <span className="font-body-sm text-[11px] text-tertiary font-medium">
-                  Current Session • Pondicherry University WiFi (172.16.4.88)
+                  Active Passenger Portal • Role: {user?.role || 'CUSTOMER'}
                 </span>
               </div>
             </div>
-            <span className="w-2.5 h-2.5 rounded-full bg-tertiary" />
-          </div>
-
-          <div className="flex items-center justify-between p-3 bg-surface-container-low rounded-xl">
-            <div className="flex items-center gap-3">
-              <Laptop size={20} className="text-on-surface-variant" />
-              <div className="flex flex-col">
-                <span className="font-label-md text-xs font-semibold text-on-surface">
-                  MacBook Air • Desktop Browser
-                </span>
-                <span className="font-body-sm text-[11px] text-on-surface-variant">
-                  Active 3 hours ago • CS Lab Wi-Fi
-                </span>
-              </div>
-            </div>
-            <button
-              type="button"
-              className="text-on-surface-variant hover:text-red-600 text-xs font-semibold bg-transparent border-0 cursor-pointer transition-colors"
-              onClick={() => alert('Device session revoked.')}
-            >
-              Revoke
-            </button>
+            <span className="w-2.5 h-2.5 rounded-full bg-tertiary" title="Active Connection" />
           </div>
         </div>
 

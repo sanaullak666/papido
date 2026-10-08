@@ -20,6 +20,12 @@ export function BookRidePage() {
   } = usePassenger();
 
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingRouteInfo, setBookingRouteInfo] = useState({
+    pickupAddress: 'Gate 1 Main Entrance',
+    destAddress: 'Central Library',
+    distanceKm: 1.4,
+    etaMins: 4
+  });
 
   /* ---------- Claim Flash Free Ride ---------- */
   const handleClaimFlash = async () => {
@@ -160,12 +166,13 @@ export function BookRidePage() {
                 onBookingStart={() => setBookingLoading(true)}
                 onBookingEnd={() => setBookingLoading(false)}
                 bookingLoading={bookingLoading}
+                onRouteUpdate={setBookingRouteInfo}
               />
             </div>
 
             {/* Right Column (4 cols): Live Radar & Safety Concierge */}
             <div className="ps-book-col-side">
-              <LiveRadarCard />
+              <LiveRadarCard {...bookingRouteInfo} />
               <FleetConciergeCard />
             </div>
           </div>

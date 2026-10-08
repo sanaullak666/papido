@@ -16,14 +16,17 @@ import {
 
 const HOTSPOTS = [
   { name: 'Gate 1 Main Entrance', icon: 'near_me' },
+  { name: 'Madame Curie Girls Hostel', icon: 'apartment' },
   { name: 'Silver Jubilee Hostel', icon: 'apartment' },
-  { name: 'Library Roundabout', icon: 'local_library' },
-  { name: 'Science Block Complex', icon: 'biotech' }
+  { name: 'Central Library', icon: 'local_library' },
+  { name: 'Science Complex / Physics Dept', icon: 'biotech' },
+  { name: 'University Canteen & Food Court', icon: 'restaurant' }
 ];
 
 export function BookingForm({
   user, token,
-  onBookingStart, onBookingEnd, bookingLoading
+  onBookingStart, onBookingEnd, bookingLoading,
+  onRouteUpdate
 }) {
   const {
     activeRide, setActiveRide, scheduledRides, fetchScheduledRides,
@@ -135,6 +138,18 @@ export function BookingForm({
     };
     run();
   }, [pickupCoords, destCoords, pickupAddress, destAddress, vehicleType, isDoubleRide, token]);
+
+  /* Broadcast real route to LiveRadarCard */
+  useEffect(() => {
+    if (typeof onRouteUpdate === 'function') {
+      onRouteUpdate({
+        pickupAddress,
+        destAddress,
+        distanceKm: fareEstimate?.distanceKm || 1.4,
+        etaMins: fareEstimate?.durationMinutes || 4
+      });
+    }
+  }, [pickupAddress, destAddress, fareEstimate, onRouteUpdate]);
 
   const isFemaleUser = (user?.gender || '').toUpperCase() === 'FEMALE';
   const effectiveFemaleOnly = isFemaleUser && Boolean(femaleRiderOnly);
@@ -398,6 +413,7 @@ export function BookingForm({
               type="text"
               className="ps-pill-input"
               value={pickupAddress}
+              list="campus-stops-list"
               onChange={(e) => {
                 setPickupAddress(e.target.value);
                 setPickupCoords(findStopCoords(e.target.value));
@@ -405,6 +421,13 @@ export function BookingForm({
               placeholder="Enter pickup spot or choose below..."
             />
           </div>
+
+          {/* Datalist for all campus stops */}
+          <datalist id="campus-stops-list">
+            {(adminStops.length > 0 ? adminStops : CAMPUS_HOTSPOTS.map(s => s.name)).map((stopName) => (
+              <option key={stopName} value={stopName} />
+            ))}
+          </datalist>
 
           {/* Hotspots chips matching Stitch */}
           <div className="ps-hotspots-bar">
@@ -451,6 +474,7 @@ export function BookingForm({
               type="text"
               className="ps-pill-input"
               value={destAddress}
+              list="campus-stops-list"
               onChange={(e) => {
                 setDestAddress(e.target.value);
                 setDestCoords(findStopCoords(e.target.value));
@@ -478,6 +502,7 @@ export function BookingForm({
                 className="ps-pill-input"
                 placeholder="Via Stop: (e.g. Student Canteen #2)"
                 value={viaAddress}
+                list="campus-stops-list"
                 onChange={(e) => {
                   setViaAddress(e.target.value);
                   setViaCoords(findStopCoords(e.target.value));

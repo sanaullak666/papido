@@ -44,20 +44,23 @@ export function PassengerProfilePage() {
       : 0;
 
     return {
-      totalRides: completed.length || 38,
-      avgRating: avgRating || 4.9,
-      upcoming: Array.isArray(scheduledRides) ? scheduledRides.length : 2
+      totalRides: completed.length,
+      avgRating: avgRating > 0 ? avgRating : 5.0,
+      upcoming: Array.isArray(scheduledRides) ? scheduledRides.length : 0
     };
   }, [pastRides, scheduledRides]);
 
   const handleSaveProfile = async (payload) => {
     try {
+      if (payload.pickupStation) {
+        localStorage.setItem('papido_pref_pickup', payload.pickupStation);
+      }
       if (typeof updateProfile === 'function') {
         await updateProfile(payload);
       }
       setFeedback({
         type: 'success',
-        msg: 'Profile & pickup preferences updated successfully.'
+        msg: 'Profile updated successfully.'
       });
       return true;
     } catch (err) {

@@ -17,13 +17,20 @@ export function ScheduledRideCard({ ride, index, onReschedule, onCancel }) {
 
   const pickupStop = (ride.pickup_address || 'Campus Stop').split('(')[0].trim();
   const pickupSub = (ride.pickup_address || '').includes('(')
-    ? (ride.pickup_address.match(/\((.*?)\)/)?.[1] || 'East Quadrangle Gate')
-    : 'Campus Terminal Bay';
+    ? (ride.pickup_address.match(/\((.*?)\)/)?.[1] || '')
+    : '';
 
   const dropStop = (ride.destination_address || 'Campus Stop').split('(')[0].trim();
   const dropSub = (ride.destination_address || '').includes('(')
-    ? (ride.destination_address.match(/\((.*?)\)/)?.[1] || 'Central Transit Portico')
-    : 'University Department';
+    ? (ride.destination_address.match(/\((.*?)\)/)?.[1] || '')
+    : '';
+
+  const driverName = ride.rider_name || 'Assigned Driver';
+  const driverInitial = (driverName.trim()[0] || 'D').toUpperCase();
+  const driverAvatar = ride.rider_avatar || null;
+  const driverRating = ride.rider_rating ? Number(ride.rider_rating).toFixed(1) : '5.0';
+  const vehicleModel = ride.rider_vehicle_model || ride.vehicle_type || 'Campus Vehicle';
+  const vehicleNumber = ride.rider_vehicle_number || '';
 
   return (
     <div
@@ -62,7 +69,7 @@ export function ScheduledRideCard({ ride, index, onReschedule, onCancel }) {
           <span>{formatRideDateTime(scheduledTime)}</span>
         </div>
         <span className="font-label-sm text-primary uppercase font-bold tracking-wider">
-          {ride.tag || 'Standard Booking'}
+          {ride.tag || 'Advance Reservation'}
         </span>
       </div>
 
@@ -77,17 +84,17 @@ export function ScheduledRideCard({ ride, index, onReschedule, onCancel }) {
           <div className="space-y-3">
             <div>
               <p className="font-label-sm text-on-surface-variant uppercase tracking-wider text-[11px]">
-                Pickup Terminal
+                Pickup Point
               </p>
               <p className="font-label-md text-on-surface font-semibold">{pickupStop}</p>
-              <p className="font-body-sm text-on-surface-variant text-xs">{pickupSub}</p>
+              {pickupSub && <p className="font-body-sm text-on-surface-variant text-xs">{pickupSub}</p>}
             </div>
             <div>
               <p className="font-label-sm text-on-surface-variant uppercase tracking-wider text-[11px]">
                 Drop Location
               </p>
               <p className="font-label-md text-on-surface font-semibold">{dropStop}</p>
-              <p className="font-body-sm text-on-surface-variant text-xs">{dropSub}</p>
+              {dropSub && <p className="font-body-sm text-on-surface-variant text-xs">{dropSub}</p>}
             </div>
           </div>
         </div>
@@ -97,7 +104,7 @@ export function ScheduledRideCard({ ride, index, onReschedule, onCancel }) {
           <div className="ps-sched-snippet-bg" />
           <div className="ps-sched-snippet-pill">
             <Navigation size={13} color="#00855B" />
-            <span>2.4 km Transit Run</span>
+            <span>Campus Transit Run</span>
           </div>
         </div>
       </div>
@@ -107,25 +114,31 @@ export function ScheduledRideCard({ ride, index, onReschedule, onCancel }) {
         <div className="ps-sched-driver-segment">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <img
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKEx3NkROvvxoYSIMLJIWUX1mQi-rnHJjgJfK9mDL_r70BapxYaJ1bE_-aFN5x6WZHhPVtIoL4__c9OL94wgbXCo0DlVuhbAFB0b0-WoTp62ZbS0Q0B9-_tCn-hiEEtrdPeL9XUMe9lmeSJURbGkP2SFxzfLWlg58sy8ZxSmEvdoe5UvNyd8pHioCwx5l1UmEZmm58qM3IM44YPqxm_Lc41bkB3xbJNyhqtSdauNQmHu-Vyn7knaFQnQ"
-                alt="Murugan S."
-                className="w-11 h-11 rounded-full object-cover shadow-sm bg-surface-container"
-              />
+              {driverAvatar ? (
+                <img
+                  src={driverAvatar}
+                  alt={driverName}
+                  className="w-11 h-11 rounded-full object-cover shadow-sm bg-surface-container"
+                />
+              ) : (
+                <div className="w-11 h-11 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-sm shadow-xs border border-primary/20">
+                  {driverInitial}
+                </div>
+              )}
               <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-tertiary" />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="font-label-md font-bold text-on-surface">
-                  {ride.rider_name || 'Murugan S.'}
+                  {driverName}
                 </span>
                 <span className="ps-driver-rating-badge text-xs">
                   <Star size={11} fill="#EA580C" color="#EA580C" />
-                  <span>4.9</span>
+                  <span>{driverRating}</span>
                 </span>
               </div>
               <p className="font-body-sm text-xs text-on-surface-variant">
-                {ride.rider_vehicle_model || 'TVS Jupiter'} · <span className="font-semibold text-on-surface">{ride.rider_vehicle_number || 'TN-32-BK-9182'}</span>
+                {vehicleModel} {vehicleNumber ? `· ${vehicleNumber}` : ''}
               </p>
             </div>
           </div>

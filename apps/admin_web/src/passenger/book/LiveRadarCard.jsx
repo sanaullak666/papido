@@ -2,9 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { usePassenger } from '../shared/PassengerContext';
 import { Navigation, Share2, Shield, Timer, Radio } from 'lucide-react';
 
-export function LiveRadarCard({ pickupAddress, destAddress, distanceKm = 1.4, etaMins = 4 }) {
-  const { socketRef } = usePassenger();
-  const [onlineCount, setOnlineCount] = useState(8);
+export function LiveRadarCard({ pickupAddress, destAddress, distanceKm, etaMins }) {
+  const { socketRef, onlineDriversCount } = usePassenger();
+  const [onlineCount, setOnlineCount] = useState(onlineDriversCount || 0);
+
+  useEffect(() => {
+    if (typeof onlineDriversCount === 'number') {
+      setOnlineCount(onlineDriversCount);
+    }
+  }, [onlineDriversCount]);
 
   useEffect(() => {
     const socket = socketRef?.current;
@@ -15,7 +21,7 @@ export function LiveRadarCard({ pickupAddress, destAddress, distanceKm = 1.4, et
         data?.totalOnlineCount ??
         data?.count ??
         (Array.isArray(data?.riders) ? data.riders.length : null);
-      if (typeof count === 'number' && count > 0) setOnlineCount(count);
+      if (typeof count === 'number') setOnlineCount(count);
     };
 
     socket.on('riders:online_update', handleOnline);
@@ -28,7 +34,9 @@ export function LiveRadarCard({ pickupAddress, destAddress, distanceKm = 1.4, et
   }, [socketRef]);
 
   const pShort = (pickupAddress || 'Gate 1 Main Entrance').split('(')[0].trim();
-  const dShort = (destAddress || 'Management Studies Dept').split('(')[0].trim();
+  const dShort = (destAddress || 'Central Library').split('(')[0].trim();
+  const dist = distanceKm ? Number(distanceKm).toFixed(1) : '1.4';
+  const eta = etaMins ? Math.round(Number(etaMins)) : '4';
 
   return (
     <div className="ps-radar-card ps-fade-up">
@@ -41,7 +49,7 @@ export function LiveRadarCard({ pickupAddress, destAddress, distanceKm = 1.4, et
           <span>PU Mobility Live Radar</span>
         </div>
         <span className="ps-radar-drivers-badge">
-          {onlineCount} Drivers Nearby
+          {onlineCount > 0 ? `${onlineCount} Driver${onlineCount === 1 ? '' : 's'} Online` : 'Scanning Fleet'}
         </span>
       </div>
 

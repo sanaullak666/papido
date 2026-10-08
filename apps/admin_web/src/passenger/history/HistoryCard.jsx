@@ -34,18 +34,18 @@ export function HistoryCard({ ride, index, onRate, onDownloadReceipt }) {
         ride.created_at || ride.accepted_at
       );
 
-  const pickup = ride.pickup_address || 'Science Block Dept';
-  const drop = ride.destination_address || 'Gate 2 Canteen & Bus Bay';
+  const pickup = ride.pickup_address || 'Campus Location';
+  const drop = ride.destination_address || 'Campus Destination';
 
-  const riderName = ride.rider_name || (isOutside ? 'Muthu K.' : isPrebooked ? 'Rajesh S.' : 'Vijay K.');
-  const riderRating = ride.rating || ride.rider_rating || (isOutside ? '4.8' : '4.9');
+  const hasRider = Boolean(ride.rider_name || ride.rider_id);
+  const riderName = ride.rider_name || (isCancelled ? 'No driver assigned' : 'Awaiting Driver Assignment');
+  const riderRating = ride.rider_rating ? Number(ride.rider_rating).toFixed(1) : (hasRider ? '5.0' : null);
   const vehicleText = ride.rider_vehicle_number
     ? `${ride.vehicle_type || 'Vehicle'} · ${ride.rider_vehicle_number}`
-    : (ride.rider_vehicle_model || (isOutside ? 'Reg: PY-01-BK-4412' : isPrebooked ? 'PU Green Shuttle #03' : 'Electric Scooter #08'));
+    : (ride.rider_vehicle_model || (hasRider ? (ride.vehicle_type || 'Campus Vehicle') : ''));
 
-  const driverPhoto = isOutside
-    ? 'https://lh3.googleusercontent.com/aida-public/AB6AXuAo3t90jpv084z6zyuvILfF-ZK37-mu55V0nSWQ4qBVOgUasaeGoP6p5whZvOr-SltbVCKcY-zsY2_WJ2siTZcM1ccB2rKMtLtRw6NbcfH2dUp2Iy9jyqL06DXDMCKFUTpjFMCZ6xWpbY8OfWlLTSERyuBNMFjHb16BJn9uwKzV6_pVi5CD42rtIuFO7_B7GdXja4GNSOmQlUy8dLDO6YBjfDeUiIZhFThQr-Ezmn3z-i3QlWVyhoYQLA'
-    : 'https://lh3.googleusercontent.com/aida-public/AB6AXuD0c5JJjWAnKJTWXhg4-wGnXgOwFBGd5WmKFu7kOqjohYf58wznRerJumRuELnn-ibKgb8RN3YG08TahVljCIVPVspytPaAmoadvepgIdE65rrm6b_gCUm9nn4DkF9OidNBeL5JNxE6FUBX_wb3M7GESNrocEACu2VSVAvbg_PV0jUJjCuQoN4sLd_sSURULN1Klq2KGk5N6tziHwhsGwHCAPUIuN6k-8LerNcj54mx1XSzUcCBPHzwmQ';
+  const driverPhoto = ride.rider_avatar || null;
+  const driverInitial = (riderName.trim()[0] || 'D').toUpperCase();
 
   const handleReceiptClick = () => {
     setExpanded(v => !v);
@@ -53,7 +53,7 @@ export function HistoryCard({ ride, index, onRate, onDownloadReceipt }) {
   };
 
   const handleRateClick = () => {
-    if (onRate) onRate(rideCode, riderName);
+    if (onRate) onRate(ride.id, riderName);
   };
 
   return (
@@ -127,14 +127,21 @@ export function HistoryCard({ ride, index, onRate, onDownloadReceipt }) {
         </div>
 
         {/* Middle: Driver & Pilot Details */}
-        {!isCancelled && (
+        {/* Middle: Driver & Vehicle Details */}
+        {!isCancelled && hasRider && (
           <div className="flex items-center gap-3 w-full sm:w-auto bg-surface-container-low px-4 py-2.5 rounded-xl border border-outline-variant/30">
             <div className="relative shrink-0">
-              <img
-                src={driverPhoto}
-                alt={riderName}
-                className="w-11 h-11 rounded-full object-cover shadow-sm bg-surface-container"
-              />
+              {driverPhoto ? (
+                <img
+                  src={driverPhoto}
+                  alt={riderName}
+                  className="w-11 h-11 rounded-full object-cover shadow-sm bg-surface-container"
+                />
+              ) : (
+                <div className="w-11 h-11 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-sm shadow-xs border border-primary/20">
+                  {driverInitial}
+                </div>
+              )}
               <div className="absolute -bottom-1 -right-1 bg-white p-0.5 rounded-full shadow-xs flex items-center">
                 <ShieldCheck size={12} color="#00855B" />
               </div>
@@ -142,12 +149,14 @@ export function HistoryCard({ ride, index, onRate, onDownloadReceipt }) {
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
                 <span className="font-label-md font-bold text-on-surface text-sm">{riderName}</span>
-                <div className="flex items-center gap-0.5 bg-white px-1.5 py-0.2 rounded font-bold text-xs shadow-xs text-amber-700">
-                  <Star size={11} fill="#EA580C" color="#EA580C" />
-                  <span>{riderRating}</span>
-                </div>
+                {riderRating && (
+                  <div className="flex items-center gap-0.5 bg-white px-1.5 py-0.2 rounded font-bold text-xs shadow-xs text-amber-700">
+                    <Star size={11} fill="#EA580C" color="#EA580C" />
+                    <span>{riderRating}</span>
+                  </div>
+                )}
               </div>
-              <span className="font-body-sm text-xs text-on-surface-variant">{vehicleText}</span>
+              {vehicleText && <span className="font-body-sm text-xs text-on-surface-variant">{vehicleText}</span>}
             </div>
           </div>
         )}
