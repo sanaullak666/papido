@@ -1,0 +1,608 @@
+/* ============================================================
+   PAPIDO — Stitch Design System Utilities & Tokens
+   Scoped exclusively to .passenger-shell (Passenger Web Portal)
+   Maintains Papido Warm Brand Theme (Orange/Amber & Soft Beige)
+   Zero impact on Admin, Driver, or Rider portals.
+   ============================================================ */
+
+/* ---------- 1. Design Tokens Mapped to Papido Brand ---------- */
+.passenger-shell {
+  --primary: #EA580C;
+  --primary-hover: #C2410C;
+  --primary-container: #CC4900;
+  --primary-fixed: #FFDBCE;
+  --primary-fixed-dim: #FFB599;
+  --on-primary: #FFFFFF;
+  --on-primary-fixed: #370E00;
+  --on-primary-container: #FFFBFF;
+
+  --secondary: #0058BE;
+  --secondary-container: #2170E4;
+  --secondary-fixed: #D8E2FF;
+  --secondary-fixed-dim: #ADC6FF;
+  --on-secondary: #FFFFFF;
+  --on-secondary-fixed: #001A42;
+
+  --tertiary: #00855B;
+  --tertiary-container: #00855B;
+  --tertiary-fixed: #D1FAE5;
+  --tertiary-fixed-dim: #A7F3D0;
+  --on-tertiary: #FFFFFF;
+  --on-tertiary-fixed: #065F46;
+
+  --surface: #FFF8F5;
+  --surface-dim: #E8D7CA;
+  --surface-bright: #FFF8F5;
+  --surface-container-lowest: #FFFFFF;
+  --surface-container-low: #FFF1E8;
+  --surface-container: #FDEBDD;
+  --surface-container-high: #F7E5D8;
+  --surface-container-highest: #F1DFD2;
+  --surface-variant: #F1DFD2;
+
+  --on-surface: #271E16;
+  --on-surface-variant: #5A4138;
+  --outline: #8E7166;
+  --outline-variant: #E2BFB2;
+
+  --error: #DC2626;
+  --error-container: #FEE2E2;
+  --on-error: #FFFFFF;
+  --on-error-container: #991B1B;
+}
+
+/* ---------- 2. Master 12-Column Responsive Bento Layout ---------- */
+.passenger-shell .ps-book-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 24px;
+  align-items: start;
+  width: 100%;
+}
+.passenger-shell .ps-book-col-main {
+  grid-column: span 8 / span 8;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+  width: 100%;
+}
+.passenger-shell .ps-book-col-side {
+  grid-column: span 4 / span 4;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .passenger-shell .ps-book-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .passenger-shell .ps-book-col-main,
+  .passenger-shell .ps-book-col-side {
+    grid-column: span 1;
+    width: 100%;
+  }
+}
+
+/* ---------- 3. Display Utilities ---------- */
+.passenger-shell .block { display: block; }
+.passenger-shell .inline-block { display: inline-block; }
+.passenger-shell .inline { display: inline; }
+.passenger-shell .flex { display: flex; }
+.passenger-shell .inline-flex { display: inline-flex; }
+.passenger-shell .grid { display: grid; }
+.passenger-shell .hidden { display: none; }
+
+/* Responsive Display */
+@media (min-width: 640px) {
+  .passenger-shell .sm\:block { display: block; }
+  .passenger-shell .sm\:inline-block { display: inline-block; }
+  .passenger-shell .sm\:flex { display: flex; }
+  .passenger-shell .sm\:inline-flex { display: inline-flex; }
+  .passenger-shell .sm\:hidden { display: none; }
+}
+@media (min-width: 768px) {
+  .passenger-shell .md\:block { display: block; }
+  .passenger-shell .md\:flex { display: flex; }
+  .passenger-shell .md\:inline-flex { display: inline-flex; }
+  .passenger-shell .md\:hidden { display: none; }
+}
+@media (min-width: 1024px) {
+  .passenger-shell .lg\:block { display: block; }
+  .passenger-shell .lg\:flex { display: flex; }
+  .passenger-shell .lg\:hidden { display: none; }
+}
+
+/* ---------- 4. Flexbox Direction & Wrap ---------- */
+.passenger-shell .flex-col { flex-direction: column; }
+.passenger-shell .flex-row { flex-direction: row; }
+.passenger-shell .flex-wrap { flex-wrap: wrap; }
+.passenger-shell .flex-nowrap { flex-wrap: nowrap; }
+.passenger-shell .flex-1 { flex: 1 1 0%; }
+.passenger-shell .flex-auto { flex: 1 1 auto; }
+.passenger-shell .flex-initial { flex: 0 1 auto; }
+.passenger-shell .flex-none { flex: none; }
+.passenger-shell .flex-grow { flex-grow: 1; }
+.passenger-shell .shrink-0 { flex-shrink: 0; }
+
+@media (min-width: 640px) {
+  .passenger-shell .sm\:flex-row { flex-direction: row; }
+  .passenger-shell .sm\:flex-col { flex-direction: column; }
+  .passenger-shell .sm\:flex-nowrap { flex-wrap: nowrap; }
+  .passenger-shell .sm\:w-auto { width: auto; }
+  .passenger-shell .sm\:self-auto { align-self: auto; }
+}
+@media (min-width: 768px) {
+  .passenger-shell .md\:flex-row { flex-direction: row; }
+  .passenger-shell .md\:flex-col { flex-direction: column; }
+  .passenger-shell .md\:self-auto { align-self: auto; }
+}
+@media (min-width: 1024px) {
+  .passenger-shell .lg\:flex-row { flex-direction: row; }
+  .passenger-shell .lg\:flex-col { flex-direction: column; }
+}
+
+/* Alignment & Justification */
+.passenger-shell .items-start { align-items: flex-start; }
+.passenger-shell .items-center { align-items: center; }
+.passenger-shell .items-end { align-items: flex-end; }
+.passenger-shell .items-baseline { align-items: baseline; }
+.passenger-shell .items-stretch { align-items: stretch; }
+
+.passenger-shell .justify-start { justify-content: flex-start; }
+.passenger-shell .justify-center { justify-content: center; }
+.passenger-shell .justify-end { justify-content: flex-end; }
+.passenger-shell .justify-between { justify-content: space-between; }
+.passenger-shell .justify-around { justify-content: space-around; }
+
+.passenger-shell .self-start { align-self: flex-start; }
+.passenger-shell .self-end { align-self: flex-end; }
+.passenger-shell .self-center { align-self: center; }
+.passenger-shell .self-stretch { align-self: stretch; }
+.passenger-shell .self-auto { align-self: auto; }
+
+@media (min-width: 640px) {
+  .passenger-shell .sm\:items-center { align-items: center; }
+  .passenger-shell .sm\:items-start { align-items: flex-start; }
+}
+@media (min-width: 768px) {
+  .passenger-shell .md\:items-center { align-items: center; }
+  .passenger-shell .md\:items-end { align-items: flex-end; }
+  .passenger-shell .md\:items-start { align-items: flex-start; }
+}
+@media (min-width: 1024px) {
+  .passenger-shell .lg\:items-center { align-items: center; }
+  .passenger-shell .lg\:items-start { align-items: flex-start; }
+}
+
+/* ---------- 5. Grid Columns Utilities ---------- */
+.passenger-shell .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+.passenger-shell .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.passenger-shell .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.passenger-shell .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.passenger-shell .grid-cols-12 { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+
+.passenger-shell .col-span-1 { grid-column: span 1 / span 1; }
+.passenger-shell .col-span-2 { grid-column: span 2 / span 2; }
+.passenger-shell .col-span-3 { grid-column: span 3 / span 3; }
+.passenger-shell .col-span-4 { grid-column: span 4 / span 4; }
+.passenger-shell .col-span-5 { grid-column: span 5 / span 5; }
+.passenger-shell .col-span-6 { grid-column: span 6 / span 6; }
+.passenger-shell .col-span-7 { grid-column: span 7 / span 7; }
+.passenger-shell .col-span-8 { grid-column: span 8 / span 8; }
+.passenger-shell .col-span-12 { grid-column: span 12 / span 12; }
+
+@media (min-width: 640px) {
+  .passenger-shell .sm\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .passenger-shell .sm\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 768px) {
+  .passenger-shell .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .passenger-shell .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 1024px) {
+  .passenger-shell .lg\:grid-cols-12 { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  .passenger-shell .lg\:col-span-4 { grid-column: span 4 / span 4; }
+  .passenger-shell .lg\:col-span-5 { grid-column: span 5 / span 5; }
+  .passenger-shell .lg\:col-span-7 { grid-column: span 7 / span 7; }
+  .passenger-shell .lg\:col-span-8 { grid-column: span 8 / span 8; }
+  .passenger-shell .lg\:w-5\/12 { width: 41.666667%; }
+  .passenger-shell .lg\:w-7\/12 { width: 58.333333%; }
+}
+@media (min-width: 1280px) {
+  .passenger-shell .xl\:col-span-8 { grid-column: span 8 / span 8; }
+}
+
+/* ---------- 6. Gap & Spacing Utilities ---------- */
+.passenger-shell .gap-1 { gap: 0.25rem; }
+.passenger-shell .gap-1\.5 { gap: 0.375rem; }
+.passenger-shell .gap-2 { gap: 0.5rem; }
+.passenger-shell .gap-2\.5 { gap: 0.625rem; }
+.passenger-shell .gap-3 { gap: 0.75rem; }
+.passenger-shell .gap-4 { gap: 1rem; }
+.passenger-shell .gap-5 { gap: 1.25rem; }
+.passenger-shell .gap-6 { gap: 1.5rem; }
+.passenger-shell .gap-8 { gap: 2rem; }
+
+.passenger-shell .gap-space-xs { gap: 0.25rem; }
+.passenger-shell .gap-space-sm { gap: 0.5rem; }
+.passenger-shell .gap-space-md { gap: 1rem; }
+.passenger-shell .gap-space-lg { gap: 1.5rem; }
+.passenger-shell .gap-space-xl { gap: 2.5rem; }
+
+@media (min-width: 640px) {
+  .passenger-shell .sm\:gap-2 { gap: 0.5rem; }
+  .passenger-shell .sm\:gap-3 { gap: 0.75rem; }
+}
+
+.passenger-shell .space-y-1 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.25rem; }
+.passenger-shell .space-y-2 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.5rem; }
+.passenger-shell .space-y-3 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.75rem; }
+.passenger-shell .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 1rem; }
+.passenger-shell .space-y-space-md > :not([hidden]) ~ :not([hidden]) { margin-top: 1rem; }
+.passenger-shell .space-y-space-lg > :not([hidden]) ~ :not([hidden]) { margin-top: 1.5rem; }
+
+/* Paddings */
+.passenger-shell .p-1 { padding: 0.25rem; }
+.passenger-shell .p-1\.5 { padding: 0.375rem; }
+.passenger-shell .p-2 { padding: 0.5rem; }
+.passenger-shell .p-2\.5 { padding: 0.625rem; }
+.passenger-shell .p-3 { padding: 0.75rem; }
+.passenger-shell .p-3\.5 { padding: 0.875rem; }
+.passenger-shell .p-4 { padding: 1rem; }
+.passenger-shell .p-5 { padding: 1.25rem; }
+.passenger-shell .p-6 { padding: 1.5rem; }
+.passenger-shell .p-space-xs { padding: 0.25rem; }
+.passenger-shell .p-space-sm { padding: 0.5rem; }
+.passenger-shell .p-space-md { padding: 1rem; }
+.passenger-shell .p-space-lg { padding: 1.5rem; }
+.passenger-shell .p-space-xl { padding: 2.5rem; }
+
+.passenger-shell .px-1 { padding-left: 0.25rem; padding-right: 0.25rem; }
+.passenger-shell .px-1\.5 { padding-left: 0.375rem; padding-right: 0.375rem; }
+.passenger-shell .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+.passenger-shell .px-2\.5 { padding-left: 0.625rem; padding-right: 0.625rem; }
+.passenger-shell .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+.passenger-shell .px-3\.5 { padding-left: 0.875rem; padding-right: 0.875rem; }
+.passenger-shell .px-4 { padding-left: 1rem; padding-right: 1rem; }
+.passenger-shell .px-5 { padding-left: 1.25rem; padding-right: 1.25rem; }
+.passenger-shell .px-margin { padding-left: 2rem; padding-right: 2rem; }
+.passenger-shell .px-space-xs { padding-left: 0.25rem; padding-right: 0.25rem; }
+.passenger-shell .px-space-md { padding-left: 1rem; padding-right: 1rem; }
+
+.passenger-shell .py-0\.5 { padding-top: 0.125rem; padding-bottom: 0.125rem; }
+.passenger-shell .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+.passenger-shell .py-1\.5 { padding-top: 0.375rem; padding-bottom: 0.375rem; }
+.passenger-shell .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+.passenger-shell .py-2\.5 { padding-top: 0.625rem; padding-bottom: 0.625rem; }
+.passenger-shell .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+.passenger-shell .py-space-xs { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+.passenger-shell .py-space-md { padding-top: 1rem; padding-bottom: 1rem; }
+.passenger-shell .py-space-xl { padding-top: 2.5rem; padding-bottom: 2.5rem; }
+
+.passenger-shell .pt-0\.5 { padding-top: 0.125rem; }
+.passenger-shell .pt-1 { padding-top: 0.25rem; }
+.passenger-shell .pt-2 { padding-top: 0.5rem; }
+.passenger-shell .pt-3 { padding-top: 0.75rem; }
+.passenger-shell .pb-2 { padding-bottom: 0.5rem; }
+.passenger-shell .pb-3 { padding-bottom: 0.75rem; }
+.passenger-shell .pl-2 { padding-left: 0.5rem; }
+.passenger-shell .pl-3\.5 { padding-left: 0.875rem; }
+.passenger-shell .pl-11 { padding-left: 2.75rem; }
+.passenger-shell .pr-3\.5 { padding-right: 0.875rem; }
+.passenger-shell .pr-space-md { padding-right: 1rem; }
+.passenger-shell .pr-24 { padding-right: 6rem; }
+
+/* Margins */
+.passenger-shell .m-0 { margin: 0; }
+.passenger-shell .mt-0\.5 { margin-top: 0.125rem; }
+.passenger-shell .mt-1 { margin-top: 0.25rem; }
+.passenger-shell .mt-2 { margin-top: 0.5rem; }
+.passenger-shell .mt-3 { margin-top: 0.75rem; }
+.passenger-shell .mt-4 { margin-top: 1rem; }
+.passenger-shell .mb-1 { margin-bottom: 0.25rem; }
+.passenger-shell .mb-2 { margin-bottom: 0.5rem; }
+.passenger-shell .mb-3 { margin-bottom: 0.75rem; }
+.passenger-shell .mb-4 { margin-bottom: 1rem; }
+.passenger-shell .mb-space-md { margin-bottom: 1rem; }
+.passenger-shell .mb-space-lg { margin-bottom: 1.5rem; }
+.passenger-shell .my-1 { margin-top: 0.25rem; margin-bottom: 0.25rem; }
+.passenger-shell .my-space-md { margin-top: 1rem; margin-bottom: 1rem; }
+.passenger-shell .ml-1\.5 { margin-left: 0.375rem; }
+.passenger-shell .mx-auto { margin-left: auto; margin-right: auto; }
+
+/* ---------- 7. Sizing Utilities ---------- */
+.passenger-shell .w-full { width: 100%; }
+.passenger-shell .w-auto { width: auto; }
+.passenger-shell .h-full { height: 100%; }
+.passenger-shell .h-auto { height: auto; }
+.passenger-shell .min-w-0 { min-width: 0; }
+.passenger-shell .max-w-xs { max-width: 20rem; }
+.passenger-shell .max-w-2xl { max-width: 42rem; }
+.passenger-shell .max-w-7xl { max-width: 80rem; }
+
+.passenger-shell .w-0\.5 { width: 0.125rem; }
+.passenger-shell .w-1 { width: 0.25rem; }
+.passenger-shell .w-1\.5 { width: 0.375rem; }
+.passenger-shell .w-2 { width: 0.5rem; }
+.passenger-shell .w-2\.5 { width: 0.625rem; }
+.passenger-shell .w-3 { width: 0.75rem; }
+.passenger-shell .w-4 { width: 1rem; }
+.passenger-shell .w-6 { width: 1.5rem; }
+.passenger-shell .w-7 { width: 1.75rem; }
+.passenger-shell .w-8 { width: 2rem; }
+.passenger-shell .w-9 { width: 2.25rem; }
+.passenger-shell .w-10 { width: 2.5rem; }
+.passenger-shell .w-11 { width: 2.75rem; }
+.passenger-shell .w-14 { width: 3.5rem; }
+.passenger-shell .w-16 { width: 4rem; }
+.passenger-shell .w-24 { width: 6rem; }
+.passenger-shell .w-28 { width: 7rem; }
+.passenger-shell .w-36 { width: 9rem; }
+.passenger-shell .w-44 { width: 11rem; }
+
+.passenger-shell .h-0\.5 { height: 0.125rem; }
+.passenger-shell .h-1 { height: 0.25rem; }
+.passenger-shell .h-1\.5 { height: 0.375rem; }
+.passenger-shell .h-2 { height: 0.5rem; }
+.passenger-shell .h-2\.5 { height: 0.625rem; }
+.passenger-shell .h-3 { height: 0.75rem; }
+.passenger-shell .h-4 { height: 1rem; }
+.passenger-shell .h-6 { height: 1.5rem; }
+.passenger-shell .h-7 { height: 1.75rem; }
+.passenger-shell .h-8 { height: 2rem; }
+.passenger-shell .h-9 { height: 2.25rem; }
+.passenger-shell .h-10 { height: 2.5rem; }
+.passenger-shell .h-14 { height: 3.5rem; }
+.passenger-shell .h-24 { height: 6rem; }
+.passenger-shell .h-28 { height: 7rem; }
+.passenger-shell .h-px { height: 1px; }
+
+/* ---------- 8. Positioning Utilities ---------- */
+.passenger-shell .relative { position: relative; }
+.passenger-shell .absolute { position: absolute; }
+.passenger-shell .fixed { position: fixed; }
+.passenger-shell .sticky { position: sticky; }
+.passenger-shell .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+.passenger-shell .inset-y-0 { top: 0; bottom: 0; }
+.passenger-shell .top-0 { top: 0; }
+.passenger-shell .top-1\/2 { top: 50%; }
+.passenger-shell .left-0 { left: 0; }
+.passenger-shell .left-3\.5 { left: 0.875rem; }
+.passenger-shell .right-0 { right: 0; }
+.passenger-shell .right-2 { right: 0.5rem; }
+.passenger-shell .right-3 { right: 0.75rem; }
+.passenger-shell .right-3\.5 { right: 0.875rem; }
+.passenger-shell .-translate-y-1\/2 { transform: translateY(-50%); }
+.passenger-shell .-rotate-90 { transform: rotate(-90deg); }
+.passenger-shell .z-0 { z-index: 0; }
+.passenger-shell .z-10 { z-index: 10; }
+.passenger-shell .z-50 { z-index: 50; }
+.passenger-shell .pointer-events-none { pointer-events: none; }
+
+/* ---------- 9. Border & Radii Utilities ---------- */
+.passenger-shell .rounded { border-radius: 0.25rem; }
+.passenger-shell .rounded-md { border-radius: 0.375rem; }
+.passenger-shell .rounded-lg { border-radius: 0.5rem; }
+.passenger-shell .rounded-xl { border-radius: 0.75rem; }
+.passenger-shell .rounded-2xl { border-radius: 1rem; }
+.passenger-shell .rounded-3xl { border-radius: 1.5rem; }
+.passenger-shell .rounded-full { border-radius: 9999px; }
+
+.passenger-shell .border { border-width: 1px; border-style: solid; border-color: var(--outline-variant, #E2BFB2); }
+.passenger-shell .border-0 { border: 0; }
+.passenger-shell .border-t { border-top-width: 1px; border-top-style: solid; border-top-color: var(--outline-variant, #E2BFB2); }
+.passenger-shell .border-b { border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: var(--outline-variant, #E2BFB2); }
+.passenger-shell .border-l-2 { border-left-width: 2px; border-left-style: solid; }
+.passenger-shell .border-dashed { border-style: dashed; }
+.passenger-shell .border-outline-variant { border-color: var(--outline-variant, #E2BFB2); }
+.passenger-shell .border-outline-variant\/30 { border-color: rgba(226, 191, 178, 0.3); }
+.passenger-shell .border-outline-variant\/40 { border-color: rgba(226, 191, 178, 0.4); }
+.passenger-shell .border-red-200 { border-color: #FECACA; }
+
+/* ---------- 10. Shadow Utilities ---------- */
+.passenger-shell .shadow-xs { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
+.passenger-shell .shadow-sm { box-shadow: 0 1px 3px 0 rgba(35, 26, 18, 0.06), 0 1px 2px -1px rgba(35, 26, 18, 0.06); }
+.passenger-shell .shadow-md { box-shadow: 0 4px 6px -1px rgba(35, 26, 18, 0.08), 0 2px 4px -2px rgba(35, 26, 18, 0.08); }
+.passenger-shell .shadow-lg { box-shadow: 0 10px 15px -3px rgba(35, 26, 18, 0.08), 0 4px 6px -4px rgba(35, 26, 18, 0.08); }
+.passenger-shell .shadow-xl { box-shadow: 0 20px 25px -5px rgba(35, 26, 18, 0.10), 0 8px 10px -6px rgba(35, 26, 18, 0.10); }
+.passenger-shell .shadow-inner { box-shadow: inset 0 2px 4px 0 rgba(35, 26, 18, 0.06); }
+
+/* ---------- 11. Color & Background Utilities ---------- */
+.passenger-shell .bg-white { background-color: #FFFFFF; }
+.passenger-shell .bg-transparent { background-color: transparent; }
+.passenger-shell .bg-surface { background-color: var(--surface, #FFF8F5); }
+.passenger-shell .bg-surface-dim { background-color: var(--surface-dim, #E8D7CA); }
+.passenger-shell .bg-surface-variant { background-color: var(--surface-variant, #F1DFD2); }
+.passenger-shell .bg-surface-container { background-color: var(--surface-container, #FDEBDD); }
+.passenger-shell .bg-surface-container-low { background-color: var(--surface-container-low, #FFF1E8); }
+.passenger-shell .bg-surface-container-high { background-color: var(--surface-container-high, #F7E5D8); }
+.passenger-shell .bg-surface-container-highest { background-color: var(--surface-container-highest, #F1DFD2); }
+.passenger-shell .bg-surface-container-lowest { background-color: var(--surface-container-lowest, #FFFFFF); }
+.passenger-shell .bg-surface-container-lowest\/80 { background-color: rgba(255, 255, 255, 0.80); }
+.passenger-shell .bg-surface-container-lowest\/90 { background-color: rgba(255, 255, 255, 0.90); }
+.passenger-shell .bg-surface-container-high\/50 { background-color: rgba(247, 229, 216, 0.50); }
+
+.passenger-shell .bg-primary { background-color: var(--primary, #EA580C); }
+.passenger-shell .bg-primary-container { background-color: var(--primary-container, #CC4900); }
+.passenger-shell .bg-primary-fixed { background-color: var(--primary-fixed, #FFDBCE); }
+.passenger-shell .bg-primary-fixed\/50 { background-color: rgba(255, 219, 206, 0.50); }
+.passenger-shell .bg-secondary { background-color: var(--secondary, #0058BE); }
+.passenger-shell .bg-secondary-fixed { background-color: var(--secondary-fixed, #D8E2FF); }
+.passenger-shell .bg-tertiary { background-color: var(--tertiary, #00855B); }
+.passenger-shell .bg-tertiary-fixed { background-color: var(--tertiary-fixed, #D1FAE5); }
+.passenger-shell .bg-tertiary-container { background-color: var(--tertiary-container, #00855B); }
+.passenger-shell .bg-error-container { background-color: var(--error-container, #FEE2E2); }
+
+.passenger-shell .bg-red-50 { background-color: #FEF2F2; }
+.passenger-shell .bg-red-100 { background-color: #FEE2E2; }
+.passenger-shell .bg-green-100 { background-color: #DCFCE7; }
+.passenger-shell .bg-blue-100 { background-color: #DBEAFE; }
+
+/* ---------- 12. Typography Utilities (Stitch Hierarchy) ---------- */
+.passenger-shell .font-headline-xl {
+  font-family: 'Manrope', 'Outfit', sans-serif;
+  font-size: 38px;
+  line-height: 44px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+.passenger-shell .font-headline-lg {
+  font-family: 'Manrope', 'Outfit', sans-serif;
+  font-size: 26px;
+  line-height: 34px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.passenger-shell .font-headline-md {
+  font-family: 'Manrope', 'Outfit', sans-serif;
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+.passenger-shell .font-body-lg {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+}
+.passenger-shell .font-body-md {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 400;
+}
+.passenger-shell .font-body-sm {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12.5px;
+  line-height: 18px;
+  font-weight: 400;
+}
+.passenger-shell .font-label-lg {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 700;
+}
+.passenger-shell .font-label-md {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 700;
+}
+.passenger-shell .font-label-sm {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 10.5px;
+  line-height: 14px;
+  font-weight: 700;
+}
+
+.passenger-shell .font-bold { font-weight: 700; }
+.passenger-shell .font-semibold { font-weight: 600; }
+.passenger-shell .font-medium { font-weight: 500; }
+.passenger-shell .font-normal { font-weight: 400; }
+.passenger-shell .font-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.passenger-shell .text-xs { font-size: 12px; line-height: 16px; }
+.passenger-shell .text-sm { font-size: 14px; line-height: 20px; }
+.passenger-shell .text-base { font-size: 16px; line-height: 24px; }
+.passenger-shell .text-lg { font-size: 18px; line-height: 26px; }
+.passenger-shell .text-xl { font-size: 20px; line-height: 28px; }
+.passenger-shell .text-2xl { font-size: 24px; line-height: 32px; }
+.passenger-shell .text-3xl { font-size: 30px; line-height: 36px; }
+.passenger-shell .text-\[10px\] { font-size: 10px; line-height: 14px; }
+.passenger-shell .text-\[11px\] { font-size: 11px; line-height: 15px; }
+.passenger-shell .text-\[12px\] { font-size: 12px; line-height: 16px; }
+
+.passenger-shell .text-left { text-align: left; }
+.passenger-shell .text-center { text-align: center; }
+.passenger-shell .text-right { text-align: right; }
+
+.passenger-shell .uppercase { text-transform: uppercase; }
+.passenger-shell .tracking-tight { letter-spacing: -0.025em; }
+.passenger-shell .tracking-wide { letter-spacing: 0.025em; }
+.passenger-shell .tracking-wider { letter-spacing: 0.05em; }
+.passenger-shell .tracking-widest { letter-spacing: 0.1em; }
+.passenger-shell .leading-tight { line-height: 1.25; }
+.passenger-shell .leading-relaxed { line-height: 1.625; }
+
+/* Text Colors */
+.passenger-shell .text-on-surface { color: var(--on-surface, #271E16); }
+.passenger-shell .text-on-surface-variant { color: var(--on-surface-variant, #5A4138); }
+.passenger-shell .text-on-primary { color: var(--on-primary, #FFFFFF); }
+.passenger-shell .text-on-primary-fixed { color: var(--on-primary-fixed, #370E00); }
+.passenger-shell .text-on-tertiary-fixed { color: var(--on-tertiary-fixed, #065F46); }
+
+.passenger-shell .text-primary { color: var(--primary, #EA580C); }
+.passenger-shell .text-primary-container { color: var(--primary-container, #CC4900); }
+.passenger-shell .text-secondary { color: var(--secondary, #0058BE); }
+.passenger-shell .text-tertiary { color: var(--tertiary, #00855B); }
+.passenger-shell .text-outline { color: var(--outline, #8E7166); }
+.passenger-shell .text-outline-variant { color: var(--outline-variant, #E2BFB2); }
+.passenger-shell .text-error { color: var(--error, #DC2626); }
+.passenger-shell .text-white { color: #FFFFFF; }
+.passenger-shell .text-white\/80 { color: rgba(255, 255, 255, 0.80); }
+
+.passenger-shell .text-red-600 { color: #DC2626; }
+.passenger-shell .text-red-700 { color: #B91C1C; }
+.passenger-shell .text-red-800 { color: #991B1B; }
+.passenger-shell .text-amber-700 { color: #B45309; }
+.passenger-shell .text-green-700 { color: #15803D; }
+.passenger-shell .text-green-800 { color: #166534; }
+.passenger-shell .text-blue-700 { color: #1D4ED8; }
+.passenger-shell .text-blue-800 { color: #1E40AF; }
+.passenger-shell .text-\[\#003273\] { color: #003273; }
+.passenger-shell .text-\[\#FFDBCE\] { color: #FFDBCE; }
+
+/* ---------- 13. Effects & Interactive States ---------- */
+.passenger-shell .truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.passenger-shell .overflow-hidden { overflow: hidden; }
+.passenger-shell .overflow-x-auto { overflow-x: auto; }
+.passenger-shell .cursor-pointer { cursor: pointer; }
+.passenger-shell .opacity-40 { opacity: 0.4; }
+.passenger-shell .opacity-60 { opacity: 0.6; }
+.passenger-shell .opacity-75 { opacity: 0.75; }
+.passenger-shell .object-cover { object-fit: cover; }
+
+.passenger-shell .transition-all { transition: all 180ms ease; }
+.passenger-shell .transition-colors {
+  transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease;
+}
+.passenger-shell .transition-transform { transition: transform 180ms ease; }
+
+.passenger-shell .backdrop-blur-md {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.passenger-shell .backdrop-blur-xl {
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.passenger-shell .hover\:underline:hover { text-decoration: underline; }
+.passenger-shell .hover\:bg-surface-container:hover { background-color: var(--surface-container, #FDEBDD); }
+.passenger-shell .hover\:bg-surface-container-high:hover { background-color: var(--surface-container-high, #F7E5D8); }
+.passenger-shell .hover\:bg-surface-container-low:hover { background-color: var(--surface-container-low, #FFF1E8); }
+.passenger-shell .hover\:text-primary:hover { color: var(--primary, #EA580C); }
+.passenger-shell .hover\:text-on-surface:hover { color: var(--on-surface, #271E16); }
+.passenger-shell .hover\:text-red-600:hover { color: #DC2626; }
+
+.passenger-shell .group:hover .group-hover\:text-primary {
+  color: var(--primary, #EA580C);
+}
+
+/* Gradients */
+.passenger-shell .bg-gradient-to-t {
+  background-image: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.2) 60%, transparent 100%);
+}
