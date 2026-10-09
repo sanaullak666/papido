@@ -21,14 +21,17 @@ export function AdvanceEmptyState() {
         across campus later. Pre-book ahead to guarantee a rider.
       </p>
 
-      <a
-        href="/passenger/book"
+      <button
+        type="button"
         className="ps-btn ps-btn--primary ps-btn--md"
-        style={{ textDecoration: 'none' }}
+        onClick={() => {
+          window.history.pushState({}, '', '/passenger/book?mode=schedule');
+          window.dispatchEvent(new PopStateEvent('popstate'));
+        }}
       >
         Pre-Book a Ride Now
         <ArrowRight size={14} />
-      </a>
+      </button>
 
       <div className="ps-animated-empty-hints">
         <div className="ps-animated-empty-hint">

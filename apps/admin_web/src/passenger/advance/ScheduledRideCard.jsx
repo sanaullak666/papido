@@ -7,8 +7,11 @@ import {
 
 export function ScheduledRideCard({ ride, index, onReschedule, onCancel }) {
   const { standardCampusFare } = usePassenger();
+  const isCompleted = ride.status === 'COMPLETED';
+  const isCancelled = ride.status === 'CANCELLED';
+  const isPast = isCompleted || isCancelled;
   const isRiderAssigned = Boolean(
-    ride.rider_name || ride.rider_id || ride.status === 'ACCEPTED'
+    !isPast && (ride.rider_name || ride.rider_id || ride.status === 'ACCEPTED')
   );
 
   const scheduledTime = ride.scheduled_time_ist || ride.scheduled_time;
@@ -34,7 +37,7 @@ export function ScheduledRideCard({ ride, index, onReschedule, onCancel }) {
 
   return (
     <div
-      className={`ps-sched-itinerary-card ps-fade-up ${isRiderAssigned ? 'is-confirmed' : 'is-dispatching'}`}
+      className={`ps-sched-itinerary-card ps-fade-up ${isCompleted ? 'is-completed' : isCancelled ? 'is-cancelled' : isRiderAssigned ? 'is-confirmed' : 'is-dispatching'}`}
       style={{ animationDelay: `${index * 60}ms` }}
     >
       {/* Top Header: ID + Status + Fare */}
@@ -43,7 +46,17 @@ export function ScheduledRideCard({ ride, index, onReschedule, onCancel }) {
           <span className="font-mono font-bold text-on-surface text-sm tracking-wide">
             #{rideCode}
           </span>
-          {isRiderAssigned ? (
+          {isCompleted ? (
+            <span className="ps-sched-status-badge ps-sched-status-badge--confirmed">
+              <CheckCircle2 size={12} color="#00855B" />
+              Completed
+            </span>
+          ) : isCancelled ? (
+            <span className="ps-sched-status-badge" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#DC2626' }}>
+              <AlertTriangle size={12} color="#DC2626" />
+              Cancelled
+            </span>
+          ) : isRiderAssigned ? (
             <span className="ps-sched-status-badge ps-sched-status-badge--confirmed">
               <span className="ps-status-live-dot" style={{ width: 6, height: 6 }} />
               Confirmed
@@ -110,7 +123,27 @@ export function ScheduledRideCard({ ride, index, onReschedule, onCancel }) {
       </div>
 
       {/* Assigned Rider Segment OR Contextual Dispatch Info */}
-      {isRiderAssigned ? (
+      {isCompleted ? (
+        <div className="ps-sched-pending-segment" style={{ borderLeft: '3px solid #00855B' }}>
+          <div className="flex items-center gap-2">
+            <CheckCircle2 size={16} color="#00855B" />
+            <p className="font-label-md text-on-surface font-semibold">Ride Completed</p>
+          </div>
+          <p className="font-body-sm text-on-surface-variant text-xs mt-1">
+            Trip completed on schedule across Pondicherry University campus.
+          </p>
+        </div>
+      ) : isCancelled ? (
+        <div className="ps-sched-pending-segment" style={{ borderLeft: '3px solid #DC2626' }}>
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={16} color="#DC2626" />
+            <p className="font-label-md text-on-surface font-semibold">Pre-Booking Cancelled</p>
+          </div>
+          <p className="font-body-sm text-on-surface-variant text-xs mt-1">
+            {ride.cancellation_reason || 'Advance reservation cancelled. Zero cancellation fee applied.'}
+          </p>
+        </div>
+      ) : isRiderAssigned ? (
         <div className="ps-sched-driver-segment">
           <div className="flex items-center gap-3">
             <div className="relative">

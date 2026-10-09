@@ -541,7 +541,7 @@ const RideService = {
     if (!ride.is_scheduled) {
       throw new Error('Only pre-booked advance rides can be rescheduled.');
     }
-    if (!['SCHEDULED', 'ACCEPTED'].includes(ride.status)) {
+    if (!['SCHEDULED', 'ACCEPTED', 'REQUESTED', 'PENDING_ADMIN_QUOTE'].includes(ride.status)) {
       throw new Error(`Cannot reschedule a ride that is already in ${ride.status} status.`);
     }
 
@@ -551,7 +551,8 @@ const RideService = {
       throw new Error('Invalid scheduled date/time format.');
     }
 
-    const updated = await RideModel.rescheduleRide(rideId, customerId, newScheduledTime);
+    const formattedTime = str.replace('T', ' ');
+    const updated = await RideModel.rescheduleRide(rideId, customerId, formattedTime);
     if (!updated) {
       throw new Error('Failed to update scheduled time.');
     }

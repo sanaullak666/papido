@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { apiRequest } from '../../api';
 import { usePassenger } from '../shared/PassengerContext';
@@ -67,18 +67,7 @@ export function BookingForm({
   const [showPreferenceModal, setShowPreferenceModal] = useState(false);
   const [preferenceModalData, setPreferenceModalData] = useState(null);
 
-  /* ---------- Mode + time ---------- */
-  const [bookingMode, setBookingMode] = useState('NOW');
-  const [rideNowTimeOption, setRideNowTimeOption] = useState('NOW'); // 'NOW', '5MIN', '10MIN', '15MIN'
-  const [scheduledDate, setScheduledDate] = useState('');
-  const [scheduledHour, setScheduledHour] = useState('09');
-  const [scheduledMinute, setScheduledMinute] = useState('00');
-  const [scheduledAmPm, setScheduledAmPm] = useState('AM');
-
-  /* ---------- Fare ---------- */
-  const [fareEstimate, setFareEstimate] = useState(null);
-  const [estimating, setEstimating] = useState(false);
-
+  /* ---------- Helpers for local date/time ---------- */
   const getLocalDateString = (d = new Date()) => {
     try {
       return new Intl.DateTimeFormat('en-CA', {
@@ -88,29 +77,83 @@ export function BookingForm({
     } catch { return d.toISOString().slice(0, 10); }
   };
 
+  const getInitialScheduleState = () => {
+    const future = new Date(Date.now() + 3600000); // 1 hour ahead
+    let h = future.getHours();
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12;
+    if (h === 0) h = 12;
+    const hourStr = String(h).padStart(2, '0');
+    const m = future.getMinutes();
+    const roundedM = m < 15 ? '15' : m < 30 ? '30' : m < 45 ? '45' : '00';
+    return {
+      date: getLocalDateString(future),
+      hour: hourStr,
+      minute: roundedM,
+      ampm
+    };
+  };
+
+  /* ---------- Mode + time ---------- */
+  const getInitialBookingMode = () => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('mode') === 'schedule' || params.get('tab') === 'schedule') {
+        return 'SCHEDULE';
+      }
+    } catch (_) {}
+    return 'NOW';
+  };
+
+  const initialSchedule = getInitialScheduleState();
+  const [bookingMode, setBookingMode] = useState(getInitialBookingMode);
+  const [rideNowTimeOption, setRideNowTimeOption] = useState('NOW'); // 'NOW', '5MIN', '10MIN', '15MIN'
+  const [scheduledDate, setScheduledDate] = useState(initialSchedule.date);
+  const [scheduledHour, setScheduledHour] = useState(initialSchedule.hour);
+  const [scheduledMinute, setScheduledMinute] = useState(initialSchedule.minute);
+  const [scheduledAmPm, setScheduledAmPm] = useState(initialSchedule.ampm);
+
+  /* Listen to browser history / query changes (e.g. navigation from Advance page) */
   useEffect(() => {
-    setScheduledDate(getLocalDateString(new Date(Date.now() + 3600000)));
+    const handleUrlMode = () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('mode') === 'schedule' || params.get('tab') === 'schedule') {
+          setBookingMode('SCHEDULE');
+        } else if (params.get('mode') === 'now') {
+          setBookingMode('NOW');
+        }
+      } catch (_) {}
+    };
+    handleUrlMode();
+    window.addEventListener('popstate', handleUrlMode);
+    return () => window.removeEventListener('popstate', handleUrlMode);
   }, []);
 
-  /* Load routes & stops from backend (Admin configured + Campus Stops) */
+  /* ---------- Fare ---------- */
+  const [fareEstimate, setFareEstimate] = useState(null);
+  const [estimating, setEstimating] = useState(false);
+
+  /* Load routes & stops strictly from active Admin configurations */
   const loadAdminRoutes = async () => {
     try {
-      const [routesRes, stopsRes] = await Promise.all([
-        apiRequest('/fares/routes', 'GET', null, token).catch(() => null),
-        apiRequest('/fares/stops', 'GET', null, token).catch(() => null)
-      ]);
+      const routesRes = await apiRequest('/fares/routes', 'GET', null, token).catch(() => null);
       const active = Array.isArray(routesRes?.data) ? routesRes.data.filter(r => r.is_active) : [];
       setAdminRoutes(active);
 
-      const routeStops = active.flatMap(r => [r.pickup_stop, r.destination_stop]).map(s => (s || '').trim()).filter(Boolean);
-      const backendStops = Array.isArray(stopsRes?.data) ? stopsRes.data.map(s => (s || '').trim()).filter(Boolean) : [];
-      const defaultStops = CAMPUS_HOTSPOTS.map(s => s.name);
-
-      const mergedStops = Array.from(new Set([...routeStops, ...backendStops, ...defaultStops]));
-      setAdminStops(mergedStops);
+      // ONLY stops added by admin in active route_fares must be shown
+      const routeStops = Array.from(
+        new Set(
+          active.flatMap(r => [r.pickup_stop, r.destination_stop])
+            .map(s => (s || '').trim())
+            .filter(Boolean)
+        )
+      );
+      setAdminStops(routeStops);
     } catch (err) {
       console.warn('Failed to fetch admin routes:', err);
-      setAdminStops(CAMPUS_HOTSPOTS.map(s => s.name));
+      setAdminRoutes([]);
+      setAdminStops([]);
     }
   };
 
@@ -167,26 +210,33 @@ export function BookingForm({
     return { lat: 12.0228681, lng: 79.8509415 };
   };
 
-  /* Route validation: both selected and distinct */
-  const isRouteReady = Boolean(
-    pickupAddress &&
-    destAddress &&
-    pickupAddress.trim().toLowerCase() !== destAddress.trim().toLowerCase()
-  );
+  /* Find Admin Route between two stops (respecting bidirectionality) */
+  const getAdminRouteBetween = (from, to) => {
+    if (!from || !to) return null;
+    const f = from.trim().toLowerCase();
+    const t = to.trim().toLowerCase();
+    if (f === t) return null;
+    return adminRoutes.find(r =>
+      (r.pickup_stop?.trim().toLowerCase() === f && r.destination_stop?.trim().toLowerCase() === t) ||
+      (r.is_bidirectional && r.destination_stop?.trim().toLowerCase() === f && r.pickup_stop?.trim().toLowerCase() === t)
+    );
+  };
 
   /* Exact Admin Route matching */
-  const matchedAdminRoute = adminRoutes.find(r =>
-    (r.pickup_stop?.trim().toLowerCase() === pickupAddress?.trim().toLowerCase() &&
-     r.destination_stop?.trim().toLowerCase() === destAddress?.trim().toLowerCase()) ||
-    (r.is_bidirectional &&
-     r.destination_stop?.trim().toLowerCase() === pickupAddress?.trim().toLowerCase() &&
-     r.pickup_stop?.trim().toLowerCase() === destAddress?.trim().toLowerCase())
-  );
+  const matchedAdminRoute = getAdminRouteBetween(pickupAddress, destAddress);
 
   const adminRouteFare = matchedAdminRoute ? parseFloat(matchedAdminRoute.fare_amount) : null;
   const adminRouteDist = matchedAdminRoute ? parseFloat(matchedAdminRoute.distance_km) : null;
 
-  /* Synchronized Fare Calculation */
+  /* Route validation: both selected, distinct, and MUST be an Admin-configured route */
+  const isRouteReady = Boolean(
+    pickupAddress &&
+    destAddress &&
+    pickupAddress.trim().toLowerCase() !== destAddress.trim().toLowerCase() &&
+    matchedAdminRoute
+  );
+
+  /* Synchronized Fare Calculation strictly from Admin route */
   const baseSingleFare = adminRouteFare !== null
     ? adminRouteFare
     : (fareEstimate?.estimatedFare || standardCampusFare || 25);
@@ -423,8 +473,48 @@ export function BookingForm({
     });
   };
 
-  const filteredPickupStops = filterStopsByQuery(adminStops, pickupSearchQuery);
-  const filteredDestStops = filterStopsByQuery(adminStops, destSearchQuery);
+  // Available destination stops based strictly on active Admin routes
+  const availableDestStops = useMemo(() => {
+    if (!pickupAddress) {
+      return adminStops;
+    }
+    const pTrim = pickupAddress.trim().toLowerCase();
+    const connected = new Set();
+    adminRoutes.forEach(r => {
+      const p = (r.pickup_stop || '').trim();
+      const d = (r.destination_stop || '').trim();
+      if (p.toLowerCase() === pTrim && d) {
+        connected.add(d);
+      } else if (r.is_bidirectional && d.toLowerCase() === pTrim && p) {
+        connected.add(p);
+      }
+    });
+    const result = Array.from(connected).filter(s => s.toLowerCase() !== pTrim);
+    return result.length > 0 ? result : adminStops.filter(s => s.toLowerCase() !== pTrim);
+  }, [pickupAddress, adminRoutes, adminStops]);
+
+  // Available pickup stops based strictly on active Admin routes
+  const availablePickupStops = useMemo(() => {
+    if (!destAddress) {
+      return adminStops;
+    }
+    const dTrim = destAddress.trim().toLowerCase();
+    const connected = new Set();
+    adminRoutes.forEach(r => {
+      const p = (r.pickup_stop || '').trim();
+      const d = (r.destination_stop || '').trim();
+      if (d.toLowerCase() === dTrim && p) {
+        connected.add(p);
+      } else if (r.is_bidirectional && p.toLowerCase() === dTrim && d) {
+        connected.add(d);
+      }
+    });
+    const result = Array.from(connected).filter(s => s.toLowerCase() !== dTrim);
+    return result.length > 0 ? result : adminStops.filter(s => s.toLowerCase() !== dTrim);
+  }, [destAddress, adminRoutes, adminStops]);
+
+  const filteredPickupStops = filterStopsByQuery(availablePickupStops, pickupSearchQuery);
+  const filteredDestStops = filterStopsByQuery(availableDestStops, destSearchQuery);
   const filteredViaStops = filterStopsByQuery(
     adminStops.filter(s => s !== pickupAddress && s !== destAddress),
     viaSearchQuery
@@ -435,6 +525,33 @@ export function BookingForm({
     setPickupSearchQuery(stopName);
     setPickupCoords(findStopCoords(stopName));
     setPickupMenuOpen(false);
+
+    // Check connected destinations in admin routes
+    const pTrim = stopName.trim().toLowerCase();
+    const connected = [];
+    adminRoutes.forEach(r => {
+      const p = (r.pickup_stop || '').trim();
+      const d = (r.destination_stop || '').trim();
+      if (p.toLowerCase() === pTrim && d) connected.push(d);
+      else if (r.is_bidirectional && d.toLowerCase() === pTrim && p) connected.push(p);
+    });
+
+    const connectedLower = connected.map(c => c.toLowerCase());
+    if (destAddress && (destAddress.trim().toLowerCase() === pTrim || !connectedLower.includes(destAddress.trim().toLowerCase()))) {
+      if (connected.length === 1) {
+        setDestAddress(connected[0]);
+        setDestSearchQuery(connected[0]);
+        setDestCoords(findStopCoords(connected[0]));
+      } else {
+        setDestAddress('');
+        setDestSearchQuery('');
+        setDestCoords(null);
+      }
+    } else if (!destAddress && connected.length === 1) {
+      setDestAddress(connected[0]);
+      setDestSearchQuery(connected[0]);
+      setDestCoords(findStopCoords(connected[0]));
+    }
   };
 
   const handleSelectDest = (stopName) => {
@@ -664,12 +781,12 @@ export function BookingForm({
           )}
 
           {/* Quick Pick stops from Admin routes */}
-          {adminStops.length > 0 && (
+          {availablePickupStops.length > 0 && (
             <div className="ps-hotspots-bar">
               <span className="font-label-sm ps-hotspots-label">Stops:</span>
-              {adminStops.map((stopName) => (
+              {availablePickupStops.map((stopName) => (
                 <button
-                  key={`chip-${stopName}`}
+                  key={`chip-p-${stopName}`}
                   type="button"
                   className={`ps-hotspot-chip ${pickupAddress === stopName ? 'is-active' : ''}`}
                   onClick={() => handleSelectPickup(stopName)}
@@ -756,20 +873,26 @@ export function BookingForm({
             {destMenuOpen && (
               <div className="ps-suggestions-menu ps-fade-up">
                 {filteredDestStops.length > 0 ? (
-                  filteredDestStops.map((stopName) => (
-                    <div
-                      key={`d-sug-${stopName}`}
-                      className={`ps-suggestion-item ${destAddress === stopName ? 'is-selected' : ''}`}
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        handleSelectDest(stopName);
-                      }}
-                    >
-                      <Navigation size={15} className="ps-suggestion-icon" />
-                      <span className="ps-suggestion-text">{stopName}</span>
-                      {destAddress === stopName && <Check size={14} className="ps-suggestion-check" />}
-                    </div>
-                  ))
+                  filteredDestStops.map((stopName) => {
+                    const route = getAdminRouteBetween(pickupAddress, stopName);
+                    return (
+                      <div
+                        key={`d-sug-${stopName}`}
+                        className={`ps-suggestion-item ${destAddress === stopName ? 'is-selected' : ''}`}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleSelectDest(stopName);
+                        }}
+                      >
+                        <Navigation size={15} className="ps-suggestion-icon" />
+                        <span className="ps-suggestion-text">{stopName}</span>
+                        {route?.fare_amount && (
+                          <span className="ps-route-fare-tag">₹{parseFloat(route.fare_amount)}</span>
+                        )}
+                        {destAddress === stopName && <Check size={14} className="ps-suggestion-check" />}
+                      </div>
+                    );
+                  })
                 ) : (
                   <div className="ps-suggestion-empty">
                     <Search size={14} />
@@ -791,6 +914,31 @@ export function BookingForm({
                 value={destDetail}
                 onChange={(e) => setDestDetail(e.target.value)}
               />
+            </div>
+          )}
+
+          {/* Quick Pick destination stops from Admin routes */}
+          {availableDestStops.length > 0 && (
+            <div className="ps-hotspots-bar">
+              <span className="font-label-sm ps-hotspots-label">Destinations:</span>
+              {availableDestStops.map((stopName) => {
+                const route = getAdminRouteBetween(pickupAddress, stopName);
+                return (
+                  <button
+                    key={`chip-dest-${stopName}`}
+                    type="button"
+                    className={`ps-hotspot-chip ${destAddress === stopName ? 'is-active' : ''}`}
+                    onClick={() => handleSelectDest(stopName)}
+                  >
+                    <span>{stopName}</span>
+                    {route?.fare_amount && (
+                      <span className="ps-chip-fare font-mono font-bold text-primary ml-1">
+                        ₹{parseFloat(route.fare_amount)}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
 
@@ -876,16 +1024,20 @@ export function BookingForm({
                   ? 'Choose Pickup Stop'
                   : !destAddress
                   ? 'Choose Drop-off Destination'
-                  : 'Pickup and Destination Must Differ'}
+                  : pickupAddress.trim().toLowerCase() === destAddress.trim().toLowerCase()
+                  ? 'Pickup and Destination Must Differ'
+                  : 'Route Not Configured by Admin'}
               </h3>
               <p className="ps-route-pending-desc">
                 {!pickupAddress && !destAddress
-                  ? 'Type letters or search your campus pickup and destination stops above to view route preview, transit modes, and synced fare.'
+                  ? 'Search or select from the admin-configured campus stops above to preview route, modes, and synced fare.'
                   : !pickupAddress
-                  ? 'Search and select where the driver partner should meet you on campus to preview route and synced fare.'
+                  ? 'Search and select where the driver partner should meet you on campus.'
                   : !destAddress
                   ? 'Search and select your destination campus stop above to calculate distance, travel time, and synced fare.'
-                  : 'Pickup and drop-off cannot be the same stop. Please pick a different destination.'}
+                  : pickupAddress.trim().toLowerCase() === destAddress.trim().toLowerCase()
+                  ? 'Pickup and drop-off cannot be the same stop. Please pick a different destination.'
+                  : 'No active route configured by Admin between these stops. Please select a connected route from the options above.'}
               </p>
             </div>
           </div>
@@ -1024,7 +1176,9 @@ export function BookingForm({
                     ₹{currentFare}
                   </span>
                   <span className="ps-student-fare-badge">
-                    {matchedAdminRoute ? 'Admin Fixed Route Fare' : 'Standard Student Fare'}
+                    {matchedAdminRoute
+                      ? `Admin Route: ${matchedAdminRoute.pickup_stop} ↔ ${matchedAdminRoute.destination_stop}`
+                      : 'Admin Fixed Route Fare'}
                     {isDoubleRide ? ' · ₹10 Bundled Discount Applied' : ''}
                   </span>
                 </div>

@@ -88,14 +88,15 @@ export function AdvancePolicyCard() {
           </div>
         </div>
 
-        <div className="rounded-xl overflow-hidden relative shadow-inner">
-          <img
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuC2vzrHMSu2-ivL3gCU9GT4p9V0ZMP-koe5tQOEt55A4vTNOd2ZmCRGDYuQNxhbwIehnVuVbSI2X-mpSW1q28RzGebSx4l-mKfKYxE4FZTTJUusf5dGukKi7cLv2lJe4r-rVrG3hb-2XC_o9zcfQpLMNduyI67MU-1IgUhpYH8Kw9yhPBFUJItBG3erLhiSSDSIi373OsQ0tLLK4CCzfhQiOqLkELNyskvG_qTrIBbiAeEpehap2BqdOw"
-            alt="Pondicherry University Fleet"
-            className="w-full h-28 object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-2.5">
-            <span className="font-label-sm text-white font-medium">Sustainable Electric Campus Fleet</span>
+        <div className="rounded-xl overflow-hidden relative shadow-xs p-3.5 bg-gradient-to-r from-primary/10 to-tertiary/10 border border-primary/20 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-primary/15 text-primary flex items-center justify-center shrink-0">
+            <ShieldCheck size={20} color="#EA580C" />
+          </div>
+          <div>
+            <div className="font-label-md text-on-surface font-semibold">Sustainable Campus Fleet</div>
+            <p className="font-body-sm text-on-surface-variant text-xs mt-0.5">
+              Zero emissions on PU pathways with verified student partner riders.
+            </p>
           </div>
         </div>
       </div>

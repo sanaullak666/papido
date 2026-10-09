@@ -16,15 +16,26 @@ const getLocalDateString = (d = new Date()) => {
 };
 
 const getTodayDateStr = () => getLocalDateString(new Date());
-const getTomorrowDateStr = () =>
-  getLocalDateString(new Date(Date.now() + 86400000));
+const getTomorrowDateStr = () => getLocalDateString(new Date(Date.now() + 86400000));
+const getInitialRescheduleTime = () => {
+  const future = new Date(Date.now() + 3600000 * 2);
+  let h = future.getHours();
+  const ap = h >= 12 ? 'PM' : 'AM';
+  h = h % 12;
+  if (h === 0) h = 12;
+  const hourStr = String(h).padStart(2, '0');
+  const m = future.getMinutes();
+  const roundedM = m < 15 ? '15' : m < 30 ? '30' : m < 45 ? '45' : '00';
+  return { hour: hourStr, minute: roundedM, ampm: ap };
+};
 
 export function RescheduleModal({ ride, token, onClose, onSuccess }) {
+  const initialTime = getInitialRescheduleTime();
   const [dateOption, setDateOption] = useState('TODAY');
   const [date, setDate] = useState(getTodayDateStr());
-  const [hour, setHour] = useState('09');
-  const [minute, setMinute] = useState('00');
-  const [ampm, setAmpm] = useState('AM');
+  const [hour, setHour] = useState(initialTime.hour);
+  const [minute, setMinute] = useState(initialTime.minute);
+  const [ampm, setAmpm] = useState(initialTime.ampm);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
 
@@ -38,11 +49,11 @@ export function RescheduleModal({ ride, token, onClose, onSuccess }) {
     if (ampm === 'AM' && h24 === 12) h24 = 0;
 
     const timePart = `${String(h24).padStart(2, '0')}:${minute}:00`;
-    const finalDateTime = `${date}T${timePart}`;
+    const finalDateTime = `${date} ${timePart}`;
 
     /* Validate future time */
-    const chosen = new Date(finalDateTime);
-    if (isNaN(chosen.getTime()) || chosen <= new Date()) {
+    const chosen = new Date(`${date}T${timePart}`);
+    if (isNaN(chosen.getTime()) || chosen.getTime() <= Date.now()) {
       setError('Please choose a future pickup time.');
       return;
     }

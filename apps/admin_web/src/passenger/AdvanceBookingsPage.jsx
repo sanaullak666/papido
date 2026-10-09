@@ -13,7 +13,7 @@ import {
 
 export function AdvanceBookingsPage() {
   const { token } = useAuth();
-  const { scheduledRides, fetchScheduledRides, pastRides, setStatusMessage } = usePassenger();
+  const { scheduledRides, fetchScheduledRides, pastRides, fetchRideHistory, setStatusMessage } = usePassenger();
 
   const [loading, setLoading] = useState(false);
   const [rescheduleTarget, setRescheduleTarget] = useState(null);
@@ -21,6 +21,7 @@ export function AdvanceBookingsPage() {
 
   useEffect(() => {
     fetchScheduledRides();
+    if (typeof fetchRideHistory === 'function') fetchRideHistory();
 
     const interval = setInterval(() => {
       fetchScheduledRides();
@@ -29,6 +30,7 @@ export function AdvanceBookingsPage() {
     const handleSync = () => {
       if (document.visibilityState === 'visible') {
         fetchScheduledRides();
+        if (typeof fetchRideHistory === 'function') fetchRideHistory();
       }
     };
     window.addEventListener('focus', handleSync);
@@ -43,7 +45,10 @@ export function AdvanceBookingsPage() {
 
   const handleRefresh = async () => {
     setLoading(true);
-    await fetchScheduledRides();
+    await Promise.all([
+      fetchScheduledRides(),
+      typeof fetchRideHistory === 'function' ? fetchRideHistory() : Promise.resolve()
+    ]);
     setLoading(false);
   };
 
@@ -57,7 +62,10 @@ export function AdvanceBookingsPage() {
         `/customer/rides/${rideId}/cancel-scheduled`,
         'POST', {}, token
       );
-      fetchScheduledRides();
+      await Promise.all([
+        fetchScheduledRides(),
+        typeof fetchRideHistory === 'function' ? fetchRideHistory() : Promise.resolve()
+      ]);
       setStatusMessage({ text: 'Pre-booked ride cancelled. No charge applied.', type: 'info' });
     } catch (err) {
       setStatusMessage({
@@ -67,15 +75,18 @@ export function AdvanceBookingsPage() {
     }
   };
 
-  const handleRescheduled = () => {
+  const handleRescheduled = async () => {
     setRescheduleTarget(null);
-    fetchScheduledRides();
+    await Promise.all([
+      fetchScheduledRides(),
+      typeof fetchRideHistory === 'function' ? fetchRideHistory() : Promise.resolve()
+    ]);
     setStatusMessage({ text: 'Ride rescheduled successfully.', type: 'success' });
   };
 
   const safeScheduledRides = scheduledRides || [];
   const confirmedRides = useMemo(() => safeScheduledRides.filter(r => r.rider_id || r.rider_name || r.status === 'ACCEPTED'), [safeScheduledRides]);
-  const pastScheduledRides = useMemo(() => (pastRides || []).filter(r => (r.is_scheduled || r.isScheduled || r.scheduled_time) && r.status === 'COMPLETED'), [pastRides]);
+  const pastScheduledRides = useMemo(() => (pastRides || []).filter(r => (r.is_scheduled || r.isScheduled || r.scheduled_time) && ['COMPLETED', 'CANCELLED'].includes(r.status)), [pastRides]);
 
   const displayRides = useMemo(() => {
     if (filterTab === 'confirmed') return confirmedRides;
@@ -84,6 +95,11 @@ export function AdvanceBookingsPage() {
   }, [filterTab, safeScheduledRides, confirmedRides, pastScheduledRides]);
 
   const isEmpty = displayRides.length === 0;
+
+  const handleGoToSchedule = () => {
+    window.history.pushState({}, '', '/passenger/book?mode=schedule');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
 
   return (
     <div className="ps-advance-page">
@@ -120,13 +136,14 @@ export function AdvanceBookingsPage() {
               <RefreshCw size={15} className={loading ? 'ps-spin' : ''} />
               <span>Refresh</span>
             </button>
-            <a
-              href="/passenger/book"
+            <button
+              type="button"
               className="ps-advance-action-btn ps-advance-action-btn--primary"
+              onClick={handleGoToSchedule}
             >
               <Plus size={16} />
               <span>Pre-Book New</span>
-            </a>
+            </button>
           </div>
         </div>
 

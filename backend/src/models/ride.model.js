@@ -656,19 +656,20 @@ const RideModel = {
           cancellation_reason = ?,
           cancelled_by_role = 'CUSTOMER',
           cancelled_at = CURRENT_TIMESTAMP
-      WHERE id = ? AND customer_id = ? AND is_scheduled = 1 AND status IN ('SCHEDULED', 'ACCEPTED', 'REQUESTED')
+      WHERE id = ? AND customer_id = ? AND (is_scheduled = 1 OR scheduled_time IS NOT NULL) AND status IN ('SCHEDULED', 'ACCEPTED', 'REQUESTED', 'PENDING_ADMIN_QUOTE')
     `;
     const res = await db.query(sql, [reason, rideId, customerId]);
     return res && res.affectedRows > 0;
   },
 
   async rescheduleRide(rideId, customerId, newScheduledTime) {
+    const formatted = String(newScheduledTime).trim().replace('T', ' ');
     const sql = `
       UPDATE rides 
       SET scheduled_time = ?
-      WHERE id = ? AND customer_id = ? AND is_scheduled = 1 AND status IN ('SCHEDULED', 'ACCEPTED')
+      WHERE id = ? AND customer_id = ? AND (is_scheduled = 1 OR scheduled_time IS NOT NULL) AND status IN ('SCHEDULED', 'ACCEPTED', 'REQUESTED', 'PENDING_ADMIN_QUOTE')
     `;
-    const res = await db.query(sql, [newScheduledTime, rideId, customerId]);
+    const res = await db.query(sql, [formatted, rideId, customerId]);
     return res && res.affectedRows > 0;
   }
 };
