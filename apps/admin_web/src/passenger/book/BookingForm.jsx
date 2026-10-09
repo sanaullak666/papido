@@ -92,21 +92,25 @@ export function BookingForm({
     setScheduledDate(getLocalDateString(new Date(Date.now() + 3600000)));
   }, []);
 
-  /* Load only routes & stops added by Admin */
+  /* Load routes & stops from backend (Admin configured + Campus Stops) */
   const loadAdminRoutes = async () => {
     try {
-      const res = await apiRequest('/fares/routes', 'GET', null, token);
-      if (Array.isArray(res?.data)) {
-        const active = res.data.filter(r => r.is_active);
-        setAdminRoutes(active);
-        const stops = Array.from(new Set(
-          active.flatMap(r => [r.pickup_stop, r.destination_stop])
-            .map(s => (s || '').trim()).filter(Boolean)
-        ));
-        setAdminStops(stops);
-      }
+      const [routesRes, stopsRes] = await Promise.all([
+        apiRequest('/fares/routes', 'GET', null, token).catch(() => null),
+        apiRequest('/fares/stops', 'GET', null, token).catch(() => null)
+      ]);
+      const active = Array.isArray(routesRes?.data) ? routesRes.data.filter(r => r.is_active) : [];
+      setAdminRoutes(active);
+
+      const routeStops = active.flatMap(r => [r.pickup_stop, r.destination_stop]).map(s => (s || '').trim()).filter(Boolean);
+      const backendStops = Array.isArray(stopsRes?.data) ? stopsRes.data.map(s => (s || '').trim()).filter(Boolean) : [];
+      const defaultStops = CAMPUS_HOTSPOTS.map(s => s.name);
+
+      const mergedStops = Array.from(new Set([...routeStops, ...backendStops, ...defaultStops]));
+      setAdminStops(mergedStops);
     } catch (err) {
       console.warn('Failed to fetch admin routes:', err);
+      setAdminStops(CAMPUS_HOTSPOTS.map(s => s.name));
     }
   };
 
@@ -702,7 +706,7 @@ export function BookingForm({
               </span>
               <input
                 type="text"
-                className="ps-pill-input"
+                className="ps-pill-input ps-pill-input--with-swap"
                 placeholder="Type letter or search drop-off destination..."
                 value={destSearchQuery}
                 onChange={(e) => {

@@ -4,13 +4,13 @@ import { Phone, ShieldAlert } from 'lucide-react';
 export function SecurityConciergeCard() {
   return (
     <div className="ps-concierge-support-card ps-fade-up">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 min-w-0">
         <div className="w-10 h-10 rounded-full bg-red-100 text-red-700 flex items-center justify-center shrink-0">
           <ShieldAlert size={20} />
         </div>
-        <div className="flex flex-col">
-          <span className="font-label-md font-bold text-on-surface">24/7 Security Concierge</span>
-          <span className="font-body-sm text-xs text-on-surface-variant">Pondicherry University Main Gate</span>
+        <div className="flex flex-col min-w-0 flex-1">
+          <span className="font-label-md font-bold text-on-surface truncate">24/7 Security Concierge</span>
+          <span className="font-body-sm text-xs text-on-surface-variant truncate">Pondicherry University Main Gate</span>
         </div>
       </div>
 
@@ -22,8 +22,8 @@ export function SecurityConciergeCard() {
         href="tel:+914132655179"
         className="ps-concierge-call-btn"
       >
-        <Phone size={15} />
-        <span>+91 413 2655179 (Security Helpline)</span>
+        <Phone size={15} className="shrink-0" />
+        <span className="truncate">+91 413 2655179 (Security Helpline)</span>
       </a>
     </div>
   );

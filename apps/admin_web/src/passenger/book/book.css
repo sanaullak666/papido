@@ -1630,6 +1630,9 @@
 .ps-pill-clear-btn--with-swap {
   right: 42px;
 }
+.ps-pill-input--with-swap {
+  padding-right: 76px;
+}
 .ps-suggestions-menu {
   position: absolute;
   top: calc(100% + 6px);

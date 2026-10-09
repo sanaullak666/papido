@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
-  const { socketRef, standardCampusFare } = usePassenger();
+  const { socketRef, standardCampusFare, driverLocation } = usePassenger();
   const [payMode, setPayMode] = useState('APPS');
   const [copiedUpi, setCopiedUpi] = useState(false);
 
@@ -138,7 +138,9 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
                 <span className="truncate">
                   {activeRide.pickup_address?.split('(')[0]} → {activeRide.destination_address?.split('(')[0]}
                 </span>
-                <span className="text-tertiary font-bold">1.4 km (4 min)</span>
+                <span className="text-tertiary font-bold">
+                  {activeRide.estimated_distance || activeRide.distance_km || 1.5} km ({activeRide.estimated_duration || 4} min)
+                </span>
               </div>
             </div>
 
@@ -344,7 +346,11 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
                   <span>Call Driver</span>
                 </a>
               )}
-              <a href={`sms:${activeRide.rider_phone || ''}`} className="ps-driver-action-pill">
+              <a
+                href={activeRide.rider_phone ? `sms:${activeRide.rider_phone}?body=${encodeURIComponent(`Hi, I am waiting for ride #${activeRide.ride_code || activeRide.id} at ${activeRide.pickup_address?.split('(')[0]?.trim() || 'pickup'}.`)}` : '#'}
+                className="ps-driver-action-pill"
+                title={activeRide.rider_phone ? 'Send SMS to driver' : 'Driver phone not available'}
+              >
                 <MessageCircle size={15} />
                 <span>Quick Message</span>
               </a>

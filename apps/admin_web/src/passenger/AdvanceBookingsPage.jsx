@@ -13,11 +13,11 @@ import {
 
 export function AdvanceBookingsPage() {
   const { token } = useAuth();
-  const { scheduledRides, fetchScheduledRides, setStatusMessage } = usePassenger();
+  const { scheduledRides, fetchScheduledRides, pastRides, setStatusMessage } = usePassenger();
 
   const [loading, setLoading] = useState(false);
   const [rescheduleTarget, setRescheduleTarget] = useState(null);
-  const [filterTab, setFilterTab] = useState('upcoming');
+  const [filterTab, setFilterTab] = useState('upcoming'); // 'upcoming', 'confirmed', 'past'
 
   useEffect(() => {
     fetchScheduledRides();
@@ -74,7 +74,16 @@ export function AdvanceBookingsPage() {
   };
 
   const safeScheduledRides = scheduledRides || [];
-  const isEmpty = safeScheduledRides.length === 0;
+  const confirmedRides = useMemo(() => safeScheduledRides.filter(r => r.rider_id || r.rider_name || r.status === 'ACCEPTED'), [safeScheduledRides]);
+  const pastScheduledRides = useMemo(() => (pastRides || []).filter(r => (r.is_scheduled || r.isScheduled || r.scheduled_time) && r.status === 'COMPLETED'), [pastRides]);
+
+  const displayRides = useMemo(() => {
+    if (filterTab === 'confirmed') return confirmedRides;
+    if (filterTab === 'past') return pastScheduledRides;
+    return safeScheduledRides;
+  }, [filterTab, safeScheduledRides, confirmedRides, pastScheduledRides]);
+
+  const isEmpty = displayRides.length === 0;
 
   return (
     <div className="ps-advance-page">
@@ -126,28 +135,28 @@ export function AdvanceBookingsPage() {
           {/* Left Column: Itinerary list (8 cols) */}
           <div className="ps-book-col-main">
 
-            {/* Filter Tabs */}
+            {/* Filter Tabs backed by real ride records */}
             <div className="ps-advance-tabs ps-fade-up">
               <button
                 type="button"
                 className={`ps-advance-tab-btn ${filterTab === 'upcoming' ? 'is-active' : ''}`}
                 onClick={() => setFilterTab('upcoming')}
               >
-                Upcoming ({safeScheduledRides.length})
+                All Active ({safeScheduledRides.length})
+              </button>
+              <button
+                type="button"
+                className={`ps-advance-tab-btn ${filterTab === 'confirmed' ? 'is-active' : ''}`}
+                onClick={() => setFilterTab('confirmed')}
+              >
+                Driver Confirmed ({confirmedRides.length})
               </button>
               <button
                 type="button"
                 className={`ps-advance-tab-btn ${filterTab === 'past' ? 'is-active' : ''}`}
                 onClick={() => setFilterTab('past')}
               >
-                Past Terminals
-              </button>
-              <button
-                type="button"
-                className={`ps-advance-tab-btn ${filterTab === 'passes' ? 'is-active' : ''}`}
-                onClick={() => setFilterTab('passes')}
-              >
-                Recurring Passes
+                Past Completed ({pastScheduledRides.length})
               </button>
             </div>
 
@@ -156,7 +165,7 @@ export function AdvanceBookingsPage() {
               <AdvanceEmptyState />
             ) : (
               <div className="ps-rides-list">
-                {safeScheduledRides.map((ride, idx) => (
+                {displayRides.map((ride, idx) => (
                   <ScheduledRideCard
                     key={ride.id}
                     ride={ride}

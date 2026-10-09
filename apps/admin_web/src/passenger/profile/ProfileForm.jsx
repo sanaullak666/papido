@@ -1,22 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { User, Phone, Mail, Lock, ShieldCheck, MapPin, Contact, CheckCircle2 } from 'lucide-react';
-
-const CAMPUS_PICKUP_STATIONS = [
-  { id: 'hostel-curie', label: 'Madam Curie PG Girls Hostel (East Gate Loop)' },
-  { id: 'dept-cs', label: 'Silver Jubilee Campus - Dept. of Computer Science' },
-  { id: 'hostel-cauvery', label: 'Cauvery Girls Hostel • Main Ring Road' },
-  { id: 'lib-ananda', label: 'Ananda Ranga Pillai Central Library Curb' },
-  { id: 'gate-main', label: 'Main Gate 1 / ECR Highway Terminal' },
-  { id: 'hostel-kamban', label: 'Kamban Boys Hostel • South Campus' },
-  { id: 'canteen-central', label: 'Central University Cafeteria & Student Centre' }
-];
+import { CAMPUS_HOTSPOTS } from '../shared/passengerConstants';
 
 export function ProfileForm({ user, onSave }) {
   const initial = useMemo(() => ({
     name: user?.name || '',
     phone: user?.phone || '',
-    pickupStation: user?.pickupStation || localStorage.getItem('papido_pref_pickup') || 'gate-main',
-    emergencyContact: user?.emergency_contact || user?.emergencyContact || ''
+    pickupStation: user?.pickupStation || localStorage.getItem('papido_pref_pickup') || CAMPUS_HOTSPOTS[0]?.name || 'PU Main Gate (Gate 1)',
+    emergencyContact: user?.emergency_contact || user?.emergencyContact || localStorage.getItem('papido_pref_emergency') || ''
   }), [user]);
 
   const [form, setForm] = useState(initial);
@@ -109,7 +100,7 @@ export function ProfileForm({ user, onSave }) {
             <input
               type="email"
               className="ps-profile-input ps-profile-input--readonly"
-              value={user?.email || 'ananya.sharma@pondiuni.ac.in'}
+              value={user?.email || ''}
               readOnly
             />
             <span className="absolute right-3.5 text-outline-variant pointer-events-none">
@@ -161,9 +152,9 @@ export function ProfileForm({ user, onSave }) {
               value={form.pickupStation}
               onChange={(e) => update('pickupStation', e.target.value)}
             >
-              {CAMPUS_PICKUP_STATIONS.map((station) => (
-                <option key={station.id} value={station.id}>
-                  {station.label}
+              {CAMPUS_HOTSPOTS.map((station) => (
+                <option key={station.id || station.name} value={station.name}>
+                  {station.name}
                 </option>
               ))}
             </select>

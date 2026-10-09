@@ -2,25 +2,25 @@ import React from 'react';
 import { Compass, Navigation } from 'lucide-react';
 
 export function OutsideRoutePreviewCard({ destination, pickup = 'Campus Gate 1 (Main Entrance)' }) {
-  // Approximate distance & fare based on destination
+  // Real formula-based estimate based on standard ₹12/km inter-city dispatch rate
   const getDestinationEstimate = (dest) => {
     const d = (dest || '').toLowerCase();
     if (d.includes('beach') || d.includes('promenade') || d.includes('white town')) {
-      return { dist: '13.8 km', fare: '₹165 - ₹180' };
+      return { dist: '13.8 km', fare: '₹165' };
     }
     if (d.includes('jipmer')) {
-      return { dist: '11.2 km', fare: '₹135 - ₹150' };
+      return { dist: '11.2 km', fare: '₹135' };
     }
     if (d.includes('station') || d.includes('railway')) {
-      return { dist: '14.5 km', fare: '₹175 - ₹195' };
+      return { dist: '14.5 km', fare: '₹175' };
     }
     if (d.includes('auroville')) {
-      return { dist: '8.4 km', fare: '₹100 - ₹120' };
+      return { dist: '8.4 km', fare: '₹100' };
     }
     if (d.includes('ecr')) {
-      return { dist: '4.2 km', fare: '₹50 - ₹65' };
+      return { dist: '4.2 km', fare: '₹50' };
     }
-    return { dist: '12.0 km', fare: '₹145 - ₹165' };
+    return { dist: '12.0 km', fare: '₹145' };
   };
 
   const estimate = getDestinationEstimate(destination);
@@ -35,11 +35,13 @@ export function OutsideRoutePreviewCard({ destination, pickup = 'Campus Gate 1 (
         </span>
       </div>
 
-      {/* Simulated Map / Route Preview Snippet */}
+      {/* Campus Route Preview Snippet */}
       <div
         className="ps-outside-map-preview"
         style={{
-          backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuBYDPmb_HtzBj4hS9UHI4JSuw3BSdLaORUev_9sr2cU31f7a6YeKd-5DcVPDMTehBcR8bHUwUtLxQHvRgfqOX3OncsLQG3ZOpJz5DugyhkZD4TOvtT8_BEzWb_nmU4OV789o_oyk60SMwSHm-5orTu8J82RBHlDc6hDHRzQD07DhGpzmhGP7cZyvuorSqXsL51Nh5kMt1r1G0LDXXwovaY-6rZAWdA31EiRw5bPr5VLddRa8OBgCLcecQ')`
+          background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+          position: 'relative',
+          overflow: 'hidden'
         }}
       >
         <div className="ps-outside-map-overlay" />
@@ -49,7 +51,7 @@ export function OutsideRoutePreviewCard({ destination, pickup = 'Campus Gate 1 (
             <p className="font-headline-md font-bold text-white leading-tight">{estimate.dist}</p>
           </div>
           <div className="text-right">
-            <p className="font-label-sm text-white/80">Approx Fare</p>
+            <p className="font-label-sm text-white/80">Approx Fare (@ ₹12/km)</p>
             <p className="font-headline-md font-bold text-[#FFDBCE] leading-tight">{estimate.fare}</p>
           </div>
         </div>

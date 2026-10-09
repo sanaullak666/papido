@@ -3,7 +3,6 @@ import {
   Compass, MapPin, Search, X, Calendar, Clock,
   Luggage, Info, Send, CheckCircle2, ChevronRight, Lock
 } from 'lucide-react';
-import { LocationInput } from './LocationInput';
 
 const QUICK_PICK_DESTS = [
   { name: 'White Town (Heritage)', lat: 11.9333, lng: 79.8333, icon: '🏛️' },

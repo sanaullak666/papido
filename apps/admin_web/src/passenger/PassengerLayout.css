@@ -123,18 +123,37 @@
 .passenger-shell *::after { box-sizing: border-box; }
 
 /* Ambient orbs */
-.ps-ambient { position: absolute; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
-.ps-orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.35; }
+.ps-ambient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  max-width: 100vw;
+  width: 100%;
+  contain: paint;
+}
+.ps-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.35;
+  pointer-events: none;
+}
 .ps-orb--a {
-  width: 360px; height: 360px;
+  width: 320px;
+  height: 320px;
   background: radial-gradient(circle, rgba(245, 158, 11, 0.55), transparent 70%);
-  top: -120px; right: -100px;
+  top: -60px;
+  right: 0;
   animation: psOrbFloat 14s ease-in-out infinite;
 }
 .ps-orb--b {
-  width: 300px; height: 300px;
+  width: 280px;
+  height: 280px;
   background: radial-gradient(circle, rgba(234, 88, 12, 0.35), transparent 70%);
-  bottom: -80px; left: -80px;
+  bottom: -50px;
+  left: 0;
   animation: psOrbFloat 18s ease-in-out infinite reverse;
 }
 
@@ -540,10 +559,27 @@
   z-index: 1;
 }
 
-/* ---------- Responsive ---------- */
+/* ---------- Responsive Navigation & Shell Breakpoints ---------- */
 @media (max-width: 1023px) {
   .ps-nav { display: none; }
   .ps-user-email { display: none; }
+
+  /* Ensure bottom navigation is always available across mobile and tablet viewports */
+  .passenger-shell .papido-bottom-nav {
+    display: flex !important;
+  }
+  .passenger-shell.has-bottom-nav {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0)) !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .passenger-shell .papido-bottom-nav {
+    display: none !important;
+  }
+  .passenger-shell.has-bottom-nav {
+    padding-bottom: 0 !important;
+  }
 }
 
 @media (max-width: 767px) {

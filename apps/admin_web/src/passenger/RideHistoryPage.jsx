@@ -53,10 +53,12 @@ export function RideHistoryPage() {
     const completed = safePastRides.filter(r => r.status === 'COMPLETED');
     const totalDist = completed.reduce((acc, r) => acc + (parseFloat(r.distance_km || r.estimated_distance) || 0), 0);
     const savings = completed.length * 30;
+    const co2 = (totalDist * 0.12).toFixed(1);
     return {
       tripsCount: safePastRides.length,
       distanceKm: Math.round(totalDist),
-      savedTaxi: savings
+      savedTaxi: savings,
+      co2Saved: co2
     };
   }, [safePastRides]);
 
@@ -171,7 +173,7 @@ export function RideHistoryPage() {
 
         {/* Interactive Filter Bar & Export Actions */}
         <section className="w-full flex flex-col sm:flex-row items-center justify-between gap-4 py-2 ps-fade-up">
-          <div className="flex items-center gap-1.5 p-1 bg-surface-container-low rounded-full w-full sm:w-auto overflow-x-auto">
+          <div className="flex items-center gap-1.5 p-1 bg-surface-container-low rounded-full w-full sm:w-auto overflow-x-auto ps-hist-tab-scroll">
             {FILTERS.map(f => (
               <button
                 key={f.id}
@@ -234,7 +236,7 @@ export function RideHistoryPage() {
                 Eco Mobility Impact
               </span>
               <h3 className="font-headline-md text-base md:text-lg font-bold text-on-surface">
-                You saved ~18.4 kg of CO₂ across campus hops
+                You saved ~{stats.co2Saved} kg of CO₂ across campus hops
               </h3>
               <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed">
                 Using Papido electric fleet and university-shared micro-mobility saves an estimated ₹30 per trip compared to commercial on-demand cabs outside the gate.
@@ -259,7 +261,7 @@ export function RideHistoryPage() {
             <button
               type="button"
               className="w-full py-2 rounded-full bg-surface-container font-label-md text-xs font-bold text-on-surface hover:bg-surface-container-high transition-colors border-0 cursor-pointer"
-              onClick={() => alert('To report lost property, please call PU Mobility Transit Hotline at Ext. 4088 or visit Gate 1 Security Operations Desk.')}
+              onClick={() => showToast('Report lost items to PU Mobility Transit Hotline at +91 413 2655 120 (Gate 1 Operations Desk).')}
             >
               Report Lost Item
             </button>

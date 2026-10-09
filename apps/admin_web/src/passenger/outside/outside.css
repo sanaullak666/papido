@@ -948,6 +948,7 @@
 .ps-outside-ambient-banner {
   position: relative;
   overflow: hidden;
+  contain: paint;
   border-radius: 1.5rem;
   background: linear-gradient(135deg, var(--surface-container, #FDEBDD) 0%, var(--surface-container-low, #FFF1E8) 50%, var(--surface-bright, #FFF8F5) 100%);
   padding: 24px 28px;
@@ -957,8 +958,8 @@
 
 .ps-outside-ambient-glow {
   position: absolute;
-  top: -48px;
-  right: -48px;
+  top: 0;
+  right: 0;
   width: 256px;
   height: 256px;
   border-radius: 50%;

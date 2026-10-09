@@ -12,7 +12,7 @@ export function SecuritySection({ user, onChangePassword, onSignOut }) {
           </h3>
         </div>
         <span className="px-3 py-1 rounded-full bg-green-100 text-green-800 font-label-sm text-xs font-bold">
-          2FA Protected
+          Active Session
         </span>
       </div>
 
@@ -27,7 +27,7 @@ export function SecuritySection({ user, onChangePassword, onSignOut }) {
             <div className="flex flex-col">
               <span className="font-label-md font-bold text-on-surface">Account Access Password</span>
               <span className="font-body-sm text-xs text-on-surface-variant">
-                Last changed 2 months ago • Strength: Strong
+                Standard encrypted password authentication
               </span>
             </div>
           </div>
@@ -46,19 +46,19 @@ export function SecuritySection({ user, onChangePassword, onSignOut }) {
             Active Verified Session
           </span>
 
-          <div className="flex items-center justify-between p-3 bg-surface-container-low rounded-xl">
-            <div className="flex items-center gap-3">
-              <ShieldCheck size={20} color="#00855B" />
-              <div className="flex flex-col">
-                <span className="font-label-md text-xs font-semibold text-on-surface">
+          <div className="flex items-center justify-between p-3 bg-surface-container-low rounded-xl gap-2 min-w-0">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <ShieldCheck size={20} color="#00855B" className="shrink-0" />
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="font-label-md text-xs font-semibold text-on-surface truncate">
                   {user?.email || 'Logged In Account'}
                 </span>
-                <span className="font-body-sm text-[11px] text-tertiary font-medium">
+                <span className="font-body-sm text-[11px] text-tertiary font-medium truncate">
                   Active Passenger Portal • Role: {user?.role || 'CUSTOMER'}
                 </span>
               </div>
             </div>
-            <span className="w-2.5 h-2.5 rounded-full bg-tertiary" title="Active Connection" />
+            <span className="w-2.5 h-2.5 rounded-full bg-tertiary shrink-0 ml-1" title="Active Connection" />
           </div>
         </div>
 

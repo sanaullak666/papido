@@ -64,8 +64,8 @@ export function IdentityTerminalCard({ user, stats, onViewQr }) {
           <span className="font-label-sm text-[10px] text-on-surface-variant uppercase font-semibold">Pass Rating</span>
         </div>
         <div className="flex flex-col items-center">
-          <span className="font-headline-md text-lg font-bold text-blue-700">Tier-1</span>
-          <span className="font-label-sm text-[10px] text-on-surface-variant uppercase font-semibold">Priority</span>
+          <span className="font-headline-md text-lg font-bold text-blue-700">{user?.status === 'ACTIVE' ? 'Active' : (user?.status || 'Member')}</span>
+          <span className="font-label-sm text-[10px] text-on-surface-variant uppercase font-semibold">Status</span>
         </div>
       </div>
 

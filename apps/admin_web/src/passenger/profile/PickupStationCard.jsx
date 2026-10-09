@@ -2,7 +2,7 @@ import React from 'react';
 import { MapPin } from 'lucide-react';
 
 export function PickupStationCard({ preferredStation }) {
-  const stationName = preferredStation || localStorage.getItem('papido_pref_pickup_name') || 'Gate 1 Main Entrance';
+  const stationName = preferredStation || localStorage.getItem('papido_pref_pickup') || localStorage.getItem('papido_pref_pickup_name') || 'PU Main Gate (Gate 1)';
 
   return (
     <div className="ps-pickup-station-card ps-fade-up">

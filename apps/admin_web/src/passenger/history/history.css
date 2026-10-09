@@ -554,6 +554,16 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
+.ps-hist-tab-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.ps-hist-tab-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 .ps-hist-csv-btn {
   display: inline-flex;
   align-items: center;
