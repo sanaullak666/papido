@@ -228,12 +228,11 @@ export function BookingForm({
   const adminRouteFare = matchedAdminRoute ? parseFloat(matchedAdminRoute.fare_amount) : null;
   const adminRouteDist = matchedAdminRoute ? parseFloat(matchedAdminRoute.distance_km) : null;
 
-  /* Route validation: both selected, distinct, and MUST be an Admin-configured route */
+  /* Route validation: both selected and distinct */
   const isRouteReady = Boolean(
     pickupAddress &&
     destAddress &&
-    pickupAddress.trim().toLowerCase() !== destAddress.trim().toLowerCase() &&
-    matchedAdminRoute
+    pickupAddress.trim().toLowerCase() !== destAddress.trim().toLowerCase()
   );
 
   /* Synchronized Fare Calculation strictly from Admin route */
@@ -473,45 +472,19 @@ export function BookingForm({
     });
   };
 
-  // Available destination stops based strictly on active Admin routes
+  // Available destination stops based strictly on active Admin routes (all admin stops except selected pickup)
   const availableDestStops = useMemo(() => {
-    if (!pickupAddress) {
-      return adminStops;
-    }
+    if (!pickupAddress) return adminStops;
     const pTrim = pickupAddress.trim().toLowerCase();
-    const connected = new Set();
-    adminRoutes.forEach(r => {
-      const p = (r.pickup_stop || '').trim();
-      const d = (r.destination_stop || '').trim();
-      if (p.toLowerCase() === pTrim && d) {
-        connected.add(d);
-      } else if (r.is_bidirectional && d.toLowerCase() === pTrim && p) {
-        connected.add(p);
-      }
-    });
-    const result = Array.from(connected).filter(s => s.toLowerCase() !== pTrim);
-    return result.length > 0 ? result : adminStops.filter(s => s.toLowerCase() !== pTrim);
-  }, [pickupAddress, adminRoutes, adminStops]);
+    return adminStops.filter(s => s.toLowerCase() !== pTrim);
+  }, [pickupAddress, adminStops]);
 
-  // Available pickup stops based strictly on active Admin routes
+  // Available pickup stops based strictly on active Admin routes (all admin stops except selected destination)
   const availablePickupStops = useMemo(() => {
-    if (!destAddress) {
-      return adminStops;
-    }
+    if (!destAddress) return adminStops;
     const dTrim = destAddress.trim().toLowerCase();
-    const connected = new Set();
-    adminRoutes.forEach(r => {
-      const p = (r.pickup_stop || '').trim();
-      const d = (r.destination_stop || '').trim();
-      if (d.toLowerCase() === dTrim && p) {
-        connected.add(p);
-      } else if (r.is_bidirectional && p.toLowerCase() === dTrim && d) {
-        connected.add(d);
-      }
-    });
-    const result = Array.from(connected).filter(s => s.toLowerCase() !== dTrim);
-    return result.length > 0 ? result : adminStops.filter(s => s.toLowerCase() !== dTrim);
-  }, [destAddress, adminRoutes, adminStops]);
+    return adminStops.filter(s => s.toLowerCase() !== dTrim);
+  }, [destAddress, adminStops]);
 
   const filteredPickupStops = filterStopsByQuery(availablePickupStops, pickupSearchQuery);
   const filteredDestStops = filterStopsByQuery(availableDestStops, destSearchQuery);
@@ -526,31 +499,11 @@ export function BookingForm({
     setPickupCoords(findStopCoords(stopName));
     setPickupMenuOpen(false);
 
-    // Check connected destinations in admin routes
-    const pTrim = stopName.trim().toLowerCase();
-    const connected = [];
-    adminRoutes.forEach(r => {
-      const p = (r.pickup_stop || '').trim();
-      const d = (r.destination_stop || '').trim();
-      if (p.toLowerCase() === pTrim && d) connected.push(d);
-      else if (r.is_bidirectional && d.toLowerCase() === pTrim && p) connected.push(p);
-    });
-
-    const connectedLower = connected.map(c => c.toLowerCase());
-    if (destAddress && (destAddress.trim().toLowerCase() === pTrim || !connectedLower.includes(destAddress.trim().toLowerCase()))) {
-      if (connected.length === 1) {
-        setDestAddress(connected[0]);
-        setDestSearchQuery(connected[0]);
-        setDestCoords(findStopCoords(connected[0]));
-      } else {
-        setDestAddress('');
-        setDestSearchQuery('');
-        setDestCoords(null);
-      }
-    } else if (!destAddress && connected.length === 1) {
-      setDestAddress(connected[0]);
-      setDestSearchQuery(connected[0]);
-      setDestCoords(findStopCoords(connected[0]));
+    // If destination was already selected to the exact same stop, clear destination
+    if (destAddress && destAddress.trim().toLowerCase() === stopName.trim().toLowerCase()) {
+      setDestAddress('');
+      setDestSearchQuery('');
+      setDestCoords(null);
     }
   };
 
@@ -559,6 +512,13 @@ export function BookingForm({
     setDestSearchQuery(stopName);
     setDestCoords(findStopCoords(stopName));
     setDestMenuOpen(false);
+
+    // If pickup was already selected to the exact same stop, clear pickup
+    if (pickupAddress && pickupAddress.trim().toLowerCase() === stopName.trim().toLowerCase()) {
+      setPickupAddress('');
+      setPickupSearchQuery('');
+      setPickupCoords(null);
+    }
   };
 
   const handleSelectVia = (stopName) => {
@@ -1024,9 +984,7 @@ export function BookingForm({
                   ? 'Choose Pickup Stop'
                   : !destAddress
                   ? 'Choose Drop-off Destination'
-                  : pickupAddress.trim().toLowerCase() === destAddress.trim().toLowerCase()
-                  ? 'Pickup and Destination Must Differ'
-                  : 'Route Not Configured by Admin'}
+                  : 'Pickup and Destination Must Differ'}
               </h3>
               <p className="ps-route-pending-desc">
                 {!pickupAddress && !destAddress
@@ -1035,9 +993,7 @@ export function BookingForm({
                   ? 'Search and select where the driver partner should meet you on campus.'
                   : !destAddress
                   ? 'Search and select your destination campus stop above to calculate distance, travel time, and synced fare.'
-                  : pickupAddress.trim().toLowerCase() === destAddress.trim().toLowerCase()
-                  ? 'Pickup and drop-off cannot be the same stop. Please pick a different destination.'
-                  : 'No active route configured by Admin between these stops. Please select a connected route from the options above.'}
+                  : 'Pickup and drop-off cannot be the same stop. Please pick a different destination.'}
               </p>
             </div>
           </div>
