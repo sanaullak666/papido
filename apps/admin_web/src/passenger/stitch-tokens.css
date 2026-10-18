@@ -105,6 +105,12 @@
     grid-column: span 1;
     width: 100%;
   }
+  .passenger-shell .ps-active-ride-layout .ps-book-col-side {
+    order: 1;
+  }
+  .passenger-shell .ps-active-ride-layout .ps-book-col-main {
+    order: 2;
+  }
 }
 
 /* ---------- 3. Display Utilities ---------- */

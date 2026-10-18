@@ -145,9 +145,13 @@
 }
 
 @media (max-width: 580px) {
+  .ps-history-page {
+    padding: 16px 12px 80px 12px;
+  }
   .ps-hist-card {
     flex-direction: column;
     align-items: flex-start;
+    padding: 14px 14px;
   }
   .ps-hist-right {
     flex-direction: row;

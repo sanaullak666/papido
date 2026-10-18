@@ -3,6 +3,7 @@ import { usePassenger } from '../shared/PassengerContext';
 import { RideStatusStepper } from '../../components/ride/RideStatusStepper';
 import { PSButton, PSCard } from '../shared/PassengerUI';
 import { openCancelWarning, openPenaltyModal } from '../shared/PassengerModals';
+import { WaitingWidget } from './WaitingWidget';
 import {
   Bike, MapPin, Clock, Phone, Search, CheckCircle2, Navigation,
   ExternalLink, Star, Award, Sparkles, ShieldCheck, ThumbsUp,
@@ -90,6 +91,9 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
           </div>
         </div>
       </div>
+
+      {/* Driver Waiting Widget (Live Timer, Free/Paid Status, Progress & Fare Breakdown) */}
+      <WaitingWidget activeRide={activeRide} standardCampusFare={standardCampusFare} />
 
       <div className="ps-book-grid">
         {/* Left Column: Progress Stepper & Live Route Map (7 or 8 cols) */}

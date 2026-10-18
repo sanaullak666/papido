@@ -280,3 +280,9 @@
   gap: 6px;
   margin-bottom: 14px;
 }
+
+@media (max-width: 480px) {
+  .ps-advance-page {
+    padding: 16px 12px 80px 12px;
+  }
+}

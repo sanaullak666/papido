@@ -109,6 +109,9 @@
 /* ---------- Shell ---------- */
 .passenger-shell {
   min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  max-width: 100%;
   background: #FAF5EE;
   color: var(--ps-text);
   display: flex;
@@ -567,9 +570,19 @@
   /* Ensure bottom navigation is always available across mobile and tablet viewports */
   .passenger-shell .papido-bottom-nav {
     display: flex !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    min-height: calc(64px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px));
+    z-index: 999;
   }
   .passenger-shell.has-bottom-nav {
-    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0)) !important;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
 

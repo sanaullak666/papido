@@ -100,3 +100,12 @@
   color: #FFFFFF;
   border-color: var(--ps-amber);
 }
+
+@media (max-width: 480px) {
+  .ps-outside-page {
+    padding: 16px 12px 80px 12px;
+  }
+  .ps-outside-card {
+    padding: 16px 14px;
+  }
+}
