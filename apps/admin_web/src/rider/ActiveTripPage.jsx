@@ -55,56 +55,21 @@ export function ActiveTripPage({ onNavigateTab }) {
       </div>
     );
   }
-  const [elapsedSec, setElapsedSec] = React.useState(0);
-
-  React.useEffect(() => {
-    if (!activeRide) return;
-    const startTimeStr = activeRide.started_at || activeRide.accepted_at || activeRide.created_at;
-    const startMs = startTimeStr ? new Date(startTimeStr).getTime() : Date.now();
-
-    const updateTimer = () => {
-      const now = Date.now();
-      const diffSec = Math.max(0, Math.floor((now - startMs) / 1000));
-      setElapsedSec(diffSec);
-    };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-    return () => clearInterval(interval);
-  }, [activeRide?.id, activeRide?.status]);
-
-  const formatElapsed = (sec) => {
-    const mins = Math.floor(sec / 60);
-    const s = sec % 60;
-    return `${String(mins).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-  };
 
   const pickupTimeVal = activeRide.scheduled_time_ist || activeRide.scheduled_time || activeRide.scheduledTime;
   const fare = activeRide.total_fare || activeRide.final_fare || activeRide.estimated_fare || 20;
   const split = calcDriverSplit(fare);
-  const waitingMins = Number(activeRide.waiting_minutes || 0);
-  const isPaidWaiting = waitingMins >= 10;
-  const freeMinsRemaining = Math.max(0, 10 - waitingMins);
-
-  const isHeadingToPickup = activeRide.status === 'ACCEPTED' || activeRide.status === 'RIDER_ARRIVING';
-  const isAtPickup = activeRide.status === 'RIDER_REACHED';
-  const isEnRoute = activeRide.status === 'STARTED';
 
   return (
     <div className="rp-content rp-content--narrow">
       <div className="rp-surface rp-surface--trip rp-fade-up">
-        {/* Trip Code & Live Operational Timer Bar */}
+        {/* Trip Code & Status Bar */}
         <div className="rp-trip-code-bar">
           <div className="rp-trip-code-left">
-            <span className="rp-trip-code-label">ACTIVE TRIP</span>
+            <span className="rp-trip-code-label">TRIP CODE</span>
             <span className="rp-trip-code-val">#{activeRide.ride_code || activeRide.rideCode || `PAP-${activeRide.id}`}</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className="font-mono text-xs font-bold text-muted flex items-center gap-1" style={{ background: 'rgba(255,255,255,0.06)', padding: '3px 8px', borderRadius: '6px' }}>
-              <Clock size={12} color="#F59E0B" /> {formatElapsed(elapsedSec)}
-            </span>
-            <span className="rp-trip-status-tag">{String(activeRide.status || '').replace(/_/g, ' ')}</span>
-          </div>
+          <span className="rp-trip-status-tag">{String(activeRide.status || '').replace('_', ' ')}</span>
         </div>
 
         {/* Cash to collect at drop banner */}
@@ -114,7 +79,7 @@ export function ActiveTripPage({ onNavigateTab }) {
             <div className="rp-cash-value">₹{fare}</div>
             {Boolean(activeRide.waiting_fare > 0) && (
               <div className="rp-cash-waiting">
-                Includes ₹{activeRide.waiting_fare} waiting charge ({waitingMins} mins)
+                Includes ₹{activeRide.waiting_fare} waiting charge ({activeRide.waiting_minutes || 0} mins)
               </div>
             )}
           </div>
@@ -129,141 +94,22 @@ export function ActiveTripPage({ onNavigateTab }) {
           </div>
         </div>
 
-        {/* DOMINANT PRIMARY NEXT ACTION DOCK */}
-        <div className="rp-next-action-hero rp-fade-up" style={{
-          background: 'rgba(245, 158, 11, 0.08)',
-          border: '2px solid rgba(245, 158, 11, 0.35)',
-          borderRadius: '16px',
-          padding: '16px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#F59E0B' }}>
-              CURRENT MISSION STEP
-            </span>
-            <span style={{ fontSize: '12px', fontWeight: 700, color: '#94A3B8' }}>
-              {isHeadingToPickup ? 'Navigate to Passenger' : isAtPickup ? 'Verify & Board' : isEnRoute ? 'Transit to Destination' : 'Complete'}
-            </span>
-          </div>
-
-          {activeRide.status === 'ACCEPTED' && (
-            <RPButton
-              type="button"
-              variant="primary"
-              size="lg"
-              block
-              loading={actionLoading}
-              onClick={() => handleStatusChange('RIDER_ARRIVING')}
-              style={{ minHeight: '56px', fontSize: '16px', fontWeight: 800 }}
-            >
-              <Bike size={20} />
-              <span>I AM ON THE WAY (ARRIVING)</span>
-            </RPButton>
-          )}
-
-          {activeRide.status === 'RIDER_ARRIVING' && (
-            <RPButton
-              type="button"
-              variant="primary"
-              size="lg"
-              block
-              loading={actionLoading}
-              onClick={() => handleStatusChange('RIDER_REACHED')}
-              style={{ minHeight: '56px', fontSize: '16px', fontWeight: 800 }}
-            >
-              <MapPin size={20} />
-              <span>I'VE REACHED PICKUP LOCATION</span>
-            </RPButton>
-          )}
-
-          {activeRide.status === 'RIDER_REACHED' && (
-            <div className="rp-otp-verify rp-fade-up" style={{ width: '100%', padding: '16px', background: '#FFFFFF', borderRadius: '14px' }}>
-              <div className="rp-otp-verify-head" style={{ marginBottom: '12px' }}>
-                <div className="rp-otp-verify-label" style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>
-                  Ask Passenger for 4-Digit Ride OTP
-                </div>
-                <div className="rp-otp-verify-sub" style={{ fontSize: '12px', color: '#64748B' }}>
-                  Displayed on the passenger's screen
-                </div>
-              </div>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={4}
-                autoComplete="off"
-                placeholder="••••"
-                className="rp-otp-input"
-                style={{
-                  fontSize: '28px',
-                  letterSpacing: '10px',
-                  textAlign: 'center',
-                  fontWeight: 900,
-                  height: '56px',
-                  borderRadius: '12px',
-                  border: '2px solid #F59E0B',
-                  marginBottom: '12px'
-                }}
-                value={enteredOtp}
-                onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
-              />
-              <RPButton
-                type="button"
-                variant={enteredOtp.length === 4 ? 'success' : 'ghost'}
-                size="lg"
-                block
-                disabled={actionLoading || enteredOtp.length !== 4}
-                loading={actionLoading}
-                onClick={() => handleStatusChange('STARTED')}
-                style={{ minHeight: '54px' }}
-              >
-                <CheckCircle2 size={20} />
-                <span>Verify OTP &amp; Start Trip</span>
-              </RPButton>
-            </div>
-          )}
-
-          {activeRide.status === 'STARTED' && (
-            <RPButton
-              type="button"
-              variant="success"
-              size="lg"
-              block
-              loading={actionLoading}
-              onClick={() => handleStatusChange('COMPLETED')}
-              style={{ minHeight: '56px', fontSize: '16px', fontWeight: 800 }}
-            >
-              <CheckCircle size={20} />
-              <span>REACHED DESTINATION &amp; COMPLETE TRIP</span>
-            </RPButton>
-          )}
-        </div>
-
         {/* Passenger Contact Card */}
         <div className="rp-passenger-card">
           <div>
-            <div className="rp-passenger-name" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>{activeRide.customer_name || 'Passenger'}</span>
-              <span style={{ fontSize: '12px', color: '#F59E0B', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
-                ★ 4.8
-              </span>
-            </div>
+            <div className="rp-passenger-name">{activeRide.customer_name || 'Passenger'}</div>
             <div className="rp-passenger-sub">Campus Passenger</div>
           </div>
           {activeRide.customer_phone && (
-            <a href={`tel:${activeRide.customer_phone}`} className="rp-btn rp-btn--success rp-btn--sm" style={{ minHeight: '44px', padding: '0 16px' }}>
-              <Phone size={15} /> Call Passenger
+            <a href={`tel:${activeRide.customer_phone}`} className="rp-btn rp-btn--success rp-btn--sm">
+              <Phone size={14} /> Call Passenger
             </a>
           )}
         </div>
 
-        {/* Waiting Control (Visible once rider reached pickup or during trip) */}
-        {(activeRide.status === 'RIDER_REACHED' || activeRide.status === 'STARTED') && (
-          <div className={`rp-waiting-card ${activeRide.is_waiting ? 'is-active' : ''}`} style={{
-            borderLeft: isPaidWaiting ? '4px solid #EF4444' : (activeRide.is_waiting ? '4px solid #F59E0B' : '1px solid var(--rp-border)')
-          }}>
+        {/* Waiting Control (only visible once trip is STARTED) */}
+        {activeRide.status === 'STARTED' && (
+          <div className={`rp-waiting-card ${activeRide.is_waiting ? 'is-active' : ''}`}>
             <div className="rp-waiting-card-head">
               <div className="rp-waiting-card-left">
                 <div className={`rp-waiting-card-icon ${activeRide.is_waiting ? 'is-active' : ''}`}>
@@ -271,29 +117,23 @@ export function ActiveTripPage({ onNavigateTab }) {
                 </div>
                 <div>
                   <div className="rp-waiting-card-title">
-                    {activeRide.is_waiting
-                      ? (isPaidWaiting ? 'WAITING CHARGE ACTIVE (₹10/10 min)' : 'FREE WAITING ACTIVE')
-                      : 'Trip Waiting Timer'}
+                    {activeRide.is_waiting ? 'DRIVER ON WAITING MODE' : 'Trip Waiting Controls'}
                   </div>
                   <div className="rp-waiting-card-sub">
-                    {isPaidWaiting
-                      ? `Paid waiting tier: +₹${activeRide.waiting_fare || 10} added to drop fare`
-                      : `Policy: 0–9 mins free (${freeMinsRemaining} mins free remaining)`}
+                    Policy: 0–9 mins free, ₹10 added for every 10 full minutes of waiting
                   </div>
                 </div>
               </div>
               {Boolean(activeRide.is_waiting) && (
-                <span className={`rp-waiting-tag ${isPaidWaiting ? 'is-paid' : ''}`}>
-                  {isPaidWaiting ? 'PAID WAITING' : 'FREE WAITING'}
-                </span>
+                <span className="rp-waiting-tag">ON WAITING</span>
               )}
             </div>
 
             <div className="rp-waiting-card-body">
               <div>
-                <div className="rp-waiting-recorded-label">Waiting Elapsed:</div>
+                <div className="rp-waiting-recorded-label">Total Waiting Recorded:</div>
                 <div className="rp-waiting-recorded-value">
-                  {waitingMins} mins {Boolean(activeRide.waiting_fare > 0) && `(+₹${activeRide.waiting_fare})`}
+                  {activeRide.waiting_minutes || 0} mins (+₹{activeRide.waiting_fare || 0} added)
                 </div>
               </div>
               <RPButton
@@ -303,16 +143,15 @@ export function ActiveTripPage({ onNavigateTab }) {
                 disabled={waitingLoading}
                 loading={waitingLoading}
                 onClick={handleToggleWaiting}
-                style={{ minHeight: '44px' }}
               >
                 <Clock size={14} />
-                {activeRide.is_waiting ? 'Stop Waiting Timer' : 'Start Waiting Timer'}
+                {activeRide.is_waiting ? 'Stop Waiting' : 'Start Waiting Timer'}
               </RPButton>
             </div>
           </div>
         )}
 
-        {/* Route Details Card with Direct Navigation Highlights */}
+        {/* Route Details Card */}
         <div className="rp-route-card">
           {Boolean(pickupTimeVal) && (
             <div className="rp-route-time-callout">
@@ -321,69 +160,41 @@ export function ActiveTripPage({ onNavigateTab }) {
             </div>
           )}
 
-          {/* Pickup Waypoint */}
-          <div className="rp-route-row" style={{
-            background: isHeadingToPickup ? 'rgba(16, 185, 129, 0.08)' : 'transparent',
-            padding: '10px 12px',
-            borderRadius: '10px',
-            border: isHeadingToPickup ? '1px solid rgba(16, 185, 129, 0.3)' : 'none'
-          }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '11px', fontWeight: 800, color: '#10B981', textTransform: 'uppercase' }}>
-                Pickup Location {isHeadingToPickup && '• CURRENT TARGET'}
-              </div>
-              <div style={{ fontWeight: 700, fontSize: '14px', marginTop: '2px', wordBreak: 'break-word' }}>
-                {activeRide.pickup_address}
-              </div>
-            </div>
+          <div className="rp-route-row">
+            <div><span className="rp-dot rp-dot--green" /> <strong>Pickup:</strong> {activeRide.pickup_address}</div>
             <a
               href={getMapLink(activeRide.pickup_address, activeRide.pickup_latitude, activeRide.pickup_longitude)}
               target="_blank"
               rel="noopener noreferrer"
-              className="rp-map-link rp-map-link--lg rp-btn rp-btn--primary rp-btn--sm"
-              style={{ minHeight: '40px', padding: '0 12px' }}
+              className="rp-map-link rp-map-link--lg"
             >
-              <ExternalLink size={13} /> Open Nav
+              <ExternalLink size={12} /> Navigate Pickup
             </a>
           </div>
 
           {activeRide.via_address && (
-            <div className="rp-route-row" style={{ padding: '8px 12px' }}>
+            <div className="rp-route-row">
               <div><span className="rp-dot rp-dot--amber" /> <strong>Via:</strong> {activeRide.via_address}</div>
               <a
                 href={getMapLink(activeRide.via_address, activeRide.via_latitude, activeRide.via_longitude)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rp-map-link"
+                className="rp-map-link rp-map-link--lg"
               >
-                <ExternalLink size={12} /> Via Nav
+                <ExternalLink size={12} /> Navigate Via Stop
               </a>
             </div>
           )}
 
-          {/* Drop Waypoint */}
-          <div className="rp-route-row" style={{
-            background: isEnRoute ? 'rgba(244, 63, 94, 0.08)' : 'transparent',
-            padding: '10px 12px',
-            borderRadius: '10px',
-            border: isEnRoute ? '1px solid rgba(244, 63, 94, 0.3)' : 'none'
-          }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '11px', fontWeight: 800, color: '#F43F5E', textTransform: 'uppercase' }}>
-                Drop-off Destination {isEnRoute && '• CURRENT TARGET'}
-              </div>
-              <div style={{ fontWeight: 700, fontSize: '14px', marginTop: '2px', wordBreak: 'break-word' }}>
-                {activeRide.destination_address}
-              </div>
-            </div>
+          <div className="rp-route-row">
+            <div><span className="rp-dot rp-dot--rose" /> <strong>Drop:</strong> {activeRide.destination_address}</div>
             <a
               href={getMapLink(activeRide.destination_address, activeRide.destination_latitude, activeRide.destination_longitude)}
               target="_blank"
               rel="noopener noreferrer"
-              className="rp-map-link rp-map-link--lg rp-btn rp-btn--primary rp-btn--sm"
-              style={{ minHeight: '40px', padding: '0 12px' }}
+              className="rp-map-link rp-map-link--lg"
             >
-              <ExternalLink size={13} /> Open Nav
+              <ExternalLink size={12} /> Navigate Drop
             </a>
           </div>
         </div>
@@ -392,7 +203,11 @@ export function ActiveTripPage({ onNavigateTab }) {
         {otpError && (
           <div className="rp-status-banner is-error" role="status" aria-live="polite">
             <span className="rp-banner-icon" aria-hidden="true">
-              <AlertCircle size={18} />
+              <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" fill="none" strokeWidth="2.2" />
+                <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" strokeWidth="2.2" />
+                <line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" strokeWidth="2.2" />
+              </svg>
             </span>
             <span className="rp-banner-text">{otpError}</span>
             <button
@@ -401,7 +216,10 @@ export function ActiveTripPage({ onNavigateTab }) {
               onClick={() => setOtpError(null)}
               aria-label="Dismiss"
             >
-              <X size={16} />
+              <svg viewBox="0 0 24 24">
+                <line x1="5" y1="5" x2="19" y2="19" />
+                <line x1="19" y1="5" x2="5" y2="19" />
+              </svg>
             </button>
           </div>
         )}
@@ -409,8 +227,88 @@ export function ActiveTripPage({ onNavigateTab }) {
         {/* Stepper */}
         <div className="rp-stepper-card">
           <div className="rp-stepper-card-label">Trip Progression</div>
-          <RideStatusStepper currentStatus={activeRide.status} variant="dark" />
+          <RideStatusStepper currentStatus={activeRide.status} />
         </div>
+
+        {/* Step-by-Step Action Progression */}
+        {activeRide.status === 'ACCEPTED' && (
+          <RPButton
+            type="button"
+            variant="primary"
+            size="lg"
+            block
+            loading={actionLoading}
+            onClick={() => handleStatusChange('RIDER_ARRIVING')}
+          >
+            <Bike size={18} />
+            <span>I am On The Way (Arriving)</span>
+          </RPButton>
+        )}
+
+        {activeRide.status === 'RIDER_ARRIVING' && (
+          <RPButton
+            type="button"
+            variant="primary"
+            size="lg"
+            block
+            loading={actionLoading}
+            onClick={() => handleStatusChange('RIDER_REACHED')}
+          >
+            <MapPin size={18} />
+            <span>Reached Pickup Location</span>
+          </RPButton>
+        )}
+
+        {activeRide.status === 'RIDER_REACHED' && (
+          <div className="rp-otp-verify rp-fade-up">
+            <div className="rp-otp-verify-head">
+              <div className="rp-otp-verify-label">Verify Passenger to Start Trip</div>
+              <div className="rp-otp-verify-sub">Ask passenger for their 4-digit Ride OTP:</div>
+            </div>
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={4}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
+              name={`ride_otp_${activeRide.id}`}
+              id={`ride_otp_${activeRide.id}`}
+              placeholder="••••"
+              className="rp-otp-input"
+              value={enteredOtp}
+              onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
+            />
+            <RPButton
+              type="button"
+              variant={enteredOtp.length === 4 ? 'success' : 'ghost'}
+              size="lg"
+              block
+              disabled={actionLoading || enteredOtp.length !== 4}
+              loading={actionLoading}
+              onClick={() => handleStatusChange('STARTED')}
+            >
+              <CheckCircle2 size={18} />
+              <span>Verify OTP &amp; Start Trip</span>
+            </RPButton>
+          </div>
+        )}
+
+        {activeRide.status === 'STARTED' && (
+          <RPButton
+            type="button"
+            variant="success"
+            size="lg"
+            block
+            loading={actionLoading}
+            onClick={() => handleStatusChange('COMPLETED')}
+          >
+            <CheckCircle size={18} />
+            <span>Reached Destination &amp; Complete Trip</span>
+          </RPButton>
+        )}
 
         {activeRide.status === 'COMPLETED' && (
           <div className="rp-trip-complete rp-fade-up">
@@ -452,7 +350,6 @@ export function ActiveTripPage({ onNavigateTab }) {
             block
             disabled={actionLoading}
             onClick={handleCancelActiveTrip}
-            style={{ minHeight: '44px' }}
           >
             Cancel Trip (Driver Emergency)
           </RPButton>
