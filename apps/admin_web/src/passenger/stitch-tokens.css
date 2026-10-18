@@ -49,6 +49,25 @@
   --error-container: #FEE2E2;
   --on-error: #FFFFFF;
   --on-error-container: #991B1B;
+
+  /* Semantic --papido-* tokens for Passenger Warm Theme */
+  --papido-primary: #EA580C;
+  --papido-primary-hover: #C2410C;
+  --papido-primary-active: #9A3412;
+  --papido-background: #FFF8F5;
+  --papido-surface: #FFFFFF;
+  --papido-surface-hover: #FFF1E8;
+  --papido-surface-elevated: #FDEBDD;
+  --papido-text: #271E16;
+  --papido-text-muted: #5A4138;
+  --papido-text-dim: #8E7166;
+  --papido-success: #00855B;
+  --papido-warning: #EA580C;
+  --papido-danger: #DC2626;
+  --papido-info: #0058BE;
+  --papido-border: #E2BFB2;
+  --papido-border-light: rgba(142, 113, 102, 0.2);
+  --papido-focus: #EA580C;
 }
 
 /* ---------- 2. Master 12-Column Responsive Bento Layout ---------- */

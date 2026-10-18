@@ -210,13 +210,20 @@
   color: var(--rp-text-muted, #64748B);
 }
 .rp-waiting-tag {
-  background: #EF4444;
-  color: #FFFFFF;
+  background: #F59E0B;
+  color: #0F172A;
   font-size: 10px;
   font-weight: 800;
-  padding: 2px 8px;
+  padding: 3px 8px;
   border-radius: 6px;
   letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.rp-waiting-tag.is-paid {
+  background: #EF4444;
+  color: #FFFFFF;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+  animation: rpPulseSoft 1.5s infinite;
 }
 .rp-waiting-card-body {
   display: flex;

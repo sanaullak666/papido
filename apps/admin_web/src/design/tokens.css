@@ -81,8 +81,53 @@
   --space-8: 32px;
   --space-10: 40px;
 
-  /* Accessibility & Touch Target */
-  --touch-target: 44px;
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* ==========================================================================
+     Unified Papido Semantic Design Tokens (System Standard)
+     ========================================================================== */
+  --papido-primary: #F59E0B;
+  --papido-primary-hover: #D97706;
+  --papido-primary-active: #B45309;
+  --papido-background: #0B0F19;
+  --papido-surface: #131D31;
+  --papido-surface-hover: #1A2642;
+  --papido-surface-elevated: #1C2B4B;
+  --papido-text: #F8FAFC;
+  --papido-text-muted: #94A3B8;
+  --papido-text-dim: #64748B;
+  --papido-success: #10B981;
+  --papido-warning: #F59E0B;
+  --papido-danger: #F43F5E;
+  --papido-info: #06B6D4;
+  --papido-border: #23314E;
+  --papido-border-light: rgba(255, 255, 255, 0.08);
+  --papido-focus: #F59E0B;
+
+  /* Standard Spacing Grid */
+  --papido-space-4: 4px;
+  --papido-space-8: 8px;
+  --papido-space-12: 12px;
+  --papido-space-16: 16px;
+  --papido-space-20: 20px;
+  --papido-space-24: 24px;
+  --papido-space-32: 32px;
+  --papido-space-40: 40px;
+  --papido-space-48: 48px;
+  --papido-space-64: 64px;
+
+  /* Standard Radii System */
+  --papido-radius-sm: 8px;
+  --papido-radius-md: 12px;
+  --papido-radius-lg: 16px;
+  --papido-radius-xl: 20px;
+  --papido-radius-2xl: 24px;
+  --papido-radius-pill: 9999px;
+
+  /* Touch Targets (Mobile & Operational Ergonomics) */
+  --papido-touch-min: 44px;
+  --papido-touch-action: 56px;
+  --papido-touch-action-lg: 60px;
+
+  /* Accessible Transitions */
+  --papido-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --papido-transition-normal: 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
