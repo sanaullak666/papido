@@ -15,6 +15,7 @@ const adminRoutes = require('./routes/admin.routes');
 const fareRoutes = require('./routes/fare.routes');
 const uploadRoutes = require('./routes/upload.routes');
 const pushRoutes = require('./routes/push.routes');
+const paymentRoutes = require('./routes/payment.routes');
 const path = require('path');
 
 const app = express();
@@ -38,8 +39,13 @@ if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
 }
 
-// Body Parsers
-app.use(express.json({ limit: '10mb' }));
+// Body Parsers with rawBody capture for webhook signature verification
+app.use(express.json({
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Apply General Rate Limiter
@@ -62,6 +68,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/fares', fareRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/push', pushRoutes);
+app.use('/api/payments', paymentRoutes);
 
 const fs = require('fs');
 const staticWebPath = path.join(__dirname, '../../apps/admin_web/dist');

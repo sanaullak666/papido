@@ -50,9 +50,12 @@ export function PaymentsView() {
   const exportCSV = () => {
     if (payments.length === 0) return alert('No payment records to export.');
 
-    const headers = ['Payment ID', 'Ride Code', 'Customer', 'Driver (Rider)', 'Amount (INR)', 'Method', 'Status', 'Date'];
+    const headers = ['Payment ID', 'Order ID', 'Gateway', 'UTR', 'Ride Code', 'Customer', 'Driver (Rider)', 'Amount (INR)', 'Method', 'Status', 'Date'];
     const rows = payments.map(p => [
       p.id,
+      p.order_id || p.transaction_reference || 'N/A',
+      p.gateway || 'MANUAL',
+      p.utr || 'N/A',
       p.ride_code,
       p.customer_name,
       p.rider_name || 'N/A',
@@ -74,11 +77,30 @@ export function PaymentsView() {
 
   const columns = [
     {
-      header: 'Txn Reference',
+      header: 'Order / Gateway Ref',
       accessor: (p) => (
-        <span className="pv-table-mono">
-          {p.transaction_reference || `TXN-${p.id}`}
-        </span>
+        <div className="flex flex-col gap-0.5">
+          <span className="pv-table-mono font-mono text-xs">
+            {p.order_id || p.transaction_reference || `TXN-${p.id}`}
+          </span>
+          {p.gateway && (
+            <span style={{ fontSize: '10px', color: '#059669', fontWeight: 700 }}>
+              {p.gateway} PG
+            </span>
+          )}
+        </div>
+      )
+    },
+    {
+      header: 'UTR',
+      accessor: (p) => (
+        p.utr ? (
+          <span className="font-mono text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+            {p.utr}
+          </span>
+        ) : (
+          <span className="text-gray-400 text-xs">—</span>
+        )
       )
     },
     {
@@ -123,7 +145,7 @@ export function PaymentsView() {
       header: 'Status',
       accessor: (p) => (
         <StatusBadge
-          status={p.payment_status === 'COMPLETED' ? 'completed' : p.payment_status === 'FAILED' ? 'cancelled' : 'requested'}
+          status={p.payment_status === 'COMPLETED' || p.payment_status === 'PAID' ? 'completed' : p.payment_status === 'FAILED' ? 'cancelled' : 'requested'}
           label={p.payment_status}
           size="sm"
         />

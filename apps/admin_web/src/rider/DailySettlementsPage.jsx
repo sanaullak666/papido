@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './DailySettlementsPage.css';
+import { apiRequest } from '../api';
 import { useRider } from './shared/RiderContext';
 import { getTodayDateString, getYesterdayDateString } from './shared/riderConstants';
 import { RPButton } from './shared/RiderUI';
@@ -15,7 +16,8 @@ import {
   Smartphone,
   Zap,
   Send,
-  ExternalLink
+  ExternalLink,
+  CreditCard
 } from 'lucide-react';
 
 export function DailySettlementsPage() {
@@ -34,9 +36,52 @@ export function DailySettlementsPage() {
 
   const [copiedAdminUpi, setCopiedAdminUpi] = useState(false);
   const [showAdminQr, setShowAdminQr] = useState(false);
+  const [payingYoupi, setPayingYoupi] = useState(false);
+  const [youpiError, setYoupiError] = useState('');
 
   const todayStr = getTodayDateString();
   const yestStr = getYesterdayDateString();
+
+  const handlePayYoupiSettlement = async () => {
+    setPayingYoupi(true);
+    setYoupiError('');
+    try {
+      const res = await apiRequest(`/payments/settlement/${selectedSettlementDate}/pay`, 'POST', {
+        returnUrl: `${window.location.origin}/rider/settlements?date=${selectedSettlementDate}&settled=1`
+      });
+
+      if (res?.data?.alreadySettled) {
+        fetchShiftSettlement(selectedSettlementDate);
+        return;
+      }
+
+      if (res?.data?.checkoutUrl) {
+        const win = window.open(res.data.checkoutUrl, '_blank');
+        if (!win) window.location.href = res.data.checkoutUrl;
+
+        // Poll for clearance
+        let checks = 0;
+        const interval = setInterval(async () => {
+          checks += 1;
+          if (checks > 20) {
+            clearInterval(interval);
+          } else {
+            try {
+              const checkRes = await apiRequest(`/payments/settlement/${selectedSettlementDate}`, 'GET');
+              if (checkRes?.data?.settlement?.status === 'SETTLED') {
+                clearInterval(interval);
+                fetchShiftSettlement(selectedSettlementDate);
+              }
+            } catch (_) {}
+          }
+        }, 4000);
+      }
+    } catch (err) {
+      setYoupiError(err.message || 'Failed to initialize YouPI settlement.');
+    } finally {
+      setPayingYoupi(false);
+    }
+  };
 
   return (
     <div className="rp-content rp-content--wide">
@@ -229,6 +274,62 @@ export function DailySettlementsPage() {
             </div>
           ) : (
             <>
+              {/* YouPI Gateway Instant Auto-Settlement */}
+              {(() => {
+                const dueAmount = Number(shiftSettlement?.totalCommissionDue || 0).toFixed(2);
+                return (
+                  <div style={{
+                    background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(5, 150, 105, 0.05))',
+                    border: '1.5px solid #10B981',
+                    borderRadius: '14px',
+                    padding: '16px',
+                    marginBottom: '16px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Zap size={18} color="#10B981" />
+                        <span style={{ fontWeight: 800, fontSize: '14px', color: '#065F46' }}>
+                          Instant Auto-Settlement via YouPI Gateway
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '12px', background: '#D1FAE5', color: '#047857' }}>
+                        RECOMMENDED · AUTO-VERIFIED
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#475569', margin: '0 0 12px', lineHeight: 1.4 }}>
+                      Pay ₹{dueAmount} commission directly. Shift is cleared automatically on payment without waiting for manual admin approval.
+                    </p>
+                    {youpiError && (
+                      <div style={{ fontSize: '12px', color: '#DC2626', marginBottom: '8px' }}>
+                        {youpiError}
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      disabled={payingYoupi}
+                      onClick={handlePayYoupiSettlement}
+                      className="rp-btn rp-btn--block rp-btn--primary"
+                      style={{
+                        background: 'linear-gradient(135deg, #10B981, #059669)',
+                        boxShadow: '0 4px 12px rgba(16, 185, 129, 0.35)',
+                        fontSize: '14px',
+                        fontWeight: 800,
+                        padding: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 8,
+                        color: '#FFFFFF'
+                      }}
+                    >
+                      <CreditCard size={16} />
+                      <span>{payingYoupi ? 'Launching Gateway...' : `Pay Commission ₹${dueAmount} (YouPI PG)`}</span>
+                      <ExternalLink size={14} style={{ opacity: 0.8 }} />
+                    </button>
+                  </div>
+                );
+              })()}
+
               {/* 1-Tap UPI Apps */}
               {(() => {
                 const adminUpiId = shiftSettlement?.adminUpi?.upiId || 'papido.admin@okaxis';

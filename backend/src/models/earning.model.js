@@ -570,7 +570,7 @@ const EarningModel = {
               DATE(re.created_at)
             ) as shift_date,
             r.id as ride_id,
-            COALESCE(r.final_fare, r.total_fare, re.amount, 0) as fare,
+            COALESCE(r.final_fare, r.estimated_fare, re.total_fare, 0) as fare,
             COALESCE(re.company_earning, 0) as company_due,
             COALESCE(re.controller_earning, 0) as controller_due,
             COALESCE(re.rider_earning, 0) as rider_net,

@@ -99,8 +99,11 @@ async function initializeDatabase() {
         await ensureMasterAdmin(testPool);
         schemaInitialized = true;
       } else if (!schemaInitialized && !schemaInitPromise) {
-        // Run migration/index verification non-blockingly in the background
+        // Run migration/index verification non-blockingly in the background (or synchronously in test mode)
         schemaInitPromise = runSchemaChecks(testPool);
+        if (process.env.NODE_ENV === 'test') {
+          await schemaInitPromise;
+        }
       }
 
       return { engine: 'mysql', pool };
@@ -558,7 +561,24 @@ async function ensureDatabaseSchemaMigrations(targetPool) {
     "ALTER TABLE fare_configurations MODIFY COLUMN vehicle_type VARCHAR(50) NOT NULL;",
     "ALTER TABLE rides MODIFY COLUMN vehicle_type VARCHAR(50) NOT NULL DEFAULT 'BIKE';",
     "ALTER TABLE rides MODIFY COLUMN status VARCHAR(40) NOT NULL DEFAULT 'REQUESTED';",
-    'ALTER TABLE rider_profiles ADD COLUMN rejection_reason VARCHAR(500) DEFAULT NULL AFTER college_id_doc_url;'
+    'ALTER TABLE rider_profiles ADD COLUMN rejection_reason VARCHAR(500) DEFAULT NULL AFTER college_id_doc_url;',
+
+    /* --- YOUPI PG V2 Payments & Settlements Migrations --- */
+    'ALTER TABLE payments ADD COLUMN rider_id INT NULL DEFAULT NULL AFTER customer_id;',
+    'ALTER TABLE payments ADD COLUMN order_id VARCHAR(150) NULL DEFAULT NULL AFTER amount;',
+    'ALTER TABLE payments ADD COLUMN gateway_payment_id VARCHAR(150) NULL DEFAULT NULL AFTER order_id;',
+    "ALTER TABLE payments ADD COLUMN gateway VARCHAR(50) DEFAULT 'YOUPI' AFTER payment_method;",
+    "ALTER TABLE payments ADD COLUMN currency VARCHAR(10) DEFAULT 'INR' AFTER gateway;",
+    'ALTER TABLE payments ADD COLUMN utr VARCHAR(100) NULL DEFAULT NULL AFTER transaction_reference;',
+    'ALTER TABLE payments ADD COLUMN failed_at DATETIME NULL DEFAULT NULL AFTER paid_at;',
+    'ALTER TABLE payments ADD COLUMN failure_reason VARCHAR(255) NULL DEFAULT NULL AFTER failed_at;',
+
+    'ALTER TABLE daily_shift_settlements ADD COLUMN order_id VARCHAR(150) DEFAULT NULL AFTER status;',
+    'ALTER TABLE daily_shift_settlements ADD COLUMN gateway_payment_id VARCHAR(150) DEFAULT NULL AFTER order_id;',
+    "ALTER TABLE daily_shift_settlements ADD COLUMN gateway VARCHAR(50) DEFAULT 'YOUPI' AFTER gateway_payment_id;",
+    'ALTER TABLE daily_shift_settlements ADD COLUMN checkout_url VARCHAR(500) DEFAULT NULL AFTER gateway;',
+    'ALTER TABLE daily_shift_settlements ADD COLUMN paid_at DATETIME DEFAULT NULL AFTER submitted_at;',
+    'ALTER TABLE daily_shift_settlements ADD COLUMN payment_attempts INT DEFAULT 0 AFTER paid_at;'
   ];
 
   for (const sql of migrations) {
@@ -566,6 +586,69 @@ async function ensureDatabaseSchemaMigrations(targetPool) {
       await targetPool.query(sql);
     } catch (_) {}
   }
+
+  // Ensure daily_shift_settlements table exists
+  try {
+    await targetPool.query(`
+      CREATE TABLE IF NOT EXISTS daily_shift_settlements (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        rider_id INT NOT NULL,
+        date DATE NOT NULL,
+        total_trips INT DEFAULT 0,
+        gross_fare DECIMAL(10, 2) DEFAULT 0.00,
+        company_due DECIMAL(10, 2) DEFAULT 0.00,
+        controller_due DECIMAL(10, 2) DEFAULT 0.00,
+        total_commission_due DECIMAL(10, 2) DEFAULT 0.00,
+        rider_net_earnings DECIMAL(10, 2) DEFAULT 0.00,
+        status VARCHAR(30) NOT NULL DEFAULT 'UNSETTLED',
+        order_id VARCHAR(150) DEFAULT NULL,
+        gateway_payment_id VARCHAR(150) DEFAULT NULL,
+        gateway VARCHAR(50) DEFAULT 'YOUPI',
+        checkout_url VARCHAR(500) DEFAULT NULL,
+        utr_reference VARCHAR(150) DEFAULT NULL,
+        rejection_reason VARCHAR(255) DEFAULT NULL,
+        submitted_at DATETIME DEFAULT NULL,
+        paid_at DATETIME DEFAULT NULL,
+        approved_at DATETIME DEFAULT NULL,
+        approved_by INT DEFAULT NULL,
+        payment_attempts INT DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_dss_rider_date (rider_id, date),
+        INDEX idx_dss_rider (rider_id),
+        INDEX idx_dss_date (date),
+        INDEX idx_dss_status (status)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+  } catch (_) {}
+
+  // Ensure payment_transactions table exists for idempotent gateway attempts
+  try {
+    await targetPool.query(`
+      CREATE TABLE IF NOT EXISTS payment_transactions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        payment_type VARCHAR(30) NOT NULL,
+        reference_id INT NOT NULL,
+        order_id VARCHAR(150) NOT NULL UNIQUE,
+        gateway_payment_id VARCHAR(150) DEFAULT NULL,
+        gateway VARCHAR(50) DEFAULT 'YOUPI',
+        amount DECIMAL(10, 2) NOT NULL,
+        currency VARCHAR(10) DEFAULT 'INR',
+        status VARCHAR(30) NOT NULL DEFAULT 'INITIATED',
+        utr VARCHAR(100) DEFAULT NULL,
+        checkout_url VARCHAR(500) DEFAULT NULL,
+        idempotency_key VARCHAR(150) DEFAULT NULL,
+        raw_webhook_payload LONGTEXT DEFAULT NULL,
+        metadata LONGTEXT DEFAULT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        completed_at DATETIME DEFAULT NULL,
+        INDEX idx_pt_order (order_id),
+        INDEX idx_pt_ref (payment_type, reference_id),
+        INDEX idx_pt_status (status)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+  } catch (_) {}
 
   // Ensure login_otps table exists unconditionally for mobile/email OTP authentication
   try {
@@ -643,6 +726,12 @@ async function ensureDatabaseIndexes(targetPool) {
     { table: 'payments', name: 'idx_payments_customer_id', cols: 'customer_id' },
     { table: 'payments', name: 'idx_payments_status', cols: 'payment_status' },
     { table: 'payments', name: 'idx_payments_created_at', cols: 'created_at' },
+    { table: 'payments', name: 'idx_payments_order_id', cols: 'order_id' },
+    { table: 'payments', name: 'idx_payments_gateway_id', cols: 'gateway_payment_id' },
+    { table: 'payments', name: 'idx_payments_utr', cols: 'utr' },
+    { table: 'payment_transactions', name: 'idx_pt_order', cols: 'order_id' },
+    { table: 'payment_transactions', name: 'idx_pt_ref', cols: 'payment_type, reference_id' },
+    { table: 'payment_transactions', name: 'idx_pt_status', cols: 'status' },
 
     { table: 'ratings', name: 'idx_ratings_rider_id', cols: 'rider_id' },
     { table: 'ratings', name: 'idx_ratings_customer_id', cols: 'customer_id' },
