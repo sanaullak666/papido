@@ -216,6 +216,41 @@ async function runYoupiIntegrationTests() {
     assert(rideAfterDupe.payment_status === 'PAID', 'Ride payment_status remains PAID after duplicate webhook');
 
     // ----------------------------------------------------
+    // TEST 5B: Rider Initiating Ride Payment & Marking Cash
+    // ----------------------------------------------------
+    console.log('\n▶ [5B] Testing Rider Initiating Ride Payment & Marking Cash...');
+    const ride2Res = await db.query(
+      `INSERT INTO rides (
+        ride_code, customer_id, rider_id, pickup_address, destination_address,
+        estimated_fare, final_fare, status, payment_status
+      ) VALUES (?, ?, ?, 'Campus Gate 2', 'Academic Block B', 30.00, 30.00, 'STARTED', 'PENDING')`,
+      [`PU-TEST-RIDER-${ts}`, testCustomerId, testDriverId]
+    );
+    const ride2Id = ride2Res.insertId;
+
+    // Assigned Rider initiates payment session
+    const riderSession = await PaymentService.createRidePayment(ride2Id, testDriverId);
+    assert(riderSession.success === true, 'Assigned rider can initiate YouPI payment session');
+    assert(riderSession.rideId === ride2Id, 'Rider session preserves ride ID');
+    assert(typeof riderSession.checkoutUrl === 'string', 'Rider session generates checkoutUrl');
+
+    // Unauthorized user rejected
+    let unauthorizedCaught = false;
+    try {
+      await PaymentService.createRidePayment(ride2Id, 999999);
+    } catch (err) {
+      unauthorizedCaught = true;
+    }
+    assert(unauthorizedCaught === true, 'Unauthorized user is rejected from creating payment session');
+
+    // Rider marks cash payment
+    const cashResult = await PaymentService.markCashPayment(ride2Id, testDriverId);
+    assert(cashResult.success === true, 'Rider can mark payment collected in cash');
+    const ride2AfterCash = await RideModel.findById(ride2Id);
+    assert(ride2AfterCash.payment_status === 'PAID', 'Ride payment_status updated to PAID on cash collection');
+    assert(ride2AfterCash.payment_method === 'CASH', 'Ride payment_method updated to CASH');
+
+    // ----------------------------------------------------
     // TEST 6: FLOW B - Rider Daily Shift Settlement Payment Lifecycle
     // ----------------------------------------------------
     console.log('\n▶ [6] Testing Flow B: Rider Daily Shift Commission Settlement...');
@@ -287,11 +322,11 @@ async function runYoupiIntegrationTests() {
     console.log('======================================================\n');
 
     // Clean up test records
-    await db.query('DELETE FROM payment_transactions WHERE reference_id IN (?, ?)', [createdRideId, testDriverId]);
-    await db.query('DELETE FROM payments WHERE ride_id = ?', [createdRideId]);
-    await db.query('DELETE FROM rider_earnings WHERE ride_id = ?', [createdRideId]);
+    await db.query('DELETE FROM payment_transactions WHERE reference_id IN (?, ?, ?)', [createdRideId, ride2Id, testDriverId]);
+    await db.query('DELETE FROM payments WHERE ride_id IN (?, ?)', [createdRideId, ride2Id]);
+    await db.query('DELETE FROM rider_earnings WHERE ride_id IN (?, ?)', [createdRideId, ride2Id]);
     await db.query('DELETE FROM daily_shift_settlements WHERE rider_id = ?', [testDriverId]);
-    await db.query('DELETE FROM rides WHERE id = ?', [createdRideId]);
+    await db.query('DELETE FROM rides WHERE id IN (?, ?)', [createdRideId, ride2Id]);
     await db.query('DELETE FROM users WHERE id IN (?, ?)', [testCustomerId, testDriverId]);
 
     if (failedTests > 0) {

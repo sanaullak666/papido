@@ -637,6 +637,53 @@ export function RiderProvider({ children, onNavigateTab }) {
       }
     });
 
+    socket.on('ride:payment_received', (data) => {
+      const rideId = data?.rideId;
+      if (rideId) {
+        setActiveRide(prev => {
+          if (!prev || String(prev.id) !== String(rideId)) return prev;
+          return {
+            ...prev,
+            payment_status: 'PAID',
+            payment_method: data.paymentMethod || 'UPI',
+            utr: data.utr || prev?.utr,
+            payment_utr: data.utr || prev?.payment_utr
+          };
+        });
+
+        const paidAmount = data.amount || 'Fare';
+        showStatusBanner({
+          type: 'success',
+          text: `Payment of ₹${paidAmount} received via YouPI Gateway! (UTR: ${data.utr || 'VERIFIED'})`
+        });
+
+        alertManager.playOneShot();
+        try {
+          if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+            const utter = new SpeechSynthesisUtterance(`Payment of ${paidAmount} rupees received via You P I`);
+            utter.lang = 'en-IN';
+            window.speechSynthesis.speak(utter);
+          }
+        } catch (_) {}
+      }
+    });
+
+    socket.on('ride:payment_status', (data) => {
+      const rideId = data?.rideId;
+      if (rideId && data.paymentStatus === 'PAID') {
+        setActiveRide(prev => {
+          if (!prev || String(prev.id) !== String(rideId)) return prev;
+          return {
+            ...prev,
+            payment_status: 'PAID',
+            payment_method: data.paymentMethod || 'UPI',
+            utr: data.utr || prev?.utr,
+            payment_utr: data.utr || prev?.payment_utr
+          };
+        });
+      }
+    });
+
     socket.on('penalty:payment_claimed', (data) => {
       fetchPendingPenalties();
       if (soundEnabled) {
@@ -929,6 +976,31 @@ export function RiderProvider({ children, onNavigateTab }) {
     }
   };
 
+  const markRideCashPayment = async (rideId) => {
+    try {
+      const res = await apiRequest(`/payments/ride/${rideId}/mark-cash`, 'POST', {}, token);
+      setActiveRide(prev => {
+        if (!prev || String(prev.id) !== String(rideId)) return prev;
+        return {
+          ...prev,
+          payment_status: 'PAID',
+          payment_method: 'CASH'
+        };
+      });
+      showStatusBanner({
+        type: 'success',
+        text: 'Cash fare collected and marked paid!'
+      });
+      return res;
+    } catch (err) {
+      showStatusBanner({
+        type: 'error',
+        text: err.message || 'Failed to mark cash payment.'
+      });
+      throw err;
+    }
+  };
+
   const value = {
     user,
     token,
@@ -949,6 +1021,7 @@ export function RiderProvider({ children, onNavigateTab }) {
     setIncomingRequests,
     activeRide,
     setActiveRide,
+    markRideCashPayment,
     activeRideLoading,
     fetchActiveRide,
     handleAcceptRequest,

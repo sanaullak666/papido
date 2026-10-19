@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './ActiveTripPage.css';
+import { apiRequest } from '../api';
 import { useRider } from './shared/RiderContext';
 import { calcDriverSplit, formatRideDateTime, getMapLink } from './shared/riderConstants';
 import { RideStatusStepper } from '../components/ride/RideStatusStepper';
 import { RPButton } from './shared/RiderUI';
+import { alertManager } from '../utils/alertManager';
 import {
   Bike,
   MapPin,
@@ -14,7 +16,14 @@ import {
   CheckCircle2,
   AlertCircle,
   Radio,
-  X
+  X,
+  CreditCard,
+  QrCode,
+  Zap,
+  Check,
+  Copy,
+  RefreshCw,
+  DollarSign
 } from 'lucide-react';
 
 export function ActiveTripPage({ onNavigateTab }) {
@@ -29,8 +38,123 @@ export function ActiveTripPage({ onNavigateTab }) {
     enteredOtp,
     setEnteredOtp,
     otpError,
-    setOtpError
+    setOtpError,
+    markRideCashPayment
   } = useRider();
+
+  const isPaid = activeRide?.payment_status === 'PAID';
+  const [showYoupiQr, setShowYoupiQr] = useState(false);
+  const [youpiSession, setYoupiSession] = useState(null);
+  const [loadingYoupi, setLoadingYoupi] = useState(false);
+  const [youpiError, setYoupiError] = useState('');
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [checkingPayment, setCheckingPayment] = useState(false);
+  const [markingCash, setMarkingCash] = useState(false);
+  const pollTimerRef = useRef(null);
+
+  const fare = activeRide ? (activeRide.total_fare || activeRide.final_fare || activeRide.estimated_fare || 20) : 20;
+  const split = calcDriverSplit(fare);
+
+  const handleGenerateYoupiQr = async () => {
+    setShowYoupiQr(true);
+    setLoadingYoupi(true);
+    setYoupiError('');
+    try {
+      const res = await apiRequest(`/payments/ride/${activeRide.id}/create`, 'POST', {
+        returnUrl: `${window.location.origin}/driver/active?rideId=${activeRide.id}&paymentSuccess=1`
+      });
+
+      if (res?.data?.alreadyPaid) {
+        setActiveRide(prev => ({
+          ...prev,
+          payment_status: 'PAID',
+          utr: res.data.utr,
+          payment_utr: res.data.utr
+        }));
+        return;
+      }
+
+      setYoupiSession(res.data);
+
+      // Start live polling every 2.5s for real-time payment clearance
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+      let attempts = 0;
+      pollTimerRef.current = setInterval(async () => {
+        attempts += 1;
+        if (attempts > 60) {
+          clearInterval(pollTimerRef.current);
+        } else {
+          try {
+            const check = await apiRequest(`/payments/ride/${activeRide.id}`, 'GET');
+            if (check?.data?.paymentStatus === 'PAID') {
+              clearInterval(pollTimerRef.current);
+              setActiveRide(prev => ({
+                ...prev,
+                payment_status: 'PAID',
+                payment_method: 'UPI',
+                utr: check.data.payment?.utr || 'YOUPI_VERIFIED',
+                payment_utr: check.data.payment?.utr || 'YOUPI_VERIFIED'
+              }));
+              alertManager.playOneShot();
+            }
+          } catch (_) {}
+        }
+      }, 2500);
+    } catch (err) {
+      setYoupiError(err.message || 'Failed to initialize YouPI payment gateway session.');
+    } finally {
+      setLoadingYoupi(false);
+    }
+  };
+
+  const handleCheckPaymentStatus = async () => {
+    setCheckingPayment(true);
+    try {
+      const check = await apiRequest(`/payments/ride/${activeRide.id}`, 'GET');
+      if (check?.data?.paymentStatus === 'PAID') {
+        if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+        setActiveRide(prev => ({
+          ...prev,
+          payment_status: 'PAID',
+          payment_method: 'UPI',
+          utr: check.data.payment?.utr || 'YOUPI_VERIFIED',
+          payment_utr: check.data.payment?.utr || 'YOUPI_VERIFIED'
+        }));
+        alertManager.playOneShot();
+      } else {
+        alert('Payment not yet detected. If passenger transferred, it will verify automatically in a moment.');
+      }
+    } catch (err) {
+      alert(err.message || 'Error checking payment status.');
+    } finally {
+      setCheckingPayment(false);
+    }
+  };
+
+  const handleMarkCash = async () => {
+    if (!window.confirm(`Confirm passenger handed over ₹${fare} in CASH?`)) return;
+    setMarkingCash(true);
+    try {
+      if (typeof markRideCashPayment === 'function') {
+        await markRideCashPayment(activeRide.id);
+      } else {
+        await apiRequest(`/payments/ride/${activeRide.id}/mark-cash`, 'POST');
+        setActiveRide(prev => ({ ...prev, payment_status: 'PAID', payment_method: 'CASH' }));
+      }
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+      setShowYoupiQr(false);
+    } catch (err) {
+      alert(err.message || 'Failed to mark cash payment.');
+    } finally {
+      setMarkingCash(false);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+    };
+  }, []);
 
   if (!activeRide) {
     return (
@@ -57,8 +181,6 @@ export function ActiveTripPage({ onNavigateTab }) {
   }
 
   const pickupTimeVal = activeRide.scheduled_time_ist || activeRide.scheduled_time || activeRide.scheduledTime;
-  const fare = activeRide.total_fare || activeRide.final_fare || activeRide.estimated_fare || 20;
-  const split = calcDriverSplit(fare);
 
   return (
     <div className="rp-content rp-content--narrow">
@@ -72,27 +194,220 @@ export function ActiveTripPage({ onNavigateTab }) {
           <span className="rp-trip-status-tag">{String(activeRide.status || '').replace('_', ' ')}</span>
         </div>
 
-        {/* Cash to collect at drop banner */}
-        <div className="rp-cash-card rp-fade-up">
-          <div>
-            <div className="rp-cash-label">CASH TO COLLECT AT DROP:</div>
-            <div className="rp-cash-value">₹{fare}</div>
-            {Boolean(activeRide.waiting_fare > 0) && (
-              <div className="rp-cash-waiting">
-                Includes ₹{activeRide.waiting_fare} waiting charge ({activeRide.waiting_minutes || 0} mins)
+        {/* Payment & Fare Section */}
+        {isPaid ? (
+          <div className="rp-payment-verified-card rp-fade-up">
+            <div className="rp-payment-verified-head">
+              <div className="rp-payment-verified-badge">
+                <CheckCircle2 size={18} color="#10B981" />
+                <span>PAID VIA YOUPI GATEWAY</span>
               </div>
-            )}
-          </div>
-          <div className="rp-cash-right">
-            <div className="rp-cash-net">
-              Net Pay: ₹{activeRide.rider_earning || split.rider}
+              <span className="rp-tag--emerald">SETTLED ONLINE</span>
             </div>
-            <div className="rp-cash-fee">
-              Platform Fee: ₹{activeRide.company_earning || split.company}
-              {split.controller > 0 && ` + ₹${split.controller} Ctrl`}
+            <div className="rp-payment-verified-body">
+              <div>
+                <div className="rp-payment-verified-label">Amount Paid by Passenger:</div>
+                <div className="rp-payment-verified-val">₹{fare}</div>
+                {activeRide.payment_utr || activeRide.utr ? (
+                  <div className="rp-payment-verified-utr">
+                    UTR: <strong>{activeRide.payment_utr || activeRide.utr}</strong>
+                  </div>
+                ) : null}
+              </div>
+              <div className="rp-payment-verified-splits">
+                <div>Your Net: <strong>₹{activeRide.rider_earning || split.rider}</strong></div>
+                <div>Platform Fee: <strong>₹{activeRide.company_earning || split.company}</strong></div>
+              </div>
+            </div>
+            <div className="rp-payment-verified-notice">
+              🛡️ <strong>No Cash Required:</strong> Passenger paid electronically via YouPI UPI Gateway. Do not collect cash from passenger.
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="rp-cash-card rp-fade-up">
+            <div className="rp-cash-top">
+              <div>
+                <div className="rp-cash-label">FARE TO COLLECT AT DROP:</div>
+                <div className="rp-cash-value">₹{fare}</div>
+                {Boolean(activeRide.waiting_fare > 0) && (
+                  <div className="rp-cash-waiting">
+                    Includes ₹{activeRide.waiting_fare} waiting charge ({activeRide.waiting_minutes || 0} mins)
+                  </div>
+                )}
+              </div>
+              <div className="rp-cash-right">
+                <div className="rp-cash-net">
+                  Net Pay: ₹{activeRide.rider_earning || split.rider}
+                </div>
+                <div className="rp-cash-fee">
+                  Platform Fee: ₹{activeRide.company_earning || split.company}
+                  {split.controller > 0 && ` + ₹${split.controller} Ctrl`}
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Action buttons for YouPI Payment or Cash Collection */}
+            <div className="rp-cash-actions">
+              <button
+                type="button"
+                className="rp-btn rp-btn--primary rp-btn--sm"
+                onClick={handleGenerateYoupiQr}
+                disabled={loadingYoupi}
+                style={{
+                  background: 'linear-gradient(135deg, #10B981, #059669)',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  fontWeight: 700,
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6
+                }}
+              >
+                <QrCode size={15} />
+                <span>{loadingYoupi ? 'Generating QR...' : 'Collect via YouPI QR'}</span>
+              </button>
+
+              <button
+                type="button"
+                className="rp-btn rp-btn--ghost rp-btn--sm"
+                onClick={handleMarkCash}
+                disabled={markingCash}
+                style={{
+                  border: '1.5px solid #CBD5E1',
+                  background: '#F8FAFC',
+                  color: '#334155',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6
+                }}
+              >
+                <DollarSign size={15} />
+                <span>{markingCash ? 'Marking...' : 'Passenger Paid Cash'}</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* YouPI QR Code Modal */}
+        {showYoupiQr && !isPaid && (
+          <div className="rp-modal-overlay rp-fade-in" onClick={() => setShowYoupiQr(false)}>
+            <div className="rp-qr-modal rp-slide-up" onClick={(e) => e.stopPropagation()}>
+              <div className="rp-qr-modal-head">
+                <div className="rp-qr-modal-title">
+                  <CreditCard size={18} color="#10B981" />
+                  <span>YouPI Gateway — Scan to Pay ₹{fare}</span>
+                </div>
+                <button
+                  type="button"
+                  className="rp-qr-modal-close"
+                  onClick={() => setShowYoupiQr(false)}
+                  aria-label="Close"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="rp-qr-modal-body">
+                {loadingYoupi ? (
+                  <div className="rp-qr-loading">
+                    <RefreshCw size={32} className="rp-spin" color="#10B981" />
+                    <p>Generating dynamic YouPI QR code for Ride #{activeRide.ride_code || activeRide.id}...</p>
+                  </div>
+                ) : youpiError ? (
+                  <div className="rp-qr-error">
+                    <AlertCircle size={24} color="#DC2626" />
+                    <p>{youpiError}</p>
+                    <RPButton size="sm" variant="primary" onClick={handleGenerateYoupiQr}>
+                      Retry
+                    </RPButton>
+                  </div>
+                ) : youpiSession ? (
+                  <>
+                    <div className="rp-qr-code-wrapper">
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=12&data=${encodeURIComponent(youpiSession.upiIntentUrl || youpiSession.checkoutUrl)}`}
+                        alt="YouPI Payment QR"
+                        className="rp-qr-img"
+                      />
+                      <div className="rp-qr-pulse-badge">
+                        <span className="rp-pulse-dot" />
+                        <span>Listening for payment confirmation...</span>
+                      </div>
+                    </div>
+
+                    <p className="rp-qr-instructions">
+                      Ask passenger to open <strong>Google Pay, PhonePe, Paytm, BHIM</strong>, or any UPI app and scan this QR code to pay exact fare <strong>₹{fare}</strong>.
+                    </p>
+
+                    <div className="rp-qr-upi-links">
+                      <a
+                        href={youpiSession.upiIntentUrl}
+                        className="rp-btn rp-btn--sm rp-btn--success"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                      >
+                        <Zap size={14} /> 1-Tap UPI Intent
+                      </a>
+                      {youpiSession.checkoutUrl && (
+                        <a
+                          href={youpiSession.checkoutUrl}
+                          className="rp-btn rp-btn--sm rp-btn--ghost"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                        >
+                          <ExternalLink size={14} /> Open Checkout
+                        </a>
+                      )}
+                      <button
+                        type="button"
+                        className="rp-btn rp-btn--sm rp-btn--ghost"
+                        onClick={() => {
+                          navigator.clipboard?.writeText(youpiSession.checkoutUrl || youpiSession.upiIntentUrl);
+                          setCopiedLink(true);
+                          setTimeout(() => setCopiedLink(false), 2000);
+                        }}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                      >
+                        <Copy size={14} />
+                        <span>{copiedLink ? 'Copied Link!' : 'Copy Payment Link'}</span>
+                      </button>
+                    </div>
+
+                    <div style={{ marginTop: 10, width: '100%', display: 'flex', justifyContent: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={handleCheckPaymentStatus}
+                        disabled={checkingPayment}
+                        className="rp-btn rp-btn--sm rp-btn--ghost"
+                        style={{ fontSize: '11px', color: '#059669', display: 'flex', alignItems: 'center', gap: 4 }}
+                      >
+                        <RefreshCw size={12} className={checkingPayment ? 'rp-spin' : ''} />
+                        <span>{checkingPayment ? 'Checking Gateway...' : 'Refresh Payment Status'}</span>
+                      </button>
+                    </div>
+
+                    <div className="rp-qr-modal-footer">
+                      <button
+                        type="button"
+                        className="rp-btn rp-btn--block rp-btn--ghost"
+                        onClick={handleMarkCash}
+                        disabled={markingCash}
+                        style={{ marginTop: 12, border: '1px dashed #94A3B8', fontSize: '12px' }}
+                      >
+                        Passenger handed cash instead? Mark Cash Paid
+                      </button>
+                    </div>
+                  </>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Passenger Contact Card */}
         <div className="rp-passenger-card">
@@ -199,7 +514,7 @@ export function ActiveTripPage({ onNavigateTab }) {
           </div>
         </div>
 
-        {/* OTP Error Banner (Glass Pill style) */}
+        {/* OTP Error Banner */}
         {otpError && (
           <div className="rp-status-banner is-error" role="status" aria-live="polite">
             <span className="rp-banner-icon" aria-hidden="true">
@@ -313,17 +628,65 @@ export function ActiveTripPage({ onNavigateTab }) {
         {activeRide.status === 'COMPLETED' && (
           <div className="rp-trip-complete rp-fade-up">
             <CheckCircle size={48} color="#10B981" />
-            <h3 className="rp-trip-complete-title">Trip Completed &amp; Settled!</h3>
+            <h3 className="rp-trip-complete-title">
+              {isPaid ? 'Trip Completed & Settled!' : 'Trip Completed!'}
+            </h3>
             <div className="rp-trip-code-val" style={{ margin: '4px 0 12px', display: 'inline-block' }}>
               #{activeRide.ride_code || activeRide.rideCode || `PAP-${activeRide.id}`}
             </div>
 
             <div className="rp-trip-complete-summary">
-              <div className="rp-trip-complete-label">CASH TO COLLECT FROM PASSENGER:</div>
-              <div className="rp-trip-complete-value">₹{fare}</div>
-              <div className="rp-trip-complete-net">
-                Your Net Take-Home: ₹{activeRide.rider_earning || split.rider}
-              </div>
+              {isPaid ? (
+                <>
+                  <div className="rp-trip-complete-label" style={{ color: '#059669', fontWeight: 800 }}>
+                    ✅ PAID VIA YOUPI GATEWAY (₹{fare})
+                  </div>
+                  {activeRide.payment_utr || activeRide.utr ? (
+                    <div style={{ fontSize: '12px', color: '#065F46', marginTop: 4, fontFamily: 'monospace' }}>
+                      UTR: {activeRide.payment_utr || activeRide.utr}
+                    </div>
+                  ) : null}
+                  <div className="rp-trip-complete-net" style={{ marginTop: 8 }}>
+                    Your Net Take-Home: ₹{activeRide.rider_earning || split.rider}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="rp-trip-complete-label">FARE TO COLLECT:</div>
+                  <div className="rp-trip-complete-value">₹{fare}</div>
+                  <div className="rp-trip-complete-net">
+                    Your Net Take-Home: ₹{activeRide.rider_earning || split.rider}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 8, marginTop: 12, width: '100%' }}>
+                    <button
+                      type="button"
+                      className="rp-btn rp-btn--primary rp-btn--sm"
+                      onClick={handleGenerateYoupiQr}
+                      style={{
+                        background: 'linear-gradient(135deg, #10B981, #059669)',
+                        color: '#FFF',
+                        flex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6
+                      }}
+                    >
+                      <QrCode size={14} /> Show YouPI QR
+                    </button>
+                    <button
+                      type="button"
+                      className="rp-btn rp-btn--secondary rp-btn--sm"
+                      onClick={handleMarkCash}
+                      disabled={markingCash}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                    >
+                      <DollarSign size={14} /> Paid Cash
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
 
             <RPButton
@@ -358,4 +721,5 @@ export function ActiveTripPage({ onNavigateTab }) {
     </div>
   );
 }
+
 export default ActiveTripPage;

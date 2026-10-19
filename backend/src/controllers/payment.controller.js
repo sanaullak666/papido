@@ -18,7 +18,8 @@ class PaymentController {
 
       const result = await PaymentService.createRidePayment(rideId, req.user.id, {
         returnUrl: req.body?.returnUrl,
-        idempotencyKey: req.headers['idempotency-key'] || req.body?.idempotencyKey
+        idempotencyKey: req.headers['idempotency-key'] || req.body?.idempotencyKey,
+        role: req.user.role
       });
 
       return success(res, 'Ride payment session created.', result, 201);
@@ -44,8 +45,8 @@ class PaymentController {
       }
 
       // Authorization: passenger, assigned rider, or admin
-      const isCustomer = ride.customer_id === req.user.id;
-      const isRider = ride.rider_id === req.user.id;
+      const isCustomer = parseInt(ride.customer_id, 10) === parseInt(req.user.id, 10);
+      const isRider = parseInt(ride.rider_id, 10) === parseInt(req.user.id, 10);
       const isAdmin = req.user.role === 'ADMIN';
 
       if (!isCustomer && !isRider && !isAdmin) {
@@ -65,6 +66,27 @@ class PaymentController {
         payment: payment || null,
         attempts: attempts || []
       });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * POST /api/payments/ride/:rideId/mark-cash
+   * Rider marks ride as paid in cash
+   */
+  async markCashPayment(req, res, next) {
+    try {
+      const rideId = parseInt(req.params.rideId, 10);
+      if (isNaN(rideId)) {
+        return error(res, 'Invalid ride ID provided.', 400);
+      }
+
+      const result = await PaymentService.markCashPayment(rideId, req.user.id, {
+        role: req.user.role
+      });
+
+      return success(res, 'Ride marked as paid in cash.', result);
     } catch (err) {
       next(err);
     }

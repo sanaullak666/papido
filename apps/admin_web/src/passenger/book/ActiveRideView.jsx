@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiRequest } from '../../api';
 import { usePassenger } from '../shared/PassengerContext';
 import { RideStatusStepper } from '../../components/ride/RideStatusStepper';
 import { PSButton, PSCard } from '../shared/PassengerUI';
@@ -64,6 +65,28 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
       window.URL.revokeObjectURL(url);
     } catch (_) {
       window.open(qrCodeUrl, '_blank');
+    }
+  };
+
+  const [payingYoupi, setPayingYoupi] = useState(false);
+
+  const handlePayYoupiActive = async () => {
+    setPayingYoupi(true);
+    try {
+      const res = await apiRequest(`/payments/ride/${activeRide.id}/create`, 'POST', {
+        returnUrl: `${window.location.origin}/passenger/rides?rideId=${activeRide.id}&paymentSuccess=1`
+      });
+
+      if (res?.data?.checkoutUrl) {
+        const win = window.open(res.data.checkoutUrl, '_blank');
+        if (!win) window.location.href = res.data.checkoutUrl;
+      }
+    } catch (err) {
+      if (setStatusMessage) {
+        setStatusMessage({ text: err.message || 'Unable to open YouPI checkout session.', type: 'error' });
+      }
+    } finally {
+      setPayingYoupi(false);
     }
   };
 
@@ -291,28 +314,72 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
               </div>
             </div>
 
-            {/* Direct UPI Settlement Actions */}
-            <div className="ps-upi-quick-dock">
-              <div className="ps-upi-quick-head">
-                <span className="ps-upi-quick-title">Direct UPI Settlement</span>
-                <span className="ps-upi-quick-badge">
-                  <CheckCircle2 size={13} color="#00855B" /> Instant Verification
-                </span>
+            {/* Payment Settlement Actions */}
+            {activeRide.payment_status === 'PAID' ? (
+              <div className="ps-upi-quick-dock" style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1.5px solid #10B981' }}>
+                <div className="ps-upi-quick-head">
+                  <span className="ps-upi-quick-title" style={{ color: '#065F46', fontWeight: 800 }}>
+                    Fare Settled via YouPI Gateway
+                  </span>
+                  <span className="ps-upi-quick-badge" style={{ background: '#D1FAE5', color: '#047857' }}>
+                    <CheckCircle2 size={13} color="#00855B" /> Paid Online
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: '#047857', margin: '4px 0 0', lineHeight: 1.4 }}>
+                  ₹{fare} confirmed received. Cash is NOT required at drop-off.
+                </p>
               </div>
-              <div className="ps-upi-grid">
-                <a href={gpayUrl} className="ps-upi-btn" target="_blank" rel="noopener noreferrer">
-                  <CreditCard size={18} color="#0058BE" />
-                  <span>Google Pay</span>
-                </a>
-                <a href={phonepeUrl} className="ps-upi-btn" target="_blank" rel="noopener noreferrer">
-                  <Zap size={18} color="#EA580C" />
-                  <span>PhonePe</span>
-                </a>
-                <button type="button" onClick={() => setPayMode(payMode === 'QR' ? 'APPS' : 'QR')} className="ps-upi-btn">
-                  <QrCode size={18} color="#271E16" />
-                  <span>Scan QR</span>
+            ) : (
+              <div className="ps-upi-quick-dock">
+                <div className="ps-upi-quick-head">
+                  <span className="ps-upi-quick-title">Online Payment &amp; UPI</span>
+                  <span className="ps-upi-quick-badge">
+                    <CheckCircle2 size={13} color="#00855B" /> Instant Auto-Verified
+                  </span>
+                </div>
+
+                {/* YouPI Gateway Instant Pay Button */}
+                <button
+                  type="button"
+                  onClick={handlePayYoupiActive}
+                  disabled={payingYoupi}
+                  style={{
+                    width: '100%',
+                    background: 'linear-gradient(135deg, #10B981, #059669)',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '10px 14px',
+                    fontSize: '13px',
+                    fontWeight: 800,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                    marginBottom: '10px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <CreditCard size={16} />
+                  <span>{payingYoupi ? 'Launching Gateway...' : `Pay Fare ₹${fare} via YouPI (UPI)`}</span>
+                  <ExternalLink size={13} style={{ opacity: 0.8 }} />
                 </button>
-              </div>
+
+                <div className="ps-upi-grid">
+                  <a href={gpayUrl} className="ps-upi-btn" target="_blank" rel="noopener noreferrer">
+                    <CreditCard size={18} color="#0058BE" />
+                    <span>Google Pay</span>
+                  </a>
+                  <a href={phonepeUrl} className="ps-upi-btn" target="_blank" rel="noopener noreferrer">
+                    <Zap size={18} color="#EA580C" />
+                    <span>PhonePe</span>
+                  </a>
+                  <button type="button" onClick={() => setPayMode(payMode === 'QR' ? 'APPS' : 'QR')} className="ps-upi-btn">
+                    <QrCode size={18} color="#271E16" />
+                    <span>Driver QR</span>
+                  </button>
+                </div>
 
               {payMode === 'QR' && (
                 <div className="mt-3 p-3 bg-surface-container-low rounded-xl text-center ps-fade-up">
@@ -341,6 +408,7 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
                 </div>
               )}
             </div>
+          )}
 
             {/* Driver Action Buttons: Call / Chat / SOS */}
             <div className="ps-driver-action-dock">

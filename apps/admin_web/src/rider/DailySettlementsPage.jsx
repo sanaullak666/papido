@@ -17,7 +17,8 @@ import {
   Zap,
   Send,
   ExternalLink,
-  CreditCard
+  CreditCard,
+  X
 } from 'lucide-react';
 
 export function DailySettlementsPage() {
@@ -38,6 +39,9 @@ export function DailySettlementsPage() {
   const [showAdminQr, setShowAdminQr] = useState(false);
   const [payingYoupi, setPayingYoupi] = useState(false);
   const [youpiError, setYoupiError] = useState('');
+  const [settleSession, setSettleSession] = useState(null);
+  const [showSettleQr, setShowSettleQr] = useState(false);
+  const [copiedSettleLink, setCopiedSettleLink] = useState(false);
 
   const todayStr = getTodayDateString();
   const yestStr = getYesterdayDateString();
@@ -55,26 +59,27 @@ export function DailySettlementsPage() {
         return;
       }
 
-      if (res?.data?.checkoutUrl) {
-        const win = window.open(res.data.checkoutUrl, '_blank');
-        if (!win) window.location.href = res.data.checkoutUrl;
+      setSettleSession(res.data);
+      setShowSettleQr(true);
 
+      if (res?.data?.checkoutUrl) {
         // Poll for clearance
         let checks = 0;
         const interval = setInterval(async () => {
           checks += 1;
-          if (checks > 20) {
+          if (checks > 30) {
             clearInterval(interval);
           } else {
             try {
               const checkRes = await apiRequest(`/payments/settlement/${selectedSettlementDate}`, 'GET');
               if (checkRes?.data?.settlement?.status === 'SETTLED') {
                 clearInterval(interval);
+                setShowSettleQr(false);
                 fetchShiftSettlement(selectedSettlementDate);
               }
             } catch (_) {}
           }
-        }, 4000);
+        }, 3000);
       }
     } catch (err) {
       setYoupiError(err.message || 'Failed to initialize YouPI settlement.');
@@ -262,18 +267,20 @@ export function DailySettlementsPage() {
             <div className="rp-settle-info rp-settle-info--neutral">
               No completed rides or commission dues on {shiftSettlement?.date || selectedSettlementDate}.
             </div>
-          ) : selectedSettlementDate === todayStr ? (
-            <div className="rp-settle-info rp-settle-info--blue">
-              <Clock size={24} color="#2563EB" />
-              <div>
-                <div style={{ fontWeight: 800 }}>Today's Shift is Currently Active</div>
-                <div style={{ fontSize: '12px', marginTop: '2px' }}>
-                  Your rides accumulate throughout today. The final shift settlement amount will be closed and payable <strong>after 12:00 AM midnight</strong>. You can drive freely anytime!
-                </div>
-              </div>
-            </div>
           ) : (
             <>
+              {selectedSettlementDate === todayStr && (
+                <div className="rp-settle-info rp-settle-info--blue" style={{ marginBottom: 14 }}>
+                  <Clock size={20} color="#2563EB" />
+                  <div>
+                    <div style={{ fontWeight: 800 }}>Today's Shift is Currently Active</div>
+                    <div style={{ fontSize: '12px', marginTop: '2px' }}>
+                      Your rides accumulate throughout today. You can settle your accumulated commission fee (₹{Number(shiftSettlement?.totalCommissionDue || 0).toFixed(2)}) right now via YouPI PG to clear your shift, or let it accumulate until 12:00 AM midnight. You can continue driving freely!
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* YouPI Gateway Instant Auto-Settlement */}
               {(() => {
                 const dueAmount = Number(shiftSettlement?.totalCommissionDue || 0).toFixed(2);
@@ -329,6 +336,82 @@ export function DailySettlementsPage() {
                   </div>
                 );
               })()}
+
+              {/* YouPI Settlement QR Modal */}
+              {showSettleQr && settleSession && (
+                <div className="rp-modal-overlay rp-fade-in" onClick={() => setShowSettleQr(false)}>
+                  <div className="rp-qr-modal rp-slide-up" onClick={(e) => e.stopPropagation()}>
+                    <div className="rp-qr-modal-head">
+                      <div className="rp-qr-modal-title">
+                        <CreditCard size={18} color="#10B981" />
+                        <span>YouPI — Settle Commission ₹{Number(shiftSettlement?.totalCommissionDue || 0).toFixed(2)}</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="rp-qr-modal-close"
+                        onClick={() => setShowSettleQr(false)}
+                        aria-label="Close"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+
+                    <div className="rp-qr-modal-body">
+                      <div className="rp-qr-code-wrapper">
+                        <img
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=12&data=${encodeURIComponent(settleSession.upiIntentUrl || settleSession.checkoutUrl)}`}
+                          alt="YouPI Settlement QR"
+                          className="rp-qr-img"
+                        />
+                        <div className="rp-qr-pulse-badge">
+                          <span className="rp-pulse-dot" />
+                          <span>Listening for payment clearance...</span>
+                        </div>
+                      </div>
+
+                      <p className="rp-qr-instructions">
+                        Scan with <strong>Google Pay, PhonePe, Paytm, BHIM</strong>, or any UPI app to settle ₹{Number(shiftSettlement?.totalCommissionDue || 0).toFixed(2)} commission. Shift will be cleared automatically on payment.
+                      </p>
+
+                      <div className="rp-qr-upi-links">
+                        <a
+                          href={settleSession.upiIntentUrl}
+                          className="rp-btn rp-btn--sm rp-btn--success"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                        >
+                          <Zap size={14} /> 1-Tap UPI Intent
+                        </a>
+                        {settleSession.checkoutUrl && (
+                          <a
+                            href={settleSession.checkoutUrl}
+                            className="rp-btn rp-btn--sm rp-btn--ghost"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                          >
+                            <ExternalLink size={14} /> Open Checkout
+                          </a>
+                        )}
+                        <button
+                          type="button"
+                          className="rp-btn rp-btn--sm rp-btn--ghost"
+                          onClick={() => {
+                            navigator.clipboard?.writeText(settleSession.checkoutUrl || settleSession.upiIntentUrl);
+                            setCopiedSettleLink(true);
+                            setTimeout(() => setCopiedSettleLink(false), 2000);
+                          }}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                        >
+                          <Copy size={14} />
+                          <span>{copiedSettleLink ? 'Copied Link!' : 'Copy Payment Link'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* 1-Tap UPI Apps */}
               {(() => {

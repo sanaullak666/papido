@@ -13,8 +13,11 @@ router.post('/webhook/youpi', PaymentController.handleYoupiWebhook);
 /**
  * FLOW A: Ride Payments (Passenger -> Rider)
  */
-// Customer initiates YouPI payment session for a completed ride
-router.post('/ride/:rideId/create', verifyToken, requireAnyRole(['CUSTOMER', 'ADMIN']), PaymentController.createRidePayment);
+// Customer or Rider initiates YouPI payment session for a ride
+router.post('/ride/:rideId/create', verifyToken, requireAnyRole(['CUSTOMER', 'RIDER', 'ADMIN']), PaymentController.createRidePayment);
+
+// Rider marks ride as paid in cash
+router.post('/ride/:rideId/mark-cash', verifyToken, requireAnyRole(['RIDER', 'ADMIN']), PaymentController.markCashPayment);
 
 // Customer, Rider, or Admin inspects payment details & gateway attempts
 router.get('/ride/:rideId', verifyToken, PaymentController.getRidePayment);

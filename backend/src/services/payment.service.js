@@ -33,15 +33,19 @@ class PaymentService {
    * FLOW A: Passenger initiates payment for a completed ride.
    * Preserves existing ride ID (e.g. ride_id = 105).
    */
-  async createRidePayment(rideId, customerId, options = {}) {
+  async createRidePayment(rideId, userId, options = {}) {
     const ride = await RideModel.findById(rideId);
     if (!ride) {
       throw new Error(`Ride #${rideId} not found.`);
     }
 
-    // Verify ownership
-    if (parseInt(ride.customer_id, 10) !== parseInt(customerId, 10)) {
-      throw new Error('Unauthorized: You can only pay for your own rides.');
+    // Verify ownership: allow passenger, assigned rider, or admin
+    const isCustomer = parseInt(ride.customer_id, 10) === parseInt(userId, 10);
+    const isRider = parseInt(ride.rider_id, 10) === parseInt(userId, 10);
+    const isAdmin = options.role === 'ADMIN';
+
+    if (!isCustomer && !isRider && !isAdmin) {
+      throw new Error('Unauthorized: Only assigned rider, passenger, or admin can initiate payment session.');
     }
 
     // Verify payable state
@@ -69,7 +73,7 @@ class PaymentService {
       throw new Error('Invalid ride fare computed.');
     }
 
-    const customer = await UserModel.findById(customerId);
+    const customer = await UserModel.findById(ride.customer_id);
     const orderId = YoupiService.generateRideOrderId(ride.id);
 
     // Call YOUPI PG V2
@@ -138,6 +142,78 @@ class PaymentService {
       status: 'INITIATED',
       checkoutUrl: session.checkoutUrl,
       upiIntentUrl: session.upiIntentUrl
+    };
+  }
+
+  /**
+   * Rider or Admin marks ride fare as collected in physical cash.
+   */
+  async markCashPayment(rideId, userId, options = {}) {
+    const ride = await RideModel.findById(rideId);
+    if (!ride) {
+      throw new Error(`Ride #${rideId} not found.`);
+    }
+
+    const isRider = parseInt(ride.rider_id, 10) === parseInt(userId, 10);
+    const isAdmin = options.role === 'ADMIN';
+
+    if (!isRider && !isAdmin) {
+      throw new Error('Unauthorized: Only assigned rider or admin can confirm cash receipt.');
+    }
+
+    if (ride.payment_status === 'PAID') {
+      return {
+        alreadyPaid: true,
+        success: true,
+        rideId: ride.id,
+        amount: parseFloat(ride.final_fare || ride.total_fare || 0),
+        message: 'This ride has already been marked as paid.'
+      };
+    }
+
+    const fareAmount = parseFloat(ride.final_fare || ride.total_fare || ride.estimated_fare || 25);
+
+    // Update ride in database
+    await db.query(
+      'UPDATE rides SET payment_status = ?, payment_method = ? WHERE id = ?',
+      ['PAID', 'CASH', rideId]
+    );
+
+    // Record or update payment record
+    await PaymentModel.create({
+      rideId: ride.id,
+      customerId: ride.customer_id,
+      riderId: ride.rider_id,
+      amount: fareAmount,
+      paymentMethod: 'CASH',
+      paymentStatus: 'COMPLETED',
+      transactionReference: `CASH-${Date.now()}-${ride.ride_code || ride.id}`
+    });
+
+    // Emit real-time notification
+    try {
+      if (socketManager?.io) {
+        const socketPayload = {
+          rideId,
+          amount: fareAmount,
+          paymentStatus: 'PAID',
+          paymentMethod: 'CASH',
+          timestamp: new Date().toISOString()
+        };
+        socketManager.io.to(`user_${ride.customer_id}`).emit('payment:success', socketPayload);
+        socketManager.io.to(`user_${ride.rider_id}`).emit('ride:payment_received', socketPayload);
+        socketManager.io.to(`ride_${rideId}`).emit('ride:payment_status', socketPayload);
+      }
+    } catch (socketErr) {
+      console.warn('[PaymentService] Notice emitting socket event for cash payment:', socketErr.message);
+    }
+
+    return {
+      success: true,
+      rideId,
+      amount: fareAmount,
+      paymentMethod: 'CASH',
+      paymentStatus: 'PAID'
     };
   }
 
