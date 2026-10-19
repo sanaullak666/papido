@@ -617,6 +617,8 @@
   justify-content: center;
   gap: 3px;
   padding: 6px 10px;
+  min-height: 48px;
+  min-width: 48px;
   border-radius: 10px;
   font-size: 10px;
   font-weight: 700;

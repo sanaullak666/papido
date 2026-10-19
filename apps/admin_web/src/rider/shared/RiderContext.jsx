@@ -654,17 +654,10 @@ export function RiderProvider({ children, onNavigateTab }) {
         const paidAmount = data.amount || 'Fare';
         showStatusBanner({
           type: 'success',
-          text: `Payment of ₹${paidAmount} received via YouPI Gateway! (UTR: ${data.utr || 'VERIFIED'})`
+          text: `Payment of ₹${paidAmount} confirmed!`
         });
 
         alertManager.playOneShot();
-        try {
-          if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-            const utter = new SpeechSynthesisUtterance(`Payment of ${paidAmount} rupees received via You P I`);
-            utter.lang = 'en-IN';
-            window.speechSynthesis.speak(utter);
-          }
-        } catch (_) {}
       }
     });
 

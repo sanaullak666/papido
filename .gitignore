@@ -35,7 +35,5 @@ Thumbs.db
 backend/uploads/
 backend/uploads/*
 
-# Standalone payment gateway service repo
-youpi-pg/
 
 

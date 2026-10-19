@@ -199,7 +199,7 @@ export function HistoryCard({ ride, index, onRate, onDownloadReceipt }) {
               {isCancelled ? '₹0' : `₹${fare}`}
             </span>
             <span className="font-body-sm text-[11px] font-semibold" style={{ color: paymentStatus === 'PAID' ? '#059669' : '#D97706' }}>
-              {isCancelled ? '100% Waived' : (paymentStatus === 'PAID' ? 'Paid via YouPI' : 'Payment Due')}
+              {isCancelled ? '100% Waived' : (paymentStatus === 'PAID' ? 'Paid' : 'Payment Due')}
             </span>
           </div>
 
@@ -211,7 +211,7 @@ export function HistoryCard({ ride, index, onRate, onDownloadReceipt }) {
                 style={{ background: '#10B981', color: '#fff', borderColor: '#059669' }}
                 onClick={handlePayRide}
                 disabled={paying}
-                title="Pay Fare with YouPI UPI"
+                title="Pay Fare"
               >
                 <CreditCard size={14} />
                 <span>{paying ? 'Opening...' : `Pay ₹${fare}`}</span>
@@ -286,7 +286,7 @@ export function HistoryCard({ ride, index, onRate, onDownloadReceipt }) {
 
             <div className="flex flex-col justify-between text-xs text-on-surface-variant bg-surface-container-low p-2.5 rounded-lg">
               <div>
-                <p><strong>Payment Mode:</strong> {ride.payment_method || 'UPI / YouPI'}</p>
+                <p><strong>Payment Mode:</strong> {ride.payment_method || 'UPI'}</p>
                 <p><strong>Status:</strong> {paymentStatus === 'PAID' ? 'Settled & Verified' : 'Awaiting Payment'}</p>
                 {utr && <p><strong>UTR:</strong> {utr}</p>}
                 <p><strong>Reference:</strong> {rideCode}</p>

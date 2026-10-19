@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { apiRequest } from '../../api';
 import { usePassenger } from '../shared/PassengerContext';
-import { PSButton, PSCard } from '../shared/PassengerUI';
 import { RatingControl } from '../../components/passenger/RatingControl';
-import { CheckCircle2, Phone, Bike, CreditCard, ExternalLink, RefreshCw, AlertCircle } from 'lucide-react';
+import { CheckCircle2, Bike, AlertCircle, ArrowRight, ShieldCheck, MapPin } from 'lucide-react';
 
 export function CompletedRideView({ activeRide, token, onClose, setStatusMessage }) {
   const { standardCampusFare, fetchRideHistory } = usePassenger();
@@ -12,82 +11,12 @@ export function CompletedRideView({ activeRide, token, onClose, setStatusMessage
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Payment state
-  const isInitiallyPaid = activeRide.payment_status === 'PAID';
-  const [paymentStatus, setPaymentStatus] = useState(isInitiallyPaid ? 'PAID' : (activeRide.payment_status || 'PENDING'));
-  const [paymentUtr, setPaymentUtr] = useState(activeRide.utr || null);
-  const [payingYoupi, setPayingYoupi] = useState(false);
-  const [checkingPayment, setCheckingPayment] = useState(false);
-  const pollTimerRef = useRef(null);
-
-  const fare = activeRide.final_fare || activeRide.total_fare || activeRide.estimated_fare || (standardCampusFare || 25);
-
-  // Poll payment status if payment session was launched
-  const checkStatus = async (silent = false) => {
-    if (!silent) setCheckingPayment(true);
-    try {
-      const res = await apiRequest(`/payments/ride/${activeRide.id}`, 'GET', null, token);
-      if (res?.data?.paymentStatus === 'PAID') {
-        setPaymentStatus('PAID');
-        if (res.data.payment?.utr) setPaymentUtr(res.data.payment.utr);
-        if (pollTimerRef.current) clearInterval(pollTimerRef.current);
-        if (setStatusMessage) {
-          setStatusMessage({ text: 'Payment confirmed successfully via YouPI!', type: 'success' });
-        }
-      }
-    } catch (_) {
-      // Ignore background poll errors
-    } finally {
-      if (!silent) setCheckingPayment(false);
-    }
-  };
-
-  useEffect(() => {
-    return () => {
-      if (pollTimerRef.current) clearInterval(pollTimerRef.current);
-    };
-  }, []);
-
-  const handlePayViaYoupi = async () => {
-    setPayingYoupi(true);
-    try {
-      const res = await apiRequest(`/payments/ride/${activeRide.id}/create`, 'POST', {
-        returnUrl: `${window.location.origin}/passenger/rides?rideId=${activeRide.id}&paymentSuccess=1`
-      }, token);
-
-      if (res?.data?.alreadyPaid) {
-        setPaymentStatus('PAID');
-        if (res.data.utr) setPaymentUtr(res.data.utr);
-        return;
-      }
-
-      if (res?.data?.checkoutUrl) {
-        // Open YouPI checkout in new window/tab, or fallback to direct location
-        const checkoutWindow = window.open(res.data.checkoutUrl, '_blank');
-        if (!checkoutWindow) {
-          window.location.href = res.data.checkoutUrl;
-        }
-
-        // Start polling payment status every 3 seconds for 90 seconds
-        let attempts = 0;
-        if (pollTimerRef.current) clearInterval(pollTimerRef.current);
-        pollTimerRef.current = setInterval(() => {
-          attempts += 1;
-          if (attempts > 30) {
-            clearInterval(pollTimerRef.current);
-          } else {
-            checkStatus(true);
-          }
-        }, 3000);
-      }
-    } catch (err) {
-      if (setStatusMessage) {
-        setStatusMessage({ text: err.message || 'Unable to initiate YouPI payment session.', type: 'error' });
-      }
-    } finally {
-      setPayingYoupi(false);
-    }
-  };
+  // Authoritative payment state
+  const isPaid = activeRide.payment_status === 'PAID';
+  const paymentMethod = activeRide.payment_method || (isPaid ? 'ONLINE' : 'PENDING');
+  const fare = parseFloat(activeRide.final_fare || activeRide.total_fare || activeRide.estimated_fare || (standardCampusFare || 25)).toFixed(2);
+  const waitingFare = parseFloat(activeRide.waiting_fare || 0);
+  const baseFare = parseFloat(activeRide.base_fare || (fare - waitingFare > 0 ? fare - waitingFare : fare)).toFixed(2);
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -101,7 +30,7 @@ export function CompletedRideView({ activeRide, token, onClose, setStatusMessage
       sessionStorage.setItem(`skipped_feedback_${activeRide.id}`, 'true');
       setRatingSubmitted(true);
       if (typeof fetchRideHistory === 'function') fetchRideHistory();
-      setTimeout(onClose, 2000);
+      setTimeout(onClose, 1500);
     } catch (err) {
       if (setStatusMessage) {
         setStatusMessage({ text: err.message || 'Failed to submit rating.', type: 'error' });
@@ -118,146 +47,135 @@ export function CompletedRideView({ activeRide, token, onClose, setStatusMessage
   };
 
   return (
-    <PSCard className="ps-thanks-card ps-fade-up">
-      <div className="ps-thanks-header">
-        <div className="ps-thanks-icon">
-          <CheckCircle2 size={36} color="#10B981" />
+    <div className="ps-completed-container ps-fade-up">
+      {/* Success Badge & Title */}
+      <div className="ps-completed-header">
+        <div className="ps-completed-icon-wrapper">
+          <CheckCircle2 size={36} className="text-emerald-500" />
         </div>
-        <h2 className="ps-heading">Trip Completed!</h2>
-        <div className="ps-thanks-ride-code">
-          Trip #{activeRide.ride_code || activeRide.rideCode || `PAP-${activeRide.id}`}
-        </div>
-        <p className="ps-subheading">You've reached your campus destination.</p>
+        <h2 className="ps-completed-title">Trip Completed</h2>
+        <span className="ps-completed-code">
+          Ride #{activeRide.ride_code || activeRide.rideCode || activeRide.id}
+        </span>
       </div>
 
-      <div className="ps-thanks-summary">
-        <div>
-          <div className="ps-thanks-summary-rider">
-            Rider: <strong>{activeRide.rider_name || 'Driver'}</strong>
-          </div>
-          <div className="ps-thanks-summary-route">
-            {activeRide.pickup_address} → {activeRide.destination_address}
+      {/* Route & Driver Card */}
+      <div className="ps-completed-route-card">
+        <div className="ps-completed-route-row">
+          <MapPin size={16} className="text-orange-500 flex-shrink-0" />
+          <div className="ps-completed-route-text">
+            <span className="ps-completed-station-label">Route</span>
+            <div className="ps-completed-station-names">
+              <span>{activeRide.pickup_address}</span>
+              <ArrowRight size={14} className="text-stone-400 inline mx-1.5" />
+              <span>{activeRide.destination_address}</span>
+            </div>
           </div>
         </div>
-        <div className="ps-thanks-summary-right">
-          <div className="ps-thanks-summary-fare-label">
-            {paymentStatus === 'PAID' ? 'Fare Paid' : 'Fare Due'}
-          </div>
-          <div className="ps-thanks-summary-fare">₹{fare}</div>
-        </div>
-      </div>
 
-      {/* Payment Gateway Box */}
-      <div style={{
-        margin: '12px 0 16px',
-        padding: '12px 14px',
-        borderRadius: '12px',
-        background: paymentStatus === 'PAID' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(245, 158, 11, 0.08)',
-        border: `1px solid ${paymentStatus === 'PAID' ? '#10B981' : '#F59E0B'}`
-      }}>
-        {paymentStatus === 'PAID' ? (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <CheckCircle2 size={18} color="#10B981" />
-              <div>
-                <div style={{ fontSize: '13px', fontWeight: 700, color: '#065F46' }}>
-                  Paid via YouPI Gateway
-                </div>
-                {paymentUtr && (
-                  <div style={{ fontSize: '11px', color: '#047857', fontFamily: 'monospace' }}>
-                    UTR: {paymentUtr}
-                  </div>
-                )}
-              </div>
-            </div>
-            <span style={{
-              fontSize: '11px',
-              fontWeight: 700,
-              padding: '2px 8px',
-              borderRadius: '20px',
-              background: '#D1FAE5',
-              color: '#065F46'
-            }}>
-              Settled
-            </span>
-          </div>
-        ) : (
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '12px', fontWeight: 700, color: '#92400E' }}>
-                <AlertCircle size={15} color="#D97706" />
-                <span>Payment Outstanding: ₹{fare}</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => checkStatus(false)}
-                disabled={checkingPayment}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#B45309',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 4
-                }}
-              >
-                <RefreshCw size={11} className={checkingPayment ? 'animate-spin' : ''} />
-                <span>{checkingPayment ? 'Checking...' : 'Check Status'}</span>
-              </button>
-            </div>
-
-            <PSButton
-              variant="primary"
-              block
-              onClick={handlePayViaYoupi}
-              disabled={payingYoupi}
-              style={{
-                background: 'linear-gradient(135deg, #10B981, #059669)',
-                color: '#FFFFFF',
-                boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
-              }}
-            >
-              <CreditCard size={16} />
-              <span>{payingYoupi ? 'Launching YouPI...' : `Pay ₹${fare} via YouPI (UPI)`}</span>
-              <ExternalLink size={14} style={{ opacity: 0.8 }} />
-            </PSButton>
+        {activeRide.rider_name && (
+          <div className="ps-completed-driver-row">
+            <span className="text-stone-500 text-xs font-medium">Rider</span>
+            <span className="text-stone-800 text-xs font-bold">{activeRide.rider_name}</span>
           </div>
         )}
       </div>
 
+      {/* Fare & Payment Summary Box */}
+      <div className="ps-fare-breakdown-card">
+        <div className="ps-fare-breakdown-header">
+          <span className="ps-fare-breakdown-title">Fare Breakdown</span>
+          <div className={`ps-payment-pill ${isPaid ? 'ps-payment-pill--paid' : 'ps-payment-pill--due'}`}>
+            {isPaid ? (
+              <>
+                <ShieldCheck size={13} />
+                <span>PAID {paymentMethod === 'CASH' ? '(CASH)' : '(ONLINE)'}</span>
+              </>
+            ) : (
+              <>
+                <AlertCircle size={13} />
+                <span>PAYMENT PENDING</span>
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="ps-fare-rows">
+          <div className="ps-fare-row">
+            <span>Base & Transit Fare</span>
+            <span>₹{baseFare}</span>
+          </div>
+          {waitingFare > 0 && (
+            <div className="ps-fare-row">
+              <span>Waiting Charge ({activeRide.waiting_minutes || 0}m)</span>
+              <span>₹{waitingFare.toFixed(2)}</span>
+            </div>
+          )}
+          <div className="ps-fare-row ps-fare-row--total">
+            <span>Total Fare</span>
+            <span className="ps-fare-total-num">₹{fare}</span>
+          </div>
+        </div>
+
+        <p className="ps-fare-payment-note">
+          {isPaid
+            ? paymentMethod === 'CASH'
+              ? 'Cash fare was handed over directly to the rider.'
+              : 'Payment confirmed received. No additional cash needed.'
+            : 'Please pay the driver in cash or through driver’s direct UPI QR code.'}
+        </p>
+      </div>
+
+      {/* Driver Rating & Review */}
       {!ratingSubmitted ? (
-        <>
-          <div className="ps-rating-head">Rate your experience</div>
-          <div className="ps-rating-control">
-            <RatingControl value={ratingVal} onChange={setRatingVal} size={32} />
+        <div className="ps-rating-box">
+          <div className="ps-rating-title">How was your ride experience?</div>
+          <div className="ps-rating-control-wrap">
+            <RatingControl value={ratingVal} onChange={setRatingVal} size={30} />
           </div>
           <input
             type="text"
-            placeholder="Brief feedback (optional)..."
-            className="ps-input"
+            placeholder="Add a feedback note (optional)..."
+            className="ps-feedback-input"
             value={ratingReview}
             onChange={(e) => setRatingReview(e.target.value)}
+            maxLength={180}
           />
-          <div className="ps-row-2" style={{ marginTop: 14 }}>
-            <PSButton variant="ghost" onClick={handleSkip}>Skip</PSButton>
-            <PSButton variant="primary" onClick={handleSubmit} disabled={submitting}>
-              {submitting ? 'Submitting...' : 'Submit'}
-            </PSButton>
+          <div className="ps-action-row">
+            <button
+              type="button"
+              className="ps-btn ps-btn--secondary"
+              onClick={handleSkip}
+            >
+              Skip
+            </button>
+            <button
+              type="button"
+              className="ps-btn ps-btn--primary"
+              onClick={handleSubmit}
+              disabled={submitting}
+            >
+              {submitting ? 'Submitting...' : 'Submit Rating'}
+            </button>
           </div>
-        </>
+        </div>
       ) : (
-        <div className="ps-rating-thanks">
-          Thank you! Your feedback was recorded.
+        <div className="ps-rating-thankyou">
+          <CheckCircle2 size={18} className="text-emerald-600 inline mr-1.5" />
+          <span>Thank you! Your rating has been recorded.</span>
         </div>
       )}
 
-      <PSButton variant="ghost" block onClick={handleSkip} style={{ marginTop: 16 }}>
-        <Bike size={16} /> Book Another Ride
-      </PSButton>
-    </PSCard>
+      {/* Book Next Ride */}
+      <button
+        type="button"
+        className="ps-btn ps-btn--ghost w-full mt-3"
+        onClick={handleSkip}
+      >
+        <Bike size={16} />
+        <span>Book Another Ride</span>
+      </button>
+    </div>
   );
 }
 

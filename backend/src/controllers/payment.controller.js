@@ -133,30 +133,6 @@ class PaymentController {
     }
   }
 
-  /**
-   * POST /api/payments/webhook/youpi
-   * Authoritative YOUPI PG V2 Webhook Receiver
-   * Verifies HMAC-SHA256 signature and executes state transition
-   */
-  async handleYoupiWebhook(req, res, next) {
-    try {
-      // Use raw body for cryptographic signature verification
-      const rawBody = req.rawBody || (typeof req.body === 'string' ? req.body : JSON.stringify(req.body));
-      const result = await PaymentService.processYoupiWebhook(rawBody, req.headers);
-
-      return res.status(200).json({
-        success: true,
-        message: 'Webhook processed successfully.',
-        data: result
-      });
-    } catch (err) {
-      console.error('[PaymentController] Webhook error:', err.message);
-      return res.status(400).json({
-        success: false,
-        error: err.message
-      });
-    }
-  }
 
   /**
    * GET /api/payments/admin/reconcile

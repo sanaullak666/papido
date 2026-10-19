@@ -563,11 +563,11 @@ async function ensureDatabaseSchemaMigrations(targetPool) {
     "ALTER TABLE rides MODIFY COLUMN status VARCHAR(40) NOT NULL DEFAULT 'REQUESTED';",
     'ALTER TABLE rider_profiles ADD COLUMN rejection_reason VARCHAR(500) DEFAULT NULL AFTER college_id_doc_url;',
 
-    /* --- YOUPI PG V2 Payments & Settlements Migrations --- */
+    /* --- Payments & Settlements Migrations --- */
     'ALTER TABLE payments ADD COLUMN rider_id INT NULL DEFAULT NULL AFTER customer_id;',
     'ALTER TABLE payments ADD COLUMN order_id VARCHAR(150) NULL DEFAULT NULL AFTER amount;',
     'ALTER TABLE payments ADD COLUMN gateway_payment_id VARCHAR(150) NULL DEFAULT NULL AFTER order_id;',
-    "ALTER TABLE payments ADD COLUMN gateway VARCHAR(50) DEFAULT 'YOUPI' AFTER payment_method;",
+    "ALTER TABLE payments ADD COLUMN gateway VARCHAR(50) DEFAULT 'UPI' AFTER payment_method;",
     "ALTER TABLE payments ADD COLUMN currency VARCHAR(10) DEFAULT 'INR' AFTER gateway;",
     'ALTER TABLE payments ADD COLUMN utr VARCHAR(100) NULL DEFAULT NULL AFTER transaction_reference;',
     'ALTER TABLE payments ADD COLUMN failed_at DATETIME NULL DEFAULT NULL AFTER paid_at;',
@@ -575,7 +575,7 @@ async function ensureDatabaseSchemaMigrations(targetPool) {
 
     'ALTER TABLE daily_shift_settlements ADD COLUMN order_id VARCHAR(150) DEFAULT NULL AFTER status;',
     'ALTER TABLE daily_shift_settlements ADD COLUMN gateway_payment_id VARCHAR(150) DEFAULT NULL AFTER order_id;',
-    "ALTER TABLE daily_shift_settlements ADD COLUMN gateway VARCHAR(50) DEFAULT 'YOUPI' AFTER gateway_payment_id;",
+    "ALTER TABLE daily_shift_settlements ADD COLUMN gateway VARCHAR(50) DEFAULT 'UPI' AFTER gateway_payment_id;",
     'ALTER TABLE daily_shift_settlements ADD COLUMN checkout_url VARCHAR(500) DEFAULT NULL AFTER gateway;',
     'ALTER TABLE daily_shift_settlements ADD COLUMN paid_at DATETIME DEFAULT NULL AFTER submitted_at;',
     'ALTER TABLE daily_shift_settlements ADD COLUMN payment_attempts INT DEFAULT 0 AFTER paid_at;'
@@ -603,7 +603,7 @@ async function ensureDatabaseSchemaMigrations(targetPool) {
         status VARCHAR(30) NOT NULL DEFAULT 'UNSETTLED',
         order_id VARCHAR(150) DEFAULT NULL,
         gateway_payment_id VARCHAR(150) DEFAULT NULL,
-        gateway VARCHAR(50) DEFAULT 'YOUPI',
+        gateway VARCHAR(50) DEFAULT 'UPI',
         checkout_url VARCHAR(500) DEFAULT NULL,
         utr_reference VARCHAR(150) DEFAULT NULL,
         rejection_reason VARCHAR(255) DEFAULT NULL,
@@ -631,7 +631,7 @@ async function ensureDatabaseSchemaMigrations(targetPool) {
         reference_id INT NOT NULL,
         order_id VARCHAR(150) NOT NULL UNIQUE,
         gateway_payment_id VARCHAR(150) DEFAULT NULL,
-        gateway VARCHAR(50) DEFAULT 'YOUPI',
+        gateway VARCHAR(50) DEFAULT 'UPI',
         amount DECIMAL(10, 2) NOT NULL,
         currency VARCHAR(10) DEFAULT 'INR',
         status VARCHAR(30) NOT NULL DEFAULT 'INITIATED',

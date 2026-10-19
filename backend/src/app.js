@@ -28,14 +28,7 @@ app.use(helmet({
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'Idempotency-Key',
-    'X-Gateway-Signature',
-    'X-Gateway-Delivery-Id',
-    'X-Merchant-Id'
-  ]
+  allowedHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key']
 }));
 
 // Serve static uploaded documents
