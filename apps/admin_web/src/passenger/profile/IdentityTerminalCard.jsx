@@ -1,7 +1,7 @@
 import React from 'react';
-import { Camera, QrCode, ShieldCheck, BadgeCheck, User } from 'lucide-react';
+import { Camera, ShieldCheck, BadgeCheck, User } from 'lucide-react';
 
-export function IdentityTerminalCard({ user, stats, onViewQr }) {
+export function IdentityTerminalCard({ user, stats }) {
   const name = user?.name || 'Passenger';
   const rollNo = user?.roll_no || user?.rollNo || (user?.id ? `PU-${user.id}` : 'PU Member');
   const dept = user?.department || user?.college || 'Pondicherry University Campus Community';
@@ -69,23 +69,7 @@ export function IdentityTerminalCard({ user, stats, onViewQr }) {
         </div>
       </div>
 
-      {/* Fast-Boarding QR Stamp Indicator */}
-      <div className="w-full mt-3 flex items-center justify-between px-3.5 py-2.5 bg-surface-container-high/50 rounded-xl">
-        <div className="flex items-center gap-2.5 text-left">
-          <QrCode size={22} color="#EA580C" />
-          <div className="flex flex-col">
-            <span className="font-label-md text-xs font-bold text-on-surface">Fast-Boarding Token</span>
-            <span className="font-body-sm text-[10px] text-on-surface-variant">Validated for Intra-Campus Fleet</span>
-          </div>
-        </div>
-        <button
-          type="button"
-          className="px-3 py-1 rounded-full bg-white text-xs font-bold text-on-surface hover:bg-surface-container transition-colors shadow-xs border-0 cursor-pointer"
-          onClick={onViewQr}
-        >
-          View
-        </button>
-      </div>
+
     </div>
   );
 }

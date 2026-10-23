@@ -8,7 +8,6 @@ import { BookingForm } from './book/BookingForm';
 import { ActiveRideView } from './book/ActiveRideView';
 import { CompletedRideView } from './book/CompletedRideView';
 import { LiveRadarCard } from './book/LiveRadarCard';
-import { FleetConciergeCard } from './book/FleetConciergeCard';
 import { Clock, Zap, AlertTriangle, ShieldCheck } from 'lucide-react';
 
 export function BookRidePage() {
@@ -177,7 +176,6 @@ export function BookRidePage() {
             {/* Right Column (4 cols): Live Radar & Safety Concierge */}
             <div className="ps-book-col-side">
               <LiveRadarCard {...bookingRouteInfo} />
-              <FleetConciergeCard />
             </div>
           </div>
         )}

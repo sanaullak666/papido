@@ -3,13 +3,11 @@ import './profile/profile.css';
 import { useAuth } from '../context/AuthContext';
 import { usePassenger } from './shared/PassengerContext';
 import { IdentityTerminalCard } from './profile/IdentityTerminalCard';
-import { PickupStationCard } from './profile/PickupStationCard';
-import { SecurityConciergeCard } from './profile/SecurityConciergeCard';
 import { ProfileForm } from './profile/ProfileForm';
 import { SecuritySection } from './profile/SecuritySection';
 import { ChangePasswordModal } from './profile/ChangePasswordModal';
 import {
-  ShieldCheck, CheckCircle2, QrCode, X, User
+  ShieldCheck, CheckCircle2, X, User
 } from 'lucide-react';
 
 export function PassengerProfilePage() {
@@ -18,7 +16,6 @@ export function PassengerProfilePage() {
 
   const [feedback, setFeedback] = useState(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [showQrModal, setShowQrModal] = useState(false);
 
   /* Auto-dismiss toast */
   useEffect(() => {
@@ -52,9 +49,6 @@ export function PassengerProfilePage() {
 
   const handleSaveProfile = async (payload) => {
     try {
-      if (payload.pickupStation) {
-        localStorage.setItem('papido_pref_pickup', payload.pickupStation);
-      }
       if (typeof updateProfile === 'function') {
         await updateProfile(payload);
       }
@@ -140,15 +134,12 @@ export function PassengerProfilePage() {
         {/* 12-Column Asymmetric Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-          {/* Left Column: Identity Terminal, Station, Concierge (5 cols) */}
+          {/* Left Column: Identity Terminal (5 cols) */}
           <div className="lg:col-span-5 flex flex-col gap-6">
             <IdentityTerminalCard
               user={user}
               stats={stats}
-              onViewQr={() => setShowQrModal(true)}
             />
-            <PickupStationCard />
-            <SecurityConciergeCard />
           </div>
 
           {/* Right Column: Profile Form & Security Section (7 cols) */}
@@ -165,46 +156,6 @@ export function PassengerProfilePage() {
           </div>
 
         </div>
-
-        {/* QR Token Modal */}
-        {showQrModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
-            <div className="bg-white p-6 rounded-2xl shadow-2xl max-w-sm w-full flex flex-col items-center gap-4 ps-fade-up text-center">
-              <div className="flex items-center justify-between w-full">
-                <span className="font-label-md font-bold text-on-surface">Fast-Boarding Token</span>
-                <button
-                  type="button"
-                  className="bg-transparent border-0 cursor-pointer text-on-surface-variant hover:text-on-surface"
-                  onClick={() => setShowQrModal(false)}
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              {/* QR Container */}
-              <div className="p-4 bg-surface-container-low rounded-2xl border border-outline-variant/30 flex flex-col items-center gap-2">
-                <div className="w-44 h-44 bg-white p-3 rounded-xl shadow-xs flex items-center justify-center">
-                  <QrCode size={140} color="#231A12" />
-                </div>
-                <span className="font-mono text-xs font-bold text-primary">
-                  {user?.roll_no || 'PU-TOKEN-2025-9981'}
-                </span>
-              </div>
-
-              <p className="font-body-sm text-xs text-on-surface-variant m-0">
-                Show this digital fast-boarding pass to campus shuttle pilots at terminal bays for zero-contact boarding.
-              </p>
-
-              <button
-                type="button"
-                className="w-full py-2.5 rounded-full bg-primary text-white font-label-md text-xs font-bold border-0 cursor-pointer shadow-xs"
-                onClick={() => setShowQrModal(false)}
-              >
-                Close Token
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Password Modal */}
         {showPasswordModal && (

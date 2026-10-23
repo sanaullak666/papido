@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../api';
 import { usePassenger } from './shared/PassengerContext';
 import { OutsideForm } from './outside/OutsideForm';
-import { OutsideRoutePreviewCard } from './outside/OutsideRoutePreviewCard';
 import { OutsideRecentTripsCard } from './outside/OutsideRecentTripsCard';
 import { Compass, ShieldCheck } from 'lucide-react';
 
@@ -111,12 +110,8 @@ export function OutsideTripsPage() {
             />
           </div>
 
-          {/* Right Column: Route Preview + Recent Destinations (4 cols) */}
+          {/* Right Column: Recent Destinations (4 cols) */}
           <div className="ps-book-col-side flex flex-col gap-5">
-            <OutsideRoutePreviewCard
-              destination={destination}
-              pickup="Campus Gate 1 (Main Entrance)"
-            />
             <OutsideRecentTripsCard
               onSelectDestination={handleSelectRecentOrQuick}
             />

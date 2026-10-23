@@ -6,7 +6,6 @@ import { usePassenger } from './shared/PassengerContext';
 import { ScheduledRideCard } from './advance/ScheduledRideCard';
 import { RescheduleModal } from './advance/RescheduleModal';
 import { AdvanceEmptyState } from './advance/AdvanceEmptyState';
-import { AdvancePolicyCard } from './advance/AdvancePolicyCard';
 import {
   Calendar, RefreshCw, Plus, Clock, CheckCircle2, ShieldCheck
 } from 'lucide-react';
@@ -147,10 +146,8 @@ export function AdvanceBookingsPage() {
           </div>
         </div>
 
-        {/* 12-Column Responsive Bento Layout */}
-        <div className="ps-book-grid">
-          {/* Left Column: Itinerary list (8 cols) */}
-          <div className="ps-book-col-main">
+        {/* Main Bookings List */}
+        <div className="w-full">
 
             {/* Filter Tabs backed by real ride records */}
             <div className="ps-advance-tabs ps-fade-up">
@@ -193,12 +190,6 @@ export function AdvanceBookingsPage() {
                 ))}
               </div>
             )}
-          </div>
-
-          {/* Right Column: Policies & Quick Hotline (4 cols) */}
-          <div className="ps-book-col-side">
-            <AdvancePolicyCard />
-          </div>
         </div>
 
         {/* Reschedule Interactive Modal */}

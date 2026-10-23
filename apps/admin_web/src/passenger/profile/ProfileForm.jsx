@@ -1,13 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { User, Phone, Mail, Lock, ShieldCheck, MapPin, Contact, CheckCircle2 } from 'lucide-react';
-import { CAMPUS_HOTSPOTS } from '../shared/passengerConstants';
+import { User, Phone, Mail, Lock, ShieldCheck, Contact, CheckCircle2 } from 'lucide-react';
 
 export function ProfileForm({ user, onSave }) {
   const initial = useMemo(() => ({
     name: user?.name || '',
-    phone: user?.phone || '',
-    pickupStation: user?.pickupStation || localStorage.getItem('papido_pref_pickup') || CAMPUS_HOTSPOTS[0]?.name || 'PU Main Gate (Gate 1)',
-    emergencyContact: user?.emergency_contact || user?.emergencyContact || localStorage.getItem('papido_pref_emergency') || ''
+    phone: user?.phone || ''
   }), [user]);
 
   const [form, setForm] = useState(initial);
@@ -15,9 +12,7 @@ export function ProfileForm({ user, onSave }) {
 
   const isDirty =
     form.name.trim() !== initial.name.trim() ||
-    form.phone.trim() !== initial.phone.trim() ||
-    form.pickupStation !== initial.pickupStation ||
-    form.emergencyContact.trim() !== initial.emergencyContact.trim();
+    form.phone.trim() !== initial.phone.trim();
 
   const isValid =
     form.name.trim().length >= 2 &&
@@ -37,9 +32,7 @@ export function ProfileForm({ user, onSave }) {
     setSaving(true);
     const ok = await onSave({
       name: form.name.trim(),
-      phone: form.phone.trim(),
-      pickupStation: form.pickupStation,
-      emergencyContact: form.emergencyContact.trim()
+      phone: form.phone.trim()
     });
     setSaving(false);
   };
@@ -131,54 +124,6 @@ export function ProfileForm({ user, onSave }) {
               onChange={(e) => update('phone', e.target.value)}
               placeholder="+91 XXXXX XXXXX"
               required
-            />
-          </div>
-        </div>
-
-        {/* Default Pickup Station Selector */}
-        <div className="flex flex-col gap-1.5">
-          <label className="font-label-md text-xs text-on-surface font-semibold flex items-center justify-between">
-            <span>Default Campus Pickup Station</span>
-            <span className="font-label-sm text-[11px] text-primary font-semibold">
-              Pre-selected for 1-Tap Booking
-            </span>
-          </label>
-          <div className="relative flex items-center">
-            <span className="absolute left-3.5 text-outline pointer-events-none">
-              <MapPin size={18} color="#EA580C" />
-            </span>
-            <select
-              className="ps-profile-input ps-profile-select"
-              value={form.pickupStation}
-              onChange={(e) => update('pickupStation', e.target.value)}
-            >
-              {CAMPUS_HOTSPOTS.map((station) => (
-                <option key={station.id || station.name} value={station.name}>
-                  {station.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Hostel Warden / Guardian Emergency Tel */}
-        <div className="flex flex-col gap-1.5">
-          <label className="font-label-md text-xs text-on-surface font-semibold flex items-center justify-between">
-            <span>Hostel Warden / Local Guardian Emergency Tel</span>
-            <span className="font-label-sm text-[11px] text-on-surface-variant">
-              Campus Safety Net
-            </span>
-          </label>
-          <div className="relative flex items-center">
-            <span className="absolute left-3.5 text-outline pointer-events-none">
-              <Phone size={18} color="#DC2626" />
-            </span>
-            <input
-              type="tel"
-              className="ps-profile-input"
-              value={form.emergencyContact}
-              onChange={(e) => update('emergencyContact', e.target.value)}
-              placeholder="Guardian / Warden Contact"
             />
           </div>
         </div>
