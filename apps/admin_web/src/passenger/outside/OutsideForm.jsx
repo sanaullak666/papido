@@ -207,6 +207,79 @@ export function OutsideForm({
         </div>
       </div>
 
+      {/* STEP 3: Trip Schedule Type (Single Custom Radio) */}
+      <div className="flex flex-col gap-2">
+        <label className="font-label-md uppercase tracking-wider text-on-surface-variant font-bold">
+          Departure Preference
+        </label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Depart Immediately */}
+          <div
+            role="radio"
+            aria-checked={departureSchedule === 'immediate'}
+            tabIndex={0}
+            className={`ps-schedule-radio-card ${departureSchedule === 'immediate' ? 'is-selected' : ''}`}
+            onClick={() => setDepartureSchedule('immediate')}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setDepartureSchedule('immediate'); }}
+          >
+            <div className="ps-radio-circle">
+              {departureSchedule === 'immediate' && <div className="ps-radio-inner" />}
+            </div>
+            <div className="flex flex-col">
+              <span className="font-label-lg font-bold text-on-surface">Depart Immediately</span>
+              <span className="font-body-sm text-xs text-on-surface-variant">
+                Dispatch assigns nearest campus car (~5-8 mins)
+              </span>
+            </div>
+          </div>
+
+          {/* Schedule for Later */}
+          <div
+            role="radio"
+            aria-checked={departureSchedule === 'scheduled'}
+            tabIndex={0}
+            className={`ps-schedule-radio-card ${departureSchedule === 'scheduled' ? 'is-selected' : ''}`}
+            onClick={() => setDepartureSchedule('scheduled')}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setDepartureSchedule('scheduled'); }}
+          >
+            <div className="ps-radio-circle">
+              {departureSchedule === 'scheduled' && <div className="ps-radio-inner" />}
+            </div>
+            <div className="flex flex-col">
+              <span className="font-label-lg font-bold text-on-surface">Schedule for Later</span>
+              <span className="font-body-sm text-xs text-on-surface-variant">
+                Reserve dispatch slot up to 48 hours ahead
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Schedule Inputs Drawer */}
+        {departureSchedule === 'scheduled' && (
+          <div className="flex flex-col sm:flex-row gap-3 p-3.5 bg-surface-container rounded-xl mt-1 ps-fade-up">
+            <div className="flex-1">
+              <label className="font-label-sm text-on-surface-variant block mb-1">Pick Date</label>
+              <input
+                type="date"
+                min={getTodayDateStr()}
+                value={scheduledDate}
+                onChange={(e) => setScheduledDate(e.target.value)}
+                className="w-full px-3 py-2 rounded-full bg-surface-container-lowest font-body-md text-on-surface text-sm border border-outline-variant/40 outline-none"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="font-label-sm text-on-surface-variant block mb-1">Preferred Time</label>
+              <input
+                type="time"
+                value={scheduledTime}
+                onChange={(e) => setScheduledTime(e.target.value)}
+                className="w-full px-3 py-2 rounded-full bg-surface-container-lowest font-body-md text-on-surface text-sm border border-outline-variant/40 outline-none"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* STEP 4: Passenger & Luggage Notes */}
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
@@ -246,6 +319,8 @@ export function OutsideForm({
         <span>
           {submitting
             ? 'Contacting Central Campus Dispatch...'
+            : departureSchedule === 'scheduled'
+            ? 'Pre-Book Outside Campus Ride'
             : 'Submit Outside Campus Request'}
         </span>
       </button>
