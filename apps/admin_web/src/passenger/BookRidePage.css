@@ -98,34 +98,6 @@
 .ps-flash-cta:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
 .ps-flash-error { margin-top: 8px; font-size: 12px; color: #F87171; }
 
-/* Mode Switch (Now vs Prebook) */
-.ps-mode-switch {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
-  background: rgba(255, 255, 255, 0.6);
-  padding: 5px; border-radius: 14px;
-  border: 1px solid var(--ps-border, #E8DCCB);
-  backdrop-filter: blur(8px);
-}
-.ps-mode-btn {
-  background: transparent; border: none;
-  padding: 10px 14px; border-radius: 10px;
-  font-size: 13px; font-weight: 800;
-  color: var(--ps-text-muted, #796D61);
-  display: inline-flex; align-items: center;
-  justify-content: center; gap: 8px; cursor: pointer;
-  transition: all var(--dur-fast, 160ms) ease;
-}
-.ps-mode-btn.is-active.is-amber {
-  background: linear-gradient(135deg, #F97316, #EA580C);
-  color: #FFFFFF;
-  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.28);
-}
-.ps-mode-btn.is-active.is-blue {
-  background: linear-gradient(135deg, #2563EB, #1D4ED8);
-  color: #FFFFFF;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28);
-}
-
 /* ============================================================
    BOOKING PROGRESS INDICATOR  (NEW)
    ============================================================ */
@@ -199,8 +171,7 @@
   background: #10B981;
 }
 
-/* Time selector cards */
-.ps-time-card,
+/* Schedule cards */
 .ps-schedule-card {
   background: var(--ps-surface-solid, #FFFFFF);
   border: 1px solid var(--ps-border, #E8DCCB);
@@ -208,27 +179,13 @@
   padding: 18px;
   box-shadow: var(--ps-shadow-1);
 }
-.ps-time-card-header,
 .ps-schedule-header {
   display: flex; align-items: center; justify-content: space-between;
 }
-.ps-time-card-label {
-  font-size: 12px; font-weight: 800;
-  color: var(--ps-text, #271E16);
-  display: flex; align-items: center; gap: 6px;
-}
-.ps-time-display {
-  font-size: 12px; font-weight: 800;
-  color: var(--ps-amber, #EA580C);
-  background: var(--ps-amber-soft);
-  padding: 2px 8px; border-radius: 6px;
-}
-.ps-time-pills,
 .ps-schedule-date-pills {
   display: flex; gap: 6px; margin-top: 12px;
   overflow-x: auto; scrollbar-width: none;
 }
-.ps-time-pill,
 .ps-schedule-pill {
   flex: 1; min-width: 60px;
   padding: 8px 10px; border-radius: 8px;
@@ -241,26 +198,18 @@
   justify-content: center; gap: 4px;
   transition: all var(--dur-fast, 160ms) ease;
 }
-.ps-time-pill.is-active,
 .ps-schedule-pill.is-active {
   background: var(--ps-amber, #EA580C);
   color: #FFFFFF;
   border-color: var(--ps-amber, #EA580C);
 }
 
-.ps-time-custom {
-  display: grid; grid-template-columns: 1fr 1fr 1fr;
-  gap: 10px; margin-top: 14px; padding-top: 14px;
-  border-top: 1px dashed var(--ps-border, #E8DCCB);
-}
-.ps-time-custom-label,
 .ps-schedule-time-label,
 .ps-schedule-label {
   font-size: 11px; font-weight: 800;
   color: var(--ps-text-muted, #796D61);
   margin-bottom: 4px; display: block;
 }
-.ps-time-select,
 .ps-schedule-select,
 .ps-select {
   width: 100%; height: 42px; padding: 8px 12px;
@@ -273,14 +222,11 @@
   transition: border-color var(--dur-fast) ease;
 }
 .ps-select:focus,
-.ps-time-select:focus,
 .ps-schedule-select:focus {
   border-color: var(--ps-amber, #EA580C);
 }
 
-.ps-time-ampm,
 .ps-schedule-period { display: flex; gap: 4px; }
-.ps-ampm-btn,
 .ps-period-btn {
   flex: 1; height: 42px; border-radius: 8px;
   border: 1px solid var(--ps-border, #E8DCCB);
@@ -289,7 +235,6 @@
   color: var(--ps-text-muted, #796D61);
   cursor: pointer;
 }
-.ps-ampm-btn.is-active,
 .ps-period-btn.is-active {
   background: var(--ps-amber, #EA580C);
   color: #FFFFFF;
@@ -318,22 +263,6 @@
   padding: 8px 12px; border-radius: 8px;
   border: 1px solid var(--ps-border, #E8DCCB);
   font-size: 13px; font-weight: 700;
-}
-.ps-schedule-summary {
-  display: flex; align-items: center; justify-content: space-between;
-  background: #EFF6FF; border: 1px solid #BFDBFE;
-  border-radius: 10px; padding: 10px 14px; margin-top: 14px;
-}
-.ps-schedule-summary-left {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 12px; font-weight: 700; color: #1E40AF;
-}
-.ps-schedule-summary-time {
-  font-size: 13px; font-weight: 800; color: #1D4ED8;
-}
-.ps-schedule-note {
-  font-size: 11px; color: var(--ps-text-muted, #796D61);
-  margin-top: 10px; line-height: 1.4;
 }
 
 /* Steps */
@@ -493,21 +422,6 @@
   color: var(--ps-amber, #EA580C);
   line-height: 1;
 }
-.ps-payment-row {
-  display: flex; align-items: center;
-  justify-content: space-between;
-  font-size: 13px; margin-bottom: 6px;
-}
-.ps-payment-label { color: var(--ps-text-muted, #796D61); font-weight: 700; }
-.ps-payment-method {
-  display: inline-flex; align-items: center;
-  gap: 6px; font-weight: 800;
-  color: var(--ps-text, #271E16);
-}
-.ps-fare-note {
-  font-size: 11px; color: var(--ps-text-muted, #796D61);
-  line-height: 1.4;
-}
 
 .ps-info-box {
   background: rgba(255, 255, 255, 0.7);
@@ -545,47 +459,6 @@
   gap: 4px; font-size: 12px;
   font-weight: 800; color: #2563EB;
   text-decoration: none;
-}
-
-/* ============================================================
-   ACTIVE RIDE TRIP MONITOR
-   ============================================================ */
-.ps-live-trip { display: flex; flex-direction: column; gap: 16px; }
-
-.ps-status-badge-card {
-  border-radius: 14px; padding: 14px 18px;
-  display: flex; flex-direction: column; gap: 6px;
-}
-.ps-status-badge-card.is-amber {
-  background: #FFFBEB;
-  border: 1.5px solid #FDE68A;
-}
-.ps-status-badge-card.is-emerald {
-  background: #ECFDF5;
-  border: 1.5px solid #A7F3D0;
-}
-.ps-status-badge-card-label {
-  font-size: 10px; font-weight: 800;
-  letter-spacing: 0.05em;
-  color: var(--ps-text-muted, #796D61);
-}
-.ps-status-badge-card-header {
-  display: flex; align-items: center;
-  justify-content: space-between; gap: 8px;
-}
-.ps-status-ride-code-badge {
-  font-family: ui-monospace, monospace;
-  font-size: 12px; font-weight: 800;
-  color: #EA580C;
-  background: #FFF7ED;
-  border: 1px solid rgba(234, 88, 12, 0.25);
-  padding: 2px 8px; border-radius: 6px;
-  letter-spacing: 0.03em;
-}
-.ps-status-badge-card-text {
-  font-size: 14px; font-weight: 800;
-  color: var(--ps-text, #271E16);
-  display: flex; align-items: center; gap: 8px;
 }
 
 /* ============================================================
@@ -1122,5 +995,18 @@
 @media (max-width: 480px) {
   .ps-book-page {
     padding: 16px 12px 80px 12px;
+  }
+}
+/* Pill banner mobile override */
+@media (max-width: 768px) {
+  .ps-status-pill-banner-inner {
+    border-radius: 16px;
+    padding: 10px 14px;
+  }
+  .ps-status-pill-left {
+    gap: 8px;
+  }
+  .ps-status-pill-sub {
+    font-size: 12px;
   }
 }

@@ -61,25 +61,6 @@
   margin: 24px 0 20px 0;
 }
 
-.ps-security-box {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-}
-
-.ps-security-title {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 800;
-  color: var(--ps-text, #271E16);
-}
-
-.ps-security-sub {
-  margin: 2px 0 0 0;
-  font-size: 12px;
-  color: var(--ps-text-muted, #796D61);
-}
 
 @media (max-width: 480px) {
   .ps-profile-page {

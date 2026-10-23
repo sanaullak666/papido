@@ -16,7 +16,8 @@ export function BookRidePage() {
   const {
     activeRide, setActiveRide,
     scheduledRides, flashFreeRide, setFlashFreeRide,
-    pendingPenalty, setPendingPenalty, fetchPendingPenalty, setStatusMessage
+    pendingPenalty, setPendingPenalty, fetchPendingPenalty, setStatusMessage,
+    onlineDriversCount
   } = usePassenger();
 
   const [bookingLoading, setBookingLoading] = useState(false);
@@ -92,10 +93,12 @@ export function BookRidePage() {
                 Average pickup in <strong>3 mins</strong>
               </span>
             </div>
-            <div className="ps-status-pill-right">
-              <Zap size={13} />
-              <span>Low Campus Congestion</span>
-            </div>
+            {typeof onlineDriversCount === 'number' && onlineDriversCount > 0 && (
+              <div className="ps-status-pill-right">
+                <Zap size={13} />
+                <span>{onlineDriversCount} rider{onlineDriversCount === 1 ? '' : 's'} online</span>
+              </div>
+            )}
           </div>
         </div>
 

@@ -2,303 +2,6 @@
 @import '../BookRidePage.css';
 
 /* ============================================================
-   BENTO HERO (enhanced)
-   ============================================================ */
-.ps-bento {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.ps-bento-cell {
-  background: var(--ps-surface-solid, #FFFFFF);
-  border: 1px solid var(--ps-border, rgba(234, 88, 12, 0.12));
-  border-radius: 20px;
-  padding: 22px;
-  position: relative;
-  overflow: hidden;
-  transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 240ms cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: var(--ps-shadow-1, 0 2px 8px -2px rgba(15, 23, 42, 0.05));
-}
-.ps-bento-cell:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--ps-shadow-3, 0 16px 40px -8px rgba(15, 23, 42, 0.12));
-}
-
-.ps-bento-cell--hero {
-  background:
-    radial-gradient(circle at 90% 10%, rgba(249, 115, 22, 0.10), transparent 55%),
-    var(--ps-surface-solid, #FFFFFF);
-  position: relative;
-  overflow: hidden;
-}
-.ps-bento-cell--hero::after {
-  content: "";
-  position: absolute;
-  top: -50%; right: -20%;
-  width: 300px; height: 300px;
-  background: radial-gradient(circle, rgba(234, 88, 12, 0.08), transparent 70%);
-  pointer-events: none;
-  animation: psOrbFloat 12s ease-in-out infinite;
-}
-
-.ps-bento-cell--accent {
-  background:
-    radial-gradient(circle at 20% 90%, rgba(234, 88, 12, 0.08), transparent 50%),
-    var(--ps-surface-solid, #FFFFFF);
-}
-
-.ps-bento-hero-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  color: var(--ps-text-muted, #796D61);
-  text-transform: uppercase;
-  margin-bottom: 14px;
-  width: 100%;
-  flex-wrap: wrap;
-}
-.ps-bento-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--ps-amber, #EA580C);
-  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15);
-}
-
-.ps-bento-live-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 10px;
-  font-weight: 800;
-  color: #B45309;
-  background: #FFFBEB;
-  border: 1px solid #FDE68A;
-  padding: 2px 8px;
-  border-radius: 999px;
-  margin-left: auto;
-  letter-spacing: 0.02em;
-  text-transform: none;
-}
-.ps-bento-live-pill.is-live {
-  color: #059669;
-  background: #ECFDF5;
-  border-color: #A7F3D0;
-}
-
-.ps-bento-live-pulse {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #10B981;
-  animation: psDotPulse 1.5s infinite;
-}
-
-.ps-bento-hero-title {
-  font-family: 'Outfit', sans-serif;
-  font-size: clamp(28px, 5vw, 42px);
-  font-weight: 900;
-  line-height: 0.98;
-  letter-spacing: -0.03em;
-  margin: 0 0 12px;
-  color: var(--ps-text, #271E16);
-  position: relative;
-  z-index: 1;
-}
-.ps-bento-hero-accent { color: var(--ps-amber, #EA580C); }
-
-.ps-bento-hero-sub {
-  font-size: 13px;
-  color: var(--ps-text-muted, #796D61);
-  margin: 0 0 18px;
-  line-height: 1.5;
-  position: relative;
-  z-index: 1;
-}
-
-.ps-bento-hero-cta-row {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  flex-wrap: wrap;
-  position: relative;
-  z-index: 1;
-}
-
-.ps-bento-hero-cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 11px 20px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #F97316, #EA580C);
-  color: #FFFFFF;
-  font-size: 13px;
-  font-weight: 800;
-  text-decoration: none;
-  box-shadow: 0 6px 18px rgba(234, 88, 12, 0.30);
-  transition: transform 180ms ease, filter 180ms ease;
-}
-.ps-bento-hero-cta:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.05);
-}
-.ps-bento-hero-cta:active { transform: scale(0.98); }
-
-.ps-bento-hero-fare-preview {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.ps-bento-fare-label {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--ps-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-.ps-bento-fare-value {
-  font-family: 'Outfit', sans-serif;
-  font-size: 20px;
-  font-weight: 900;
-  color: var(--ps-amber);
-}
-
-.ps-bento-hero-meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--ps-text-muted, #796D61);
-}
-.ps-bento-live-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: #10B981;
-  animation: psDotPulse 1.8s infinite;
-}
-
-.ps-bento-cell--stat {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 18px;
-}
-
-.ps-bento-stat-icon {
-  width: 34px; height: 34px;
-  border-radius: 10px;
-  background: var(--ps-amber-soft, rgba(234, 88, 12, 0.08));
-  color: var(--ps-amber, #EA580C);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: auto;
-}
-.ps-bento-stat-icon--accent {
-  background: rgba(234, 88, 12, 0.14);
-}
-
-.ps-bento-stat-value {
-  font-family: 'Outfit', sans-serif;
-  font-size: 32px;
-  font-weight: 900;
-  color: var(--ps-text, #271E16);
-  line-height: 1;
-  margin-top: 16px;
-}
-.ps-bento-stat-value--sm { font-size: 20px; }
-
-.ps-bento-stat-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--ps-text-muted, #796D61);
-  margin-top: 4px;
-}
-
-.ps-bento-stat-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 11px;
-  font-weight: 800;
-  color: var(--ps-amber, #EA580C);
-  text-decoration: none;
-  margin-top: 8px;
-}
-
-.ps-bento-stat-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 9.5px;
-  font-weight: 800;
-  color: #059669;
-  background: #ECFDF5;
-  border: 1px solid #A7F3D0;
-  padding: 2px 6px;
-  border-radius: 4px;
-  margin-top: 8px;
-  width: fit-content;
-}
-
-@media (max-width: 720px) {
-  .ps-bento { grid-template-columns: 1fr 1fr; }
-  .ps-bento-cell--hero { grid-column: 1 / -1; }
-}
-@media (max-width: 440px) {
-  .ps-bento { grid-template-columns: 1fr; }
-}
-
-/* Location pulse */
-@keyframes psMarkerPulse {
-  0%   { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45); }
-  70%  { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-}
-.ps-pulse-marker { animation: psMarkerPulse 2s infinite; }
-
-@keyframes psSharedEnter {
-  from { opacity: 0; transform: scale(0.96) translateY(8px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
-}
-.ps-status-badge-card {
-  animation: psSharedEnter 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-/* Bottom sheet on mobile */
-@media (max-width: 479px) {
-  .ps-modal-overlay {
-    align-items: flex-end;
-    padding: 0;
-  }
-  .ps-modal {
-    border-radius: 20px 20px 0 0;
-    max-height: 88vh;
-    animation: psSheetUp 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  }
-}
-@keyframes psSheetUp {
-  from { opacity: 0; transform: translateY(40px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* Reduced motion guard */
-@media (prefers-reduced-motion: reduce) {
-  .ps-bento-cell,
-  .ps-bento-hero-cta,
-  .ps-pulse-marker,
-  .ps-status-badge-card {
-    animation: none !important;
-    transition: none !important;
-  }
-}
-
-/* ============================================================
    PREFERENCE AVAILABILITY INDICATOR & INTERCEPT MODAL
    ============================================================ */
 .ps-pref-status-box { margin-top: 14px; }
@@ -524,32 +227,19 @@
   border-radius: 9999px;
 }
 
-/* 12-Column Responsive Bento Layout */
-.ps-book-grid {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 24px;
-  align-items: start;
-  width: 100%;
-}
-.ps-book-col-main {
-  grid-column: span 8;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-.ps-book-col-side {
-  grid-column: span 4;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-@media (max-width: 1024px) {
-  .ps-book-col-main,
-  .ps-book-col-side {
-    grid-column: span 12;
+@media (max-width: 768px) {
+  .ps-status-pill-banner-inner {
+    border-radius: 16px;
+    padding: 10px 14px;
+  }
+  .ps-status-pill-left {
+    gap: 8px;
+  }
+  .ps-status-pill-sub {
+    font-size: 12px;
   }
 }
+
 
 /* Active Ride Layout & Mobile Reordering */
 .ps-active-ride-layout {
@@ -1128,25 +818,27 @@
   border-radius: 16px;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, #1C2B4B, #0B0F19);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(234, 88, 12, 0.08) 0%, transparent 60%),
+    linear-gradient(135deg, #FFF1E8 0%, #FDEBDD 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
+  box-shadow: inset 0 2px 8px rgba(234, 88, 12, 0.06);
 }
 .ps-radar-bg-grid {
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(rgba(245, 158, 11, 0.15) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(234, 88, 12, 0.18) 1px, transparent 1px);
   background-size: 20px 20px;
-  opacity: 0.8;
+  opacity: 0.9;
 }
 .ps-radar-ring-pulse {
   position: absolute;
   width: 90px;
   height: 90px;
   border-radius: 50%;
-  background: rgba(234, 88, 12, 0.15);
+  background: rgba(234, 88, 12, 0.12);
   animation: psPing 2s infinite;
 }
 .ps-radar-pin {
@@ -1170,7 +862,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.5);
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.45);
 }
 .ps-radar-route-badge {
   position: absolute;
@@ -1367,7 +1059,7 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #FAF5EE;
+  background: inherit;   /* matches parent card surface */
   top: 50%;
   transform: translateY(-50%);
   pointer-events: none;
@@ -1499,6 +1191,7 @@
 }
 .ps-driver-action-pill {
   flex: 1;
+  min-width: 0;
   padding: 10px 14px;
   border-radius: 9999px;
   background: var(--surface-container, #FDEBDD);
@@ -1510,6 +1203,9 @@
   justify-content: center;
   gap: 6px;
   text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   transition: background 180ms ease;
 }
 .ps-driver-action-pill:hover {
@@ -1757,4 +1453,19 @@
   border-radius: 9999px;
   font-size: 11px;
 }
-
+/* ============================================================
+   RESPONSIVE FIX — Book CTA button full width on narrow screens
+   ============================================================ */
+@media (max-width: 560px) {
+  .ps-fare-dock-action-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ps-fare-dock-action-row .ps-insured-note {
+    justify-content: center;
+    text-align: center;
+  }
+  .ps-heroic-book-btn {
+    width: 100%;
+  }
+}

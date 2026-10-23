@@ -370,14 +370,15 @@ export function ActiveRideView({ activeRide, onCancel, setStatusMessage }) {
                   <span>Call Driver</span>
                 </a>
               )}
-              <a
-                href={activeRide.rider_phone ? `sms:${activeRide.rider_phone}?body=${encodeURIComponent(`Hi, I am waiting for ride #${activeRide.ride_code || activeRide.id} at ${activeRide.pickup_address?.split('(')[0]?.trim() || 'pickup'}.`)}` : '#'}
-                className="ps-driver-action-pill"
-                title={activeRide.rider_phone ? 'Send SMS to driver' : 'Driver phone not available'}
-              >
-                <MessageCircle size={15} />
-                <span>Quick Message</span>
-              </a>
+              {activeRide.rider_phone && (
+                <a
+                  href={`sms:${activeRide.rider_phone}?body=${encodeURIComponent(`Hi, I am waiting for ride #${activeRide.ride_code || activeRide.id} at ${activeRide.pickup_address?.split('(')[0]?.trim() || 'pickup'}.`)}`}
+                  className="ps-driver-action-pill"
+                >
+                  <MessageCircle size={15} />
+                  <span>Quick Message</span>
+                </a>
+              )}
               <a href="tel:112" className="ps-driver-sos-btn" title="Safety Emergency">
                 <AlertTriangle size={16} />
               </a>

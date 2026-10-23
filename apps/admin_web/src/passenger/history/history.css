@@ -165,8 +165,8 @@
               box-shadow 220ms var(--ease-out-soft, cubic-bezier(0.16, 1, 0.3, 1));
 }
 .ps-hist-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--ps-shadow-3);
+  transform: translateY(-1px);
+  box-shadow: var(--ps-shadow-2);
 }
 
 .ps-hist-card.is-prebooked { border-left: 4px solid #3B82F6; }

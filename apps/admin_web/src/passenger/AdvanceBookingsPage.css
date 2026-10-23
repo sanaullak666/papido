@@ -57,41 +57,6 @@
   gap: 14px;
 }
 
-.ps-empty-card {
-  text-align: center;
-  padding: 40px 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-
-.ps-empty-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: var(--ps-amber-soft);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 4px;
-}
-
-.ps-empty-title {
-  margin: 0;
-  font-family: 'Outfit', sans-serif;
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--ps-text, #271E16);
-}
-
-.ps-empty-sub {
-  margin: 0;
-  font-size: 13px;
-  color: var(--ps-text-muted, #796D61);
-  max-width: 440px;
-  line-height: 1.5;
-}
 
 .ps-rides-list {
   display: flex;

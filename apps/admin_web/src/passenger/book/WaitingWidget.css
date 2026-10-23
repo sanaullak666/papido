@@ -401,7 +401,7 @@
   }
 }
 
-@media (max-width: 340px) {
+@media (max-width: 420px) {
   .ps-waiting-metrics-grid {
     grid-template-columns: 1fr;
     gap: 6px;
