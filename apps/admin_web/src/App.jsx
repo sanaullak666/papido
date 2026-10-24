@@ -18,6 +18,7 @@ import { ReportsView } from './adminweb/ReportsView';
 import { DailySettlementsView } from './adminweb/DailySettlementsView';
 import { CoreRegisterView } from './rider/CoreRegisterView';
 import { CoreTeamView } from './adminweb/CoreTeamView';
+import { ManageRegistrationsView } from './adminweb/ManageRegistrationsView';
 import { useSocket } from './context/SocketContext';
 import { alertManager } from './utils/alertManager';
 import { apiRequest } from './api';
@@ -48,6 +49,7 @@ const getAdminTabFromPath = (path) => {
   if (cleanPath === '/admin/outside-trips' || cleanPath === '/admin/outside' || cleanPath === '/admin/dispatch') return 'outside-trips';
   if (cleanPath === '/admin/core-team' || cleanPath === '/admin/core' || cleanPath === '/admin/team') return 'core-team';
   if (cleanPath === '/admin/customers' || cleanPath === '/admin/passengers') return 'customers';
+  if (cleanPath === '/admin/registrations' || cleanPath === '/admin/manage-registrations') return 'registrations';
   if (cleanPath === '/admin/riders' || cleanPath === '/admin/drivers') return 'riders';
   if (cleanPath === '/admin/rides' || cleanPath === '/admin/trips' || cleanPath === '/admin/operations') return 'rides';
   if (cleanPath === '/admin/fares' || cleanPath === '/admin/fare-settings' || cleanPath === '/admin/pricing') return 'fares';
@@ -373,6 +375,8 @@ export function App() {
           return { title: 'Outside Trips Dispatch', subtitle: 'Review passenger custom routes, set fair pricing, and dispatch to riders' };
         case 'core-team':
           return { title: 'Core Team Management', subtitle: 'Manage core organizers, generate invite links, and track driver shifts' };
+        case 'registrations':
+          return { title: 'Manage Registrations', subtitle: 'Platform-wide registration controls, role access toggles, and signup rules' };
         case 'customers':
           return { title: 'Customer Management', subtitle: 'Campus passenger directory and history' };
         case 'riders':
@@ -431,6 +435,7 @@ export function App() {
             {currentTab === 'outside-trips' && <OutsideTripsView />}
             {currentTab === 'core-team' && <CoreTeamView />}
             {currentTab === 'customers' && <CustomersView />}
+            {currentTab === 'registrations' && <ManageRegistrationsView />}
             {currentTab === 'riders' && <RidersView />}
             {currentTab === 'rides' && <RidesView />}
             {currentTab === 'fares' && <FareSettingsView />}

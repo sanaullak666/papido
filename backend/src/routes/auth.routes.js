@@ -5,6 +5,7 @@ const { verifyToken } = require('../middleware/auth.middleware');
 const { requireRole } = require('../middleware/role.middleware');
 const { authLimiter, otpLimiter } = require('../middleware/rateLimiter');
 
+router.get('/registration-status', AuthController.getRegistrationStatus);
 router.post('/register', authLimiter, AuthController.register);
 router.post('/register-core', authLimiter, AuthController.registerCore);
 router.post('/login', authLimiter, AuthController.login);

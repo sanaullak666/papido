@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import './LoginView.css';
 import { useAuth } from '../context/AuthContext';
-import { uploadFile } from '../api';
+import { uploadFile, apiRequest } from '../api';
 import {
   Lock, Mail, Phone, ArrowRight, Bike, User,
   ShieldCheck, Zap, CheckCircle2, AlertCircle,
@@ -186,6 +186,41 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess }) {
   });
   const [successMsg, setSuccessMsg] = useState('');
   const [shakeKey, setShakeKey] = useState(0);
+
+  /* Dynamic Platform Registration Controls */
+  const [regStatus, setRegStatus] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchRegStatus = async () => {
+      try {
+        const res = await apiRequest('/auth/registration-status');
+        if (res && res.data && isMounted) {
+          setRegStatus(res.data);
+        }
+      } catch (_) {}
+    };
+    fetchRegStatus();
+    return () => { isMounted = false; };
+  }, []);
+
+  const isRegistrationBlocked = useMemo(() => {
+    if (!regStatus) return false;
+    if (regStatus.masterEnabled === false) return true;
+    if (regStatus.webEnabled === false) return true;
+    if (role === 'CUSTOMER' && regStatus.passengerEnabled === false) return true;
+    if (role === 'RIDER' && regStatus.riderEnabled === false) return true;
+    return false;
+  }, [regStatus, role]);
+
+  const blockedReasonMessage = useMemo(() => {
+    if (!regStatus) return null;
+    if (regStatus.masterEnabled === false) return regStatus.blockedMessage || 'Registrations are temporarily closed by platform administration.';
+    if (regStatus.webEnabled === false) return 'Web registration is currently disabled. Please use the Papido mobile app to sign up.';
+    if (role === 'CUSTOMER' && regStatus.passengerEnabled === false) return regStatus.blockedMessage || 'Passenger registration is currently closed by administration.';
+    if (role === 'RIDER' && regStatus.riderEnabled === false) return regStatus.blockedMessage || 'Rider driver registration is currently closed by administration.';
+    return null;
+  }, [regStatus, role]);
 
   /* ============================================================
      HELPERS
@@ -475,6 +510,12 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess }) {
     e.preventDefault();
     setError('');
 
+    if (isRegistrationBlocked) {
+      setError(blockedReasonMessage || 'Registration is currently disabled.');
+      shake();
+      return;
+    }
+
     /* Basic validation */
     if (!regName.trim() || regName.trim().length < 2) {
       setError('Full name is required.');
@@ -551,6 +592,8 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess }) {
         gender: regGender,
         password: regPassword,
         role,
+        platform: 'WEB',
+        isWeb: true,
         vehicleType: role === 'RIDER' ? regVehicleType : undefined,
         vehicleModel: role === 'RIDER'
           ? regVehicleModel.trim().toUpperCase()
@@ -1004,6 +1047,26 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess }) {
                   <h2>Create your account</h2>
                 </div>
 
+                {isRegistrationBlocked && (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '12px 14px',
+                    borderRadius: '10px',
+                    background: 'rgba(239, 68, 68, 0.12)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    color: '#f87171',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    lineHeight: '1.45',
+                    marginBottom: '16px'
+                  }}>
+                    <AlertCircle size={18} style={{ flexShrink: 0 }} />
+                    <span>{blockedReasonMessage}</span>
+                  </div>
+                )}
+
                 <form onSubmit={handleRegister} className="papido-form">
                   <div className="papido-field-group">
                     <label className="papido-input-label">I am joining as</label>
@@ -1251,12 +1314,18 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess }) {
                   <button
                     type="submit"
                     className="papido-primary-btn"
-                    disabled={loading}
+                    disabled={loading || isRegistrationBlocked}
+                    style={isRegistrationBlocked ? { opacity: 0.55, cursor: 'not-allowed', background: '#334155', color: '#94a3b8' } : undefined}
                   >
                     {loading ? (
                       <>
                         <Loader2 size={18} className="papido-spin" />
                         <span>Creating account...</span>
+                      </>
+                    ) : isRegistrationBlocked ? (
+                      <>
+                        <Lock size={16} />
+                        <span>Registration Blocked</span>
                       </>
                     ) : (
                       <>

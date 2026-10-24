@@ -11,6 +11,7 @@ import {
   FileBarChart,
   LogOut,
   Shield,
+  UserCheck,
   X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -47,7 +48,8 @@ export function Sidebar({ currentTab, onNavigate, isOpen, onClose, hasPendingOut
       title: 'People',
       items: [
         { id: 'riders', path: '/admin/riders', label: 'Riders', icon: Bike },
-        { id: 'customers', path: '/admin/customers', label: 'Customers', icon: Users }
+        { id: 'customers', path: '/admin/customers', label: 'Customers', icon: Users },
+        { id: 'registrations', path: '/admin/registrations', label: 'Manage Registrations', icon: UserCheck }
       ]
     },
     {

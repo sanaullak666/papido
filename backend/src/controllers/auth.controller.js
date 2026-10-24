@@ -31,6 +31,21 @@ const AuthController = {
         return error(res, 'Public registration is only permitted for CUSTOMER or RIDER roles.', 400);
       }
 
+      // Enforcement of dynamic Platform Registration Controls
+      const SettingsModel = require('../models/settings.model');
+      const isWeb = req.headers['x-client-platform'] === 'web' ||
+        (req.body && (req.body.platform === 'WEB' || req.body.isWeb === true)) ||
+        Boolean(req.headers.origin || req.headers.referer);
+
+      const regCheck = await SettingsModel.checkRegistrationAllowed({
+        role: role.toUpperCase(),
+        isWeb
+      });
+
+      if (!regCheck.allowed) {
+        return error(res, regCheck.message, 403);
+      }
+
       const cleanName = (name || '').replace(/<[^>]*>?/gm, '').trim().toUpperCase();
       if (cleanName.length < 2) {
         return error(res, 'Full Name must be at least 2 characters.', 400);
@@ -351,6 +366,23 @@ const AuthController = {
         expectedRole: expectedRole || null
       });
       return success(res, 'Login successful.', result, 200);
+    } catch (err) {
+      return error(res, err.message, 400);
+    }
+  },
+
+  async getRegistrationStatus(req, res, next) {
+    try {
+      const SettingsModel = require('../models/settings.model');
+      const settings = await SettingsModel.getRegistrationSettings();
+      return success(res, 'Registration status fetched successfully.', {
+        masterEnabled: settings.masterEnabled,
+        passengerEnabled: settings.passengerEnabled,
+        riderEnabled: settings.riderEnabled,
+        webEnabled: settings.webEnabled,
+        blockedMessage: settings.blockedMessage,
+        updatedAt: settings.updatedAt
+      }, 200);
     } catch (err) {
       return error(res, err.message, 400);
     }

@@ -915,6 +915,33 @@ const AdminController = {
     } catch (err) {
       next(err);
     }
+  },
+
+  async getRegistrationSettings(req, res, next) {
+    try {
+      const SettingsModel = require('../models/settings.model');
+      const settings = await SettingsModel.getRegistrationSettings();
+      return success(res, 'Registration settings retrieved successfully.', settings);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async saveRegistrationSettings(req, res, next) {
+    try {
+      const SettingsModel = require('../models/settings.model');
+      const { masterEnabled, passengerEnabled, riderEnabled, webEnabled, blockedMessage } = req.body;
+      const updated = await SettingsModel.saveRegistrationSettings({
+        masterEnabled,
+        passengerEnabled,
+        riderEnabled,
+        webEnabled,
+        blockedMessage
+      });
+      return success(res, 'Registration settings updated successfully.', updated);
+    } catch (err) {
+      next(err);
+    }
   }
 };
 
