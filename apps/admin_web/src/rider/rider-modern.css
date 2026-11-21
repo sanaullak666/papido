@@ -1,8 +1,8 @@
 /* ==========================================================================
-   PAPIDO — Rider Portal · Modern Theme Overlay (UI only, zero logic)
+   PAPIDO — Rider (Driver) Portal · Modern Theme Overlay (UI only, zero logic)
    Matches Passenger Web: ink + warm paper + orange.
    Scoped to .rider-shell. Doubled class = wins over page CSS regardless
-   of import order.
+   of import order. Import LAST (see install notes).
    ========================================================================== */
 
 /* ---------- 1. Tokens ---------- */
@@ -12,6 +12,7 @@
   --paper: #FFFFFF;
   --soft: #FAF8F5;
   --line: #ECE7DF;
+  --line-strong: #DDD5C9;
   --brand: #F97316;
   --brand-2: #EA580C;
   --brand-soft: #FFF1E6;
@@ -37,6 +38,37 @@
   --dur-fast: 160ms;
   --dur-base: 240ms;
 
+  --primary: #EA580C;
+  --primary-container: #C2410C;
+  --primary-fixed: #FFE8D6;
+  --primary-fixed-dim: #FDBA74;
+  --on-primary-fixed: #7C2D12;
+  --surface: #FAF8F5;
+  --surface-bright: #FAF8F5;
+  --surface-container-lowest: #FFFFFF;
+  --surface-container-low: #FAF8F5;
+  --surface-container: #F5F1EB;
+  --surface-container-high: #EFEAE2;
+  --surface-container-highest: #E8E2D8;
+  --on-surface: #1C1917;
+  --on-surface-variant: #6B645D;
+  --outline: #A39A90;
+  --outline-variant: #ECE7DF;
+
+  --papido-primary: #EA580C;
+  --papido-primary-hover: #C2410C;
+  --papido-primary-active: #9A3412;
+  --papido-background: #FAF8F5;
+  --papido-surface: #FFFFFF;
+  --papido-surface-hover: #FAF8F5;
+  --papido-surface-elevated: #F5F1EB;
+  --papido-text: #1C1917;
+  --papido-text-muted: #6B645D;
+  --papido-text-dim: #A39A90;
+  --papido-border: #ECE7DF;
+  --papido-border-light: rgba(12, 10, 9, 0.08);
+  --papido-focus: #EA580C;
+
   background: var(--soft);
   color: var(--rp-text);
   font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -61,7 +93,7 @@
   letter-spacing: -0.02em;
 }
 
-/* Subtle top glow + quiet grid backdrop */
+/* Subtle top glow + quiet grid backdrop (identical to passenger portal) */
 .rider-shell.rider-shell::before {
   content: '';
   position: absolute;
@@ -114,6 +146,9 @@
 }
 
 /* Brand */
+.rider-shell.rider-shell .rp-brand {
+  color: #FFFFFF;
+}
 .rider-shell.rider-shell .rp-brand-logo-wrap {
   border-radius: 12px;
   background: var(--brand-2);
@@ -133,9 +168,9 @@
   background: rgba(249, 115, 22, 0.18);
   color: #FDBA74;
   border: 1px solid rgba(249, 115, 22, 0.3);
-  border-radius: 999px;
+  border-radius: 6px;
   font-weight: 800;
-  padding: 2px 8px;
+  letter-spacing: 0.06em;
 }
 .rider-shell.rider-shell .rp-brand-sub {
   color: rgba(255, 255, 255, 0.55);
@@ -145,24 +180,27 @@
 .rider-shell.rider-shell .rp-duty-pill {
   border-radius: 999px;
   font-weight: 800;
-  font-size: 12px;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.75);
+  box-shadow: none;
   padding: 7px 16px;
   transition: all var(--dur-fast) ease;
 }
 .rider-shell.rider-shell .rp-duty-pill.is-online {
-  background: #ECFDF5;
-  color: #047857;
-  border: 1px solid #A7F3D0;
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
+  background: rgba(16, 185, 129, 0.16);
+  border-color: rgba(16, 185, 129, 0.45);
+  color: #6EE7B7;
 }
 .rider-shell.rider-shell .rp-duty-pill.is-online .rp-duty-dot {
-  background: #10B981;
+  background: #34D399;
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.6);
 }
 .rider-shell.rider-shell .rp-duty-pill.is-offline {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.14);
   color: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 .rider-shell.rider-shell .rp-duty-pill.is-offline .rp-duty-dot {
   background: rgba(255, 255, 255, 0.4);
@@ -178,8 +216,7 @@
   padding: 6px 14px;
 }
 .rider-shell.rider-shell .rp-earn-chip-label {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
 }
 .rider-shell.rider-shell .rp-earn-chip-value {
   color: #FDBA74;
@@ -198,6 +235,7 @@
   color: rgba(255, 255, 255, 0.7);
   font-weight: 600;
   border-radius: 999px;
+  padding: 7px 14px;
   transition: all var(--dur-fast) ease;
 }
 .rider-shell.rider-shell .rp-nav-tab:hover {
@@ -210,12 +248,23 @@
   box-shadow: 0 8px 22px -8px rgba(249, 115, 22, 0.8);
 }
 .rider-shell.rider-shell .rp-nav-badge {
-  background: #EF4444;
-  color: #FFFFFF;
+  background: #FFFFFF;
+  color: var(--brand-2);
+  font-weight: 800;
   border-radius: 999px;
 }
+.rider-shell.rider-shell .rp-nav-tab.is-active .rp-nav-badge {
+  background: #FFFFFF;
+  color: var(--brand-2);
+}
 .rider-shell.rider-shell .rp-nav-badge--dot {
-  background: #10B981;
+  background: #10B981 !important;
+  width: 8px !important;
+  height: 8px !important;
+  min-width: 8px !important;
+  border-radius: 999px !important;
+  padding: 0 !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.35);
 }
 
 /* Right controls */
@@ -224,22 +273,17 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   color: rgba(255, 255, 255, 0.85);
   border-radius: 12px;
+  transition: all var(--dur-fast) ease;
 }
 .rider-shell.rider-shell .rp-icon-btn:hover {
   background: rgba(255, 255, 255, 0.16);
   color: #FFFFFF;
 }
-.rider-shell.rider-shell .rp-icon-btn.is-ringing {
-  background: rgba(239, 68, 68, 0.2);
-  border-color: #EF4444;
-  color: #FCA5A5;
-}
-
 .rider-shell.rider-shell .rp-user-chip {
   background: rgba(255, 255, 255, 0.07);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 999px;
-  padding: 5px 14px;
+  padding: 6px 14px;
 }
 .rider-shell.rider-shell .rp-user-name {
   color: #FFFFFF;
@@ -251,44 +295,54 @@
 
 /* ---------- 3. Mobile Bottom Navigation (Floating Ink Dock) ---------- */
 .rider-shell.rider-shell .rp-bottom-nav {
-  background: rgba(12, 10, 9, 0.92);
+  background: rgba(12, 10, 9, 0.94);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 -12px 32px -16px rgba(0, 0, 0, 0.5);
+  padding: 6px 8px env(safe-area-inset-bottom, 8px);
 }
 .rider-shell.rider-shell .rp-bottom-nav-item {
   color: rgba(255, 255, 255, 0.55);
   font-weight: 600;
+  transition: color var(--dur-fast) ease;
 }
 .rider-shell.rider-shell .rp-bottom-nav-item.is-active {
   color: #FDBA74;
 }
 .rider-shell.rider-shell .rp-bottom-nav-badge {
-  background: #EF4444;
+  background: var(--brand);
   color: #FFFFFF;
   border-radius: 999px;
 }
+.rider-shell.rider-shell .rp-bottom-nav-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #10B981;
+  box-shadow: 0 0 0 2px rgba(12, 10, 9, 0.94);
+}
 
 /* ---------- 4. Status & Notice Banners ---------- */
-.rider-shell.rider-shell .rp-status-banner {
+.rider-shell.rider-shell .rp-status-banner,
+.rider-shell.rider-shell .rp-commission-banner,
+.rider-shell.rider-shell .rp-sound-bar,
+.rider-shell.rider-shell .rp-kyc-warning {
   background: #FFFFFF;
   border: 1px solid var(--line);
-  border-radius: 999px;
-  box-shadow: var(--rp-shadow-1);
-  color: var(--ink-2);
-  padding: 10px 18px;
+  border-radius: 18px;
+  box-shadow: var(--rp-shadow-2);
+  backdrop-filter: none;
 }
-.rider-shell.rider-shell .rp-status-banner::before {
-  display: none;
-}
+
+/* Clean banner overhaul: remove old pseudo blobs & bars */
+.rider-shell.rider-shell .rp-status-banner::before,
 .rider-shell.rider-shell .rp-status-banner::after {
-  display: none;
+  display: none !important;
 }
-.rider-shell.rider-shell .rp-status-banner .rp-banner-icon {
-  background: var(--brand-soft);
-  color: var(--brand-2);
-  border-radius: 999px;
+
+.rider-shell.rider-shell .rp-status-banner {
+  color: var(--ink-2);
 }
 .rider-shell.rider-shell .rp-status-banner.is-success {
   background: #ECFDF5;
@@ -311,31 +365,22 @@
 .rider-shell.rider-shell .rp-status-banner.is-info {
   background: #EFF6FF;
   border-color: #BFDBFE;
-  color: #1E40AF;
+  color: #1D4ED8;
 }
 .rider-shell.rider-shell .rp-status-banner.is-info .rp-banner-icon {
   background: #DBEAFE;
   color: #2563EB;
 }
-.rider-shell.rider-shell .rp-banner-close {
-  background: #F5F1EB;
-  color: var(--ink-2);
-  border-radius: 999px;
-}
-.rider-shell.rider-shell .rp-banner-close:hover {
-  background: var(--line);
-  color: var(--ink);
-}
 
-/* Commission Notice Banner */
 .rider-shell.rider-shell .rp-commission-banner {
-  background: var(--brand-soft);
-  border: 1px solid #FED7AA;
-  border-radius: 20px;
-  box-shadow: var(--rp-shadow-1);
+  background: #FFFFFF;
+  border: 1px solid var(--line);
 }
 .rider-shell.rider-shell .rp-commission-icon {
+  background: var(--brand-soft);
   color: var(--brand-2);
+  border-radius: 14px;
+  padding: 8px;
 }
 .rider-shell.rider-shell .rp-commission-title {
   color: var(--ink);
@@ -346,413 +391,46 @@
   color: var(--rp-text-muted);
 }
 .rider-shell.rider-shell .rp-commission-pill {
-  background: #FFFFFF;
+  background: var(--brand-soft);
+  color: #C2410C;
   border: 1px solid #FED7AA;
-  color: var(--brand-2);
   border-radius: 999px;
   font-weight: 700;
 }
 
-/* Penalty Banner */
 .rider-shell.rider-shell .rp-penalty-banner {
-  background: #FFFFFF;
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  box-shadow: var(--rp-shadow-2);
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 18px;
+  box-shadow: none;
 }
 .rider-shell.rider-shell .rp-penalty-banner-title {
-  color: var(--ink);
+  color: #991B1B;
   font-family: 'Outfit', sans-serif;
   font-weight: 800;
 }
 .rider-shell.rider-shell .rp-penalty-banner-sub {
-  color: var(--rp-text-muted);
-}
-
-/* ---------- 5. Buttons (Pill-shaped, modern) ---------- */
-.rider-shell.rider-shell .rp-btn {
-  border-radius: 999px;
-  font-weight: 700;
-  letter-spacing: 0;
-  min-height: 44px;
-  padding: 10px 20px;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.rider-shell.rider-shell .rp-btn--sm {
-  border-radius: 999px;
-  min-height: 36px;
-  padding: 6px 14px;
-  font-size: 12.5px;
-}
-.rider-shell.rider-shell .rp-btn--lg {
-  border-radius: 999px;
-  min-height: 52px;
-  padding: 13px 26px;
-  font-size: 15px;
-}
-.rider-shell.rider-shell .rp-btn--primary {
-  background: var(--brand-2);
-  background-image: none;
-  color: #FFFFFF;
-  box-shadow: 0 10px 26px -10px rgba(234, 88, 12, 0.75);
-}
-.rider-shell.rider-shell .rp-btn--primary:hover:not(:disabled) {
-  background: #C2410C;
-  background-image: none;
-  filter: none;
-  transform: translateY(-2px);
-  box-shadow: 0 12px 28px -8px rgba(234, 88, 12, 0.85);
-}
-.rider-shell.rider-shell .rp-btn--secondary {
-  background: #FFFFFF;
-  color: var(--ink-2);
-  border: 1px solid var(--line);
-  box-shadow: var(--rp-shadow-1);
-}
-.rider-shell.rider-shell .rp-btn--secondary:hover:not(:disabled) {
-  border-color: #FDBA74;
-  background: var(--brand-soft);
-  color: var(--brand-2);
-  transform: translateY(-2px);
-}
-.rider-shell.rider-shell .rp-btn--ghost {
-  background: #FFFFFF;
-  color: var(--ink-2);
-  border: 1px solid var(--line);
-}
-.rider-shell.rider-shell .rp-btn--ghost:hover:not(:disabled) {
-  border-color: #FDBA74;
-  background: var(--brand-soft);
-  color: var(--brand-2);
-}
-.rider-shell.rider-shell .rp-btn--success {
-  background: #059669;
-  background-image: none;
-  color: #FFFFFF;
-  box-shadow: 0 10px 24px -12px rgba(5, 150, 105, 0.7);
-}
-.rider-shell.rider-shell .rp-btn--success:hover:not(:disabled) {
-  background: #047857;
-  transform: translateY(-2px);
-}
-.rider-shell.rider-shell .rp-btn--danger {
-  background: #DC2626;
-  background-image: none;
-  color: #FFFFFF;
-  box-shadow: 0 10px 24px -12px rgba(220, 38, 38, 0.6);
-}
-.rider-shell.rider-shell .rp-btn--danger:hover:not(:disabled) {
-  background: #B91C1C;
-  transform: translateY(-2px);
-}
-.rider-shell.rider-shell .rp-btn--danger-soft {
-  background: #FEF2F2;
-  color: #DC2626;
-  border: 1px solid #FECACA;
-}
-.rider-shell.rider-shell .rp-btn--danger-soft:hover:not(:disabled) {
-  background: #FEE2E2;
   color: #B91C1C;
-  border-color: #FCA5A5;
-}
-.rider-shell.rider-shell .rp-btn--phonepe {
-  border-radius: 999px;
-  box-shadow: 0 8px 22px -8px rgba(95, 37, 159, 0.6);
-}
-.rider-shell.rider-shell .rp-btn:focus-visible,
-.rider-shell.rider-shell button:focus-visible {
-  outline: 2px solid var(--brand);
-  outline-offset: 3px;
 }
 
-/* ---------- 6. Cards & Surfaces ---------- */
-.rider-shell.rider-shell .rp-card,
-.rider-shell.rider-shell .rp-surface,
-.rider-shell.rider-shell .rp-panel,
-.rider-shell.rider-shell .rp-reserved-card,
-.rider-shell.rider-shell .rp-request-card,
-.rider-shell.rider-shell .rp-scheduled-card,
-.rider-shell.rider-shell .rp-settle-card,
-.rider-shell.rider-shell .rp-metric-tile,
-.rider-shell.rider-shell .rp-stepper-card,
-.rider-shell.rider-shell .rp-passenger-card,
-.rider-shell.rider-shell .rp-waiting-card,
-.rider-shell.rider-shell .rp-route-card,
-.rider-shell.rider-shell .rp-security-card,
-.rider-shell.rider-shell .rp-empty,
-.rider-shell.rider-shell .rp-empty-flat {
-  background: #FFFFFF;
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  box-shadow: var(--rp-shadow-2);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+.rider-shell.rider-shell .rp-kyc-warning {
+  background: var(--brand-soft);
+  border-color: #FED7AA;
 }
-
-.rider-shell.rider-shell .rp-metric-tile,
-.rider-shell.rider-shell .rp-scheduled-card,
-.rider-shell.rider-shell .rp-request-card,
-.rider-shell.rider-shell .rp-settle-card {
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s, border-color 0.25s;
+.rider-shell.rider-shell .rp-kyc-warning.is-pending {
+  background: var(--brand-soft);
+  border-color: #FED7AA;
+  color: #C2410C;
 }
-.rider-shell.rider-shell .rp-metric-tile:hover,
-.rider-shell.rider-shell .rp-scheduled-card:hover,
-.rider-shell.rider-shell .rp-request-card:hover,
-.rider-shell.rider-shell .rp-settle-card:hover {
-  transform: translateY(-2px);
-  border-color: #FDBA74;
-  box-shadow: 0 20px 40px -20px rgba(234, 88, 12, 0.22);
-}
-
-/* Dark "Hero" Cards — Ink surface with orange glow */
-.rider-shell.rider-shell .rp-cash-card,
-.rider-shell.rider-shell .rp-active-quick {
-  background: var(--ink);
-  background-image: radial-gradient(ellipse 70% 120% at 100% 0%, rgba(249, 115, 22, 0.28), transparent 60%);
-  color: #FFFFFF;
-  border: 1px solid var(--ink);
-  border-radius: 24px;
-  box-shadow: 0 30px 60px -28px rgba(12, 10, 9, 0.7);
-}
-
-/* Active Quick Peek (Inside Radar) */
-.rider-shell.rider-shell .rp-active-quick-label {
-  color: #FDBA74;
-  font-weight: 800;
-}
-.rider-shell.rider-shell .rp-active-quick-title {
-  color: #FFFFFF;
-  font-family: 'Outfit', sans-serif;
-  font-weight: 800;
-}
-.rider-shell.rider-shell .rp-active-quick-sub {
-  color: rgba(255, 255, 255, 0.75);
-}
-.rider-shell.rider-shell .rp-active-quick-sub strong {
-  color: #FFFFFF;
-}
-.rider-shell.rider-shell .rp-active-quick-icon {
-  background: var(--brand-2);
-  border-radius: 14px;
-  box-shadow: 0 6px 16px rgba(234, 88, 12, 0.5);
-}
-
-/* Active Trip Cash / Fare Section */
-.rider-shell.rider-shell .rp-cash-label {
-  color: rgba(255, 255, 255, 0.85);
-  font-weight: 800;
-  letter-spacing: 0.05em;
-}
-.rider-shell.rider-shell .rp-cash-value {
-  color: #FDBA74;
-  font-family: 'Outfit', sans-serif;
-  font-weight: 900;
-  letter-spacing: 0.02em;
-}
-.rider-shell.rider-shell .rp-cash-waiting {
-  color: #FDBA74;
-}
-.rider-shell.rider-shell .rp-cash-net {
-  color: #34D399;
-  font-weight: 800;
-}
-.rider-shell.rider-shell .rp-cash-fee {
-  color: rgba(255, 255, 255, 0.65);
-}
-
-/* Payment Verified Card */
-.rider-shell.rider-shell .rp-payment-verified-card {
-  background: #ECFDF5;
-  border: 1px solid #A7F3D0;
-  border-radius: 20px;
-  box-shadow: var(--rp-shadow-1);
-}
-.rider-shell.rider-shell .rp-payment-verified-badge {
-  color: #047857;
-  font-weight: 800;
-}
-.rider-shell.rider-shell .rp-payment-verified-val {
-  color: #047857;
-  font-family: 'Outfit', sans-serif;
-  font-weight: 900;
-  font-size: 28px;
-}
-
-/* Trip Code Bar */
-.rider-shell.rider-shell .rp-trip-code-bar {
-  background: #FFFFFF;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  box-shadow: var(--rp-shadow-1);
-}
-.rider-shell.rider-shell .rp-trip-code-label {
-  color: var(--rp-text-muted);
-  font-weight: 800;
-}
-.rider-shell.rider-shell .rp-trip-code-val {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  background: #F5F1EB;
-  border: 1px solid var(--line);
-  color: var(--brand-2);
-  border-radius: 8px;
-  font-weight: 800;
-}
-.rider-shell.rider-shell .rp-trip-status-tag {
-  background: #ECFDF5;
-  color: #047857;
-  border: 1px solid #A7F3D0;
-  border-radius: 999px;
-  font-weight: 800;
-}
-
-/* Passenger Card */
-.rider-shell.rider-shell .rp-passenger-card {
-  border-radius: 18px;
-}
-.rider-shell.rider-shell .rp-passenger-name {
-  font-family: 'Outfit', sans-serif;
-  font-weight: 800;
-  color: var(--ink);
-}
-.rider-shell.rider-shell .rp-passenger-sub {
-  color: var(--rp-text-muted);
-}
-
-/* Waiting Controls Card */
-.rider-shell.rider-shell .rp-waiting-card {
-  border-radius: 18px;
-}
-.rider-shell.rider-shell .rp-waiting-card.is-active {
+.rider-shell.rider-shell .rp-kyc-warning.is-rejected {
   background: #FEF2F2;
   border-color: #FECACA;
-}
-.rider-shell.rider-shell .rp-waiting-card-title {
-  font-family: 'Outfit', sans-serif;
-  font-weight: 800;
-  color: var(--ink);
-}
-.rider-shell.rider-shell .rp-waiting-tag {
-  background: #FEE2E2;
-  color: #DC2626;
-  border: 1px solid #FECACA;
-  border-radius: 999px;
-  font-weight: 800;
+  color: #991B1B;
 }
 
-/* Route Details Card */
-.rider-shell.rider-shell .rp-route-card {
-  border-radius: 18px;
-}
-.rider-shell.rider-shell .rp-route-time-callout {
-  background: var(--brand-soft);
-  border: 1px solid #FED7AA;
-  color: var(--brand-2);
-  border-radius: 12px;
-}
-.rider-shell.rider-shell .rp-map-link {
-  background: #EFF6FF;
-  border: 1px solid #BFDBFE;
-  color: #1D4ED8;
-  border-radius: 999px;
-  font-weight: 700;
-  padding: 4px 10px;
-}
-.rider-shell.rider-shell .rp-map-link:hover {
-  background: #DBEAFE;
-}
-.rider-shell.rider-shell .rp-map-link--lg {
-  border-radius: 999px;
-}
-
-/* Trip Stepper & OTP Verify */
-.rider-shell.rider-shell .rp-stepper-card-label {
-  font-size: 11px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--rp-text-muted);
-}
-.rider-shell.rider-shell .rp-otp-verify {
-  background: #FFFFFF;
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  box-shadow: var(--rp-shadow-2);
-  padding: 24px;
-}
-.rider-shell.rider-shell .rp-otp-verify-label {
-  font-family: 'Outfit', sans-serif;
-  font-size: 18px;
-  font-weight: 800;
-  color: var(--ink);
-}
-.rider-shell.rider-shell .rp-otp-verify-sub {
-  color: var(--rp-text-muted);
-}
-.rider-shell.rider-shell .rp-otp-input {
-  background: #FFFFFF;
-  border: 2px solid var(--line);
-  border-radius: 16px;
-  color: var(--ink);
-  font-family: 'Outfit', sans-serif;
-  font-size: 32px;
-  font-weight: 800;
-  letter-spacing: 0.25em;
-  text-align: center;
-  transition: all 0.2s ease;
-  width: 100%;
-  padding: 12px;
-}
-.rider-shell.rider-shell .rp-otp-input:focus {
-  outline: none;
-  border-color: var(--brand-2);
-  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.16);
-}
-
-/* Trip Complete Hero */
-.rider-shell.rider-shell .rp-trip-complete {
-  background: #FFFFFF;
-  border: 1px solid var(--line);
-  border-radius: 24px;
-  padding: 32px 20px;
-  box-shadow: var(--rp-shadow-2);
-}
-.rider-shell.rider-shell .rp-trip-complete-title {
-  color: var(--ink);
-}
-.rider-shell.rider-shell .rp-trip-complete-summary {
-  background: var(--soft);
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 16px;
-}
-.rider-shell.rider-shell .rp-trip-complete-label {
-  color: var(--rp-text-muted);
-  font-weight: 800;
-}
-.rider-shell.rider-shell .rp-trip-complete-value {
-  font-family: 'Outfit', sans-serif;
-  font-size: 32px;
-  font-weight: 900;
-  color: var(--brand-2);
-}
-.rider-shell.rider-shell .rp-trip-complete-net {
-  color: #059669;
-  font-weight: 800;
-}
-
-/* ---------- 7. Radar Page Styles ---------- */
-.rider-shell.rider-shell .rp-heading {
-  color: var(--ink);
-  font-weight: 800;
-}
-.rider-shell.rider-shell .rp-subheading {
-  color: var(--rp-text-muted);
-}
 .rider-shell.rider-shell .rp-sound-bar {
   background: #FFFFFF;
   border: 1px solid var(--line);
-  border-radius: 16px;
-  box-shadow: var(--rp-shadow-1);
 }
 .rider-shell.rider-shell .rp-sound-bar.is-on {
   color: #047857;
@@ -766,41 +444,363 @@
   color: #DC2626;
 }
 
-/* Ride Request Cards */
-.rider-shell.rider-shell .rp-request-card {
-  border-left: 5px solid var(--brand-2);
-  border-radius: 20px;
+/* ---------- 5. Buttons (Pill-shaped, Modern) ---------- */
+.rider-shell.rider-shell .rp-btn {
+  border-radius: 999px;
+  font-weight: 700;
+  letter-spacing: 0;
+  min-height: 44px;
+  font-family: inherit;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.rider-shell.rider-shell .rp-request-card.has-conflict {
-  border-left-color: #EF4444;
-  background: #FFFBFB;
+.rider-shell.rider-shell .rp-btn--sm {
+  border-radius: 999px;
+  min-height: 36px;
+  padding: 6px 14px;
 }
-.rider-shell.rider-shell .rp-request-name {
-  font-family: 'Outfit', sans-serif;
-  font-weight: 800;
-  color: var(--ink);
+.rider-shell.rider-shell .rp-btn--lg {
+  border-radius: 999px;
+  min-height: 52px;
+  font-size: 15px;
+  padding: 12px 24px;
 }
-.rider-shell.rider-shell .rp-request-fare-value {
-  color: var(--brand-2);
-  font-family: 'Outfit', sans-serif;
-  font-weight: 800;
+.rider-shell.rider-shell .rp-btn--primary {
+  background: var(--brand-2);
+  background-image: none;
+  color: #FFFFFF;
+  border: 0;
+  box-shadow: 0 10px 26px -10px rgba(234, 88, 12, 0.75);
 }
-.rider-shell.rider-shell .rp-request-fare-net {
-  color: #059669;
+.rider-shell.rider-shell .rp-btn--primary:hover:not(:disabled) {
+  background: #C2410C;
+  filter: none;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px -10px rgba(234, 88, 12, 0.85);
 }
-.rider-shell.rider-shell .rp-request-route {
-  background: var(--soft);
+.rider-shell.rider-shell .rp-btn--secondary {
+  background: var(--ink);
+  background-image: none;
+  color: #FFFFFF;
+  border: 0;
+  box-shadow: 0 10px 24px -12px rgba(12, 10, 9, 0.6);
+}
+.rider-shell.rider-shell .rp-btn--secondary:hover:not(:disabled) {
+  background: var(--ink-2);
+  transform: translateY(-2px);
+}
+.rider-shell.rider-shell .rp-btn--ghost {
+  background: #FFFFFF;
+  color: var(--ink-2);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  box-shadow: none;
 }
-.rider-shell.rider-shell .rp-request-time-callout {
+.rider-shell.rider-shell .rp-btn--ghost:hover:not(:disabled) {
+  border-color: #FDBA74;
   background: var(--brand-soft);
-  border: 1px solid #FED7AA;
   color: var(--brand-2);
-  border-radius: 8px;
+}
+.rider-shell.rider-shell .rp-btn--success {
+  background: #059669;
+  background-image: none;
+  color: #FFFFFF;
+  border: 0;
+  box-shadow: 0 10px 24px -12px rgba(5, 150, 105, 0.7);
+}
+.rider-shell.rider-shell .rp-btn--success:hover:not(:disabled) {
+  background: #047857;
+  transform: translateY(-2px);
+}
+.rider-shell.rider-shell .rp-btn--danger {
+  background: #DC2626;
+  background-image: none;
+  color: #FFFFFF;
+  border: 0;
+  box-shadow: 0 10px 24px -12px rgba(220, 38, 38, 0.6);
+}
+.rider-shell.rider-shell .rp-btn--danger:hover:not(:disabled) {
+  background: #B91C1C;
+  transform: translateY(-2px);
+}
+.rider-shell.rider-shell .rp-btn--danger-soft {
+  background: #FEF2F2;
+  color: #DC2626;
+  border: 1px solid #FECACA;
+  box-shadow: none;
+}
+.rider-shell.rider-shell .rp-btn--danger-soft:hover:not(:disabled) {
+  background: #FEE2E2;
+  color: #B91C1C;
+}
+.rider-shell.rider-shell .rp-btn--phonepe {
+  background: #5F259F;
+  border-radius: 999px;
+  box-shadow: 0 10px 24px -12px rgba(95, 37, 159, 0.6);
+}
+.rider-shell.rider-shell .rp-btn:focus-visible,
+.rider-shell.rider-shell button:focus-visible,
+.rider-shell.rider-shell a:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
 }
 
-/* Radar Empty State */
+/* ---------- 6. Cards & Panels ---------- */
+.rider-shell.rider-shell .rp-card,
+.rider-shell.rider-shell .rp-card--solid,
+.rider-shell.rider-shell .rp-surface,
+.rider-shell.rider-shell .rp-panel,
+.rider-shell.rider-shell .rp-section,
+.rider-shell.rider-shell .rp-reserved-card,
+.rider-shell.rider-shell .rp-scheduled-card,
+.rider-shell.rider-shell .rp-settle-card,
+.rider-shell.rider-shell .rp-security-card,
+.rider-shell.rider-shell .rp-passenger-card,
+.rider-shell.rider-shell .rp-route-card,
+.rider-shell.rider-shell .rp-stepper-card,
+.rider-shell.rider-shell .rp-cash-card,
+.rider-shell.rider-shell .rp-waiting-card,
+.rider-shell.rider-shell .rp-trip-complete,
+.rider-shell.rider-shell .rp-payment-verified-card,
+.rider-shell.rider-shell .rp-radar-empty,
+.rider-shell.rider-shell .rp-empty,
+.rider-shell.rider-shell .rp-empty-flat,
+.rider-shell.rider-shell .rp-metric-tile {
+  background: #FFFFFF;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: var(--rp-shadow-2);
+  backdrop-filter: none;
+}
+
+.rider-shell.rider-shell .rp-request-card {
+  background: #FFFFFF;
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--brand-2);
+  border-radius: 22px;
+  box-shadow: var(--rp-shadow-2);
+  backdrop-filter: none;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s, border-color 0.25s;
+}
+.rider-shell.rider-shell .rp-request-card:hover,
+.rider-shell.rider-shell .rp-scheduled-card:hover,
+.rider-shell.rider-shell .rp-reserved-card:hover {
+  transform: translateY(-3px);
+  border-color: #FDBA74;
+  box-shadow: 0 24px 48px -24px rgba(234, 88, 12, 0.28);
+}
+.rider-shell.rider-shell .rp-scheduled-card--confirmed {
+  border-left: 5px solid #10B981;
+}
+.rider-shell.rider-shell .rp-metric-tile {
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+.rider-shell.rider-shell .rp-metric-tile:hover {
+  border-color: #FDBA74;
+}
+
+.rider-shell.rider-shell .rp-empty-icon,
+.rider-shell.rider-shell .rp-radar-empty-icon,
+.rider-shell.rider-shell .rp-active-quick-icon,
+.rider-shell.rider-shell .rp-waiting-card-icon {
+  background: var(--brand-soft);
+  color: var(--brand-2);
+  border-radius: 16px;
+  border: 0;
+}
+.rider-shell.rider-shell .rp-active-quick {
+  background: linear-gradient(160deg, #FFFFFF, var(--brand-soft));
+  border: 1px solid #FED7AA;
+  border-radius: 20px;
+  box-shadow: 0 24px 48px -28px rgba(234, 88, 12, 0.4);
+}
+
+/* ---------- 7. Typography ---------- */
+.rider-shell.rider-shell .rp-heading {
+  color: var(--ink);
+  font-weight: 700;
+}
+.rider-shell.rider-shell .rp-subheading,
+.rider-shell.rider-shell .rp-field-hint,
+.rider-shell.rider-shell .rp-field-note {
+  color: var(--rp-text-muted);
+}
+.rider-shell.rider-shell .rp-field-label {
+  color: var(--ink-2);
+  font-weight: 700;
+  font-size: 12.5px;
+}
+.rider-shell.rider-shell .rp-request-fare-value,
+.rider-shell.rider-shell .rp-reserved-fare,
+.rider-shell.rider-shell .rp-scheduled-card-payout-value,
+.rider-shell.rider-shell .rp-metric-tile-value,
+.rider-shell.rider-shell .rp-cash-value,
+.rider-shell.rider-shell .rp-trip-complete-value,
+.rider-shell.rider-shell .rp-settle-breakdown-value,
+.rider-shell.rider-shell .rp-trip-complete-net {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.rider-shell.rider-shell .rp-metric-tile-value--amber,
+.rider-shell.rider-shell .rp-scheduled-card-payout-value--amber,
+.rider-shell.rider-shell .rp-request-fare-value {
+  color: var(--brand-2);
+}
+.rider-shell.rider-shell .rp-metric-tile-value--emerald,
+.rider-shell.rider-shell .rp-settle-breakdown-value--emerald,
+.rider-shell.rider-shell .rp-request-fare-net,
+.rider-shell.rider-shell .rp-cash-net {
+  color: #059669;
+}
+.rider-shell.rider-shell .rp-ride-code,
+.rider-shell.rider-shell .rp-table-code,
+.rider-shell.rider-shell .rp-trip-code-val,
+.rider-shell.rider-shell .rp-tag--code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* ---------- 8. Inputs & Form Elements ---------- */
+.rider-shell.rider-shell .rp-input,
+.rider-shell.rider-shell .rp-select,
+.rider-shell.rider-shell .rp-textarea,
+.rider-shell.rider-shell .rp-settle-date-input,
+.rider-shell.rider-shell .rp-otp-input,
+.rider-shell.rider-shell input[type="text"],
+.rider-shell.rider-shell input[type="tel"],
+.rider-shell.rider-shell input[type="email"],
+.rider-shell.rider-shell input[type="password"],
+.rider-shell.rider-shell input[type="date"],
+.rider-shell.rider-shell input[type="number"],
+.rider-shell.rider-shell select,
+.rider-shell.rider-shell textarea {
+  background: #FFFFFF;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: var(--ink-2);
+  font-family: inherit;
+  box-shadow: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+.rider-shell.rider-shell .rp-input:focus,
+.rider-shell.rider-shell .rp-select:focus,
+.rider-shell.rider-shell .rp-textarea:focus,
+.rider-shell.rider-shell .rp-otp-input:focus,
+.rider-shell.rider-shell input:focus,
+.rider-shell.rider-shell select:focus,
+.rider-shell.rider-shell textarea:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.16);
+  background: #FFFFFF;
+}
+.rider-shell.rider-shell .rp-otp-input {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.4em;
+  text-align: center;
+  font-size: 24px;
+}
+.rider-shell.rider-shell .rp-input--mono {
+  font-family: ui-monospace, Menlo, monospace;
+}
+.rider-shell.rider-shell ::placeholder {
+  color: #B5ADA3;
+}
+.rider-shell.rider-shell .rp-field-error {
+  color: #DC2626;
+}
+
+/* ---------- 9. Tags, Badges & Chips ---------- */
+.rider-shell.rider-shell .rp-tag,
+.rider-shell.rider-shell .rp-badge,
+.rider-shell.rider-shell .rp-status-chip,
+.rider-shell.rider-shell .rp-trip-status-tag,
+.rider-shell.rider-shell .rp-payment-verified-badge,
+.rider-shell.rider-shell .rp-qr-pulse-badge {
+  border-radius: 999px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.rider-shell.rider-shell .rp-tag--amber,
+.rider-shell.rider-shell .rp-tag--amber-soft,
+.rider-shell.rider-shell .rp-tag--amber-border,
+.rider-shell.rider-shell .rp-status-chip--amber,
+.rider-shell.rider-shell .rp-badge--pending {
+  background: var(--brand-soft);
+  color: #C2410C;
+  border: 1px solid #FED7AA;
+}
+.rider-shell.rider-shell .rp-tag--emerald,
+.rider-shell.rider-shell .rp-status-chip--emerald,
+.rider-shell.rider-shell .rp-badge--approved,
+.rider-shell.rider-shell .rp-badge--online {
+  background: #ECFDF5;
+  color: #047857;
+  border: 1px solid #A7F3D0;
+}
+.rider-shell.rider-shell .rp-tag--rose,
+.rider-shell.rider-shell .rp-status-chip--rose,
+.rider-shell.rider-shell .rp-badge--rejected {
+  background: #FEF2F2;
+  color: #B91C1C;
+  border: 1px solid #FECACA;
+}
+.rider-shell.rider-shell .rp-tag--blue,
+.rider-shell.rider-shell .rp-tag--indigo {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
+}
+.rider-shell.rider-shell .rp-tag--neutral,
+.rider-shell.rider-shell .rp-tag--code,
+.rider-shell.rider-shell .rp-badge--offline {
+  background: #F5F1EB;
+  color: var(--rp-text-muted);
+  border: 1px solid var(--line);
+}
+.rider-shell.rider-shell .rp-tag--core {
+  background: var(--ink);
+  color: #FDBA74;
+  border: 1px solid var(--ink);
+}
+.rider-shell.rider-shell .rp-dot--green {
+  background: #10B981;
+}
+.rider-shell.rider-shell .rp-dot--amber {
+  background: var(--brand);
+}
+.rider-shell.rider-shell .rp-dot--rose {
+  background: #EF4444;
+}
+.rider-shell.rider-shell .rp-map-link,
+.rider-shell.rider-shell .rp-text-link {
+  color: var(--brand-2);
+  font-weight: 700;
+  text-decoration: none;
+}
+.rider-shell.rider-shell .rp-map-link:hover,
+.rider-shell.rider-shell .rp-text-link:hover {
+  text-decoration: underline;
+}
+
+/* ---------- 10. Radar & Request Card Details ---------- */
+.rider-shell.rider-shell .rp-request-route-row,
+.rider-shell.rider-shell .rp-route-row,
+.rider-shell.rider-shell .rp-scheduled-route-row,
+.rider-shell.rider-shell .rp-reserved-row {
+  border-color: var(--line);
+}
+.rider-shell.rider-shell .rp-request-time-callout,
+.rider-shell.rider-shell .rp-route-time-callout {
+  background: var(--brand-soft);
+  border: 1px solid #FED7AA;
+  border-radius: 14px;
+  color: #C2410C;
+}
+.rider-shell.rider-shell .rp-scheduled-foot,
+.rider-shell.rider-shell .rp-request-route-footer {
+  background: #FAF8F5;
+  border-radius: 16px;
+}
 .rider-shell.rider-shell .rp-radar-empty-icon.is-live {
   background: #ECFDF5;
   color: #059669;
@@ -810,117 +810,75 @@
   background: #F5F1EB;
   color: #A39A90;
 }
-.rider-shell.rider-shell .rp-radar-empty-title {
-  color: var(--ink);
-  font-family: 'Outfit', sans-serif;
-  font-weight: 800;
-}
-.rider-shell.rider-shell .rp-radar-empty-sub {
-  color: var(--rp-text-muted);
-}
 
-/* KYC Notice */
-.rider-shell.rider-shell .rp-kyc-warning {
-  border-radius: 16px;
-}
-.rider-shell.rider-shell .rp-kyc-warning.is-pending {
-  background: var(--brand-soft);
-  border: 1px solid #FED7AA;
-  color: #C2410C;
-}
-.rider-shell.rider-shell .rp-kyc-warning.is-rejected {
-  background: #FEF2F2;
-  border: 1px solid #FECACA;
-  color: #B91C1C;
-}
-.rider-shell.rider-shell .rp-kyc-approved {
-  background: #ECFDF5;
-  border: 1px solid #A7F3D0;
-  color: #047857;
-  border-radius: 16px;
-}
-
-/* ---------- 8. Scheduled Pre-Bookings ---------- */
-.rider-shell.rider-shell .rp-metric-tile-label {
-  color: var(--rp-text-muted);
-  font-weight: 800;
-}
-.rider-shell.rider-shell .rp-metric-tile-value {
-  font-family: 'Outfit', sans-serif;
-  font-weight: 900;
-  color: var(--ink);
-}
-.rider-shell.rider-shell .rp-metric-tile-value--emerald {
-  color: #059669;
-}
-.rider-shell.rider-shell .rp-metric-tile-value--amber {
-  color: var(--brand-2);
-}
-.rider-shell.rider-shell .rp-scheduled-card--confirmed {
-  border-left: 5px solid #10B981;
-}
-.rider-shell.rider-shell .rp-scheduled-card-payout-value {
-  color: #059669;
-  font-family: 'Outfit', sans-serif;
-  font-weight: 800;
-}
-.rider-shell.rider-shell .rp-scheduled-card-payout-value--amber {
-  color: var(--brand-2);
-}
-.rider-shell.rider-shell .rp-scheduled-route {
-  background: var(--soft);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-}
-.rider-shell.rider-shell .rp-reserved-row {
-  background: var(--soft);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-}
-
-/* ---------- 9. Shift Earnings & Trip Ledger ---------- */
-.rider-shell.rider-shell .rp-panel {
+/* ---------- 11. Active Trip (Dark Hero Bar & Details) ---------- */
+.rider-shell.rider-shell .rp-trip-code-bar {
+  background: var(--ink);
+  background-image: radial-gradient(ellipse 70% 120% at 100% 0%, rgba(249, 115, 22, 0.28), transparent 60%);
+  color: #FFFFFF;
+  border: 1px solid var(--ink);
   border-radius: 20px;
-  overflow: hidden;
+  box-shadow: 0 24px 48px -28px rgba(12, 10, 9, 0.6);
+  padding: 14px 20px;
 }
-.rider-shell.rider-shell .rp-panel-head {
+.rider-shell.rider-shell .rp-trip-code-label {
+  color: rgba(255, 255, 255, 0.6);
+}
+.rider-shell.rider-shell .rp-trip-code-val {
+  color: #FDBA74;
+}
+.rider-shell.rider-shell .rp-otp-verify {
+  background: linear-gradient(160deg, #FFFFFF, var(--brand-soft));
+  border: 1px solid #FED7AA;
+  border-radius: 20px;
+  box-shadow: var(--rp-shadow-2);
+}
+.rider-shell.rider-shell .rp-payment-verified-card {
+  background: #ECFDF5;
+  border-color: #A7F3D0;
+}
+.rider-shell.rider-shell .rp-pulse-dot {
+  background: var(--brand);
+}
+
+/* ---------- 12. Tables (Trip Ledger & Earnings) ---------- */
+.rider-shell.rider-shell .rp-table-wrap {
+  border: 1px solid var(--line);
+  border-radius: 18px;
   background: #FFFFFF;
-  border-bottom: 1px solid var(--line);
+  overflow: auto;
 }
-.rider-shell.rider-shell .rp-panel-title {
-  color: var(--ink);
+.rider-shell.rider-shell .rp-table {
+  border-collapse: collapse;
+  width: 100%;
 }
 .rider-shell.rider-shell .rp-table th {
-  background: #F5F1EB;
-  border-bottom: 1px solid var(--line);
+  background: #FAF8F5;
   color: var(--rp-text-muted);
-  font-weight: 800;
   font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--line);
+  padding: 14px 18px;
 }
 .rider-shell.rider-shell .rp-table td {
   border-bottom: 1px solid #F5F1EB;
-  color: var(--ink-2);
+  padding: 14px 18px;
 }
 .rider-shell.rider-shell .rp-table tr:hover td {
-  background: var(--soft);
-}
-.rider-shell.rider-shell .rp-table-code {
-  font-family: 'Outfit', sans-serif;
-  font-weight: 800;
-  color: var(--brand-2);
+  background: #FFFBF7;
 }
 .rider-shell.rider-shell .rp-table-amber {
-  font-family: 'Outfit', sans-serif;
-  font-weight: 800;
-  color: #059669;
+  color: var(--brand-2);
+  font-weight: 700;
 }
 .rider-shell.rider-shell .rp-table-cyan {
-  font-family: 'Outfit', sans-serif;
+  color: #0F766E;
   font-weight: 700;
-  color: #0284C7;
 }
 
-/* ---------- 10. Daily Settlements Page ---------- */
+/* ---------- 13. Daily Settlements ---------- */
 .rider-shell.rider-shell .rp-settle-date-bar {
   background: #F1ECE4;
   border: 1px solid var(--line);
@@ -933,52 +891,61 @@
   border-radius: 999px;
   padding: 4px 10px;
 }
-.rider-shell.rider-shell .rp-settle-card-title {
-  color: var(--ink);
-  font-family: 'Outfit', sans-serif;
-  font-weight: 800;
-}
-.rider-shell.rider-shell .rp-settle-card-sub {
-  color: var(--rp-text-muted);
-}
 .rider-shell.rider-shell .rp-settle-breakdown {
-  background: var(--soft);
+  background: #FAF8F5;
   border: 1px solid var(--line);
   border-radius: 16px;
-}
-.rider-shell.rider-shell .rp-settle-breakdown-value {
-  font-family: 'Outfit', sans-serif;
-  font-weight: 800;
-  color: var(--ink);
-}
-.rider-shell.rider-shell .rp-settle-breakdown-value--emerald {
-  color: #059669;
 }
 .rider-shell.rider-shell .rp-settle-breakdown-due {
-  background: #FFFFFF;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  box-shadow: var(--rp-shadow-1);
+  background: var(--ink);
+  background-image: radial-gradient(ellipse 70% 120% at 100% 0%, rgba(249, 115, 22, 0.28), transparent 60%);
+  color: #FFFFFF;
+  border: 1px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 0 20px 40px -20px rgba(12, 10, 9, 0.5);
+  padding: 16px 20px;
 }
-.rider-shell.rider-shell .rp-settle-breakdown-due-label {
-  color: var(--brand-2);
-  font-weight: 800;
+.rider-shell.rider-shell .rp-settle-breakdown-due-label,
+.rider-shell.rider-shell .rp-settle-breakdown-due-note {
+  color: rgba(255, 255, 255, 0.65);
 }
 .rider-shell.rider-shell .rp-settle-breakdown-due-value {
+  color: #FDBA74;
   font-family: 'Outfit', sans-serif;
-  font-weight: 900;
-  color: var(--brand-2);
+  font-weight: 800;
+}
+.rider-shell.rider-shell .rp-settle-info {
+  border-radius: 14px;
+}
+.rider-shell.rider-shell .rp-settle-info--green {
+  background: #ECFDF5;
+  border: 1px solid #A7F3D0;
+}
+.rider-shell.rider-shell .rp-settle-info--rose {
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+}
+.rider-shell.rider-shell .rp-settle-info--blue {
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+}
+.rider-shell.rider-shell .rp-settle-info--neutral {
+  background: #FAF8F5;
+  border: 1px solid var(--line);
+}
+.rider-shell.rider-shell .rp-qr-box,
+.rider-shell.rider-shell .rp-qr-inner {
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: #FFFFFF;
 }
 .rider-shell.rider-shell .rp-upi-copy-row {
-  background: #FFFFFF;
+  background: #FAF8F5;
   border: 1px solid var(--line);
-  border-radius: 16px;
-}
-.rider-shell.rider-shell .rp-upi-copy-label {
-  color: var(--rp-text-muted);
+  border-radius: 14px;
 }
 
-/* ---------- 11. KYC & Profile Settings ---------- */
+/* ---------- 14. KYC Segmented Control & Security ---------- */
 .rider-shell.rider-shell .rp-seg-2 {
   background: #F1ECE4;
   border: 1px solid var(--line);
@@ -988,115 +955,26 @@
 .rider-shell.rider-shell .rp-seg-btn {
   border-radius: 999px;
   color: var(--rp-text-muted);
-  font-weight: 700;
-}
-.rider-shell.rider-shell .rp-seg-btn:hover {
-  color: var(--ink);
+  font-weight: 600;
+  background: transparent;
+  border: 0;
+  transition: all 0.2s ease;
 }
 .rider-shell.rider-shell .rp-seg-btn.is-active {
   background: #FFFFFF;
   color: var(--ink);
   box-shadow: 0 2px 8px rgba(12, 10, 9, 0.1);
 }
+.rider-shell.rider-shell .rp-kyc-approved {
+  background: #ECFDF5;
+  border: 1px solid #A7F3D0;
+  border-radius: 18px;
+}
 .rider-shell.rider-shell .rp-security-card {
   border-radius: 18px;
 }
-.rider-shell.rider-shell .rp-security-title {
-  color: var(--ink);
-  font-family: 'Outfit', sans-serif;
-  font-weight: 800;
-}
-.rider-shell.rider-shell .rp-security-sub {
-  color: var(--rp-text-muted);
-}
 
-/* ---------- 12. Inputs & Form Elements ---------- */
-.rider-shell.rider-shell .rp-input,
-.rider-shell.rider-shell .rp-select,
-.rider-shell.rider-shell .rp-textarea,
-.rider-shell.rider-shell input[type="text"],
-.rider-shell.rider-shell input[type="password"],
-.rider-shell.rider-shell input[type="date"] {
-  background: #FFFFFF;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  color: var(--ink-2);
-  font-family: inherit;
-  box-shadow: none;
-  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-}
-.rider-shell.rider-shell .rp-input:focus,
-.rider-shell.rider-shell .rp-select:focus,
-.rider-shell.rider-shell .rp-textarea:focus,
-.rider-shell.rider-shell input:focus {
-  outline: none;
-  border-color: var(--brand);
-  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.16);
-  background: #FFFFFF;
-}
-.rider-shell.rider-shell .rp-field-label {
-  color: var(--ink-2);
-  font-weight: 700;
-  font-size: 12.5px;
-}
-.rider-shell.rider-shell .rp-field-hint {
-  color: var(--rp-text-muted);
-  font-size: 11.5px;
-}
-.rider-shell.rider-shell ::placeholder {
-  color: #B5ADA3;
-}
-
-/* ---------- 13. Badges, Tags & Chips ---------- */
-.rider-shell.rider-shell .rp-badge,
-.rider-shell.rider-shell .rp-tag,
-.rider-shell.rider-shell .rp-status-chip {
-  border-radius: 999px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-.rider-shell.rider-shell .rp-badge--online,
-.rider-shell.rider-shell .rp-badge--approved,
-.rider-shell.rider-shell .rp-tag--emerald,
-.rider-shell.rider-shell .rp-status-chip--emerald {
-  background: #ECFDF5;
-  color: #047857;
-  border: 1px solid #A7F3D0;
-}
-.rider-shell.rider-shell .rp-badge--pending,
-.rider-shell.rider-shell .rp-tag--amber,
-.rider-shell.rider-shell .rp-tag--amber-soft,
-.rider-shell.rider-shell .rp-status-chip--amber {
-  background: var(--brand-soft);
-  color: #C2410C;
-  border: 1px solid #FED7AA;
-}
-.rider-shell.rider-shell .rp-badge--rejected,
-.rider-shell.rider-shell .rp-tag--rose,
-.rider-shell.rider-shell .rp-status-chip--rose {
-  background: #FEF2F2;
-  color: #DC2626;
-  border: 1px solid #FECACA;
-}
-.rider-shell.rider-shell .rp-badge--offline,
-.rider-shell.rider-shell .rp-tag--neutral {
-  background: #F5F1EB;
-  color: var(--ink-2);
-  border: 1px solid var(--line);
-}
-.rider-shell.rider-shell .rp-tag--blue {
-  background: #EFF6FF;
-  color: #1E40AF;
-  border: 1px solid #BFDBFE;
-}
-.rider-shell.rider-shell .rp-tag--code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  background: #F5F1EB;
-  color: var(--brand-2);
-  border: 1px solid var(--line);
-}
-
-/* ---------- 14. Modals (Overlays & Dialogs) ---------- */
+/* ---------- 15. Modals (Overlays & Portals) ---------- */
 .rp-modal-overlay {
   background: rgba(12, 10, 9, 0.6) !important;
   backdrop-filter: blur(8px);
@@ -1104,17 +982,15 @@
   z-index: 1000;
 }
 .rp-modal-overlay .rp-modal,
+.rp-modal-overlay .rp-qr-modal,
 .rider-shell .rp-modal {
   background: #FFFFFF;
   border: 1px solid #ECE7DF;
   border-radius: 24px;
   box-shadow: 0 40px 80px -24px rgba(12, 10, 9, 0.5);
-  padding: 24px;
 }
-.rp-modal-overlay .rp-modal--amber {
-  border-top: 4px solid var(--brand-2);
-}
-.rp-modal-overlay .rp-modal-title {
+.rp-modal-overlay .rp-modal-title,
+.rp-modal-overlay .rp-qr-modal-title {
   font-family: 'Outfit', sans-serif;
   font-weight: 700;
   color: #0C0A09;
@@ -1123,20 +999,26 @@
 .rp-modal-overlay .rp-modal-sub {
   color: #6B645D;
 }
-.rp-modal-overlay .rp-modal-close {
+.rp-modal-overlay .rp-modal-close,
+.rp-modal-overlay .rp-qr-modal-close {
   background: #F5F1EB;
-  border-radius: 12px;
   border: 0;
+  border-radius: 12px;
   color: #1C1917;
   transition: all 0.16s ease;
 }
-.rp-modal-overlay .rp-modal-close:hover {
+.rp-modal-overlay .rp-modal-close:hover,
+.rp-modal-overlay .rp-qr-modal-close:hover {
   background: #ECE7DF;
   color: #0C0A09;
 }
+.rp-modal-overlay .rp-modal--amber {
+  border-color: #FED7AA;
+}
 
-/* ---------- 15. Skeletons, Scrollbars, Selection ---------- */
-.rider-shell.rider-shell .rp-skeleton {
+/* ---------- 16. Skeleton, Scrollbars, Selection, Motion ---------- */
+.rider-shell.rider-shell .rp-skeleton,
+.rider-shell.rider-shell .rp-skeleton-line {
   background: linear-gradient(90deg, #F1ECE4 25%, #F8F5F0 50%, #F1ECE4 75%);
   background-size: 200% 100%;
   border-radius: 10px;
@@ -1152,17 +1034,43 @@
   background: #DDD5C9;
   border-radius: 999px;
 }
-
-/* ---------- 16. Layout & Mobile Polish ---------- */
 .rider-shell.rider-shell .rp-main {
-  max-width: 1380px;
+  max-width: 1280px;
   width: 100%;
   margin: 0 auto;
 }
+@media (prefers-reduced-motion: reduce) {
+  .rider-shell.rider-shell * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
 
-@media (max-width: 1023px) {
-  .rider-shell.rider-shell .rp-header {
-    padding: 10px 16px;
+/* ---------- 17. Responsive Polish & Mobile Refinements ---------- */
+.rider-shell.rider-shell .rp-user-chip {
+  padding: 6px 14px;
+}
+
+@media (min-width: 1024px) {
+  /* Row 1: brand · duty/earnings · account. Row 2: full-width tabs. */
+  .rider-shell.rider-shell .rp-header-inner {
+    flex-wrap: wrap;
+    row-gap: 12px;
+  }
+  .rider-shell.rider-shell .rp-brand {
+    order: 1;
+  }
+  .rider-shell.rider-shell .rp-header-center {
+    order: 2;
+    margin-left: auto;
+  }
+  .rider-shell.rider-shell .rp-header-right {
+    order: 3;
+  }
+  .rider-shell.rider-shell .rp-nav {
+    order: 4;
+    flex: 1 1 100%;
+    justify-content: flex-start;
   }
 }
 
@@ -1255,12 +1163,5 @@
   .rider-shell.rider-shell .rp-modal {
     padding: 18px;
     border-radius: 20px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .rider-shell.rider-shell * {
-    transition-duration: 0.01ms !important;
-    animation-duration: 0.01ms !important;
   }
 }
