@@ -1,0 +1,128 @@
+/* ==========================================================================
+   PAPIDO — Login / Register / Rider sign-in · Modern Theme Overlay
+   UI only. Zero logic changes. Scoped to .papido-auth-page.theme-modern-split
+   Desktop: split screen (ink brand panel + clean form). Mobile: ink page + card.
+   ========================================================================== */
+
+/* ---------- 1. Tokens (the page is built on these variables) ---------- */
+.papido-auth-page.theme-modern-split.theme-modern-split {
+  --pap-navy: #0C0A09; --pap-navy-deep: #0C0A09;
+  --pap-orange: #EA580C; --pap-orange-dark: #C2410C; --pap-orange-light: #FB923C;
+  --pap-orange-gradient: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
+  --pap-card: #FFFFFF; --pap-cream: #FFFFFF; --pap-cream-tint: #F1ECE4;
+  --pap-border: #E7E0D5; --pap-border-soft: #F0EAE0;
+  --pap-ink: #0C0A09; --pap-ink-soft: #57534E; --pap-muted: #8B8377;
+  --r-sm: 10px; --r-md: 14px; --r-lg: 18px; --r-xl: 28px;
+  --shadow-card: 0 1px 2px rgba(12,10,9,.04), 0 24px 60px -28px rgba(12,10,9,.28);
+  --shadow-btn: 0 12px 28px -10px rgba(234,88,12,.7);
+
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(249,115,22,.35), transparent 70%),
+    linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px) 0 0 / 48px 48px,
+    linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px) 0 0 / 48px 48px,
+    #0C0A09;
+}
+/* old floating orbs / grid replaced by the page background above */
+.papido-auth-page.theme-modern-split .papido-auth-bg { display: none; }
+
+/* ---------- 2. Card ---------- */
+.papido-auth-page.theme-modern-split .papido-split-container { max-width: 440px; }
+.papido-auth-page.theme-modern-split .papido-auth-card {
+  border: 1px solid #ECE7DF; border-radius: 28px; padding: 36px 32px 28px;
+  box-shadow: 0 40px 80px -30px rgba(0,0,0,.6);
+}
+.papido-auth-page.theme-modern-split .papido-hero-logo { width: 46px; height: 46px; border-radius: 14px; object-fit: cover; box-shadow: 0 10px 24px -8px rgba(234,88,12,.55); }
+.papido-auth-page.theme-modern-split .papido-hero-brand-name { font-family: 'Outfit', sans-serif; font-weight: 800; letter-spacing: .05em; font-size: 22px; color: #0C0A09; }
+.papido-auth-page.theme-modern-split .papido-hero-brand-sub { color: #8B8377; font-weight: 500; }
+.papido-auth-page.theme-modern-split .papido-card-head h2 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 26px; letter-spacing: -0.03em; color: #0C0A09; line-height: 1.15; }
+.papido-auth-page.theme-modern-split .papido-card-head p { color: #6B645D; font-size: 14px; line-height: 1.55; }
+
+/* ---------- 3. Role switch (ink pill) ---------- */
+.papido-auth-page.theme-modern-split .papido-role-label { color: #8B8377; letter-spacing: .1em; }
+.papido-auth-page.theme-modern-split .papido-role-track { background: #F1ECE4; border: 1px solid #ECE7DF; border-radius: 999px; }
+.papido-auth-page.theme-modern-split .papido-role-slider { background: #0C0A09; border-radius: 999px; box-shadow: 0 8px 18px -8px rgba(12,10,9,.6); }
+.papido-auth-page.theme-modern-split .papido-role-tab { border-radius: 999px; color: #57534E; }
+.papido-auth-page.theme-modern-split .papido-role-tab.is-active { color: #fff; }
+
+/* ---------- 4. Inputs ---------- */
+.papido-auth-page.theme-modern-split .papido-input-label { color: #1C1917; font-weight: 700; font-size: 12.5px; }
+.papido-auth-page.theme-modern-split .papido-phone-shell,
+.papido-auth-page.theme-modern-split .papido-form-input,
+.papido-auth-page.theme-modern-split .pap-otp-box {
+  background: #fff; border: 1px solid #E7E0D5; border-radius: 14px; box-shadow: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+.papido-auth-page.theme-modern-split .papido-phone-shell:focus-within,
+.papido-auth-page.theme-modern-split .papido-form-input:focus,
+.papido-auth-page.theme-modern-split .pap-otp-box:focus {
+  border-color: #F97316; box-shadow: 0 0 0 4px rgba(249,115,22,.16); outline: none;
+}
+.papido-auth-page.theme-modern-split .papido-phone-input { background: transparent; }
+.papido-auth-page.theme-modern-split .papido-country-chip { background: #F5F1EB; border-radius: 10px; color: #1C1917; }
+.papido-auth-page.theme-modern-split .pap-otp-box { font-family: 'Outfit', sans-serif; font-weight: 700; }
+.papido-auth-page.theme-modern-split .pap-otp-box.is-filled { border-color: #FDBA74; background: #FFF7F0; }
+.papido-auth-page.theme-modern-split .papido-phone-valid { background: #ECFDF5; color: #059669; }
+.papido-auth-page.theme-modern-split ::placeholder { color: #B5ADA3; }
+
+/* ---------- 5. Buttons ---------- */
+.papido-auth-page.theme-modern-split .papido-primary-btn {
+  border-radius: 999px; min-height: 52px; background: #EA580C; background-image: none; font-weight: 700; font-size: 15px;
+  box-shadow: 0 12px 28px -10px rgba(234,88,12,.7); transition: transform .2s, background .2s, box-shadow .2s;
+}
+.papido-auth-page.theme-modern-split .papido-primary-btn:hover:not(:disabled) { background: #C2410C; transform: translateY(-2px); }
+.papido-auth-page.theme-modern-split .papido-primary-btn:disabled { background: #F5B791; box-shadow: none; }
+.papido-auth-page.theme-modern-split .papido-ghost-btn { border-radius: 999px; background: #fff; border: 1px solid #E7E0D5; color: #1C1917; font-weight: 700; }
+.papido-auth-page.theme-modern-split .papido-ghost-btn:hover { border-color: #FDBA74; background: #FFF1E6; color: #C2410C; }
+.papido-auth-page.theme-modern-split .papido-text-link { color: #EA580C; }
+.papido-auth-page.theme-modern-split .papido-subtle-btn { color: #57534E; }
+.papido-auth-page.theme-modern-split .papido-subtle-btn strong { color: #EA580C; }
+.papido-auth-page.theme-modern-split .pap-back-btn { color: #57534E; font-weight: 600; }
+.papido-auth-page.theme-modern-split .pap-back-btn:hover { color: #EA580C; }
+.papido-auth-page.theme-modern-split .papido-auth-divider span { color: #A39A90; }
+.papido-auth-page.theme-modern-split .papido-duo-btn { border-radius: 999px; background: #fff; border: 1px solid #E7E0D5; }
+.papido-auth-page.theme-modern-split .papido-duo-btn.is-active { background: #0C0A09; border-color: #0C0A09; color: #fff; }
+.papido-auth-page.theme-modern-split .papido-pwd-pill { border-radius: 999px; }
+.papido-auth-page.theme-modern-split .papido-pwd-pill.is-met { background: #ECFDF5; color: #047857; border-color: #A7F3D0; }
+.papido-auth-page.theme-modern-split button:focus-visible,
+.papido-auth-page.theme-modern-split a:focus-visible { outline: 2px solid #F97316; outline-offset: 3px; }
+
+/* ---------- 6. Toasts & KYC ---------- */
+.papido-auth-page.theme-modern-split .papido-toast { border-radius: 14px; }
+.papido-auth-page.theme-modern-split .papido-kyc-card,
+.papido-auth-page.theme-modern-split .papido-kyc-upload-box { border-radius: 18px; }
+.papido-auth-page.theme-modern-split .papido-kyc-upload-box.is-uploaded { border-color: #A7F3D0; background: #ECFDF5; }
+
+/* ---------- 7. Desktop split screen ---------- */
+@media (min-width: 1024px) {
+  .papido-auth-page.theme-modern-split.theme-modern-split {
+    display: grid; grid-template-columns: minmax(440px, 46%) 1fr; padding: 0; align-items: stretch;
+    background: #FAF8F5;
+  }
+  /* left brand panel */
+  .papido-auth-page.theme-modern-split.theme-modern-split::before {
+    content: "Campus rides,\A done right.";
+    white-space: pre; grid-column: 1; grid-row: 1;
+    display: block; min-height: 100vh; padding: 24vh 56px 0 64px;
+    font: 800 clamp(44px, 5vw, 76px)/1.02 'Outfit', system-ui, sans-serif; letter-spacing: -0.04em; color: #fff;
+    background:
+      radial-gradient(ellipse 90% 60% at 100% 0%, rgba(249,115,22,.5), transparent 65%),
+      linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px) 0 0 / 48px 48px,
+      linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px) 0 0 / 48px 48px,
+      #0C0A09;
+  }
+  .papido-auth-page.theme-modern-split.theme-modern-split::after {
+    content: "\2713   Verified student riders\A \2713   One flat campus fare, zero surge\A \2713   OTP-secured trips, live tracking";
+    white-space: pre; position: absolute; left: 64px; bottom: 56px; width: calc(46% - 96px); min-width: 320px;
+    font: 500 15px/2.2 'Plus Jakarta Sans', system-ui, sans-serif; color: rgba(255,255,255,.72);
+  }
+  .papido-auth-page.theme-modern-split .papido-split-container { grid-column: 2; align-self: center; justify-self: center; padding: 40px 24px; }
+  .papido-auth-page.theme-modern-split .papido-auth-card { box-shadow: 0 1px 2px rgba(12,10,9,.04), 0 24px 60px -30px rgba(12,10,9,.28); }
+}
+@media (max-width: 479px) {
+  .papido-auth-page.theme-modern-split .papido-auth-card { padding: 28px 22px 22px; border-radius: 24px; }
+  .papido-auth-page.theme-modern-split .papido-card-head h2 { font-size: 23px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .papido-auth-page.theme-modern-split * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}

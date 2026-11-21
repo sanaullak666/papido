@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import './LoginView.css';
+import './login-modern.css';
 import { useAuth } from '../context/AuthContext';
 import { uploadFile, apiRequest } from '../api';
 import {

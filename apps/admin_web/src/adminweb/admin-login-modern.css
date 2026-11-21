@@ -1,0 +1,81 @@
+/* ==========================================================================
+   PAPIDO — Admin Login · Modern Theme Overlay (UI only, zero logic)
+   Same split-screen look as the main login: ink brand panel + clean form.
+   Scoped to .al-page with a doubled class so it beats AdminLoginView.css.
+   ========================================================================== */
+
+/* ---------- 1. Page ---------- */
+.al-page.al-page {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: #1C1917;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(249,115,22,.35), transparent 70%),
+    linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px) 0 0 / 48px 48px,
+    linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px) 0 0 / 48px 48px,
+    #0C0A09;
+}
+.al-page .al-bg { display: none; }
+
+/* ---------- 2. Card ---------- */
+.al-page.al-page .al-card {
+  background: #fff; color: #1C1917; border: 1px solid #ECE7DF; border-radius: 28px;
+  box-shadow: 0 40px 80px -30px rgba(0,0,0,.6); backdrop-filter: none; -webkit-backdrop-filter: none;
+  width: 100%; max-width: 440px;
+}
+.al-page.al-page .al-shield-badge {
+  background: linear-gradient(135deg, #F97316, #EA580C); color: #fff; border-radius: 18px; border: 0;
+  box-shadow: 0 14px 30px -10px rgba(234,88,12,.7); animation: none;
+}
+.al-page.al-page .al-restricted-tag { background: #FFF1E6; color: #C2410C; border: 1px solid #FED7AA; border-radius: 999px; font-weight: 700; letter-spacing: .08em; }
+.al-page.al-page .al-restricted-dot { background: #EA580C; }
+.al-page.al-page .al-title { font-family: 'Outfit', sans-serif; font-weight: 800; letter-spacing: -0.03em; color: #0C0A09; background: none; -webkit-text-fill-color: #0C0A09; }
+.al-page.al-page .al-sub { color: #6B645D; }
+
+/* ---------- 3. Form ---------- */
+.al-page.al-page .al-label { color: #1C1917; font-weight: 700; }
+.al-page.al-page .al-input {
+  background: #fff; color: #1C1917; border: 1px solid #E7E0D5; border-radius: 14px; box-shadow: none;
+  font-family: inherit; transition: border-color .2s, box-shadow .2s;
+}
+.al-page.al-page .al-input:focus { border-color: #F97316; box-shadow: 0 0 0 4px rgba(249,115,22,.16); outline: none; background: #fff; }
+.al-page.al-page .al-input::placeholder { color: #B5ADA3; }
+.al-page.al-page .al-input-icon { color: #EA580C; }
+.al-page.al-page .al-input-trail { color: #8B8377; }
+.al-page.al-page .al-input-trail:hover { color: #EA580C; background: #FFF1E6; }
+.al-page.al-page .al-submit {
+  background: #EA580C; background-image: none; color: #fff; border: 0; border-radius: 999px; min-height: 52px; font-weight: 700;
+  box-shadow: 0 12px 28px -10px rgba(234,88,12,.7); transition: transform .2s, background .2s;
+}
+.al-page.al-page .al-submit:hover:not(:disabled) { background: #C2410C; transform: translateY(-2px); }
+.al-page.al-page .al-submit:disabled { background: #F5B791; box-shadow: none; }
+.al-page.al-page .al-alert--error { background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; border-radius: 14px; }
+.al-page.al-page .al-back-btn { color: #57534E; font-weight: 600; }
+.al-page.al-page .al-back-btn:hover { color: #EA580C; }
+.al-page.al-page button:focus-visible { outline: 2px solid #F97316; outline-offset: 3px; }
+
+/* ---------- 4. Desktop split screen ---------- */
+@media (min-width: 1024px) {
+  .al-page.al-page { display: grid; grid-template-columns: minmax(440px, 46%) 1fr; padding: 0; align-items: stretch; background: #FAF8F5; justify-content: stretch; }
+  .al-page.al-page::before {
+    content: "Operations,\A under control.";
+    white-space: pre; grid-column: 1; grid-row: 1; display: block; min-height: 100vh; padding: 24vh 56px 0 64px;
+    font: 800 clamp(44px, 5vw, 76px)/1.02 'Outfit', system-ui, sans-serif; letter-spacing: -0.04em; color: #fff;
+    background:
+      radial-gradient(ellipse 90% 60% at 100% 0%, rgba(249,115,22,.5), transparent 65%),
+      linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px) 0 0 / 48px 48px,
+      linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px) 0 0 / 48px 48px,
+      #0C0A09;
+  }
+  .al-page.al-page::after {
+    content: "\2713   Live fleet & ride monitoring\A \2713   Fares, payments & settlements\A \2713   Rider KYC approvals";
+    white-space: pre; position: absolute; left: 64px; bottom: 56px; width: calc(46% - 96px); min-width: 320px;
+    font: 500 15px/2.2 'Plus Jakarta Sans', system-ui, sans-serif; color: rgba(255,255,255,.72);
+  }
+  .al-page.al-page .al-card { grid-column: 2; align-self: center; justify-self: center; box-shadow: 0 1px 2px rgba(12,10,9,.04), 0 24px 60px -30px rgba(12,10,9,.28); margin: 40px 24px; }
+}
+@media (max-width: 479px) {
+  .al-page.al-page .al-card { border-radius: 24px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .al-page.al-page * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
