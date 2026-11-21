@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import './PassengerLayout.css';
+import './passenger-modern.css';
 import { useAuth } from '../context/AuthContext';
 import { BottomNavigation } from '../components/layout/BottomNavigation';
 import { PassengerProvider, usePassenger } from './shared/PassengerContext';

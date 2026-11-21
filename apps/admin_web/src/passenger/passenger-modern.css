@@ -1,0 +1,746 @@
+/* ==========================================================================
+   PAPIDO — Passenger Portal · Modern Theme Overlay (UI only, zero logic)
+   Matches the new landing page: ink + warm paper + orange.
+   Scoped to .passenger-shell. Doubled class = wins over page CSS regardless
+   of import order. Import LAST (see install notes).
+   ========================================================================== */
+
+/* ---------- 1. Tokens ---------- */
+.passenger-shell.passenger-shell {
+  --ink: #0C0A09; --ink-2: #1C1917;
+  --paper: #FFFFFF; --soft: #FAF8F5; --line: #ECE7DF;
+  --brand: #F97316; --brand-2: #EA580C; --brand-soft: #FFF1E6;
+
+  --ps-surface: rgba(255,255,255,.86);
+  --ps-surface-solid: #FFFFFF;
+  --ps-border: #ECE7DF;
+  --ps-border-strong: #DDD5C9;
+  --ps-shadow-1: 0 1px 2px rgba(12,10,9,.05);
+  --ps-shadow-2: 0 1px 2px rgba(12,10,9,.04), 0 8px 24px -12px rgba(12,10,9,.10);
+  --ps-shadow-3: 0 24px 56px -24px rgba(12,10,9,.22);
+  --ps-amber: #EA580C;
+  --ps-amber-soft: #FFF1E6;
+  --ps-text: #1C1917;
+  --ps-text-muted: #6B645D;
+  --ps-radius-card: 20px;
+  --ps-radius-input: 14px;
+
+  --primary: #EA580C; --primary-container: #C2410C;
+  --primary-fixed: #FFE8D6; --primary-fixed-dim: #FDBA74; --on-primary-fixed: #7C2D12;
+  --surface: #FAF8F5; --surface-bright: #FAF8F5;
+  --surface-container-lowest: #FFFFFF; --surface-container-low: #FAF8F5;
+  --surface-container: #F5F1EB; --surface-container-high: #EFEAE2; --surface-container-highest: #E8E2D8;
+  --on-surface: #1C1917; --on-surface-variant: #6B645D;
+  --outline: #A39A90; --outline-variant: #ECE7DF;
+
+  --papido-primary: #EA580C; --papido-primary-hover: #C2410C; --papido-primary-active: #9A3412;
+  --papido-background: #FAF8F5; --papido-surface: #FFFFFF;
+  --papido-surface-hover: #FAF8F5; --papido-surface-elevated: #F5F1EB;
+  --papido-text: #1C1917; --papido-text-muted: #6B645D; --papido-text-dim: #A39A90;
+  --papido-border: #ECE7DF; --papido-border-light: rgba(12,10,9,.08);
+  --papido-focus: #EA580C;
+
+  background: var(--soft);
+  color: var(--ps-text);
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.passenger-shell.passenger-shell h1,
+.passenger-shell.passenger-shell h2,
+.passenger-shell.passenger-shell h3,
+.passenger-shell.passenger-shell h4,
+.passenger-shell.passenger-shell .ps-heading,
+.passenger-shell.passenger-shell .ps-brand-name {
+  font-family: 'Outfit', system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Replace blurry orbs with a quiet top glow + subtle grid */
+.passenger-shell.passenger-shell .ps-orb { display: none; }
+.passenger-shell.passenger-shell .ps-ambient::before {
+  content: ''; position: absolute; inset: 0 0 auto 0; height: 380px;
+  background: radial-gradient(ellipse 60% 100% at 85% 0%, rgba(249,115,22,.14), transparent 70%);
+}
+.passenger-shell.passenger-shell .ps-ambient::after {
+  content: ''; position: absolute; inset: 0; opacity: .6;
+  background-image: linear-gradient(rgba(12,10,9,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(12,10,9,.035) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(#000, transparent 480px);
+  -webkit-mask-image: linear-gradient(#000, transparent 480px);
+}
+
+/* ---------- 2. Header (ink glass, like landing nav) ---------- */
+.passenger-shell.passenger-shell .ps-header {
+  background: rgba(12,10,9,.88);
+  backdrop-filter: saturate(150%) blur(16px);
+  -webkit-backdrop-filter: saturate(150%) blur(16px);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  box-shadow: none;
+}
+.passenger-shell.passenger-shell.is-compact .ps-header { border-bottom-color: rgba(255,255,255,.1); box-shadow: 0 10px 30px -18px rgba(0,0,0,.6); }
+.passenger-shell.passenger-shell .ps-brand-logo-wrap { border-radius: 12px; background: var(--brand-2); box-shadow: 0 8px 20px -6px rgba(249,115,22,.6); }
+.passenger-shell.passenger-shell .ps-brand-logo { border-radius: 12px; padding: 0; object-fit: cover; }
+.passenger-shell.passenger-shell .ps-brand-name { color: #fff; font-weight: 800; letter-spacing: .04em; }
+.passenger-shell.passenger-shell .ps-brand-tag { background: rgba(249,115,22,.18); color: #FDBA74; border: 1px solid rgba(249,115,22,.3); }
+.passenger-shell.passenger-shell .ps-brand-sub { color: rgba(255,255,255,.55); }
+
+.passenger-shell.passenger-shell .ps-nav { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); }
+.passenger-shell.passenger-shell .ps-nav-tab { color: rgba(255,255,255,.7); font-weight: 600; }
+.passenger-shell.passenger-shell .ps-nav-tab:hover { color: #fff; background: rgba(255,255,255,.1); }
+.passenger-shell.passenger-shell .ps-nav-tab.is-active { background: var(--brand); color: #fff; box-shadow: 0 8px 22px -8px rgba(249,115,22,.8); }
+
+.passenger-shell.passenger-shell .ps-user-pill { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12); border-radius: 999px; }
+.passenger-shell.passenger-shell .ps-user-name { color: #fff; }
+.passenger-shell.passenger-shell .ps-user-email { color: rgba(255,255,255,.55); }
+.passenger-shell.passenger-shell .ps-user-avatar { background: linear-gradient(135deg, #FB923C, #EA580C); color: #fff; }
+.passenger-shell.passenger-shell .ps-icon-btn { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12); color: rgba(255,255,255,.85); border-radius: 12px; }
+.passenger-shell.passenger-shell .ps-icon-btn:hover { background: rgba(255,255,255,.16); color: #fff; }
+
+/* ---------- 3. Bottom navigation (floating ink dock) ---------- */
+.passenger-shell.passenger-shell .papido-bottom-nav {
+  background: rgba(12,10,9,.92);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 -12px 32px -16px rgba(0,0,0,.5);
+}
+.passenger-shell.passenger-shell .papido-bottom-nav-item { color: rgba(255,255,255,.55); font-weight: 600; }
+.passenger-shell.passenger-shell .papido-bottom-nav-item.active,
+.passenger-shell.passenger-shell .papido-bottom-nav-item.is-active { color: #FDBA74; }
+
+/* ---------- 4. Status banner ---------- */
+.passenger-shell.passenger-shell .ps-status-banner { border-radius: 14px; border: 1px solid var(--line); box-shadow: var(--ps-shadow-2); backdrop-filter: blur(10px); }
+.passenger-shell.passenger-shell .ps-status-pill-banner-inner {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  box-shadow: var(--ps-shadow-1);
+}
+.passenger-shell.passenger-shell .ps-status-pill-title { color: var(--ink); }
+.passenger-shell.passenger-shell .ps-status-pill-sub { color: var(--ps-text-muted); }
+.passenger-shell.passenger-shell .ps-status-pill-right {
+  background: #ECFDF5;
+  color: #047857;
+  border: 1px solid #A7F3D0;
+  border-radius: 999px;
+}
+
+/* ---------- 5. Buttons ---------- */
+.passenger-shell.passenger-shell .ps-btn { border-radius: 999px; font-weight: 700; letter-spacing: 0; min-height: 44px; }
+.passenger-shell.passenger-shell .ps-btn--sm { border-radius: 999px; }
+.passenger-shell.passenger-shell .ps-btn--lg { border-radius: 999px; min-height: 52px; font-size: 15px; }
+.passenger-shell.passenger-shell .ps-btn--primary,
+.passenger-shell.passenger-shell .ps-heroic-book-btn,
+.passenger-shell.passenger-shell .ps-outside-submit-btn,
+.passenger-shell.passenger-shell .ps-profile-save-btn,
+.passenger-shell.passenger-shell .ps-advance-action-btn--primary,
+.passenger-shell.passenger-shell .ps-hist-btn--rate {
+  background: var(--brand-2); background-image: none; color: #fff;
+  box-shadow: 0 10px 26px -10px rgba(234,88,12,.75);
+}
+.passenger-shell.passenger-shell .ps-btn--primary:hover:not(:disabled),
+.passenger-shell.passenger-shell .ps-heroic-book-btn:hover:not(:disabled),
+.passenger-shell.passenger-shell .ps-outside-submit-btn:hover:not(:disabled),
+.passenger-shell.passenger-shell .ps-profile-save-btn:hover:not(:disabled),
+.passenger-shell.passenger-shell .ps-advance-action-btn--primary:hover:not(:disabled),
+.passenger-shell.passenger-shell .ps-hist-btn--rate:hover:not(:disabled) { background: #C2410C; filter: none; transform: translateY(-2px); }
+.passenger-shell.passenger-shell .ps-btn--ghost { background: #fff; color: var(--ink-2); border: 1px solid var(--line); backdrop-filter: none; }
+.passenger-shell.passenger-shell .ps-btn--ghost:hover:not(:disabled) { border-color: #FDBA74; background: var(--brand-soft); color: var(--brand-2); }
+.passenger-shell.passenger-shell .ps-btn--success { background: #059669; background-image: none; box-shadow: 0 10px 24px -12px rgba(5,150,105,.7); }
+.passenger-shell.passenger-shell .ps-btn--blue { background: var(--ink); background-image: none; box-shadow: 0 10px 24px -12px rgba(12,10,9,.6); }
+.passenger-shell.passenger-shell .ps-btn--danger { background: #DC2626; background-image: none; box-shadow: 0 10px 24px -12px rgba(220,38,38,.6); }
+.passenger-shell.passenger-shell .ps-btn:focus-visible,
+.passenger-shell.passenger-shell button:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+
+.passenger-shell.passenger-shell .ps-driver-action-pill,
+.passenger-shell.passenger-shell .ps-security-change-btn,
+.passenger-shell.passenger-shell .ps-upi-btn {
+  border-radius: 999px;
+  font-weight: 700;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink-2);
+  transition: all .2s ease;
+}
+.passenger-shell.passenger-shell .ps-driver-action-pill:hover,
+.passenger-shell.passenger-shell .ps-security-change-btn:hover,
+.passenger-shell.passenger-shell .ps-upi-btn:hover {
+  border-color: #FDBA74;
+  background: var(--brand-soft);
+  color: var(--brand-2);
+}
+.passenger-shell.passenger-shell .ps-security-signout-btn {
+  border-radius: 999px;
+  font-weight: 700;
+  background: #DC2626;
+  color: #fff;
+}
+.passenger-shell.passenger-shell .ps-security-signout-btn:hover {
+  background: #B91C1C;
+}
+
+/* ---------- 6. Cards ---------- */
+.passenger-shell.passenger-shell .ps-card,
+.passenger-shell.passenger-shell .ps-fare-card,
+.passenger-shell.passenger-shell .ps-route-card,
+.passenger-shell.passenger-shell .ps-rider-card,
+.passenger-shell.passenger-shell .ps-prefs-box,
+.passenger-shell.passenger-shell .ps-hist-card,
+.passenger-shell.passenger-shell .ps-hist-stitch-card,
+.passenger-shell.passenger-shell .ps-sched-card,
+.passenger-shell.passenger-shell .ps-sched-itinerary-card,
+.passenger-shell.passenger-shell .ps-advance-header-card,
+.passenger-shell.passenger-shell .ps-policy-card,
+.passenger-shell.passenger-shell .ps-outside-card,
+.passenger-shell.passenger-shell .ps-outside-card-form,
+.passenger-shell.passenger-shell .ps-outside-side-card,
+.passenger-shell.passenger-shell .ps-outside-stepper,
+.passenger-shell.passenger-shell .ps-schedule-card,
+.passenger-shell.passenger-shell .ps-terminal-box,
+.passenger-shell.passenger-shell .ps-radar-card,
+.passenger-shell.passenger-shell .ps-waiting-widget,
+.passenger-shell.passenger-shell .ps-profile-card,
+.passenger-shell.passenger-shell .ps-profile-form-card,
+.passenger-shell.passenger-shell .ps-profile-stat-card,
+.passenger-shell.passenger-shell .ps-avatar-card,
+.passenger-shell.passenger-shell .ps-concierge-card,
+.passenger-shell.passenger-shell .ps-concierge-support-card,
+.passenger-shell.passenger-shell .ps-driver-credential-card,
+.passenger-shell.passenger-shell .ps-pickup-station-card,
+.passenger-shell.passenger-shell .ps-empty-card,
+.passenger-shell.passenger-shell .ps-waiting-metric-card,
+.passenger-shell.passenger-shell .ps-advance-summary-tile {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: var(--ps-shadow-2);
+  backdrop-filter: none;
+}
+.passenger-shell.passenger-shell .ps-hist-card,
+.passenger-shell.passenger-shell .ps-sched-card,
+.passenger-shell.passenger-shell .ps-sched-itinerary-card,
+.passenger-shell.passenger-shell .ps-profile-stat-card,
+.passenger-shell.passenger-shell .ps-outside-history-item { transition: transform .25s cubic-bezier(.16,1,.3,1), box-shadow .25s, border-color .25s; }
+.passenger-shell.passenger-shell .ps-hist-card:hover,
+.passenger-shell.passenger-shell .ps-sched-card:hover,
+.passenger-shell.passenger-shell .ps-sched-itinerary-card:hover,
+.passenger-shell.passenger-shell .ps-profile-stat-card:hover { transform: translateY(-3px); border-color: #FDBA74; box-shadow: 0 24px 48px -24px rgba(234,88,12,.28); }
+
+/* Dark "hero" cards — same ink look as the landing page */
+.passenger-shell.passenger-shell .ps-otp-card,
+.passenger-shell.passenger-shell .ps-otp-highlight-card,
+.passenger-shell.passenger-shell .ps-fare-dock-card,
+.passenger-shell.passenger-shell .ps-identity-card,
+.passenger-shell.passenger-shell .ps-outside-hero,
+.passenger-shell.passenger-shell .ps-outside-ambient-banner {
+  background: var(--ink); background-image: radial-gradient(ellipse 70% 120% at 100% 0%, rgba(249,115,22,.28), transparent 60%);
+  color: #fff; border: 1px solid var(--ink); border-radius: 24px; box-shadow: 0 30px 60px -28px rgba(12,10,9,.7);
+}
+.passenger-shell.passenger-shell .ps-otp-value,
+.passenger-shell.passenger-shell .ps-fare-dock-amount { font-family: 'Outfit', sans-serif; color: #FDBA74; letter-spacing: .04em; }
+.passenger-shell.passenger-shell .ps-otp-digit-box { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); color: #FDBA74; border-radius: 14px; font-family: 'Outfit', sans-serif; }
+.passenger-shell.passenger-shell .ps-otp-card .ps-otp-label { color: rgba(255,255,255,.85); }
+.passenger-shell.passenger-shell .ps-otp-card .ps-otp-note { color: rgba(255,255,255,.65); }
+.passenger-shell.passenger-shell .ps-otp-card .ps-otp-ride-chip { background: rgba(255,255,255,.12); color: #FDBA74; border: 1px solid rgba(255,255,255,.2); border-radius: 999px; }
+.passenger-shell.passenger-shell .ps-otp-highlight-title { color: #fff; }
+.passenger-shell.passenger-shell .ps-otp-highlight-sub { color: rgba(255,255,255,.7); }
+
+.passenger-shell.passenger-shell .ps-fare-dock-card .ps-fare-dock-meta,
+.passenger-shell.passenger-shell .ps-fare-dock-card .ps-insured-note { color: rgba(255,255,255,.75); }
+.passenger-shell.passenger-shell .ps-fare-dock-card .ps-fare-dock-meta strong { color: #fff; }
+.passenger-shell.passenger-shell .ps-fare-dock-card .ps-fare-receipt-icon { background: rgba(255,255,255,.08); color: #FDBA74; border: 1px solid rgba(255,255,255,.14); }
+
+.passenger-shell.passenger-shell .ps-identity-card h2,
+.passenger-shell.passenger-shell .ps-identity-card .text-on-surface { color: #fff; font-family: 'Outfit', sans-serif; font-weight: 800; }
+.passenger-shell.passenger-shell .ps-identity-card .text-on-surface-variant { color: rgba(255,255,255,.7); }
+.passenger-shell.passenger-shell .ps-identity-card .bg-surface-container { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); color: #FDBA74; border-radius: 999px; }
+.passenger-shell.passenger-shell .ps-identity-card .bg-surface-container-low { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); border-radius: 16px; }
+.passenger-shell.passenger-shell .ps-identity-card .text-blue-700 { color: #93C5FD; }
+.passenger-shell.passenger-shell .ps-identity-verified-badge { background: rgba(16,185,129,.18); color: #34D399; border: 1px solid rgba(16,185,129,.3); border-radius: 999px; }
+
+.passenger-shell.passenger-shell .ps-outside-hero-title,
+.passenger-shell.passenger-shell .ps-outside-ambient-title { color: #fff; font-family: 'Outfit', sans-serif; font-weight: 800; }
+.passenger-shell.passenger-shell .ps-outside-hero-accent { color: #FDBA74; }
+.passenger-shell.passenger-shell .ps-outside-hero-sub,
+.passenger-shell.passenger-shell .ps-outside-ambient-sub { color: rgba(255,255,255,.7); }
+.passenger-shell.passenger-shell .ps-outside-hero-eyebrow { color: #FDBA74; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; }
+.passenger-shell.passenger-shell .ps-outside-tag-pill { background: rgba(249,115,22,.18); color: #FDBA74; border: 1px solid rgba(249,115,22,.3); border-radius: 999px; }
+.passenger-shell.passenger-shell .ps-outside-formula-pill { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); color: #fff; border-radius: 999px; }
+.passenger-shell.passenger-shell .ps-outside-formula-pill .text-on-surface { color: #fff; }
+.passenger-shell.passenger-shell .ps-outside-formula-pill .text-on-surface-variant { color: rgba(255,255,255,.65); }
+
+/* ---------- 7. Headings & labels ---------- */
+.passenger-shell.passenger-shell .ps-heading { color: var(--ink); font-weight: 700; }
+.passenger-shell.passenger-shell .ps-field-label,
+.passenger-shell.passenger-shell .ps-field-label-left { color: var(--ink-2); font-weight: 700; font-size: 12.5px; }
+.passenger-shell.passenger-shell .ps-field-hint,
+.passenger-shell.passenger-shell .ps-hist-meta,
+.passenger-shell.passenger-shell .ps-sched-meta { color: var(--ps-text-muted); }
+
+/* ---------- 8. Inputs ---------- */
+.passenger-shell.passenger-shell .ps-input,
+.passenger-shell.passenger-shell .ps-pill-input,
+.passenger-shell.passenger-shell .ps-profile-input,
+.passenger-shell.passenger-shell .ps-profile-select,
+.passenger-shell.passenger-shell .ps-outside-dest-input,
+.passenger-shell.passenger-shell .ps-schedule-date-input,
+.passenger-shell.passenger-shell .ps-picker-search,
+.passenger-shell.passenger-shell .ps-input-pill,
+.passenger-shell.passenger-shell input[type="text"],
+.passenger-shell.passenger-shell input[type="tel"],
+.passenger-shell.passenger-shell input[type="email"],
+.passenger-shell.passenger-shell input[type="password"],
+.passenger-shell.passenger-shell input[type="date"],
+.passenger-shell.passenger-shell input[type="time"],
+.passenger-shell.passenger-shell select,
+.passenger-shell.passenger-shell textarea {
+  background: #fff; border: 1px solid var(--line); border-radius: 14px; color: var(--ink-2);
+  font-family: inherit; box-shadow: none; transition: border-color .2s, box-shadow .2s, background .2s;
+}
+.passenger-shell.passenger-shell .ps-input:focus,
+.passenger-shell.passenger-shell .ps-pill-input:focus,
+.passenger-shell.passenger-shell .ps-profile-input:focus,
+.passenger-shell.passenger-shell .ps-profile-select:focus,
+.passenger-shell.passenger-shell .ps-outside-dest-input:focus,
+.passenger-shell.passenger-shell input:focus,
+.passenger-shell.passenger-shell select:focus,
+.passenger-shell.passenger-shell textarea:focus {
+  outline: none; border-color: var(--brand); box-shadow: 0 0 0 4px rgba(249,115,22,.16); background: #fff;
+}
+.passenger-shell.passenger-shell .ps-input--readonly,
+.passenger-shell.passenger-shell .ps-profile-input--readonly { background: var(--soft); color: var(--ps-text-muted); }
+.passenger-shell.passenger-shell ::placeholder { color: #B5ADA3; }
+.passenger-shell.passenger-shell .ps-pill-input-icon,
+.passenger-shell.passenger-shell .ps-pill-input-icon--primary { color: var(--brand-2); }
+.passenger-shell.passenger-shell .ps-pill-swap-btn { background: #fff; border: 1px solid var(--line); color: var(--ink-2); box-shadow: var(--ps-shadow-2); }
+.passenger-shell.passenger-shell .ps-pill-swap-btn:hover { background: var(--brand-soft); color: var(--brand-2); border-color: #FDBA74; }
+
+.passenger-shell.passenger-shell .ps-schedule-radio-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  transition: all .18s ease;
+}
+.passenger-shell.passenger-shell .ps-schedule-radio-card:hover {
+  border-color: #FDBA74;
+  background: var(--brand-soft);
+}
+.passenger-shell.passenger-shell .ps-schedule-radio-card.is-selected {
+  border-color: var(--brand-2);
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(234,88,12,.12);
+}
+.passenger-shell.passenger-shell .ps-radio-circle {
+  border-color: var(--line);
+}
+.passenger-shell.passenger-shell .ps-schedule-radio-card.is-selected .ps-radio-circle {
+  border-color: var(--brand-2);
+  background: var(--brand-2);
+}
+.passenger-shell.passenger-shell .ps-outside-card-form .bg-surface-container-low {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+/* ---------- 9. Chips, pills, tabs, toggles ---------- */
+.passenger-shell.passenger-shell .ps-hotspot-chip,
+.passenger-shell.passenger-shell .ps-quick-chip,
+.passenger-shell.passenger-shell .ps-picker-chip,
+.passenger-shell.passenger-shell .ps-popular-pill,
+.passenger-shell.passenger-shell .ps-recent-pill,
+.passenger-shell.passenger-shell .ps-gender-pill,
+.passenger-shell.passenger-shell .ps-period-btn,
+.passenger-shell.passenger-shell .ps-hist-filter,
+.passenger-shell.passenger-shell .ps-mode-pill,
+.passenger-shell.passenger-shell .ps-mode-pill-btn,
+.passenger-shell.passenger-shell .ps-payment-pill,
+.passenger-shell.passenger-shell .ps-schedule-pill {
+  background: #fff; border: 1px solid var(--line); color: var(--ink-2); border-radius: 999px; font-weight: 600; box-shadow: none;
+  transition: all .2s ease;
+}
+.passenger-shell.passenger-shell .ps-hotspot-chip:hover,
+.passenger-shell.passenger-shell .ps-quick-chip:hover,
+.passenger-shell.passenger-shell .ps-picker-chip:hover,
+.passenger-shell.passenger-shell .ps-popular-pill:hover,
+.passenger-shell.passenger-shell .ps-recent-pill:hover,
+.passenger-shell.passenger-shell .ps-hist-filter:hover,
+.passenger-shell.passenger-shell .ps-schedule-pill:hover { border-color: #FDBA74; background: var(--brand-soft); color: var(--brand-2); }
+.passenger-shell.passenger-shell .ps-hist-filter.is-active,
+.passenger-shell.passenger-shell .ps-hist-filter.active,
+.passenger-shell.passenger-shell .ps-period-btn.is-active,
+.passenger-shell.passenger-shell .ps-period-btn.active,
+.passenger-shell.passenger-shell .ps-mode-pill.is-active,
+.passenger-shell.passenger-shell .ps-mode-pill.active,
+.passenger-shell.passenger-shell .ps-mode-pill-btn.is-active,
+.passenger-shell.passenger-shell .ps-mode-pill-btn.active,
+.passenger-shell.passenger-shell .ps-gender-pill.is-active,
+.passenger-shell.passenger-shell .ps-gender-pill.active,
+.passenger-shell.passenger-shell .ps-hotspot-chip.is-active,
+.passenger-shell.passenger-shell .ps-hotspot-chip.active,
+.passenger-shell.passenger-shell .ps-quick-chip.is-selected,
+.passenger-shell.passenger-shell .ps-quick-chip.is-active,
+.passenger-shell.passenger-shell .ps-picker-chip.is-active,
+.passenger-shell.passenger-shell .ps-popular-pill.is-active,
+.passenger-shell.passenger-shell .ps-recent-pill.is-active,
+.passenger-shell.passenger-shell .ps-schedule-pill.is-active { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+.passenger-shell.passenger-shell .ps-hist-tab-scroll,
+.passenger-shell.passenger-shell .ps-advance-tabs,
+.passenger-shell.passenger-shell .ps-pay-tabs,
+.passenger-shell.passenger-shell .ps-mode-pill-toggle,
+.passenger-shell.passenger-shell .ps-mode-pills,
+.passenger-shell.passenger-shell .ps-gender-row { background: #F1ECE4; border: 1px solid var(--line); border-radius: 999px; padding: 4px; }
+.passenger-shell.passenger-shell .ps-hist-tab-btn,
+.passenger-shell.passenger-shell .ps-advance-tab-btn,
+.passenger-shell.passenger-shell .ps-pay-tab { border-radius: 999px; color: var(--ps-text-muted); font-weight: 600; background: transparent; border: 0; }
+.passenger-shell.passenger-shell .ps-hist-tab-btn.is-active,
+.passenger-shell.passenger-shell .ps-hist-tab-btn.active,
+.passenger-shell.passenger-shell .ps-advance-tab-btn.is-active,
+.passenger-shell.passenger-shell .ps-advance-tab-btn.active,
+.passenger-shell.passenger-shell .ps-pay-tab.is-active,
+.passenger-shell.passenger-shell .ps-pay-tab.active { background: #fff; color: var(--ink); box-shadow: 0 2px 8px rgba(12,10,9,.1); }
+.passenger-shell.passenger-shell .ps-switch { background: #D6D0C7; }
+.passenger-shell.passenger-shell .ps-switch.is-on { background: var(--brand-2); }
+
+.passenger-shell.passenger-shell .ps-vehicle-pill-card,
+.passenger-shell.passenger-shell .ps-vehicle-btn {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  transition: all .2s ease;
+}
+.passenger-shell.passenger-shell .ps-vehicle-pill-card:hover,
+.passenger-shell.passenger-shell .ps-vehicle-btn:hover {
+  border-color: #FDBA74;
+  background: var(--brand-soft);
+}
+.passenger-shell.passenger-shell .ps-vehicle-pill-card.is-active,
+.passenger-shell.passenger-shell .ps-vehicle-btn.is-active {
+  background: #fff;
+  border-color: var(--brand-2);
+  box-shadow: 0 8px 24px -4px rgba(234,88,12,.22);
+}
+.passenger-shell.passenger-shell .ps-vehicle-pill-icon {
+  background: var(--brand-soft);
+  color: var(--brand-2);
+}
+.passenger-shell.passenger-shell .ps-vehicle-pill-card.is-active .ps-vehicle-pill-icon {
+  background: var(--brand-2);
+  color: #fff;
+}
+.passenger-shell.passenger-shell .ps-vehicle-pill-price {
+  background: #F5F1EB;
+  color: var(--ink);
+  border-radius: 999px;
+}
+.passenger-shell.passenger-shell .ps-vehicle-pill-card.is-active .ps-vehicle-pill-price {
+  background: var(--brand-2);
+  color: #fff;
+}
+
+.passenger-shell.passenger-shell .ps-chip,
+.passenger-shell.passenger-shell .ps-mini-pill,
+.passenger-shell.passenger-shell .ps-badge-status,
+.passenger-shell.passenger-shell .ps-sched-status-badge,
+.passenger-shell.passenger-shell .ps-hist-status,
+.passenger-shell.passenger-shell .ps-fare-tag,
+.passenger-shell.passenger-shell .ps-avatar-chip,
+.passenger-shell.passenger-shell .ps-driver-status-pill { border-radius: 999px; font-weight: 700; letter-spacing: .01em; }
+.passenger-shell.passenger-shell .ps-fare-tag--green,
+.passenger-shell.passenger-shell .ps-chip--emerald,
+.passenger-shell.passenger-shell .ps-mini-pill--green,
+.passenger-shell.passenger-shell .ps-badge-status--green,
+.passenger-shell.passenger-shell .ps-sched-status-badge--confirmed { background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; }
+.passenger-shell.passenger-shell .ps-fare-tag--amber,
+.passenger-shell.passenger-shell .ps-chip--amber,
+.passenger-shell.passenger-shell .ps-mini-pill--amber,
+.passenger-shell.passenger-shell .ps-sched-status-badge--dispatching { background: var(--brand-soft); color: #C2410C; border: 1px solid #FED7AA; }
+.passenger-shell.passenger-shell .ps-driver-status-pill { background: #F5F1EB; color: var(--ink); padding: 4px 12px; }
+
+/* ---------- 10. Progress & route ---------- */
+.passenger-shell.passenger-shell .ps-progress-dot,
+.passenger-shell.passenger-shell .ps-outside-step-icon { border-radius: 50%; border: 2px solid var(--line); background: #fff; color: var(--ps-text-muted); }
+.passenger-shell.passenger-shell .ps-progress-step.is-active .ps-progress-dot,
+.passenger-shell.passenger-shell .ps-progress-step.active .ps-progress-dot,
+.passenger-shell.passenger-shell .ps-outside-step.is-active .ps-outside-step-icon,
+.passenger-shell.passenger-shell .ps-outside-step.active .ps-outside-step-icon { background: var(--brand-2); border-color: var(--brand-2); color: #fff; box-shadow: 0 0 0 5px rgba(249,115,22,.18); }
+.passenger-shell.passenger-shell .ps-progress-connector,
+.passenger-shell.passenger-shell .ps-outside-step-connector { background: var(--line); }
+.passenger-shell.passenger-shell .ps-waiting-progress-track { background: #EFEAE2; border-radius: 999px; }
+.passenger-shell.passenger-shell .ps-waiting-progress-fill { background: linear-gradient(90deg, #FB923C, #EA580C); border-radius: 999px; }
+.passenger-shell.passenger-shell .ps-map-grid { background-color: #FFF3E6; background-image: linear-gradient(rgba(234,88,12,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(234,88,12,.08) 1px, transparent 1px); background-size: 28px 28px; }
+.passenger-shell.passenger-shell .ps-map-route-line { stroke: var(--brand-2); }
+.passenger-shell.passenger-shell .ps-map-preview,
+.passenger-shell.passenger-shell .ps-outside-map-preview,
+.passenger-shell.passenger-shell .ps-sched-snippet-map { border-radius: 16px; border: 1px solid var(--line); overflow: hidden; }
+
+/* Waiting Widget & Fare Summary Elements */
+.passenger-shell.passenger-shell .ps-waiting-metric-card {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.passenger-shell.passenger-shell .ps-waiting-timer-pill {
+  background: var(--brand-soft);
+  color: var(--brand-2);
+  border: 1px solid #FED7AA;
+  border-radius: 999px;
+}
+.passenger-shell.passenger-shell .ps-waiting-timer-pill.is-paid {
+  background: #FEF2F2;
+  color: #DC2626;
+  border-color: #FECACA;
+}
+.passenger-shell.passenger-shell .ps-waiting-fare-ribbon {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.passenger-shell.passenger-shell .ps-ticket-perforated-cut-left,
+.passenger-shell.passenger-shell .ps-ticket-perforated-cut-right {
+  background: var(--soft);
+}
+
+/* ---------- 11. Icon tiles ---------- */
+.passenger-shell.passenger-shell .ps-profile-stat-icon,
+.passenger-shell.passenger-shell .ps-hist-summary-icon,
+.passenger-shell.passenger-shell .ps-advance-summary-icon,
+.passenger-shell.passenger-shell .ps-security-icon,
+.passenger-shell.passenger-shell .ps-policy-icon,
+.passenger-shell.passenger-shell .ps-concierge-icon,
+.passenger-shell.passenger-shell .ps-advance-header-icon,
+.passenger-shell.passenger-shell .ps-history-icon-box,
+.passenger-shell.passenger-shell .ps-empty-icon,
+.passenger-shell.passenger-shell .ps-outside-history-icon,
+.passenger-shell.passenger-shell .ps-picker-spot-icon { border-radius: 14px; background: var(--brand-soft); color: var(--brand-2); border: 0; }
+
+/* ---------- 12. History / schedule rows ---------- */
+.passenger-shell.passenger-shell .ps-hist-fare,
+.passenger-shell.passenger-shell .ps-sched-fare-val,
+.passenger-shell.passenger-shell .ps-fare-value,
+.passenger-shell.passenger-shell .ps-fare-total,
+.passenger-shell.passenger-shell .ps-profile-stat-value,
+.passenger-shell.passenger-shell .ps-hist-summary-value,
+.passenger-shell.passenger-shell .ps-advance-summary-value { font-family: 'Outfit', sans-serif; font-weight: 800; color: var(--ink); letter-spacing: -0.02em; }
+.passenger-shell.passenger-shell .ps-hist-code,
+.passenger-shell.passenger-shell .ps-sched-code { font-family: ui-monospace, Menlo, monospace; color: var(--ps-text-muted); background: #F5F1EB; border-radius: 8px; padding: 2px 8px; }
+.passenger-shell.passenger-shell .ps-hist-route-line { background: repeating-linear-gradient(#DDD5C9 0 4px, transparent 4px 8px); }
+.passenger-shell.passenger-shell .ps-hist-btn,
+.passenger-shell.passenger-shell .ps-sched-action-btn,
+.passenger-shell.passenger-shell .ps-advance-action-btn,
+.passenger-shell.passenger-shell .ps-hist-csv-btn,
+.passenger-shell.passenger-shell .ps-link-btn { border-radius: 999px; font-weight: 700; border: 1px solid var(--line); background: #fff; color: var(--ink-2); }
+.passenger-shell.passenger-shell .ps-hist-btn:hover,
+.passenger-shell.passenger-shell .ps-sched-action-btn:hover,
+.passenger-shell.passenger-shell .ps-advance-action-btn:hover,
+.passenger-shell.passenger-shell .ps-hist-csv-btn:hover,
+.passenger-shell.passenger-shell .ps-link-btn:hover { border-color: #FDBA74; background: var(--brand-soft); color: var(--brand-2); }
+.passenger-shell.passenger-shell .ps-hist-btn--rebook,
+.passenger-shell.passenger-shell .ps-sched-action-btn--call { background: var(--ink); border-color: var(--ink); color: #fff; }
+.passenger-shell.passenger-shell .ps-sched-action-btn--cancel,
+.passenger-shell.passenger-shell .ps-cancel-btn { color: #DC2626; border-color: #FECACA; background: #FEF2F2; }
+
+.passenger-shell.passenger-shell .ps-hist-expanded {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.passenger-shell.passenger-shell .ps-sched-timeframe-badge,
+.passenger-shell.passenger-shell .ps-sched-driver-segment {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.passenger-shell.passenger-shell .ps-history-page .grid-cols-3.bg-surface-container-low {
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+}
+.passenger-shell.passenger-shell .ps-history-page .grid-cols-3.bg-surface-container-low > div {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+/* ---------- 13. Alerts / info boxes ---------- */
+.passenger-shell.passenger-shell .ps-info-box,
+.passenger-shell.passenger-shell .ps-field-hint-box,
+.passenger-shell.passenger-shell .ps-warn-box,
+.passenger-shell.passenger-shell .ps-cancel-warning,
+.passenger-shell.passenger-shell .ps-flash-banner,
+.passenger-shell.passenger-shell .ps-penalty-banner,
+.passenger-shell.passenger-shell .ps-waiting-policy-note,
+.passenger-shell.passenger-shell .ps-sched-pending-box { border-radius: 16px; }
+.passenger-shell.passenger-shell .ps-info-box { background: var(--brand-soft); border: 1px solid #FED7AA; }
+.passenger-shell.passenger-shell .ps-cancel-warning {
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  color: #B91C1C;
+  border-radius: 14px;
+}
+.passenger-shell.passenger-shell .ps-alert--error,
+.passenger-shell.passenger-shell .ps-modal-error,
+.passenger-shell.passenger-shell .ps-flash-error { border-radius: 14px; background: #FEF2F2; border: 1px solid #FECACA; color: #B91C1C; }
+.passenger-shell.passenger-shell .ps-alert--success,
+.passenger-shell.passenger-shell .ps-success-banner { border-radius: 14px; background: #ECFDF5; border: 1px solid #A7F3D0; color: #047857; }
+.passenger-shell.passenger-shell .ps-thanks-ride-code {
+  background: var(--brand-soft);
+  color: var(--brand-2);
+  border: 1px solid #FED7AA;
+  border-radius: 999px;
+}
+
+/* ---------- 14. Modals (also rendered via portals) ---------- */
+.ps-modal-overlay { background: rgba(12,10,9,.6) !important; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.ps-modal-overlay .ps-modal,
+.passenger-shell .ps-modal {
+  background: #fff; border: 1px solid #ECE7DF; border-radius: 24px; box-shadow: 0 40px 80px -24px rgba(12,10,9,.5);
+}
+.ps-modal-overlay .ps-modal-title { font-family: 'Outfit', sans-serif; font-weight: 700; color: #0C0A09; letter-spacing: -0.02em; }
+.ps-modal-overlay .ps-modal-sub { color: #6B645D; }
+.ps-modal-overlay .ps-modal-close { background: #F5F1EB; border-radius: 12px; border: 0; color: #1C1917; }
+.ps-modal-overlay .ps-modal-head-icon { background: #FFF1E6; color: #EA580C; border-radius: 14px; }
+.ps-modal-overlay .ps-modal-head-icon--danger { background: #FEF2F2; color: #DC2626; }
+
+.ps-modal-overlay .ps-penalty-amount {
+  background: #FFF1E6;
+  border: 1px solid #FED7AA;
+  border-radius: 16px;
+}
+.ps-modal-overlay .ps-penalty-label { color: #EA580C; font-weight: 800; }
+.ps-modal-overlay .ps-penalty-name { color: #0C0A09; font-weight: 800; }
+.ps-modal-overlay .ps-penalty-phone { color: #EA580C; }
+.ps-modal-overlay .ps-penalty-value { color: #EA580C; font-family: 'Outfit', sans-serif; font-weight: 900; }
+.ps-modal-overlay .ps-upiid-row { background: #FAF8F5; border: 1px solid #ECE7DF; border-radius: 14px; }
+.ps-modal-overlay .ps-upi-copy { background: #fff; border: 1px solid #ECE7DF; border-radius: 8px; color: #1C1917; font-weight: 700; }
+.ps-modal-overlay .ps-upi-copy:hover { border-color: #FDBA74; background: #FFF1E6; color: #EA580C; }
+
+.ps-modal-overlay .ps-pref-modal-alert { border-radius: 14px; background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; }
+.ps-modal-overlay .ps-pref-modal-actions button.bg-surface-container,
+.ps-modal-overlay .ps-pref-modal-actions button.bg-surface-container-low {
+  background: #fff !important;
+  border: 1px solid #ECE7DF !important;
+  color: #1C1917 !important;
+  font-weight: 700 !important;
+  border-radius: 999px !important;
+  transition: all .2s ease;
+}
+.ps-modal-overlay .ps-pref-modal-actions button.bg-surface-container:hover,
+.ps-modal-overlay .ps-pref-modal-actions button.bg-surface-container-low:hover {
+  border-color: #FDBA74 !important;
+  background: #FFF1E6 !important;
+  color: #EA580C !important;
+}
+
+.ps-modal-overlay .ps-schedule-pill {
+  background: #fff;
+  border: 1px solid #ECE7DF;
+  color: #1C1917;
+  border-radius: 999px;
+  font-weight: 600;
+}
+.ps-modal-overlay .ps-schedule-pill:hover {
+  border-color: #FDBA74;
+  background: #FFF1E6;
+  color: #EA580C;
+}
+.ps-modal-overlay .ps-schedule-pill.is-active {
+  background: #0C0A09;
+  border-color: #0C0A09;
+  color: #fff;
+}
+.ps-modal-overlay .ps-period-btn {
+  border-radius: 8px;
+  border: 1px solid #ECE7DF;
+  background: #fff;
+  color: #1C1917;
+}
+.ps-modal-overlay .ps-period-btn.is-active {
+  background: #0C0A09;
+  border-color: #0C0A09;
+  color: #fff;
+}
+
+/* Rating Modal overlay & container */
+.passenger-shell.passenger-shell .fixed.inset-0.z-50 {
+  background: rgba(12,10,9,.6) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.passenger-shell.passenger-shell .fixed.inset-0.z-50 > div {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: 0 40px 80px -24px rgba(12,10,9,.5);
+}
+.passenger-shell.passenger-shell .fixed.inset-0.z-50 h3 {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+.passenger-shell.passenger-shell .fixed.inset-0.z-50 textarea {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: var(--ink-2);
+  font-family: inherit;
+}
+.passenger-shell.passenger-shell .fixed.inset-0.z-50 textarea:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 4px rgba(249,115,22,.16);
+}
+.passenger-shell.passenger-shell .fixed.inset-0.z-50 button.bg-primary {
+  background: var(--brand-2) !important;
+  border-radius: 999px;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(234,88,12,.35);
+}
+.passenger-shell.passenger-shell .fixed.inset-0.z-50 button.bg-primary:hover {
+  background: #C2410C !important;
+}
+
+/* ---------- 15. Skeleton, scrollbars, selection ---------- */
+.passenger-shell.passenger-shell .ps-skeleton,
+.passenger-shell.passenger-shell .ps-skeleton-line { background: linear-gradient(90deg, #F1ECE4 25%, #F8F5F0 50%, #F1ECE4 75%); background-size: 200% 100%; border-radius: 10px; }
+.passenger-shell.passenger-shell ::selection { background: rgba(249,115,22,.25); }
+.passenger-shell.passenger-shell *::-webkit-scrollbar { width: 8px; height: 8px; }
+.passenger-shell.passenger-shell *::-webkit-scrollbar-thumb { background: #DDD5C9; border-radius: 999px; }
+
+/* ---------- 16. Layout polish ---------- */
+.passenger-shell.passenger-shell .ps-main { max-width: 1280px; width: 100%; margin: 0 auto; }
+@media (max-width: 767px) {
+  .passenger-shell.passenger-shell .ps-card,
+  .passenger-shell.passenger-shell .ps-hist-card,
+  .passenger-shell.passenger-shell .ps-sched-card,
+  .passenger-shell.passenger-shell .ps-sched-itinerary-card { border-radius: 18px; }
+}
+@media (max-width: 480px) {
+  .passenger-shell.passenger-shell .ps-vehicle-grid {
+    grid-template-columns: 1fr;
+  }
+  .passenger-shell.passenger-shell .ps-status-pill-banner-inner {
+    border-radius: 18px;
+    padding: 10px 14px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .passenger-shell.passenger-shell .ps-status-pill-left {
+    gap: 6px;
+  }
+  .passenger-shell.passenger-shell .ps-fare-dock-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .passenger-shell.passenger-shell .ps-fare-dock-action-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .passenger-shell.passenger-shell .ps-heroic-book-btn {
+    width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .passenger-shell.passenger-shell * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
