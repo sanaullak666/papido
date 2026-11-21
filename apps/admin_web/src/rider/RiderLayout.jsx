@@ -1,5 +1,6 @@
 import React from 'react';
 import './RiderLayout.css';
+import './rider-modern.css';
 import { useRider } from './shared/RiderContext';
 import {
   Radio,
