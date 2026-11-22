@@ -17,8 +17,8 @@
   to { transform: rotate(360deg); }
 }
 @keyframes otPulseSoft {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.25); }
-  50%      { box-shadow: 0 0 0 8px rgba(244, 63, 94, 0.05); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.153); }
+  50%      { box-shadow: 0 0 0 8px rgba(244, 63, 94, 0.031); }
 }
 @keyframes otBellShake {
   0%, 100% { transform: rotate(0deg); }
@@ -37,7 +37,7 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  color: #F8FAFC;
+  color: #1C1917;
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 .ot-page *,
@@ -75,7 +75,7 @@
   height: 38px;
   border-radius: 10px;
   background: rgba(244, 63, 94, 0.2);
-  color: #FB7185;
+  color: #9C1125;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -87,11 +87,11 @@
 .ot-alert-title {
   font-size: 14px;
   font-weight: 800;
-  color: #FECDD3;
+  color: #9C1122;
 }
 .ot-alert-sub {
   font-size: 12px;
-  color: #FDA4AF;
+  color: #9C1122;
   margin-top: 2px;
   line-height: 1.4;
 }
@@ -108,9 +108,9 @@
   gap: 6px;
   padding: 6px 12px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  color: #FFFFFF;
+  background: rgba(12, 10, 9, 0.09);
+  border: 1px solid rgba(12, 10, 9, 0.15);
+  color: #1C1917;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
@@ -118,13 +118,13 @@
 }
 
 .ot-alert-action-btn:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(12, 10, 9, 0.165);
 }
 
 .ot-alert-action-btn.is-muted {
   background: rgba(239, 68, 68, 0.25);
   border-color: rgba(239, 68, 68, 0.5);
-  color: #FECDD3;
+  color: #9C1122;
 }
 
 /* ============================================================
@@ -139,8 +139,8 @@
 }
 .ot-tab-switch {
   display: inline-flex;
-  background: #131D31;
-  border: 1px solid #23314E;
+  background: #FFFFFF;
+  border: 1px solid #ECE7DF;
   border-radius: 12px;
   padding: 4px;
   gap: 4px;
@@ -150,7 +150,7 @@
   border-radius: 8px;
   border: none;
   background: transparent;
-  color: #94A3B8;
+  color: #A8A29E;
   font-family: inherit;
   font-size: 13px;
   font-weight: 700;
@@ -161,22 +161,22 @@
   min-height: 38px;
   transition: background 200ms ease, color 200ms ease, box-shadow 200ms ease;
 }
-.ot-tab-btn:hover { color: #F8FAFC; }
+.ot-tab-btn:hover { color: #1C1917; }
 .ot-tab-btn.is-active {
-  background: linear-gradient(135deg, #F97316, #EA580C);
+  background: linear-gradient(135deg, #EA580C, #EA580C);
   color: #FFFFFF;
-  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35);
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.297);
 }
 .ot-tab-btn--cyan.is-active {
   background: linear-gradient(135deg, #38BDF8, #0EA5E9);
-  box-shadow: 0 4px 14px rgba(56, 189, 248, 0.35);
+  box-shadow: 0 4px 14px rgba(56, 189, 248, 0.297);
 }
 .ot-tab-btn:focus-visible {
-  outline: 2px solid #F59E0B;
+  outline: 2px solid #EA580C;
   outline-offset: 2px;
 }
 .ot-tab-count {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(12, 10, 9, 0.112);
   color: inherit;
   padding: 1px 8px;
   border-radius: 10px;
@@ -187,7 +187,7 @@
 }
 .ot-tab-btn:not(.is-active) .ot-tab-count {
   background: rgba(148, 163, 184, 0.15);
-  color: #94A3B8;
+  color: #A8A29E;
 }
 
 .ot-refresh-btn {
@@ -196,9 +196,9 @@
   gap: 6px;
   padding: 8px 14px;
   border-radius: 8px;
-  background: #1E293B;
-  border: 1px solid #23314E;
-  color: #94A3B8;
+  background: #FAF8F5;
+  border: 1px solid #ECE7DF;
+  color: #A8A29E;
   font-family: inherit;
   font-size: 12px;
   font-weight: 700;
@@ -207,12 +207,12 @@
   transition: background 180ms ease, color 180ms ease, border-color 180ms ease, transform 180ms ease;
 }
 .ot-refresh-btn:hover {
-  background: #23314E;
-  color: #F8FAFC;
+  background: #F5F1EB;
+  color: #1C1917;
   transform: translateY(-1px);
 }
 .ot-refresh-btn:focus-visible {
-  outline: 2px solid #F59E0B;
+  outline: 2px solid #EA580C;
   outline-offset: 2px;
 }
 
@@ -232,12 +232,12 @@
 .ot-alert--error {
   background: rgba(244, 63, 94, 0.12);
   border-color: rgba(244, 63, 94, 0.3);
-  color: #FB7185;
+  color: #9C1125;
 }
 .ot-alert--success {
   background: rgba(16, 185, 129, 0.12);
   border-color: rgba(16, 185, 129, 0.3);
-  color: #34D399;
+  color: #1E8F66;
 }
 
 /* ============================================================
@@ -256,8 +256,8 @@
   gap: 16px;
 }
 .ot-skeleton-card {
-  background: #131D31;
-  border: 1px solid #23314E;
+  background: #FFFFFF;
+  border: 1px solid #ECE7DF;
   border-radius: 12px;
   padding: 20px;
   display: flex;
@@ -271,9 +271,9 @@
   border-radius: 6px;
   background: linear-gradient(
     90deg,
-    rgba(35, 49, 78, 0.4) 0%,
-    rgba(35, 49, 78, 0.9) 50%,
-    rgba(35, 49, 78, 0.4) 100%
+    rgba(255, 255, 255, 0.55) 0%,
+    #FFFFFF 50%,
+    rgba(255, 255, 255, 0.55) 100%
   );
   background-size: 200% 100%;
   animation: otSkeleton 1.4s linear infinite;
@@ -284,20 +284,20 @@
    DISPATCH CARD
    ============================================================ */
 .ot-card {
-  background: #131D31;
-  border: 1px solid #23314E;
+  background: #FFFFFF;
+  border: 1px solid #ECE7DF;
   border-radius: 12px;
   padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 20px rgba(12, 10, 9, 0.075);
   transition: border-color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
 }
 .ot-card:hover {
   transform: translateY(-1px);
-  border-color: #334155;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3);
+  border-color: #ECE7DF;
+  box-shadow: 0 8px 28px rgba(12, 10, 9, 0.09);
 }
 
 /* Card head */
@@ -318,7 +318,7 @@
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-weight: 800;
   font-size: 15px;
-  color: #F59E0B;
+  color: #9C3A11;
   letter-spacing: 0.3px;
 }
 .ot-vehicle-badge {
@@ -329,15 +329,15 @@
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #94A3B8;
+  background: rgba(12, 10, 9, 0.06);
+  color: #A8A29E;
 }
 .ot-card-head-time {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: #64748B;
+  color: #78716C;
 }
 
 /* Scheduled / Pre-Booked styling */
@@ -349,9 +349,9 @@
   font-weight: 800;
   padding: 3px 8px;
   border-radius: 6px;
-  background: rgba(245, 158, 11, 0.15);
-  color: #FBBF24;
-  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: rgba(234, 88, 12, 0.112);
+  color: #9C3A11;
+  border: 1px solid rgba(234, 88, 12, 0.35);
   letter-spacing: 0.02em;
 }
 
@@ -362,9 +362,9 @@
   gap: 12px;
   padding: 10px 14px;
   border-radius: 8px;
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.14), rgba(234, 88, 12, 0.08));
-  border: 1px solid rgba(245, 158, 11, 0.35);
-  color: #FDE68A;
+  background: linear-gradient(135deg, rgba(234, 88, 12, 0.105), rgba(234, 88, 12, 0.08));
+  border: 1px solid rgba(234, 88, 12, 0.35);
+  color: #9C3A11;
   font-size: 13px;
   flex-wrap: wrap;
 }
@@ -380,17 +380,17 @@
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #F59E0B;
+  color: #9C3A11;
   display: block;
 }
 
 .ot-scheduled-banner-time {
   font-size: 13px;
-  color: #F1F5F9;
+  color: #1C1917;
 }
 
 .ot-scheduled-banner-time strong {
-  color: #FDE68A;
+  color: #9C3A11;
   font-weight: 800;
 }
 
@@ -399,9 +399,9 @@
   font-weight: 800;
   padding: 3px 8px;
   border-radius: 4px;
-  background: rgba(245, 158, 11, 0.22);
-  color: #FBBF24;
-  border: 1px solid rgba(245, 158, 11, 0.45);
+  background: rgba(234, 88, 12, 0.165);
+  color: #9C3A11;
+  border: 1px solid rgba(234, 88, 12, 0.45);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -413,9 +413,9 @@
   font-weight: 800;
   padding: 1px 6px;
   border-radius: 4px;
-  background: rgba(245, 158, 11, 0.15);
-  color: #FBBF24;
-  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: rgba(234, 88, 12, 0.112);
+  color: #9C3A11;
+  border: 1px solid rgba(234, 88, 12, 0.35);
   text-transform: uppercase;
 }
 
@@ -424,11 +424,11 @@
   align-items: center;
   gap: 5px;
   font-size: 12px;
-  color: #FDE68A;
+  color: #9C3A11;
 }
 
 .ot-table-scheduled-row strong {
-  color: #F59E0B;
+  color: #9C3A11;
 }
 
 .ot-table-immediate-row {
@@ -436,7 +436,7 @@
   align-items: center;
   gap: 4px;
   font-size: 11px;
-  color: #94A3B8;
+  color: #A8A29E;
 }
 
 /* ============================================================
@@ -449,8 +449,8 @@
 }
 
 .ot-info-block {
-  background: #1E293B;
-  border: 1px solid #23314E;
+  background: #FAF8F5;
+  border: 1px solid #ECE7DF;
   border-radius: 8px;
   padding: 14px;
   display: flex;
@@ -475,26 +475,26 @@
 }
 .ot-info-icon--green {
   background: rgba(16, 185, 129, 0.12);
-  color: #10B981;
+  color: #119C6E;
   border-color: rgba(16, 185, 129, 0.35);
 }
 .ot-info-icon--amber {
-  background: rgba(245, 158, 11, 0.12);
-  color: #F59E0B;
-  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(234, 88, 12, 0.09);
+  color: #9C3A11;
+  border-color: rgba(234, 88, 12, 0.35);
 }
 .ot-info-body { flex: 1; min-width: 0; }
 .ot-info-label {
   font-size: 11px;
   font-weight: 700;
-  color: #64748B;
+  color: #78716C;
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
 .ot-info-label--upper { text-transform: uppercase; }
 .ot-info-value {
   font-size: 13px;
-  color: #F8FAFC;
+  color: #1C1917;
   font-weight: 600;
   margin-top: 2px;
   word-break: break-word;
@@ -505,7 +505,7 @@
   align-items: center;
   gap: 4px;
   font-size: 11px;
-  color: #38BDF8;
+  color: #11719C;
   text-decoration: none;
   font-weight: 700;
   padding: 4px 8px;
@@ -516,7 +516,7 @@
 }
 .ot-info-map-link:hover {
   background: rgba(56, 189, 248, 0.2);
-  color: #7DD3FC;
+  color: #116F9C;
 }
 
 /* Passenger block specifics */
@@ -526,12 +526,12 @@
 .ot-passenger-name {
   font-size: 14px;
   font-weight: 800;
-  color: #F8FAFC;
+  color: #1C1917;
   margin-top: 4px;
 }
 .ot-passenger-phone {
   font-size: 12px;
-  color: #64748B;
+  color: #78716C;
   margin-top: 2px;
 }
 .ot-passenger-call {
@@ -540,12 +540,12 @@
   gap: 6px;
   font-size: 12px;
   font-weight: 700;
-  color: #10B981;
+  color: #119C6E;
   text-decoration: none;
   width: fit-content;
   transition: color 180ms ease;
 }
-.ot-passenger-call:hover { color: #34D399; text-decoration: underline; }
+.ot-passenger-call:hover { color: #1E8F66; text-decoration: underline; }
 
 /* ============================================================
    DISPATCH CONTROLS (fare + rider + CTA)
@@ -555,26 +555,26 @@
   grid-template-columns: minmax(160px, 200px) 1fr auto;
   align-items: flex-end;
   gap: 12px;
-  background: #1E293B;
-  border: 1px solid #23314E;
+  background: #FAF8F5;
+  border: 1px solid #ECE7DF;
   border-radius: 10px;
   padding: 14px 16px;
 }
 
 .ot-fare-input-wrap { min-width: 0; }
 .ot-fare-input-wrap label {
-  color: #94A3B8;
+  color: #A8A29E;
   font-size: 12px;
 }
 .ot-fare-input-wrap input {
-  background: #0B0F19;
-  color: #F8FAFC;
-  border-color: #23314E;
+  background: #FAF8F5;
+  color: #1C1917;
+  border-color: #ECE7DF;
 }
-.ot-fare-input-wrap input::placeholder { color: #64748B; }
+.ot-fare-input-wrap input::placeholder { color: #78716C; }
 .ot-fare-input-wrap input:focus {
-  border-color: #F59E0B;
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+  border-color: #EA580C;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.12);
 }
 
 .ot-rider-select-wrap {
@@ -586,14 +586,14 @@
 .ot-rider-select-label {
   font-size: 12px;
   font-weight: 700;
-  color: #94A3B8;
+  color: #A8A29E;
 }
 .ot-rider-select {
   height: 42px;
   padding: 0 12px;
-  background: #0B0F19;
-  color: #F8FAFC;
-  border: 1px solid #23314E;
+  background: #FAF8F5;
+  color: #1C1917;
+  border: 1px solid #ECE7DF;
   border-radius: 6px;
   font-size: 13px;
   font-family: inherit;
@@ -601,10 +601,10 @@
   cursor: pointer;
   transition: border-color 180ms ease, box-shadow 180ms ease;
 }
-.ot-rider-select:hover { border-color: #334155; }
+.ot-rider-select:hover { border-color: #ECE7DF; }
 .ot-rider-select:focus-visible {
-  border-color: #F59E0B;
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+  border-color: #EA580C;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.12);
 }
 
 .ot-dispatch-action {
@@ -624,45 +624,45 @@
 
 /* Table cell helpers */
 .ot-table-code {
-  color: #F59E0B;
+  color: #9C3A11;
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-weight: 700;
   font-size: 13px;
 }
 .ot-table-name {
   font-weight: 600;
-  color: #F8FAFC;
+  color: #1C1917;
 }
-.ot-table-name--emerald { color: #10B981; }
+.ot-table-name--emerald { color: #119C6E; }
 .ot-table-sub {
   font-size: 11px;
-  color: #64748B;
+  color: #78716C;
 }
 .ot-table-unassigned {
-  color: #64748B;
+  color: #78716C;
   font-style: italic;
 }
 .ot-table-route {
   font-size: 13px;
   font-weight: 600;
-  color: #F8FAFC;
+  color: #1C1917;
 }
 .ot-table-route-sub {
   font-size: 12px;
-  color: #64748B;
+  color: #78716C;
   display: inline-flex;
   align-items: center;
   gap: 4px;
   margin-top: 2px;
 }
 .ot-table-fare {
-  color: #10B981;
+  color: #119C6E;
   font-size: 14px;
   font-weight: 800;
 }
 .ot-table-time {
   font-size: 12px;
-  color: #64748B;
+  color: #78716C;
 }
 
 /* ============================================================
@@ -749,14 +749,14 @@
 }
 
 .ot-panel {
-  background: #131D31;
-  border: 1px solid #23314E;
+  background: #FFFFFF;
+  border: 1px solid #ECE7DF;
   border-radius: 14px;
   padding: 18px;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 20px rgba(12, 10, 9, 0.075);
 }
 
 .ot-panel-head {
@@ -764,7 +764,7 @@
   align-items: center;
   justify-content: space-between;
   padding-bottom: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(12, 10, 9, 0.06);
 }
 .ot-panel-title {
   display: flex;
@@ -774,7 +774,7 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #F8FAFC;
+  color: #1C1917;
 }
 
 /* Queue List */
@@ -787,8 +787,8 @@
   padding-right: 4px;
 }
 .ot-queue-item {
-  background: #18243E;
-  border: 1px solid #23314E;
+  background: #FAF8F5;
+  border: 1px solid #ECE7DF;
   border-radius: 12px;
   padding: 14px;
   cursor: pointer;
@@ -799,13 +799,13 @@
 }
 .ot-queue-item:hover {
   border-color: #38BDF8;
-  background: #1D2D4E;
+  background: #FAF8F5;
   transform: translateY(-1px);
 }
 .ot-queue-item.is-selected {
-  border-color: #F59E0B;
-  background: rgba(245, 158, 11, 0.08);
-  box-shadow: 0 0 16px rgba(245, 158, 11, 0.2);
+  border-color: #EA580C;
+  background: rgba(234, 88, 12, 0.06);
+  box-shadow: 0 0 16px rgba(234, 88, 12, 0.16);
 }
 
 .ot-queue-item-top {
@@ -824,14 +824,14 @@
   height: 8px;
   border-radius: 50%;
   background: #F43F5E;
-  box-shadow: 0 0 8px #F43F5E;
+  box-shadow: 0 0 8px rgba(244, 63, 94, 0.85);
   animation: otPulseSoft 1.5s infinite;
 }
 .ot-queue-code {
   font-family: ui-monospace, SFMono-Regular, monospace;
   font-weight: 800;
   font-size: 13px;
-  color: #F59E0B;
+  color: #9C3A11;
 }
 .ot-queue-vehicle-tag {
   display: inline-flex;
@@ -839,22 +839,22 @@
   gap: 4px;
   font-size: 10px;
   font-weight: 700;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(12, 10, 9, 0.06);
   padding: 2px 6px;
   border-radius: 4px;
-  color: #94A3B8;
+  color: #A8A29E;
 }
 .ot-queue-prebook-tag {
   font-size: 10px;
   font-weight: 800;
   background: rgba(6, 182, 212, 0.15);
-  color: #38BDF8;
+  color: #11719C;
   padding: 2px 6px;
   border-radius: 4px;
 }
 .ot-queue-time {
   font-size: 11px;
-  color: #64748B;
+  color: #78716C;
 }
 .ot-queue-route {
   display: flex;
@@ -863,10 +863,10 @@
   font-size: 12px;
 }
 .ot-queue-dest {
-  color: #F8FAFC;
+  color: #1C1917;
 }
 .ot-queue-pickup {
-  color: #94A3B8;
+  color: #A8A29E;
   font-size: 11px;
 }
 .ot-queue-meta-row {
@@ -874,15 +874,15 @@
   align-items: center;
   justify-content: space-between;
   padding-top: 6px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(12, 10, 9, 0.06);
   font-size: 11px;
 }
 .ot-queue-customer {
-  color: #94A3B8;
+  color: #A8A29E;
   font-weight: 600;
 }
 .ot-queue-fare {
-  color: #10B981;
+  color: #119C6E;
   font-weight: 800;
   font-size: 13px;
 }
@@ -904,15 +904,15 @@
     display: flex;
     position: fixed;
     inset: 0;
-    background: rgba(11, 15, 25, 0.85);
+    background: rgba(12, 10, 9, 0.85);
     backdrop-filter: blur(8px);
     z-index: 999;
     flex-direction: column;
     justify-content: flex-end;
   }
   .ot-mobile-drawer {
-    background: #131D31;
-    border-top: 2px solid #F59E0B;
+    background: #FFFFFF;
+    border-top: 2px solid #EA580C;
     border-radius: 20px 20px 0 0;
     max-height: 88vh;
     overflow-y: auto;
@@ -920,19 +920,19 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
-    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 -8px 32px rgba(12, 10, 9, 0.15);
   }
   .ot-mobile-drawer-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding-bottom: 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(12, 10, 9, 0.06);
   }
   .ot-mobile-drawer-close {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(12, 10, 9, 0.06);
     border: none;
-    color: #F8FAFC;
+    color: #1C1917;
     width: 36px;
     height: 36px;
     border-radius: 50%;

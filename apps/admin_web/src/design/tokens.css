@@ -10,65 +10,65 @@
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   /* Papido Brand Amber Scale */
-  --primary: #F59E0B;
-  --primary-hover: #D97706;
-  --primary-active: #B45309;
-  --primary-light: rgba(245, 158, 11, 0.15);
-  --primary-glow: rgba(245, 158, 11, 0.35);
-  --primary-text-on: #0F172A; /* High contrast: dark text on amber buttons (WCAG 8.5:1) */
+  --primary: #EA580C;
+  --primary-hover: #C2410C;
+  --primary-active: #9A3412;
+  --primary-light: rgba(234, 88, 12, 0.10);
+  --primary-glow: rgba(234, 88, 12, 0.28);
+  --primary-text-on: #FFFFFF; /* High contrast: dark text on amber buttons (WCAG 8.5:1) */
 
   /* Semantic Accent Palette */
-  --accent-emerald: #10B981;
-  --accent-emerald-light: rgba(16, 185, 129, 0.15);
-  --accent-emerald-glow: rgba(16, 185, 129, 0.3);
+  --accent-emerald: #059669;
+  --accent-emerald-light: rgba(5, 150, 105, 0.10);
+  --accent-emerald-glow: rgba(5, 150, 105, 0.25);
 
-  --accent-cyan: #06B6D4;
-  --accent-cyan-light: rgba(6, 182, 212, 0.15);
-  --accent-cyan-glow: rgba(6, 182, 212, 0.3);
+  --accent-cyan: #0891B2;
+  --accent-cyan-light: rgba(8, 145, 178, 0.10);
+  --accent-cyan-glow: rgba(8, 145, 178, 0.25);
 
-  --accent-rose: #F43F5E;
-  --accent-rose-light: rgba(244, 63, 94, 0.15);
-  --accent-rose-glow: rgba(244, 63, 94, 0.3);
+  --accent-rose: #E11D48;
+  --accent-rose-light: rgba(225, 29, 72, 0.10);
+  --accent-rose-glow: rgba(225, 29, 72, 0.25);
 
-  --accent-indigo: #6366F1;
-  --accent-indigo-light: rgba(99, 102, 241, 0.15);
-  --accent-indigo-glow: rgba(99, 102, 241, 0.3);
+  --accent-indigo: #4F46E5;
+  --accent-indigo-light: rgba(79, 70, 229, 0.10);
+  --accent-indigo-glow: rgba(79, 70, 229, 0.25);
 
   /* Dark Theme Surfaces (Preserved) */
-  --bg-main: #0B0F19;
-  --bg-sidebar: #0F172A;
-  --bg-card: #131D31;
-  --bg-card-hover: #1A2642;
-  --bg-card-raised: #1C2B4B;
-  --bg-input: #1E293B;
-  --bg-input-focus: #182236;
-  --bg-overlay: rgba(11, 15, 25, 0.82);
+  --bg-main: #FAF8F5;
+  --bg-sidebar: #0C0A09;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #FAF8F5;
+  --bg-card-raised: #F5F1EB;
+  --bg-input: #FFFFFF;
+  --bg-input-focus: #FFFFFF;
+  --bg-overlay: rgba(12, 10, 9, 0.6);
 
   /* Borders & Dividers */
-  --border: #23314E;
-  --border-light: rgba(255, 255, 255, 0.08);
-  --border-focus: #F59E0B;
-  --border-subtle: #1E293B;
+  --border: #ECE7DF;
+  --border-light: rgba(12, 10, 9, 0.08);
+  --border-focus: #EA580C;
+  --border-subtle: #F1ECE4;
 
   /* Typography Colors */
-  --text-primary: #F8FAFC;
-  --text-secondary: #94A3B8;
-  --text-muted: #64748B;
-  --text-disabled: #475569;
+  --text-primary: #1C1917;
+  --text-secondary: #57534E;
+  --text-muted: #78716C;
+  --text-disabled: #A8A29E;
 
   /* Elevation & Shadows */
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.6);
-  --shadow-primary: 0 4px 20px rgba(245, 158, 11, 0.25);
-  --shadow-glow: 0 0 25px rgba(245, 158, 11, 0.35);
+  --shadow-sm: 0 1px 2px rgba(12, 10, 9, 0.05);
+  --shadow-md: 0 1px 2px rgba(12, 10, 9, 0.04), 0 8px 24px -12px rgba(12, 10, 9, 0.12);
+  --shadow-lg: 0 24px 56px -24px rgba(12, 10, 9, 0.25);
+  --shadow-primary: 0 10px 26px -10px rgba(234, 88, 12, 0.6);
+  --shadow-glow: 0 0 24px rgba(234, 88, 12, 0.25);
 
   /* Corner Radii */
   --radius-xs: 4px;
   --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
   --radius-full: 9999px;
 
   /* Spacing Grid */
@@ -84,23 +84,23 @@
   /* ==========================================================================
      Unified Papido Semantic Design Tokens (System Standard)
      ========================================================================== */
-  --papido-primary: #F59E0B;
-  --papido-primary-hover: #D97706;
-  --papido-primary-active: #B45309;
-  --papido-background: #0B0F19;
-  --papido-surface: #131D31;
-  --papido-surface-hover: #1A2642;
-  --papido-surface-elevated: #1C2B4B;
-  --papido-text: #F8FAFC;
-  --papido-text-muted: #94A3B8;
-  --papido-text-dim: #64748B;
-  --papido-success: #10B981;
-  --papido-warning: #F59E0B;
-  --papido-danger: #F43F5E;
-  --papido-info: #06B6D4;
-  --papido-border: #23314E;
-  --papido-border-light: rgba(255, 255, 255, 0.08);
-  --papido-focus: #F59E0B;
+  --papido-primary: #EA580C;
+  --papido-primary-hover: #C2410C;
+  --papido-primary-active: #9A3412;
+  --papido-background: #FAF8F5;
+  --papido-surface: #FFFFFF;
+  --papido-surface-hover: #FAF8F5;
+  --papido-surface-elevated: #F5F1EB;
+  --papido-text: #1C1917;
+  --papido-text-muted: #57534E;
+  --papido-text-dim: #78716C;
+  --papido-success: #059669;
+  --papido-warning: #EA580C;
+  --papido-danger: #E11D48;
+  --papido-info: #0891B2;
+  --papido-border: #ECE7DF;
+  --papido-border-light: rgba(12, 10, 9, 0.08);
+  --papido-focus: #EA580C;
 
   /* Standard Spacing Grid */
   --papido-space-4: 4px;

@@ -14,8 +14,8 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes rrLivePulse {
-  0%, 100% { box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22); }
-  50%      { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.05); }
+  0%, 100% { box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.135); }
+  50%      { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.031); }
 }
 
 /* ---------- Page shell ---------- */
@@ -23,7 +23,7 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
-  color: #F8FAFC;
+  color: #1C1917;
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 .rr-page *,
@@ -46,8 +46,8 @@
    TOOLBAR
    ============================================================ */
 .rr-toolbar {
-  background: #131D31;
-  border: 1px solid #23314E;
+  background: #FFFFFF;
+  border: 1px solid #ECE7DF;
   border-radius: 10px;
   padding: 16px 20px;
   display: flex;
@@ -55,7 +55,7 @@
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 20px rgba(12, 10, 9, 0.075);
 }
 .rr-toolbar-left {
   display: flex;
@@ -69,7 +69,7 @@
   height: 42px;
   border-radius: 10px;
   background: rgba(56, 189, 248, 0.15);
-  color: #38BDF8;
+  color: #11719C;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -81,12 +81,12 @@
   font-size: 16px;
   font-weight: 700;
   margin: 0;
-  color: #F8FAFC;
+  color: #1C1917;
   letter-spacing: -0.01em;
 }
 .rr-toolbar-sub {
   font-size: 12px;
-  color: #64748B;
+  color: #78716C;
   margin: 4px 0 0 0;
   line-height: 1.5;
 }
@@ -100,17 +100,17 @@
 /* Period switch (daily / weekly / monthly) */
 .rr-period-switch {
   display: inline-flex;
-  background: #1E293B;
+  background: #FAF8F5;
   border-radius: 6px;
   padding: 2px;
-  border: 1px solid #23314E;
+  border: 1px solid #ECE7DF;
 }
 .rr-period-btn {
   padding: 6px 12px;
   border-radius: 4px;
   border: none;
   background: transparent;
-  color: #94A3B8;
+  color: #A8A29E;
   font-size: 12px;
   font-weight: 700;
   font-family: inherit;
@@ -119,14 +119,14 @@
   transition: background 180ms ease, color 180ms ease;
   min-height: 32px;
 }
-.rr-period-btn:hover { color: #F8FAFC; }
+.rr-period-btn:hover { color: #1C1917; }
 .rr-period-btn.is-active {
-  background: #F59E0B;
-  color: #0F172A;
-  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.35);
+  background: #EA580C;
+  color: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.28);
 }
 .rr-period-btn:focus-visible {
-  outline: 2px solid #F59E0B;
+  outline: 2px solid #EA580C;
   outline-offset: 2px;
 }
 
@@ -134,15 +134,15 @@
    TABLE CARD
    ============================================================ */
 .rr-table-card {
-  background: #131D31;
-  border: 1px solid #23314E;
+  background: #FFFFFF;
+  border: 1px solid #ECE7DF;
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 20px rgba(12, 10, 9, 0.075);
 }
 .rr-table-card-head {
   padding: 16px 20px;
-  border-bottom: 1px solid #23314E;
+  border-bottom: 1px solid #ECE7DF;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -154,12 +154,12 @@
   font-size: 16px;
   font-weight: 700;
   margin: 0;
-  color: #F8FAFC;
+  color: #1C1917;
   letter-spacing: -0.01em;
 }
 .rr-table-card-sub {
   font-size: 12px;
-  color: #64748B;
+  color: #78716C;
   margin: 4px 0 0 0;
   line-height: 1.5;
 }
@@ -169,7 +169,7 @@
   gap: 6px;
   font-size: 11px;
   font-weight: 700;
-  color: #10B981;
+  color: #119C6E;
   background: rgba(16, 185, 129, 0.1);
   border: 1px solid rgba(16, 185, 129, 0.3);
   padding: 4px 10px;
@@ -188,28 +188,28 @@
    TABLE CELL HELPERS
    ============================================================ */
 .rr-table-date {
-  color: #F8FAFC;
+  color: #1C1917;
   font-weight: 700;
   font-size: 13px;
 }
 .rr-table-emerald {
-  color: #10B981;
+  color: #119C6E;
   font-weight: 600;
 }
 .rr-table-rose {
-  color: #F43F5E;
+  color: #9C1129;
   font-weight: 600;
 }
 .rr-table-gross {
-  color: #F8FAFC;
+  color: #1C1917;
   font-weight: 800;
 }
 .rr-table-amber {
-  color: #F59E0B;
+  color: #9C3A11;
   font-weight: 600;
 }
 .rr-table-emerald-strong {
-  color: #10B981;
+  color: #119C6E;
   font-weight: 700;
 }
 

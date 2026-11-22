@@ -14,8 +14,8 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes pvLivePulse {
-  0%, 100% { box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22); }
-  50%      { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.05); }
+  0%, 100% { box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.135); }
+  50%      { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.031); }
 }
 
 /* ---------- Page shell ---------- */
@@ -23,7 +23,7 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
-  color: #F8FAFC;
+  color: #1C1917;
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 .pv-page *,
@@ -37,8 +37,8 @@
    TOOLBAR
    ============================================================ */
 .pv-toolbar {
-  background: #131D31;
-  border: 1px solid #23314E;
+  background: #FFFFFF;
+  border: 1px solid #ECE7DF;
   border-radius: 10px;
   padding: 16px 20px;
   display: flex;
@@ -46,7 +46,7 @@
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 20px rgba(12, 10, 9, 0.075);
 }
 .pv-toolbar-left {
   display: flex;
@@ -59,25 +59,25 @@
   width: 42px;
   height: 42px;
   border-radius: 10px;
-  background: rgba(245, 158, 11, 0.15);
-  color: #F59E0B;
+  background: rgba(234, 88, 12, 0.112);
+  color: #9C3A11;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  border: 1px solid rgba(234, 88, 12, 0.3);
 }
 .pv-toolbar-title {
   font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
   font-size: 16px;
   font-weight: 700;
   margin: 0;
-  color: #F8FAFC;
+  color: #1C1917;
   letter-spacing: -0.01em;
 }
 .pv-toolbar-sub {
   font-size: 12px;
-  color: #64748B;
+  color: #78716C;
   margin: 4px 0 0 0;
   line-height: 1.5;
 }
@@ -92,9 +92,9 @@
 .pv-select {
   height: 38px;
   padding: 0 12px;
-  background: #1E293B;
-  color: #F8FAFC;
-  border: 1px solid #23314E;
+  background: #FAF8F5;
+  color: #1C1917;
+  border: 1px solid #ECE7DF;
   border-radius: 6px;
   font-size: 13px;
   font-family: inherit;
@@ -102,25 +102,25 @@
   cursor: pointer;
   transition: border-color 180ms ease, box-shadow 180ms ease;
 }
-.pv-select:hover { border-color: #334155; }
+.pv-select:hover { border-color: #ECE7DF; }
 .pv-select:focus-visible {
-  border-color: #F59E0B;
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+  border-color: #EA580C;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.12);
 }
 
 /* ============================================================
    TABLE CARD
    ============================================================ */
 .pv-table-card {
-  background: #131D31;
-  border: 1px solid #23314E;
+  background: #FFFFFF;
+  border: 1px solid #ECE7DF;
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 20px rgba(12, 10, 9, 0.075);
 }
 .pv-table-card-head {
   padding: 16px 20px;
-  border-bottom: 1px solid #23314E;
+  border-bottom: 1px solid #ECE7DF;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -132,12 +132,12 @@
   font-size: 16px;
   font-weight: 700;
   margin: 0;
-  color: #F8FAFC;
+  color: #1C1917;
   letter-spacing: -0.01em;
 }
 .pv-table-card-sub {
   font-size: 12px;
-  color: #64748B;
+  color: #78716C;
   margin: 4px 0 0 0;
 }
 .pv-table-live {
@@ -146,7 +146,7 @@
   gap: 6px;
   font-size: 11px;
   font-weight: 700;
-  color: #10B981;
+  color: #119C6E;
   background: rgba(16, 185, 129, 0.1);
   border: 1px solid rgba(16, 185, 129, 0.3);
   padding: 4px 10px;
@@ -168,31 +168,31 @@
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-size: 13px;
   font-weight: 600;
-  color: #94A3B8;
+  color: #A8A29E;
 }
 .pv-table-code {
-  color: #F59E0B;
+  color: #9C3A11;
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-weight: 700;
   font-size: 13px;
 }
 .pv-table-name {
   font-weight: 600;
-  color: #F8FAFC;
+  color: #1C1917;
 }
-.pv-table-name--emerald { color: #10B981; }
+.pv-table-name--emerald { color: #119C6E; }
 .pv-table-unassigned {
-  color: #64748B;
+  color: #78716C;
   font-style: italic;
 }
 .pv-table-amount {
-  color: #10B981;
+  color: #119C6E;
   font-size: 15px;
   font-weight: 800;
 }
 .pv-table-time {
   font-size: 12px;
-  color: #64748B;
+  color: #78716C;
 }
 
 .pv-method-chip {
@@ -201,8 +201,8 @@
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #94A3B8;
+  background: rgba(12, 10, 9, 0.06);
+  color: #A8A29E;
   letter-spacing: 0.3px;
 }
 

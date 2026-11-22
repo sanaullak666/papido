@@ -8,7 +8,7 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
-  color: #F8FAFC;
+  color: #1C1917;
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   animation: mrFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -20,8 +20,8 @@
 
 /* ---------- Header Banner ---------- */
 .mr-header-card {
-  background: linear-gradient(135deg, #131D31 0%, #17243B 100%);
-  border: 1px solid #23314E;
+  background: linear-gradient(135deg, #FFFFFF 0%, #FAF8F5 100%);
+  border: 1px solid #ECE7DF;
   border-radius: 12px;
   padding: 24px;
   display: flex;
@@ -29,7 +29,7 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 20px rgba(12, 10, 9, 0.075);
 }
 
 .mr-header-left {
@@ -47,26 +47,26 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #10B981;
+  color: #119C6E;
 }
 
 .mr-header-icon.is-blocked {
   background: rgba(239, 68, 68, 0.12);
   border-color: rgba(239, 68, 68, 0.25);
-  color: #EF4444;
+  color: #9C1111;
 }
 
 .mr-header-title {
   font-size: 20px;
   font-weight: 700;
-  color: #FFFFFF;
+  color: #1C1917;
   margin: 0 0 4px;
   letter-spacing: -0.01em;
 }
 
 .mr-header-sub {
   font-size: 13px;
-  color: #94A3B8;
+  color: #A8A29E;
   margin: 0;
   line-height: 1.5;
 }
@@ -92,13 +92,13 @@
 .mr-status-pill.is-active {
   background: rgba(16, 185, 129, 0.15);
   border: 1px solid rgba(16, 185, 129, 0.3);
-  color: #34D399;
+  color: #1E8F66;
 }
 
 .mr-status-pill.is-blocked {
   background: rgba(239, 68, 68, 0.15);
   border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #F87171;
+  color: #9C1111;
 }
 
 .mr-dot {
@@ -109,18 +109,18 @@
 
 .mr-dot.is-active {
   background: #10B981;
-  box-shadow: 0 0 8px #10B981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.85);
 }
 
 .mr-dot.is-blocked {
   background: #EF4444;
-  box-shadow: 0 0 8px #EF4444;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.85);
 }
 
 .mr-refresh-btn {
-  background: #1A2742;
-  border: 1px solid #28395B;
-  color: #E2E8F0;
+  background: #FAF8F5;
+  border: 1px solid #ECE7DF;
+  color: #1C1917;
   padding: 8px 14px;
   border-radius: 8px;
   font-size: 13px;
@@ -133,15 +133,15 @@
 }
 
 .mr-refresh-btn:hover:not(:disabled) {
-  background: #23314E;
+  background: #F5F1EB;
   border-color: #38BDF8;
-  color: #FFFFFF;
+  color: #1C1917;
 }
 
 /* ---------- Master Kill Switch Card ---------- */
 .mr-master-card {
-  background: #10192A;
-  border: 2px solid #23314E;
+  background: #FFFFFF;
+  border: 2px solid #ECE7DF;
   border-radius: 12px;
   padding: 24px;
   display: flex;
@@ -153,7 +153,7 @@
 
 .mr-master-card.is-blocked {
   border-color: rgba(239, 68, 68, 0.5);
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, #10192A 100%);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, #FFFFFF 100%);
 }
 
 .mr-master-card.is-active {
@@ -172,7 +172,7 @@
   height: 48px;
   border-radius: 10px;
   background: rgba(59, 130, 246, 0.15);
-  color: #60A5FA;
+  color: #114F9C;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -181,24 +181,24 @@
 
 .mr-master-card.is-blocked .mr-master-icon {
   background: rgba(239, 68, 68, 0.15);
-  color: #EF4444;
+  color: #9C1111;
 }
 
 .mr-master-card.is-active .mr-master-icon {
   background: rgba(16, 185, 129, 0.15);
-  color: #10B981;
+  color: #119C6E;
 }
 
 .mr-master-text h3 {
   font-size: 16px;
   font-weight: 700;
   margin: 0 0 4px;
-  color: #F8FAFC;
+  color: #1C1917;
 }
 
 .mr-master-text p {
   font-size: 13px;
-  color: #94A3B8;
+  color: #A8A29E;
   margin: 0;
   line-height: 1.5;
   max-width: 680px;
@@ -212,8 +212,8 @@
 }
 
 .mr-card {
-  background: #131D31;
-  border: 1px solid #23314E;
+  background: #FFFFFF;
+  border: 1px solid #ECE7DF;
   border-radius: 12px;
   padding: 20px;
   display: flex;
@@ -221,11 +221,11 @@
   justify-content: space-between;
   gap: 18px;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 14px rgba(12, 10, 9, 0.045);
 }
 
 .mr-card:hover {
-  border-color: #334568;
+  border-color: #ECE7DF;
 }
 
 .mr-card.is-disabled {
@@ -244,7 +244,7 @@
   height: 44px;
   border-radius: 10px;
   background: rgba(148, 163, 184, 0.1);
-  color: #CBD5E1;
+  color: #44403C;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -253,24 +253,24 @@
 
 .mr-card.is-active .mr-card-icon {
   background: rgba(16, 185, 129, 0.12);
-  color: #10B981;
+  color: #119C6E;
 }
 
 .mr-card.is-disabled .mr-card-icon {
   background: rgba(239, 68, 68, 0.12);
-  color: #F87171;
+  color: #9C1111;
 }
 
 .mr-card-details h4 {
   font-size: 15px;
   font-weight: 700;
   margin: 0 0 4px;
-  color: #FFFFFF;
+  color: #1C1917;
 }
 
 .mr-card-details p {
   font-size: 12.5px;
-  color: #94A3B8;
+  color: #A8A29E;
   margin: 0;
   line-height: 1.45;
 }
@@ -280,7 +280,7 @@
   align-items: center;
   justify-content: space-between;
   padding-top: 14px;
-  border-top: 1px solid #1E2B45;
+  border-top: 1px solid #ECE7DF;
 }
 
 .mr-badge {
@@ -294,13 +294,13 @@
 
 .mr-badge.is-enabled {
   background: rgba(16, 185, 129, 0.15);
-  color: #34D399;
+  color: #1E8F66;
   border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
 .mr-badge.is-disabled {
   background: rgba(239, 68, 68, 0.15);
-  color: #F87171;
+  color: #9C1111;
   border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
@@ -327,10 +327,10 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #334155;
+  background-color: #F5F1EB;
   transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 28px;
-  border: 1px solid #475569;
+  border: 1px solid #DDD5C9;
 }
 
 .mr-slider:before {
@@ -340,10 +340,10 @@
   width: 20px;
   left: 4px;
   bottom: 3px;
-  background-color: white;
+  background-color: #FFFFFF;
   transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 50%;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 4px rgba(12, 10, 9, 0.09);
 }
 
 input:checked + .mr-slider {
@@ -362,14 +362,14 @@ input:disabled + .mr-slider {
 
 /* ---------- Notice / Message Section ---------- */
 .mr-notice-card {
-  background: #131D31;
-  border: 1px solid #23314E;
+  background: #FFFFFF;
+  border: 1px solid #ECE7DF;
   border-radius: 12px;
   padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 14px rgba(12, 10, 9, 0.045);
 }
 
 .mr-notice-header {
@@ -386,15 +386,15 @@ input:disabled + .mr-slider {
   gap: 10px;
   font-size: 15px;
   font-weight: 700;
-  color: #FFFFFF;
+  color: #1C1917;
 }
 
 .mr-notice-textarea {
   width: 100%;
-  background: #0B111E;
-  border: 1px solid #23314E;
+  background: #FAF8F5;
+  border: 1px solid #ECE7DF;
   border-radius: 8px;
-  color: #F8FAFC;
+  color: #1C1917;
   padding: 12px 14px;
   font-size: 13.5px;
   font-family: inherit;
@@ -423,7 +423,7 @@ input:disabled + .mr-slider {
   gap: 8px;
   align-self: flex-start;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.212);
 }
 
 .mr-save-btn:hover:not(:disabled) {
@@ -451,18 +451,18 @@ input:disabled + .mr-slider {
 .mr-banner.is-success {
   background: rgba(16, 185, 129, 0.12);
   border: 1px solid rgba(16, 185, 129, 0.3);
-  color: #34D399;
+  color: #1E8F66;
 }
 
 .mr-banner.is-error {
   background: rgba(239, 68, 68, 0.12);
   border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #F87171;
+  color: #9C1111;
 }
 
 .mr-meta-info {
   font-size: 12px;
-  color: #64748B;
+  color: #78716C;
   display: flex;
   align-items: center;
   gap: 6px;

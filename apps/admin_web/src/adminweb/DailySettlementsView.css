@@ -18,12 +18,12 @@
   100% { background-position: 200% 0; }
 }
 @keyframes dsLivePulse {
-  0%, 100% { box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22); }
-  50%      { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.05); }
+  0%, 100% { box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.135); }
+  50%      { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.031); }
 }
 @keyframes dsAmberPulse {
-  0%, 100% { box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.22); }
-  50%      { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.05); }
+  0%, 100% { box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.128); }
+  50%      { box-shadow: 0 0 0 6px rgba(234, 88, 12, 0.029); }
 }
 
 /* ---------- Page shell ---------- */
@@ -31,7 +31,7 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
-  color: #F8FAFC;
+  color: #1C1917;
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 .ds-page *,
@@ -54,8 +54,8 @@
    TOOLBAR
    ============================================================ */
 .ds-toolbar {
-  background: #131D31;
-  border: 1px solid #23314E;
+  background: #FFFFFF;
+  border: 1px solid #ECE7DF;
   border-radius: 10px;
   padding: 16px;
   display: flex;
@@ -63,7 +63,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 20px rgba(12, 10, 9, 0.075);
 }
 .ds-toolbar-left {
   display: flex;
@@ -83,17 +83,17 @@
 /* Date switch pill */
 .ds-date-switch {
   display: inline-flex;
-  background: #1E293B;
+  background: #FAF8F5;
   border-radius: 6px;
   padding: 2px;
-  border: 1px solid #23314E;
+  border: 1px solid #ECE7DF;
 }
 .ds-date-btn {
   padding: 6px 14px;
   border-radius: 4px;
   border: none;
   background: transparent;
-  color: #94A3B8;
+  color: #A8A29E;
   font-size: 12px;
   font-weight: 700;
   font-family: inherit;
@@ -101,14 +101,14 @@
   transition: background 180ms ease, color 180ms ease, box-shadow 180ms ease;
   min-height: 32px;
 }
-.ds-date-btn:hover { color: #F8FAFC; }
+.ds-date-btn:hover { color: #1C1917; }
 .ds-date-btn.is-active {
-  background: #F59E0B;
-  color: #0F172A;
-  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.35);
+  background: #EA580C;
+  color: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.28);
 }
 .ds-date-btn:focus-visible {
-  outline: 2px solid #F59E0B;
+  outline: 2px solid #EA580C;
   outline-offset: 2px;
 }
 
@@ -117,21 +117,21 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #1E293B;
-  border: 1px solid #23314E;
+  background: #FAF8F5;
+  border: 1px solid #ECE7DF;
   border-radius: 6px;
   padding: 6px 10px;
-  color: #94A3B8;
+  color: #A8A29E;
   transition: border-color 180ms ease, box-shadow 180ms ease;
 }
 .ds-date-picker:focus-within {
-  border-color: #F59E0B;
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+  border-color: #EA580C;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.12);
 }
 .ds-date-input {
   background: transparent;
   border: none;
-  color: #F8FAFC;
+  color: #1C1917;
   font-size: 12px;
   font-weight: 700;
   outline: none;
@@ -151,23 +151,23 @@
   max-width: 320px;
 }
 .ds-search-wrap input {
-  background: #1E293B;
-  color: #F8FAFC;
-  border-color: #23314E;
+  background: #FAF8F5;
+  color: #1C1917;
+  border-color: #ECE7DF;
 }
-.ds-search-wrap input::placeholder { color: #64748B; }
+.ds-search-wrap input::placeholder { color: #78716C; }
 .ds-search-wrap input:focus {
-  border-color: #F59E0B;
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+  border-color: #EA580C;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.12);
 }
 
 /* Select (used in controller bar) */
 .ds-select {
   height: 36px;
   padding: 0 12px;
-  background: #1E293B;
-  color: #F8FAFC;
-  border: 1px solid #23314E;
+  background: #FAF8F5;
+  color: #1C1917;
+  border: 1px solid #ECE7DF;
   border-radius: 6px;
   font-size: 12px;
   font-family: inherit;
@@ -176,18 +176,18 @@
   min-width: 220px;
   transition: border-color 180ms ease, box-shadow 180ms ease;
 }
-.ds-select:hover { border-color: #334155; }
+.ds-select:hover { border-color: #ECE7DF; }
 .ds-select:focus-visible {
-  border-color: #F59E0B;
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+  border-color: #EA580C;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.12);
 }
 
 /* ============================================================
    DUTY CONTROLLER BAR
    ============================================================ */
 .ds-controller-bar {
-  background: #131D31;
-  border: 1px solid #23314E;
+  background: #FFFFFF;
+  border: 1px solid #ECE7DF;
   border-radius: 10px;
   padding: 16px 20px;
   display: flex;
@@ -195,7 +195,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 20px rgba(12, 10, 9, 0.075);
 }
 .ds-controller-left {
   display: flex;
@@ -209,7 +209,7 @@
   height: 42px;
   border-radius: 10px;
   background: rgba(56, 189, 248, 0.15);
-  color: #38BDF8;
+  color: #11719C;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -220,16 +220,16 @@
 .ds-controller-title {
   font-size: 14px;
   font-weight: 700;
-  color: #F8FAFC;
+  color: #1C1917;
 }
 .ds-controller-sub {
   font-size: 12px;
-  color: #64748B;
+  color: #78716C;
   margin-top: 2px;
   line-height: 1.5;
 }
 .ds-controller-name {
-  color: #38BDF8;
+  color: #11719C;
   font-weight: 800;
 }
 .ds-controller-right {
@@ -245,7 +245,7 @@
   border-radius: 6px;
   background: rgba(16, 185, 129, 0.15);
   border: 1px solid rgba(16, 185, 129, 0.3);
-  color: #34D399;
+  color: #1E8F66;
   font-size: 13px;
   font-weight: 600;
   display: flex;
@@ -257,14 +257,14 @@
    ADMIN SETTLEMENT UPI SETTINGS CARD
    ============================================================ */
 .ds-settings-card {
-  background: #131D31;
-  border: 1px solid #23314E;
+  background: #FFFFFF;
+  border: 1px solid #ECE7DF;
   border-radius: 10px;
   padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 20px rgba(12, 10, 9, 0.075);
 }
 .ds-settings-head {
   display: flex;
@@ -282,24 +282,24 @@
   width: 44px;
   height: 44px;
   border-radius: 10px;
-  background: rgba(245, 158, 11, 0.15);
-  color: #F59E0B;
+  background: rgba(234, 88, 12, 0.112);
+  color: #9C3A11;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  border: 1px solid rgba(234, 88, 12, 0.3);
 }
 .ds-settings-title {
   font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
   font-size: 15px;
   font-weight: 700;
-  color: #F8FAFC;
+  color: #1C1917;
   letter-spacing: -0.01em;
 }
 .ds-settings-sub {
   font-size: 12px;
-  color: #94A3B8;
+  color: #A8A29E;
   margin-top: 3px;
   line-height: 1.4;
 }
@@ -317,14 +317,14 @@
 .ds-settings-label {
   font-size: 11px;
   font-weight: 700;
-  color: #94A3B8;
+  color: #A8A29E;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 .ds-settings-input {
-  background: #0F172A;
-  border: 1px solid #23314E;
-  color: #F8FAFC;
+  background: #FFFFFF;
+  border: 1px solid #ECE7DF;
+  color: #1C1917;
   padding: 10px 14px;
   border-radius: 6px;
   font-size: 13px;
@@ -333,21 +333,21 @@
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .ds-settings-input:focus {
-  border-color: #F59E0B;
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+  border-color: #EA580C;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.12);
 }
 .ds-settings-toggle {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  color: #94A3B8;
+  color: #A8A29E;
   cursor: pointer;
   user-select: none;
   width: fit-content;
 }
 .ds-settings-toggle input[type="checkbox"] {
-  accent-color: #F59E0B;
+  accent-color: #EA580C;
   width: 16px;
   height: 16px;
   cursor: pointer;
@@ -357,15 +357,15 @@
    SETTLEMENTS TABLE CARD
    ============================================================ */
 .ds-table-card {
-  background: #131D31;
-  border: 1px solid #23314E;
+  background: #FFFFFF;
+  border: 1px solid #ECE7DF;
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 20px rgba(12, 10, 9, 0.075);
 }
 .ds-table-card-head {
   padding: 16px 20px;
-  border-bottom: 1px solid #23314E;
+  border-bottom: 1px solid #ECE7DF;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -377,12 +377,12 @@
   font-size: 16px;
   font-weight: 700;
   margin: 0;
-  color: #F8FAFC;
+  color: #1C1917;
   letter-spacing: -0.01em;
 }
 .ds-table-card-sub {
   font-size: 12px;
-  color: #64748B;
+  color: #78716C;
   margin: 4px 0 0 0;
   line-height: 1.5;
 }
@@ -392,7 +392,7 @@
   gap: 6px;
   font-size: 11px;
   font-weight: 700;
-  color: #10B981;
+  color: #119C6E;
   background: rgba(16, 185, 129, 0.1);
   border: 1px solid rgba(16, 185, 129, 0.3);
   padding: 4px 10px;
@@ -410,34 +410,34 @@
 /* Table cell helpers */
 .ds-table-name {
   font-weight: 700;
-  color: #F8FAFC;
+  color: #1C1917;
 }
 .ds-table-sub {
   font-size: 11px;
-  color: #64748B;
+  color: #78716C;
   margin-top: 2px;
 }
 .ds-table-sub-strong {
   font-size: 12px;
-  color: #94A3B8;
+  color: #A8A29E;
   font-weight: 600;
 }
 .ds-table-mono {
   font-size: 11px;
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-weight: 700;
-  color: #F8FAFC;
+  color: #1C1917;
 }
 .ds-table-trips {
-  color: #F59E0B;
+  color: #9C3A11;
   font-size: 14px;
   font-weight: 800;
 }
-.ds-table-gross { color: #F8FAFC; font-weight: 600; }
-.ds-table-amber { color: #F59E0B; font-weight: 700; }
-.ds-table-cyan { color: #38BDF8; font-weight: 700; }
-.ds-table-rose { color: #F43F5E; font-size: 14px; font-weight: 800; }
-.ds-table-emerald { color: #10B981; font-size: 14px; font-weight: 800; }
+.ds-table-gross { color: #1C1917; font-weight: 600; }
+.ds-table-amber { color: #9C3A11; font-weight: 700; }
+.ds-table-cyan { color: #11719C; font-weight: 700; }
+.ds-table-rose { color: #9C1129; font-size: 14px; font-weight: 800; }
+.ds-table-emerald { color: #119C6E; font-size: 14px; font-weight: 800; }
 
 .ds-row-actions {
   display: flex;
@@ -458,33 +458,33 @@
   align-items: center;
   gap: 14px;
   padding: 16px;
-  background: #1E293B;
+  background: #FAF8F5;
   border-radius: 6px;
-  border: 1px solid #23314E;
+  border: 1px solid #ECE7DF;
 }
 .ds-drawer-avatar {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: rgba(245, 158, 11, 0.15);
-  color: #F59E0B;
+  background: rgba(234, 88, 12, 0.112);
+  color: #9C3A11;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
   font-size: 18px;
   flex-shrink: 0;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  border: 1px solid rgba(234, 88, 12, 0.3);
 }
 .ds-drawer-name {
   font-size: 16px;
   font-weight: 700;
   margin: 0;
-  color: #F8FAFC;
+  color: #1C1917;
 }
 .ds-drawer-vehicle {
   font-size: 12px;
-  color: #64748B;
+  color: #78716C;
   margin-top: 2px;
 }
 
@@ -502,23 +502,23 @@
 }
 .ds-drawer-row--lg { font-size: 15px; }
 .ds-drawer-row-label {
-  color: #94A3B8;
+  color: #A8A29E;
   font-weight: 500;
 }
-.ds-drawer-row-label--bold { font-weight: 700; color: #F8FAFC; }
+.ds-drawer-row-label--bold { font-weight: 700; color: #1C1917; }
 .ds-drawer-row-value {
-  color: #F8FAFC;
+  color: #1C1917;
   font-weight: 700;
 }
 .ds-drawer-row-value--lg { font-size: 16px; }
-.ds-drawer-row-value--amber { color: #F59E0B; }
-.ds-drawer-row-value--cyan { color: #38BDF8; }
-.ds-drawer-row-value--rose { color: #F43F5E; }
-.ds-drawer-row-value--emerald { color: #10B981; }
+.ds-drawer-row-value--amber { color: #9C3A11; }
+.ds-drawer-row-value--cyan { color: #11719C; }
+.ds-drawer-row-value--rose { color: #9C1129; }
+.ds-drawer-row-value--emerald { color: #119C6E; }
 
 .ds-drawer-divider {
   height: 1px;
-  background: #23314E;
+  background: #F5F1EB;
   margin: 4px 0;
 }
 
@@ -538,19 +538,19 @@
   gap: 12px;
 }
 .ds-modal-body label {
-  color: #94A3B8;
+  color: #A8A29E;
 }
 .ds-modal-body input,
 .ds-modal-body textarea {
-  background: #1E293B;
-  color: #F8FAFC;
-  border-color: #23314E;
+  background: #FAF8F5;
+  color: #1C1917;
+  border-color: #ECE7DF;
 }
-.ds-modal-body input::placeholder { color: #64748B; }
+.ds-modal-body input::placeholder { color: #78716C; }
 .ds-modal-body input:focus,
 .ds-modal-body textarea:focus {
   border-color: #F43F5E;
-  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.15);
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.128);
 }
 .ds-modal-footer {
   display: flex;

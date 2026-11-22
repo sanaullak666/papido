@@ -14,16 +14,16 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes dvPulseSoft {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.30); }
-  50%      { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0.05); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.173); }
+  50%      { box-shadow: 0 0 0 8px rgba(234, 88, 12, 0.029); }
 }
 @keyframes dvLivePulse {
-  0%, 100% { box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22); }
-  50%      { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.05); }
+  0%, 100% { box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.135); }
+  50%      { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.031); }
 }
 @keyframes dvAmberPulse {
-  0%, 100% { box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.22); }
-  50%      { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.05); }
+  0%, 100% { box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.128); }
+  50%      { box-shadow: 0 0 0 6px rgba(234, 88, 12, 0.029); }
 }
 @keyframes dvSkeleton {
   0%   { background-position: -200% 0; }
@@ -39,7 +39,7 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
-  color: #F8FAFC;
+  color: #1C1917;
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 .dv-page *,
@@ -63,14 +63,14 @@
    FLEET STRIP
    ============================================================ */
 .dv-fleet-strip {
-  background: #131D31;
-  border: 1px solid #23314E;
+  background: #FFFFFF;
+  border: 1px solid #ECE7DF;
   border-radius: 10px;
   padding: 16px 20px;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 20px rgba(12, 10, 9, 0.075);
 }
 .dv-fleet-pill {
   display: flex;
@@ -94,7 +94,7 @@
   animation: dvLivePulse 2.4s ease-in-out infinite;
 }
 .dv-fleet-pill-dot--amber {
-  background: #F59E0B;
+  background: #EA580C;
   animation: dvAmberPulse 2s ease-in-out infinite;
 }
 .dv-fleet-pill-dot--indigo {
@@ -109,7 +109,7 @@
 }
 .dv-fleet-pill-label {
   font-size: 12px;
-  color: #64748B;
+  color: #78716C;
   font-weight: 600;
 }
 .dv-fleet-pill-value {
@@ -117,28 +117,28 @@
   font-weight: 800;
   line-height: 1.1;
 }
-.dv-fleet-pill-value--emerald { color: #10B981; }
-.dv-fleet-pill-value--cyan    { color: #38BDF8; }
-.dv-fleet-pill-value--amber   { color: #FBBF24; }
-.dv-fleet-pill-value--indigo  { color: #818CF8; }
+.dv-fleet-pill-value--emerald { color: #119C6E; }
+.dv-fleet-pill-value--cyan    { color: #11719C; }
+.dv-fleet-pill-value--amber   { color: #9C3A11; }
+.dv-fleet-pill-value--indigo  { color: #111E9C; }
 
 /* ============================================================
    FLASH FREE RIDE CARD
    ============================================================ */
 .dv-flash-card {
-  background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, #131D31 100%);
-  border: 1px solid #23314E;
+  background: linear-gradient(180deg, rgba(234, 88, 12, 0.038) 0%, #FFFFFF 100%);
+  border: 1px solid #ECE7DF;
   border-radius: 10px;
   padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 16px;
   transition: border-color 220ms ease, box-shadow 220ms ease;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 20px rgba(12, 10, 9, 0.075);
 }
 .dv-flash-card.is-live {
-  border-color: #F59E0B;
-  box-shadow: 0 8px 32px rgba(245, 158, 11, 0.15);
+  border-color: #EA580C;
+  box-shadow: 0 8px 32px rgba(234, 88, 12, 0.12);
   animation: dvPulseSoft 2.4s ease-in-out infinite;
 }
 
@@ -160,8 +160,8 @@
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  background: rgba(245, 158, 11, 0.15);
-  color: #F59E0B;
+  background: rgba(234, 88, 12, 0.112);
+  color: #9C3A11;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -172,12 +172,12 @@
   font-size: 16px;
   font-weight: 700;
   margin: 0;
-  color: #F8FAFC;
+  color: #1C1917;
   letter-spacing: -0.01em;
 }
 .dv-flash-sub {
   font-size: 12px;
-  color: #64748B;
+  color: #78716C;
   margin: 4px 0 0 0;
   line-height: 1.5;
   max-width: 720px;
@@ -187,9 +187,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(245, 158, 11, 0.15);
-  color: #F59E0B;
-  border: 1px solid rgba(245, 158, 11, 0.4);
+  background: rgba(234, 88, 12, 0.112);
+  color: #9C3A11;
+  border: 1px solid rgba(234, 88, 12, 0.4);
   padding: 5px 12px;
   border-radius: 20px;
   font-size: 11px;
@@ -200,7 +200,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #F59E0B;
+  background: #EA580C;
   animation: dvAmberPulse 1.6s ease-in-out infinite;
 }
 
@@ -218,25 +218,25 @@
 .dv-flash-msg--success {
   background: rgba(16, 185, 129, 0.15);
   border-color: rgba(16, 185, 129, 0.3);
-  color: #10B981;
+  color: #119C6E;
 }
 .dv-flash-msg--error {
   background: rgba(244, 63, 94, 0.15);
   border-color: rgba(244, 63, 94, 0.3);
-  color: #F43F5E;
+  color: #9C1129;
 }
 .dv-flash-msg--info {
   background: rgba(6, 182, 212, 0.15);
   border-color: rgba(6, 182, 212, 0.3);
-  color: #06B6D4;
+  color: #11889C;
 }
 
 /* Active flash state */
 .dv-flash-active {
   padding: 16px;
   border-radius: 6px;
-  background: rgba(245, 158, 11, 0.08);
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: rgba(234, 88, 12, 0.06);
+  border: 1px solid rgba(234, 88, 12, 0.3);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -256,15 +256,15 @@
   flex-wrap: wrap;
   font-size: 14px;
   font-weight: 700;
-  color: #F59E0B;
+  color: #9C3A11;
 }
 .dv-flash-active-arrow {
-  color: #FBBF24;
+  color: #9C3A11;
   flex-shrink: 0;
 }
 .dv-flash-active-note {
   font-size: 12px;
-  color: #64748B;
+  color: #78716C;
 }
 
 /* Broadcast form */
@@ -286,14 +286,14 @@
 .dv-flash-form-label {
   font-size: 13px;
   font-weight: 600;
-  color: #94A3B8;
+  color: #A8A29E;
 }
 .dv-flash-select {
   min-height: 42px;
   padding: 8px 12px;
-  background: #1E293B;
-  color: #F8FAFC;
-  border: 1px solid #23314E;
+  background: #FAF8F5;
+  color: #1C1917;
+  border: 1px solid #ECE7DF;
   border-radius: 6px;
   font-size: 14px;
   outline: none;
@@ -301,8 +301,8 @@
   transition: border-color 180ms ease, box-shadow 180ms ease;
 }
 .dv-flash-select:focus-visible {
-  border-color: #F59E0B;
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+  border-color: #EA580C;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.12);
 }
 .dv-flash-form-actions {
   display: flex;
@@ -313,15 +313,15 @@
    RECENT RIDES TABLE CARD
    ============================================================ */
 .dv-table-card {
-  background: #131D31;
-  border: 1px solid #23314E;
+  background: #FFFFFF;
+  border: 1px solid #ECE7DF;
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 20px rgba(12, 10, 9, 0.075);
 }
 .dv-table-card-head {
   padding: 16px 20px;
-  border-bottom: 1px solid #23314E;
+  border-bottom: 1px solid #ECE7DF;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -333,12 +333,12 @@
   font-size: 16px;
   font-weight: 700;
   margin: 0;
-  color: #F8FAFC;
+  color: #1C1917;
   letter-spacing: -0.01em;
 }
 .dv-table-card-sub {
   font-size: 12px;
-  color: #64748B;
+  color: #78716C;
   margin: 2px 0 0 0;
 }
 .dv-table-card-live {
@@ -347,7 +347,7 @@
   gap: 6px;
   font-size: 11px;
   font-weight: 700;
-  color: #10B981;
+  color: #119C6E;
   background: rgba(16, 185, 129, 0.1);
   border: 1px solid rgba(16, 185, 129, 0.3);
   padding: 4px 10px;
@@ -364,48 +364,48 @@
 
 /* Table cell styling helpers (used via className on cells) */
 .dv-table-code {
-  color: #F59E0B;
+  color: #9C3A11;
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-weight: 700;
   font-size: 13px;
 }
 .dv-table-name {
   font-weight: 600;
-  color: #F8FAFC;
+  color: #1C1917;
 }
-.dv-table-name--emerald { color: #10B981; }
+.dv-table-name--emerald { color: #119C6E; }
 .dv-table-sub {
   font-size: 11px;
-  color: #64748B;
+  color: #78716C;
 }
 .dv-table-unassigned {
-  color: #64748B;
+  color: #78716C;
   font-style: italic;
 }
 .dv-table-route {
   font-size: 13px;
   font-weight: 600;
-  color: #F8FAFC;
+  color: #1C1917;
 }
 .dv-table-route-sub {
   font-size: 12px;
-  color: #64748B;
+  color: #78716C;
   display: flex;
   align-items: center;
   gap: 4px;
 }
 .dv-table-arrow {
-  color: #F59E0B;
+  color: #9C3A11;
   font-weight: 700;
 }
 .dv-table-fare {
-  color: #10B981;
+  color: #119C6E;
   font-size: 14px;
   font-weight: 800;
 }
 .dv-table-time {
   font-size: 12px;
-  color: #64748B;
+  color: #78716C;
 }
 
 /* ============================================================
@@ -415,21 +415,21 @@
   padding: 20px;
   background: rgba(244, 63, 94, 0.12);
   border: 1px solid rgba(244, 63, 94, 0.3);
-  color: #FB7185;
+  color: #9C1125;
   border-radius: 10px;
   display: flex;
   align-items: center;
   gap: 12px;
   font-size: 14px;
 }
-.dv-error-banner strong { color: #F8FAFC; }
+.dv-error-banner strong { color: #1C1917; }
 
 /* ============================================================
    SKELETONS
    ============================================================ */
 .dv-skeleton-card {
-  background: #131D31;
-  border: 1px solid #23314E;
+  background: #FFFFFF;
+  border: 1px solid #ECE7DF;
   border-radius: 10px;
   padding: 20px;
   display: flex;
@@ -438,8 +438,8 @@
   min-height: 120px;
 }
 .dv-skeleton-table {
-  background: #131D31;
-  border: 1px solid #23314E;
+  background: #FFFFFF;
+  border: 1px solid #ECE7DF;
   border-radius: 10px;
   padding: 24px;
   display: flex;
@@ -456,9 +456,9 @@
   border-radius: 6px;
   background: linear-gradient(
     90deg,
-    rgba(35, 49, 78, 0.4) 0%,
-    rgba(35, 49, 78, 0.9) 50%,
-    rgba(35, 49, 78, 0.4) 100%
+    rgba(255, 255, 255, 0.55) 0%,
+    #FFFFFF 50%,
+    rgba(255, 255, 255, 0.55) 100%
   );
   background-size: 200% 100%;
   animation: dvSkeleton 1.4s linear infinite;
@@ -512,7 +512,7 @@
   }
   .dv-fleet-pill {
     padding: 8px 0;
-    border-bottom: 1px solid #23314E;
+    border-bottom: 1px solid #ECE7DF;
   }
   .dv-fleet-pill:last-child { border-bottom: none; padding-bottom: 0; }
   .dv-fleet-pill-value { font-size: 18px; }
