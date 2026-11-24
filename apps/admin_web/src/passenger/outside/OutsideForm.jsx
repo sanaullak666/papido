@@ -1,9 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import {
   Compass, MapPin, Search, X,
-  Luggage, Send, CheckCircle2, ChevronRight, Lock, Tag
+  Luggage, Send, CheckCircle2, ChevronRight, Lock, Tag, ArrowUpDown, RefreshCw
 } from 'lucide-react';
 import { apiRequest } from '../../api';
+
+const ALL_CAMPUS_GATES = [
+  { name: 'Campus Gate 1 (Main Entrance)', lat: 12.0228681, lng: 79.8509415 },
+  { name: 'Campus Gate 2 (Beach Road Gate / ECR)', lat: 12.0295, lng: 79.8580 },
+  { name: 'Silver Jubilee Campus (SJC Gate)', lat: 12.0280, lng: 79.8520 },
+  { name: 'University Health Centre Outpost', lat: 12.0240, lng: 79.8530 },
+  { name: 'Girls Hostel Complex', lat: 12.0215, lng: 79.8565 },
+  { name: 'Boys Hostel Complex', lat: 12.0275, lng: 79.8515 },
+  { name: 'Central Library', lat: 12.0245, lng: 79.8532 }
+];
 
 const QUICK_PICK_DESTS = [
   { name: 'White Town (Heritage)', lat: 11.9333, lng: 79.8333, fare: 165, icon: '🏛️' },
@@ -16,7 +26,8 @@ const QUICK_PICK_DESTS = [
 
 const GATES = [
   'Campus Gate 1 (Main Entrance)',
-  'Campus Gate 2 (Beach Road Gate)',
+  'Campus Gate 2 (Beach Road Gate / ECR)',
+  'Silver Jubilee Campus (SJC Gate)',
   'University Health Centre Outpost'
 ];
 
@@ -39,9 +50,8 @@ export function OutsideForm({
   destinationCoords,
   setDestinationCoords
 }) {
-  const [pickup, setPickup] = useState(GATES[0]);
+  const [pickup, setPickup] = useState(ALL_CAMPUS_GATES[0].name);
   const [pickupCoords, setPickupCoords] = useState({ lat: 12.0228681, lng: 79.8509415 });
-  const [gateIndex, setGateIndex] = useState(0);
 
   const [adminOutsideStops, setAdminOutsideStops] = useState([]);
   const [matchedFare, setMatchedFare] = useState(null);
@@ -70,36 +80,75 @@ export function OutsideForm({
     return () => { isMounted = false; };
   }, [token]);
 
-  // Match destination with pre-approved fare
+  // Combined stops for suggestions: Campus Gates + Admin Configured Outside Stops
+  const allKnownStops = [
+    ...ALL_CAMPUS_GATES.map(g => ({ name: g.name, lat: g.lat, lng: g.lng, type: 'CAMPUS' })),
+    ...(adminOutsideStops.length > 0 ? adminOutsideStops.map(s => ({
+      name: s.name,
+      lat: parseFloat(s.lat || 11.9338),
+      lng: parseFloat(s.lng || 79.8359),
+      fare: parseFloat(s.fare_amount),
+      dist: s.distance_km,
+      type: 'OUTSIDE'
+    })) : QUICK_PICK_DESTS.map(q => ({ ...q, type: 'OUTSIDE' })))
+  ];
+
+  const findStopCoords = (name) => {
+    if (!name) return null;
+    const n = name.trim().toLowerCase();
+    const matched = allKnownStops.find(s => s.name.toLowerCase() === n || n.includes(s.name.toLowerCase()) || s.name.toLowerCase().includes(n));
+    if (matched) return { lat: matched.lat, lng: matched.lng };
+    return null;
+  };
+
+  // Match route (pickup <-> destination) with pre-approved fare
   useEffect(() => {
-    if (!destination || !destination.trim()) {
+    if (!pickup || !destination) {
       setMatchedFare(null);
       return;
     }
+    const pLower = pickup.trim().toLowerCase();
     const dLower = destination.trim().toLowerCase();
+
     const listToSearch = adminOutsideStops.length > 0 ? adminOutsideStops : QUICK_PICK_DESTS;
-    const matched = listToSearch.find(s => 
-      s.name.toLowerCase() === dLower ||
-      dLower.includes(s.name.toLowerCase()) ||
-      s.name.toLowerCase().includes(dLower)
-    );
+    const matched = listToSearch.find(s => {
+      const sName = (s.name || s.destination_stop || '').toLowerCase();
+      // Forward: pickup is campus, destination is outside spot
+      // Reverse: pickup is outside spot, destination is campus
+      return (dLower.includes(sName) || sName.includes(dLower)) ||
+             (pLower.includes(sName) || sName.includes(pLower));
+    });
+
     if (matched) {
       setMatchedFare(parseFloat(matched.fare_amount || matched.fare));
-      if (!destinationCoords && (matched.lat || matched.latitude)) {
-        setDestinationCoords({
-          lat: parseFloat(matched.lat || matched.latitude),
-          lng: parseFloat(matched.lng || matched.longitude)
-        });
+      if (!destinationCoords) {
+        const found = findStopCoords(destination);
+        if (found) setDestinationCoords(found);
       }
     } else {
       setMatchedFare(null);
     }
-  }, [destination, adminOutsideStops]);
+  }, [pickup, destination, adminOutsideStops]);
 
-  const cycleGate = () => {
-    const nextIdx = (gateIndex + 1) % GATES.length;
-    setGateIndex(nextIdx);
-    setPickup(GATES[nextIdx]);
+  // One-click Swap Direction for Return Trips
+  const handleSwapRoute = () => {
+    const currentPickup = pickup;
+    const currentPickupCoords = pickupCoords;
+    const currentDest = destination;
+    const currentDestCoords = destinationCoords;
+
+    if (!currentDest) {
+      setDestination(currentPickup);
+      setDestinationCoords(currentPickupCoords);
+      setPickup('');
+      setPickupCoords(null);
+      return;
+    }
+
+    setPickup(currentDest);
+    setPickupCoords(currentDestCoords || findStopCoords(currentDest) || { lat: 11.9338, lng: 79.8359 });
+    setDestination(currentPickup);
+    setDestinationCoords(currentPickupCoords || findStopCoords(currentPickup) || { lat: 12.0228681, lng: 79.8509415 });
   };
 
   const handleSelectQuickPick = (item) => {
@@ -109,8 +158,16 @@ export function OutsideForm({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!pickup.trim()) {
+      setErrorMsg('Please specify or pick an origin pickup point.');
+      return;
+    }
     if (!destination.trim()) {
       setErrorMsg('Please specify or pick a drop destination.');
+      return;
+    }
+    if (pickup.trim().toLowerCase() === destination.trim().toLowerCase()) {
+      setErrorMsg('Pickup and destination cannot be the exact same stop.');
       return;
     }
     setErrorMsg('');
@@ -131,14 +188,17 @@ export function OutsideForm({
       }
     }
 
+    const pCoords = pickupCoords || findStopCoords(pickup) || { lat: 12.0228681, lng: 79.8509415 };
+    const dCoords = destinationCoords || findStopCoords(destination) || { lat: 11.9338, lng: 79.8359 };
+
     setSubmitting(true);
     const ok = await onSubmit({
       pickupAddress: pickup,
-      pickupLatitude: pickupCoords.lat,
-      pickupLongitude: pickupCoords.lng,
+      pickupLatitude: pCoords.lat,
+      pickupLongitude: pCoords.lng,
       destinationAddress: destination,
-      destinationLatitude: destinationCoords?.lat ?? 11.9338,
-      destinationLongitude: destinationCoords?.lng ?? 79.8359,
+      destinationLatitude: dCoords.lat,
+      destinationLongitude: dCoords.lng,
       vehicleType: 'ANY',
       isDoubleRide: false,
       isOutside: true,
@@ -157,45 +217,118 @@ export function OutsideForm({
   return (
     <form onSubmit={handleSubmit} className="ps-outside-card-form ps-fade-up">
 
-      {/* STEP 1: Pickup Location */}
+      {/* Datalist of all known stops (Campus Gates + Outside Spots) */}
+      <datalist id="all-outside-and-campus-stops">
+        <optgroup label="University Campus Gates">
+          {ALL_CAMPUS_GATES.map(g => (
+            <option key={g.name} value={g.name}>Campus Gate</option>
+          ))}
+        </optgroup>
+        <optgroup label="Outside City Spots">
+          {(adminOutsideStops.length > 0 ? adminOutsideStops : QUICK_PICK_DESTS).map(s => (
+            <option key={s.name} value={s.name}>Outside Destination</option>
+          ))}
+        </optgroup>
+      </datalist>
+
+      {/* STEP 1: Pickup Location (Selectable: Campus Gate or Outside Spot) */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <label className="font-label-md uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5 font-bold">
             <span className="w-2.5 h-2.5 rounded-full bg-tertiary" />
             Origin (Pickup Point)
           </label>
-          <button
-            type="button"
-            className="font-label-sm text-primary hover:text-primary-container font-semibold transition-colors flex items-center gap-1 bg-transparent border-0 cursor-pointer"
-            onClick={cycleGate}
-          >
-            <MapPin size={14} />
-            <span>Switch Campus Gate</span>
-          </button>
+          <span className="font-label-sm text-on-surface-variant font-semibold text-xs">
+            Campus or Outside Landmark
+          </span>
         </div>
 
-        <div className="flex items-center justify-between p-4 bg-surface-container-low rounded-xl border border-outline-variant/30">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-primary shrink-0">
-              <Compass size={20} color="#EA580C" />
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <span className="font-label-lg font-bold text-on-surface">{pickup}</span>
-                <span className="bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded-full font-label-sm text-[10px] font-bold">
-                  Default
-                </span>
-              </div>
-              <span className="font-body-sm text-xs text-on-surface-variant">
-                Pondicherry University · Kalapet, ECR Highway
-              </span>
-            </div>
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-tertiary">
+            <MapPin size={18} color="#059669" />
           </div>
-          <Lock size={16} className="text-outline-variant hidden sm:block" />
+          <input
+            type="text"
+            list="all-outside-and-campus-stops"
+            className="ps-outside-dest-input"
+            style={{ paddingLeft: '40px' }}
+            placeholder="Select or type pickup (e.g. Campus Gate 1, Rock Beach, Station...)"
+            value={pickup}
+            onChange={(e) => {
+              const val = e.target.value;
+              setPickup(val);
+              const found = findStopCoords(val);
+              if (found) setPickupCoords(found);
+            }}
+            required
+          />
+          {pickup && (
+            <button
+              type="button"
+              className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-outline hover:text-on-surface bg-transparent border-0 cursor-pointer"
+              onClick={() => {
+                setPickup('');
+                setPickupCoords(null);
+              }}
+            >
+              <X size={18} />
+            </button>
+          )}
+        </div>
+
+        {/* Quick-Pick Campus Gates for fast selection */}
+        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+          <span className="text-[10px] text-outline font-bold uppercase tracking-wider mr-1">
+            Campus Gates:
+          </span>
+          {ALL_CAMPUS_GATES.slice(0, 4).map((gate) => (
+            <button
+              key={gate.name}
+              type="button"
+              className={`text-xs px-2.5 py-1 rounded-full border transition-all cursor-pointer font-medium ${
+                pickup === gate.name
+                  ? 'bg-emerald-100 text-emerald-800 border-emerald-300 font-bold'
+                  : 'bg-surface-container-low text-on-surface-variant border-outline-variant/40 hover:border-emerald-400'
+              }`}
+              onClick={() => {
+                setPickup(gate.name);
+                setPickupCoords({ lat: gate.lat, lng: gate.lng });
+              }}
+            >
+              {gate.name.replace('Campus ', '').replace(' (Main Entrance)', ' (Gate 1)')}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* STEP 2: Drop Destination */}
+      {/* ⇄ ROUTE DIRECTION SWAP BUTTON (Return Rides) */}
+      <div className="flex justify-center -my-1 z-10">
+        <button
+          type="button"
+          onClick={handleSwapRoute}
+          title="Swap Pickup and Drop-off for Return Trips"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '6px 14px',
+            borderRadius: '20px',
+            background: '#FFFFFF',
+            border: '1px solid #D6D3D1',
+            color: '#EA580C',
+            fontSize: '12px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+            transition: 'all 150ms ease'
+          }}
+        >
+          <ArrowUpDown size={14} color="#EA580C" />
+          <span>⇄ Swap Direction (Return Ride)</span>
+        </button>
+      </div>
+
+      {/* STEP 2: Drop Destination (Selectable: Outside Spot or Campus Gate) */}
       <div className="flex flex-col gap-2">
         <label className="font-label-md uppercase tracking-wider text-on-surface-variant flex items-center justify-between font-bold">
           <span className="flex items-center gap-1.5">
@@ -214,12 +347,16 @@ export function OutsideForm({
           </div>
           <input
             type="text"
+            list="all-outside-and-campus-stops"
             className="ps-outside-dest-input"
-            placeholder="Search destination, hotel, beach, station, or landmark..."
+            style={{ paddingLeft: '40px' }}
+            placeholder="Search destination, hotel, beach, station, or campus gate..."
             value={destination}
             onChange={(e) => {
-              setDestination(e.target.value);
-              setDestinationCoords(null);
+              const val = e.target.value;
+              setDestination(val);
+              const found = findStopCoords(val);
+              if (found) setDestinationCoords(found);
             }}
             required
           />

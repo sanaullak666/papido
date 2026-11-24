@@ -242,9 +242,7 @@ export function OutsideTripsView() {
   useEffect(() => {
     fetchData(false);
     fetchOutsideRoutes();
-    const interval = setInterval(() => fetchData(true), 3000);
     return () => {
-      clearInterval(interval);
       alertManager.stopRingtone();
     };
   }, []);
