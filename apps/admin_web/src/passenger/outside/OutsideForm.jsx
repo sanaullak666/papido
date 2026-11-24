@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Compass, MapPin, Search, X,
-  Luggage, Send, CheckCircle2, ChevronRight, Lock, Tag, ArrowUpDown, RefreshCw
+  Luggage, Send, CheckCircle2, ChevronRight, Lock, Tag, ArrowUpDown, RefreshCw,
+  ChevronDown, Check, Navigation
 } from 'lucide-react';
 import { apiRequest } from '../../api';
 
@@ -62,6 +63,30 @@ export function OutsideForm({
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Dropdown floating menu states & refs (matching Campus Ride experience)
+  const [pickupMenuOpen, setPickupMenuOpen] = useState(false);
+  const [destMenuOpen, setDestMenuOpen] = useState(false);
+  const pickupWrapRef = useRef(null);
+  const destWrapRef = useRef(null);
+
+  // Close floating menus when clicking/touching outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (pickupWrapRef.current && !pickupWrapRef.current.contains(e.target)) {
+        setPickupMenuOpen(false);
+      }
+      if (destWrapRef.current && !destWrapRef.current.contains(e.target)) {
+        setDestMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, []);
 
   // Fetch admin configured outside destinations
   useEffect(() => {
@@ -156,6 +181,33 @@ export function OutsideForm({
     setDestinationCoords({ lat: item.lat, lng: item.lng });
   };
 
+  // Filter stops by query (matching Campus Ride token-search algorithm)
+  const filterStopsByQuery = (stops, query) => {
+    if (!query || !query.trim()) return stops;
+    const q = query.trim().toLowerCase();
+    const tokens = q.split(/\s+/).filter(Boolean);
+    return stops.filter(stop => {
+      const s = (typeof stop === 'string' ? stop : stop.name).toLowerCase();
+      if (s.includes(q)) return true;
+      return tokens.every(t => s.includes(t));
+    });
+  };
+
+  const filteredPickupStops = filterStopsByQuery(allKnownStops, pickup);
+  const filteredDestStops = filterStopsByQuery(allKnownStops, destination);
+
+  const handleSelectPickup = (item) => {
+    setPickup(item.name);
+    setPickupCoords({ lat: item.lat, lng: item.lng });
+    setPickupMenuOpen(false);
+  };
+
+  const handleSelectDest = (item) => {
+    setDestination(item.name);
+    setDestinationCoords({ lat: item.lat, lng: item.lng });
+    setDestMenuOpen(false);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!pickup.trim()) {
@@ -217,62 +269,92 @@ export function OutsideForm({
   return (
     <form onSubmit={handleSubmit} className="ps-outside-card-form ps-fade-up">
 
-      {/* Datalist of all known stops (Campus Gates + Outside Spots) */}
-      <datalist id="all-outside-and-campus-stops">
-        <optgroup label="University Campus Gates">
-          {ALL_CAMPUS_GATES.map(g => (
-            <option key={g.name} value={g.name}>Campus Gate</option>
-          ))}
-        </optgroup>
-        <optgroup label="Outside City Spots">
-          {(adminOutsideStops.length > 0 ? adminOutsideStops : QUICK_PICK_DESTS).map(s => (
-            <option key={s.name} value={s.name}>Outside Destination</option>
-          ))}
-        </optgroup>
-      </datalist>
-
       {/* STEP 1: Pickup Location (Selectable: Campus Gate or Outside Spot) */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <label className="font-label-md uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5 font-bold">
-            <span className="w-2.5 h-2.5 rounded-full bg-tertiary" />
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
             Origin (Pickup Point)
           </label>
           <span className="font-label-sm text-on-surface-variant font-semibold text-xs">
-            Campus or Outside Landmark
+            Campus Gate or Outside Landmark
           </span>
         </div>
 
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-tertiary">
-            <MapPin size={18} color="#059669" />
-          </div>
-          <input
-            type="text"
-            list="all-outside-and-campus-stops"
-            className="ps-outside-dest-input"
-            style={{ paddingLeft: '40px' }}
-            placeholder="Select or type pickup (e.g. Campus Gate 1, Rock Beach, Station...)"
-            value={pickup}
-            onChange={(e) => {
-              const val = e.target.value;
-              setPickup(val);
-              const found = findStopCoords(val);
-              if (found) setPickupCoords(found);
-            }}
-            required
-          />
-          {pickup && (
-            <button
-              type="button"
-              className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-outline hover:text-on-surface bg-transparent border-0 cursor-pointer"
-              onClick={() => {
-                setPickup('');
-                setPickupCoords(null);
+        <div className="ps-searchable-stop-wrap" ref={pickupWrapRef}>
+          <div className="ps-pill-input-wrap">
+            <span className="ps-pill-input-icon ps-pill-input-icon--primary">
+              <MapPin size={18} />
+            </span>
+            <input
+              type="text"
+              className="ps-pill-input"
+              placeholder="Search or pick pickup (Gate, Beach, Railway Station...)"
+              value={pickup}
+              onChange={(e) => {
+                const val = e.target.value;
+                setPickup(val);
+                const found = findStopCoords(val);
+                if (found) setPickupCoords(found);
+                setPickupMenuOpen(true);
               }}
-            >
-              <X size={18} />
-            </button>
+              onFocus={() => setPickupMenuOpen(true)}
+              required
+            />
+            {pickup ? (
+              <button
+                type="button"
+                className="ps-pill-clear-btn"
+                title="Clear pickup"
+                onClick={() => {
+                  setPickup('');
+                  setPickupCoords(null);
+                  setPickupMenuOpen(true);
+                }}
+              >
+                <X size={15} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="ps-pill-clear-btn"
+                title="Browse stops"
+                onClick={() => setPickupMenuOpen(!pickupMenuOpen)}
+              >
+                <ChevronDown size={16} />
+              </button>
+            )}
+          </div>
+
+          {/* Floating Suggestions List matching Campus Ride Booking */}
+          {pickupMenuOpen && (
+            <div className="ps-suggestions-menu ps-fade-up">
+              {filteredPickupStops.length > 0 ? (
+                filteredPickupStops.map((item) => (
+                  <div
+                    key={`p-sug-${item.name}`}
+                    className={`ps-suggestion-item ${pickup === item.name ? 'is-selected' : ''}`}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      handleSelectPickup(item);
+                    }}
+                  >
+                    <MapPin size={15} className="ps-suggestion-icon" />
+                    <span className="ps-suggestion-text">{item.name}</span>
+                    <span className={`ps-suggestion-badge ${item.type === 'CAMPUS' ? 'ps-suggestion-badge--campus' : 'ps-suggestion-badge--outside'}`}>
+                      {item.type === 'CAMPUS' ? 'Campus Gate' : 'Outside Spot'}
+                    </span>
+                    {item.fare && <span className="ps-route-fare-tag">₹{parseFloat(item.fare)}</span>}
+                    {pickup === item.name && <Check size={14} className="ps-suggestion-check" />}
+                  </div>
+                ))
+              ) : (
+                <div className="ps-suggestion-empty">
+                  <Search size={14} />
+                  <span>No stop matching "{pickup}"</span>
+                </div>
+              )}
+            </div>
           )}
         </div>
 
@@ -341,37 +423,82 @@ export function OutsideForm({
             </span>
           )}
         </label>
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-primary">
-            <Search size={18} color="#EA580C" />
-          </div>
-          <input
-            type="text"
-            list="all-outside-and-campus-stops"
-            className="ps-outside-dest-input"
-            style={{ paddingLeft: '40px' }}
-            placeholder="Search destination, hotel, beach, station, or campus gate..."
-            value={destination}
-            onChange={(e) => {
-              const val = e.target.value;
-              setDestination(val);
-              const found = findStopCoords(val);
-              if (found) setDestinationCoords(found);
-            }}
-            required
-          />
-          {destination && (
-            <button
-              type="button"
-              className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-outline hover:text-on-surface bg-transparent border-0 cursor-pointer"
-              onClick={() => {
-                setDestination('');
-                setDestinationCoords(null);
-                setMatchedFare(null);
+
+        <div className="ps-searchable-stop-wrap" ref={destWrapRef}>
+          <div className="ps-pill-input-wrap">
+            <span className="ps-pill-input-icon ps-pill-input-icon--dest">
+              <Navigation size={18} />
+            </span>
+            <input
+              type="text"
+              className="ps-pill-input"
+              placeholder="Search destination, hotel, beach, station, or campus gate..."
+              value={destination}
+              onChange={(e) => {
+                const val = e.target.value;
+                setDestination(val);
+                const found = findStopCoords(val);
+                if (found) setDestinationCoords(found);
+                setDestMenuOpen(true);
               }}
-            >
-              <X size={18} />
-            </button>
+              onFocus={() => setDestMenuOpen(true)}
+              required
+            />
+            {destination ? (
+              <button
+                type="button"
+                className="ps-pill-clear-btn"
+                title="Clear destination"
+                onClick={() => {
+                  setDestination('');
+                  setDestinationCoords(null);
+                  setMatchedFare(null);
+                  setDestMenuOpen(true);
+                }}
+              >
+                <X size={15} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="ps-pill-clear-btn"
+                title="Browse stops"
+                onClick={() => setDestMenuOpen(!destMenuOpen)}
+              >
+                <ChevronDown size={16} />
+              </button>
+            )}
+          </div>
+
+          {/* Floating Suggestions List matching Campus Ride Booking */}
+          {destMenuOpen && (
+            <div className="ps-suggestions-menu ps-fade-up">
+              {filteredDestStops.length > 0 ? (
+                filteredDestStops.map((item) => (
+                  <div
+                    key={`d-sug-${item.name}`}
+                    className={`ps-suggestion-item ${destination === item.name ? 'is-selected' : ''}`}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      handleSelectDest(item);
+                    }}
+                  >
+                    <Navigation size={15} className="ps-suggestion-icon" />
+                    <span className="ps-suggestion-text">{item.name}</span>
+                    <span className={`ps-suggestion-badge ${item.type === 'CAMPUS' ? 'ps-suggestion-badge--campus' : 'ps-suggestion-badge--outside'}`}>
+                      {item.type === 'CAMPUS' ? 'Campus Gate' : 'Outside Spot'}
+                    </span>
+                    {item.fare && <span className="ps-route-fare-tag">₹{parseFloat(item.fare)}</span>}
+                    {destination === item.name && <Check size={14} className="ps-suggestion-check" />}
+                  </div>
+                ))
+              ) : (
+                <div className="ps-suggestion-empty">
+                  <Search size={14} />
+                  <span>No stop matching "{destination}"</span>
+                </div>
+              )}
+            </div>
           )}
         </div>
 

@@ -1,3 +1,4 @@
+const db = require('../config/database');
 const { RIDE_STATUS, ROLES } = require('../config/constants');
 const UserModel = require('../models/user.model');
 const RideModel = require('../models/ride.model');
@@ -8,6 +9,7 @@ const PaymentModel = require('../models/payment.model');
 const EarningModel = require('../models/earning.model');
 const NotificationModel = require('../models/notification.model');
 const AuditModel = require('../models/audit.model');
+const { calculateDistance, calculateDuration } = require('../utils/geo');
 
 let socketManager = null;
 const setSocketManager = (sm) => { socketManager = sm; };
