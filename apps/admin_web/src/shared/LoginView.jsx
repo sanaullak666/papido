@@ -23,7 +23,15 @@ const SCREEN = {
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 30;
 
-export function LoginView({ onGoToAdminPortal, onLoginSuccess }) {
+export function LoginView({ onGoToAdminPortal, onLoginSuccess, onGoToHome }) {
+  const handleGoHome = (e) => {
+    if (e) e.preventDefault();
+    if (typeof onGoToHome === 'function') {
+      onGoToHome();
+    } else {
+      window.location.href = '/';
+    }
+  };
   const {
     login,
     register,
@@ -701,7 +709,7 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess }) {
 
             {/* Papido Brand Header */}
             <div className="papido-card-brand-header">
-              <div className="papido-brand-pill">
+              <button type="button" className="papido-brand-pill papido-brand-pill--link" onClick={handleGoHome} title="Go to Papido Homepage" aria-label="Go to Papido Homepage">
                 <img
                   src="/papidologo.jpeg"
                   alt="Papido"
@@ -713,7 +721,7 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess }) {
                     Pondicherry University Mobility
                   </div>
                 </div>
-              </div>
+              </button>
             </div>
 
             {/* Role selector */}

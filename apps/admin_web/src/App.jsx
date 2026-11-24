@@ -584,6 +584,7 @@ export function App() {
   // ============================================================
   return (
     <LoginView
+      onGoToHome={() => navigateTo('/')}
       onLoginSuccess={(loggedInUser) => {
         const dest = loggedInUser?.role === 'RIDER' ? '/rider' : (loggedInUser?.role === 'ADMIN' ? '/admin/dashboard' : '/passenger');
         if (window.location.pathname !== dest) {

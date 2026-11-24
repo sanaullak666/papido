@@ -199,6 +199,35 @@
   border-bottom: 1px solid var(--pap-border-soft);
 }
 
+
+.papido-brand-pill--link {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: none;
+  font: inherit;
+  color: inherit;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.papido-brand-pill--link:hover {
+  transform: translateY(-2px);
+  opacity: 0.92;
+}
+
+.papido-brand-pill--link:hover .papido-hero-logo {
+  box-shadow: 0 8px 20px rgba(234, 88, 12, 0.28);
+  border-color: #ea580c;
+}
+
+.papido-brand-pill--link:focus-visible {
+  outline: 2px solid #ea580c;
+  outline-offset: 4px;
+  border-radius: 12px;
+}
 .papido-brand-pill {
   display: flex;
   align-items: center;
