@@ -4,7 +4,7 @@ import { apiRequest } from '../api';
 import {
   Bike, ShieldCheck, MapPin, Zap, Star, ArrowRight, Navigation, Wallet,
   PhoneCall, QrCode, Building2, Lock, Award, CalendarClock, BellRing,
-  FileCheck2, Check, Menu, X, ArrowUpRight, Clock,
+  FileCheck2, Check, Menu, X, ArrowUpRight, Clock, LogIn,
 } from 'lucide-react';
 
 const NAV = [
@@ -101,14 +101,27 @@ export function LandingView({ onGoToLogin, onGoToRegister, onGoToRiderLogin }) {
               <WhatsAppIcon size={16} />
               <span>{WHATSAPP_DISPLAY}</span>
             </a>
-            <button className="pm-btn pm-btn--text" onClick={() => go(onGoToLogin)}>Sign in</button>
+            <button className="pm-btn pm-btn--signin" onClick={() => go(onGoToLogin)}>
+              <LogIn size={15} />
+              <span>Sign in</span>
+            </button>
             <button className="pm-btn pm-btn--solid" onClick={() => go(onGoToRegister)}>
               Get started <ArrowRight size={15} />
             </button>
           </div>
-          <button className="pm-burger" aria-label="Menu" aria-expanded={menu} onClick={() => setMenu(v => !v)}>
-            {menu ? <X size={22} /> : <Menu size={22} />}
-          </button>
+          <div className="pm-nav-mobile-right">
+            <button
+              className="pm-btn pm-btn--signin pm-btn--mobile-signin"
+              onClick={() => go(onGoToLogin)}
+              aria-label="Sign in"
+            >
+              <LogIn size={14} />
+              <span>Sign in</span>
+            </button>
+            <button className="pm-burger" aria-label="Menu" aria-expanded={menu} onClick={() => setMenu(v => !v)}>
+              {menu ? <X size={22} /> : <Menu size={22} />}
+            </button>
+          </div>
         </div>
         {menu && (
           <div className="pm-drawer">
@@ -123,8 +136,13 @@ export function LandingView({ onGoToLogin, onGoToRegister, onGoToRiderLogin }) {
               <WhatsAppIcon size={17} />
               <span>WhatsApp: {WHATSAPP_DISPLAY}</span>
             </a>
-            <button className="pm-btn pm-btn--solid pm-btn--block" onClick={() => go(onGoToRegister)}>Get started</button>
-            <button className="pm-btn pm-btn--line pm-btn--block" onClick={() => go(onGoToLogin)}>Sign in</button>
+            <button className="pm-btn pm-btn--signin pm-btn--block pm-drawer-signin" onClick={() => go(onGoToLogin)}>
+              <LogIn size={16} />
+              <span>Sign in to Account</span>
+            </button>
+            <button className="pm-btn pm-btn--solid pm-btn--block" onClick={() => go(onGoToRegister)}>
+              Get started <ArrowRight size={15} />
+            </button>
           </div>
         )}
       </header>
@@ -143,6 +161,9 @@ export function LandingView({ onGoToLogin, onGoToRegister, onGoToRiderLogin }) {
             <div className="pm-hero-btns">
               <button className="pm-btn pm-btn--solid pm-btn--lg" onClick={() => go(onGoToRegister)}>
                 Book a ride <ArrowRight size={17} />
+              </button>
+              <button className="pm-btn pm-btn--signin pm-btn--lg" onClick={() => go(onGoToLogin)}>
+                <LogIn size={17} /> Sign in
               </button>
               <button className="pm-btn pm-btn--glass pm-btn--lg" onClick={() => go(onGoToRiderLogin || onGoToLogin)}>
                 <Bike size={17} /> Drive with Papido
@@ -319,8 +340,8 @@ export function LandingView({ onGoToLogin, onGoToRegister, onGoToRiderLogin }) {
               <button className="pm-btn pm-btn--solid pm-btn--lg" onClick={() => go(onGoToRegister)}>
                 Get started free <ArrowRight size={17} />
               </button>
-              <button className="pm-btn pm-btn--glass pm-btn--lg" onClick={() => go(onGoToLogin)}>
-                I have an account
+              <button className="pm-btn pm-btn--signin pm-btn--lg" onClick={() => go(onGoToLogin)}>
+                <LogIn size={17} /> Sign in to your account
               </button>
             </div>
           </div>
@@ -336,7 +357,11 @@ export function LandingView({ onGoToLogin, onGoToRegister, onGoToRiderLogin }) {
           </div>
           <div className="pm-foot-nav-col">
             <div className="pm-foot-heading">Quick Links</div>
-            <nav>{NAV.map(([id, l]) => <a key={id} href={`#${id}`}>{l}</a>)}</nav>
+            <nav>
+              {NAV.map(([id, l]) => <a key={id} href={`#${id}`}>{l}</a>)}
+              <button className="pm-foot-link-btn" onClick={() => go(onGoToLogin)}>Sign in</button>
+              <button className="pm-foot-link-btn" onClick={() => go(onGoToRegister)}>Register</button>
+            </nav>
           </div>
           <div className="pm-foot-contact-col">
             <div className="pm-foot-heading">WhatsApp & Support</div>
