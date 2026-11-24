@@ -14,6 +14,25 @@ const NAV = [
   ['safety', 'Safety'],
 ];
 
+export const WHATSAPP_NUMBER = '+918547420669';
+export const WHATSAPP_DISPLAY = '+91 85474 20669';
+export const WHATSAPP_URL = 'https://wa.me/918547420669?text=Hi%20Papido,%20I%20have%20an%20enquiry%20regarding%20campus%20rides';
+
+export function WhatsAppIcon({ size = 20, className = '' }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M17.472 14.382c-.301-.15-1.78-.879-2.056-.979-.276-.1-.477-.15-.678.15-.2.301-.777.979-.953 1.18-.176.2-.351.226-.652.075-.301-.15-1.272-.469-2.423-1.496-.896-.799-1.501-1.786-1.677-2.087-.175-.301-.019-.464.132-.614.135-.135.301-.351.451-.527.151-.175.201-.301.301-.501.101-.2.05-.376-.025-.527-.075-.15-.678-1.634-.928-2.236-.244-.586-.492-.507-.678-.516-.175-.009-.376-.01-.577-.01-.2 0-.527.075-.802.376s-1.053 1.028-1.053 2.508 1.078 2.909 1.229 3.11c.15.2 2.122 3.24 5.141 4.544.718.31 1.278.496 1.716.634.721.229 1.378.197 1.898.119.579-.087 1.78-.727 2.031-1.429.25-.702.25-1.303.175-1.429-.075-.126-.276-.201-.577-.351zM12.05 21.785h-.002a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.999-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c0-5.445 4.43-9.876 9.88-9.876 2.637 0 5.116 1.027 6.98 2.893a9.813 9.813 0 0 1 2.89 6.983c-.003 5.447-4.433 9.878-9.871 9.878zM20.52 3.48A11.93 11.93 0 0 0 12.046 0C5.462 0 .108 5.354.105 11.94a11.88 11.88 0 0 0 1.602 5.975L0 24l6.236-1.636A11.92 11.92 0 0 0 12.043 24c6.586 0 11.943-5.355 11.946-11.941a11.87 11.87 0 0 0-3.469-8.579z" />
+    </svg>
+  );
+}
+
 export function LandingView({ onGoToLogin, onGoToRegister, onGoToRiderLogin }) {
   const [scrolled, setScrolled] = useState(false);
   const [menu, setMenu] = useState(false);
@@ -71,6 +90,17 @@ export function LandingView({ onGoToLogin, onGoToRegister, onGoToRiderLogin }) {
             {NAV.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}
           </nav>
           <div className="pm-nav-cta">
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="pm-btn pm-btn--wa-nav"
+              aria-label={`Chat on WhatsApp ${WHATSAPP_DISPLAY}`}
+              title={`WhatsApp Support: ${WHATSAPP_DISPLAY}`}
+            >
+              <WhatsAppIcon size={16} />
+              <span>{WHATSAPP_DISPLAY}</span>
+            </a>
             <button className="pm-btn pm-btn--text" onClick={() => go(onGoToLogin)}>Sign in</button>
             <button className="pm-btn pm-btn--solid" onClick={() => go(onGoToRegister)}>
               Get started <ArrowRight size={15} />
@@ -83,6 +113,16 @@ export function LandingView({ onGoToLogin, onGoToRegister, onGoToRiderLogin }) {
         {menu && (
           <div className="pm-drawer">
             {NAV.map(([id, label]) => <a key={id} href={`#${id}`} onClick={() => setMenu(false)}>{label}</a>)}
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="pm-btn pm-btn--wa-drawer pm-btn--block"
+              onClick={() => setMenu(false)}
+            >
+              <WhatsAppIcon size={17} />
+              <span>WhatsApp: {WHATSAPP_DISPLAY}</span>
+            </a>
             <button className="pm-btn pm-btn--solid pm-btn--block" onClick={() => go(onGoToRegister)}>Get started</button>
             <button className="pm-btn pm-btn--line pm-btn--block" onClick={() => go(onGoToLogin)}>Sign in</button>
           </div>
@@ -107,6 +147,18 @@ export function LandingView({ onGoToLogin, onGoToRegister, onGoToRiderLogin }) {
               <button className="pm-btn pm-btn--glass pm-btn--lg" onClick={() => go(onGoToRiderLogin || onGoToLogin)}>
                 <Bike size={17} /> Drive with Papido
               </button>
+            </div>
+            <div className="pm-hero-wa-bar">
+              <span className="pm-hero-wa-text">Need help or fast booking?</span>
+              <a
+                href={WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pm-hero-wa-link"
+              >
+                <WhatsAppIcon size={15} />
+                <span>WhatsApp: {WHATSAPP_DISPLAY}</span>
+              </a>
             </div>
             <dl className="pm-stats">
               <div><dt>~2.5 min</dt><dd>Avg. pickup</dd></div>
@@ -243,7 +295,7 @@ export function LandingView({ onGoToLogin, onGoToRegister, onGoToRiderLogin }) {
               [ShieldCheck, 'Verified riders', 'Campus ID, licence and RC reviewed before approval.'],
               [Lock, 'OTP-secured trips', 'A ride starts only when you share your OTP.'],
               [Navigation, 'Live tracking', 'Location refreshed every few seconds.'],
-              [PhoneCall, 'One-tap contact', 'Call your rider or passenger from the app.'],
+              [PhoneCall, 'WhatsApp & Direct Helpline', `Chat on WhatsApp at ${WHATSAPP_DISPLAY} for fast campus support.`],
               [Building2, 'Campus-only fleet', 'Core members and approved students only.'],
               [Award, 'Ratings that matter', 'Every trip is rated to uphold standards.'],
             ].map(([Icon, t, b], i) => (
@@ -278,11 +330,52 @@ export function LandingView({ onGoToLogin, onGoToRegister, onGoToRiderLogin }) {
       {/* FOOTER */}
       <footer className="pm-foot">
         <div className="pm-wrap pm-foot-in">
-          <a href="#top" className="pm-brand"><img src="/papidologo.jpeg" alt="" /><span>PAPIDO</span></a>
-          <nav>{NAV.map(([id, l]) => <a key={id} href={`#${id}`}>{l}</a>)}</nav>
+          <div className="pm-foot-brand-col">
+            <a href="#top" className="pm-brand"><img src="/papidologo.jpeg" alt="" /><span>PAPIDO</span></a>
+            <p className="pm-foot-tagline">Campus rides made reliable & transparent for Pondicherry University.</p>
+          </div>
+          <div className="pm-foot-nav-col">
+            <div className="pm-foot-heading">Quick Links</div>
+            <nav>{NAV.map(([id, l]) => <a key={id} href={`#${id}`}>{l}</a>)}</nav>
+          </div>
+          <div className="pm-foot-contact-col">
+            <div className="pm-foot-heading">WhatsApp & Support</div>
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="pm-foot-wa-badge"
+              aria-label={`Official WhatsApp support: ${WHATSAPP_DISPLAY}`}
+            >
+              <span className="pm-foot-wa-icon"><WhatsAppIcon size={18} /></span>
+              <span className="pm-foot-wa-copy">
+                <span className="pm-foot-wa-tag">Direct Chat</span>
+                <strong className="pm-foot-wa-num">{WHATSAPP_DISPLAY}</strong>
+              </span>
+            </a>
+          </div>
           <small>© {new Date().getFullYear()} Papido · Puducherry, India · Built with students, for students.</small>
         </div>
       </footer>
+
+      {/* Floating WhatsApp Action Widget */}
+      <aside className="pm-float-wa-wrap" aria-label="WhatsApp Support">
+        <a
+          href={WHATSAPP_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="pm-float-wa"
+          aria-label={`Chat with Papido on WhatsApp (${WHATSAPP_DISPLAY})`}
+          title={`Chat on WhatsApp ${WHATSAPP_DISPLAY}`}
+        >
+          <span className="pm-float-wa-pulse" aria-hidden="true" />
+          <WhatsAppIcon size={24} className="pm-float-wa-svg" />
+          <span className="pm-float-wa-text">
+            <span className="pm-float-wa-sub">WhatsApp Support</span>
+            <strong className="pm-float-wa-num">{WHATSAPP_DISPLAY}</strong>
+          </span>
+        </a>
+      </aside>
     </div>
   );
 }
