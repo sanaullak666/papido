@@ -43,29 +43,6 @@ import StatusBadge from '../components/ui/StatusBadge';
 import DataTable from '../components/ui/DataTable';
 import EmptyState from '../components/ui/EmptyState';
 
-const CAMPUS_GATES = [
-  'Campus Gate 1 (Main Entrance)',
-  'Campus Gate 2 (Beach Road Gate / ECR)',
-  'Silver Jubilee Campus (SJC)',
-  'University Health Centre Outpost',
-  'Girls Hostel',
-  'Boys Hostel',
-  'Central Library',
-  'Science Block / Departments'
-];
-
-const PRESET_DESTINATIONS = [
-  { name: 'Rock Beach / Promenade', dist: '13.8', fare: '165.00' },
-  { name: 'White Town (Heritage)', dist: '13.8', fare: '165.00' },
-  { name: 'Puducherry Railway Station', dist: '14.5', fare: '175.00' },
-  { name: 'JIPMER Hospital', dist: '11.2', fare: '135.00' },
-  { name: 'Auroville Visitors Centre', dist: '8.4', fare: '100.00' },
-  { name: 'ECR Bus Stop', dist: '4.2', fare: '50.00' },
-  { name: 'New Bus Stand (Orleanpet)', dist: '14.0', fare: '170.00' },
-  { name: 'Providence Mall / INOX', dist: '13.5', fare: '160.00' },
-  { name: 'Paradise Beach / Chunnambar', dist: '22.0', fare: '270.00' }
-];
-
 export function formatScheduledDateTime(val) {
   if (!val) return 'Date/Time not specified';
   try {
@@ -94,10 +71,10 @@ export function OutsideTripsView() {
   const [savingRoute, setSavingRoute] = useState(false);
   const [editingRoute, setEditingRoute] = useState(null);
   const [newOutsideRoute, setNewOutsideRoute] = useState({
-    pickupStop: 'Campus Gate 1 (Main Entrance)',
+    pickupStop: '',
     destinationStop: '',
-    fareAmount: '165.00',
-    distanceKm: '13.8',
+    fareAmount: '',
+    distanceKm: '',
     isBidirectional: true
   });
 
@@ -157,27 +134,27 @@ export function OutsideTripsView() {
   const handleSaveOutsideRoute = async (e) => {
     e?.preventDefault();
     if (!newOutsideRoute.pickupStop || !newOutsideRoute.destinationStop || !newOutsideRoute.fareAmount) {
-      setError('Please select campus pickup gate, enter outside destination stop, and specify the fare amount.');
+      setError('Please type pickup origin stop, enter outside destination stop, and specify the fare amount.');
       return;
     }
     try {
       setSavingRoute(true);
       setError(null);
       await apiRequest('/admin/outside-route-fares', 'POST', {
-        pickupStop: newOutsideRoute.pickupStop,
-        destinationStop: newOutsideRoute.destinationStop,
+        pickupStop: newOutsideRoute.pickupStop.trim(),
+        destinationStop: newOutsideRoute.destinationStop.trim(),
         fareAmount: parseFloat(newOutsideRoute.fareAmount),
-        distanceKm: parseFloat(newOutsideRoute.distanceKm || 12.0),
+        distanceKm: parseFloat(newOutsideRoute.distanceKm || 1.0),
         isBidirectional: true
       });
       setSuccessMsg(`Outside route "${newOutsideRoute.pickupStop} ⇄ ${newOutsideRoute.destinationStop}" saved & vice-versa synced!`);
       setTimeout(() => setSuccessMsg(null), 4000);
       setShowAddRoute(false);
       setNewOutsideRoute({
-        pickupStop: 'Campus Gate 1 (Main Entrance)',
+        pickupStop: '',
         destinationStop: '',
-        fareAmount: '165.00',
-        distanceKm: '13.8',
+        fareAmount: '',
+        distanceKm: '',
         isBidirectional: true
       });
       await fetchOutsideRoutes();
@@ -527,51 +504,30 @@ export function OutsideTripsView() {
           {showAddRoute && (
             <form onSubmit={handleSaveOutsideRoute} className="ot-stops-form-box ot-slide-down">
               <div className="ot-stops-form-grid">
-                {/* Campus Origin Dropdown */}
+                {/* Pickup Origin Stop (Typed by Admin) */}
                 <div className="ot-form-group">
-                  <label className="ot-form-label">Pickup Campus Gate (Origin)</label>
-                  <select
-                    className="ot-form-select"
+                  <label className="ot-form-label">Pickup Spot (Origin)</label>
+                  <input
+                    type="text"
+                    className="ot-form-input"
                     value={newOutsideRoute.pickupStop}
                     onChange={(e) => setNewOutsideRoute({ ...newOutsideRoute, pickupStop: e.target.value })}
+                    placeholder="Type pickup origin (e.g. Campus Gate 1, Hostel, or Landmark)"
                     required
-                  >
-                    {CAMPUS_GATES.map((gate) => (
-                      <option key={gate} value={gate}>{gate}</option>
-                    ))}
-                  </select>
+                  />
                 </div>
 
-                {/* Outside Destination Stop */}
+                {/* Outside Destination Stop (Typed by Admin) */}
                 <div className="ot-form-group">
                   <label className="ot-form-label">Outside Destination Stop</label>
                   <input
                     type="text"
-                    list="preset-outside-stops"
                     className="ot-form-input"
                     value={newOutsideRoute.destinationStop}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      const preset = PRESET_DESTINATIONS.find(p => p.name.toLowerCase() === val.toLowerCase());
-                      if (preset) {
-                        setNewOutsideRoute({
-                          ...newOutsideRoute,
-                          destinationStop: preset.name,
-                          fareAmount: preset.fare,
-                          distanceKm: preset.dist
-                        });
-                      } else {
-                        setNewOutsideRoute({ ...newOutsideRoute, destinationStop: val });
-                      }
-                    }}
-                    placeholder="e.g. Rock Beach / Promenade"
+                    onChange={(e) => setNewOutsideRoute({ ...newOutsideRoute, destinationStop: e.target.value })}
+                    placeholder="Type destination stop (e.g. Rock Beach, Railway Station, Bus Stand)"
                     required
                   />
-                  <datalist id="preset-outside-stops">
-                    {PRESET_DESTINATIONS.map(p => (
-                      <option key={p.name} value={p.name}>{p.name} (~₹{p.fare})</option>
-                    ))}
-                  </datalist>
                 </div>
 
                 {/* Fixed Fare (₹) */}
@@ -580,10 +536,11 @@ export function OutsideTripsView() {
                   <input
                     type="number"
                     step="1"
+                    min="1"
                     className="ot-form-input"
                     value={newOutsideRoute.fareAmount}
                     onChange={(e) => setNewOutsideRoute({ ...newOutsideRoute, fareAmount: e.target.value })}
-                    placeholder="165.00"
+                    placeholder="e.g. 150"
                     required
                   />
                 </div>
@@ -594,10 +551,11 @@ export function OutsideTripsView() {
                   <input
                     type="number"
                     step="0.1"
+                    min="0.1"
                     className="ot-form-input"
                     value={newOutsideRoute.distanceKm}
                     onChange={(e) => setNewOutsideRoute({ ...newOutsideRoute, distanceKm: e.target.value })}
-                    placeholder="13.8"
+                    placeholder="e.g. 12.5"
                     required
                   />
                 </div>
