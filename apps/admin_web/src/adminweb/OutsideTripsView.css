@@ -167,9 +167,187 @@
   color: #FFFFFF;
   box-shadow: 0 4px 14px rgba(234, 88, 12, 0.297);
 }
-.ot-tab-btn--cyan.is-active {
-  background: linear-gradient(135deg, #38BDF8, #0EA5E9);
-  box-shadow: 0 4px 14px rgba(56, 189, 248, 0.297);
+.ot-tab-btn--amber.is-active {
+  background: linear-gradient(135deg, #F59E0B, #D97706);
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+}
+
+/* ============================================================
+   OUTSIDE STOPS & FARES MANAGER (PANEL & FORM)
+   ============================================================ */
+.ot-stops-panel {
+  background: #FFFFFF;
+  border: 1px solid #E7E5E4;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.ot-stops-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-bottom: 1px solid #F5F5F4;
+  padding-bottom: 16px;
+}
+.ot-stops-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #1C1917;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ot-stops-sub {
+  font-size: 13px;
+  color: #78716C;
+  margin-top: 2px;
+}
+.ot-btn-add-stop {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  background: #EA580C;
+  color: #FFFFFF;
+  border: none;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 180ms ease;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.25);
+}
+.ot-btn-add-stop:hover {
+  background: #C2410C;
+  transform: translateY(-1px);
+}
+.ot-stops-form-box {
+  background: #FAFAF9;
+  border: 1px solid #E7E5E4;
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.ot-stops-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+.ot-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ot-form-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #44403C;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ot-form-input,
+.ot-form-select {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #D6D3D1;
+  background: #FFFFFF;
+  color: #1C1917;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  outline: none;
+  transition: border-color 150ms ease;
+}
+.ot-form-input:focus,
+.ot-form-select:focus {
+  border-color: #EA580C;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.12);
+}
+.ot-viceversa-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px dashed rgba(16, 185, 129, 0.4);
+  border-radius: 8px;
+  color: #065F46;
+  font-size: 12px;
+  font-weight: 700;
+}
+.ot-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.ot-stops-table-wrap {
+  overflow-x: auto;
+}
+.ot-stops-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+}
+.ot-stops-table th {
+  background: #F5F5F4;
+  color: #78716C;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #E7E5E4;
+}
+.ot-stops-table th:first-child { border-top-left-radius: 8px; }
+.ot-stops-table th:last-child { border-top-right-radius: 8px; }
+.ot-stops-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #F5F5F4;
+  color: #1C1917;
+  vertical-align: middle;
+}
+.ot-stops-table tr:hover td {
+  background: #FAFAF9;
+}
+.ot-badge-viceversa-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+  font-size: 11px;
+  font-weight: 700;
+}
+.ot-action-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #FECACA;
+  background: #FEF2F2;
+  color: #DC2626;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+.ot-action-delete-btn:hover {
+  background: #DC2626;
+  color: #FFFFFF;
 }
 .ot-tab-btn:focus-visible {
   outline: 2px solid #EA580C;

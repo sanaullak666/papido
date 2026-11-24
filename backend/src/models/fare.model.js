@@ -47,8 +47,25 @@ const FareModel = {
   // ROUTE-BASED FARE MANAGEMENT
   // ==========================================
 
-  async getAllRouteFares() {
-    return db.query('SELECT * FROM route_fares ORDER BY pickup_stop ASC, destination_stop ASC');
+  async getAllRouteFares({ isOutside = false } = {}) {
+    if (isOutside === true) {
+      return db.query('SELECT * FROM route_fares WHERE is_outside = 1 ORDER BY updated_at DESC, id DESC');
+    }
+    return db.query('SELECT * FROM route_fares WHERE (is_outside = 0 OR is_outside IS NULL) ORDER BY pickup_stop ASC, destination_stop ASC');
+  },
+
+  async getOutsideRouteFares() {
+    return db.query('SELECT * FROM route_fares WHERE is_outside = 1 ORDER BY updated_at DESC, id DESC');
+  },
+
+  async getOutsideDestinations() {
+    return db.query(`
+      SELECT id, destination_stop as name, destination_latitude as lat, destination_longitude as lng,
+             pickup_stop, fare_amount, distance_km
+      FROM route_fares 
+      WHERE is_outside = 1 AND is_active = 1
+      ORDER BY fare_amount ASC, destination_stop ASC
+    `);
   },
 
   async findRouteFare(pickupStop, destinationStop) {
@@ -106,7 +123,19 @@ const FareModel = {
     return null;
   },
 
-  async upsertRouteFare({ pickupStop, destinationStop, fareAmount, distanceKm = 1.5, isActive = 1, isBidirectional = true }) {
+  async upsertRouteFare({
+    pickupStop,
+    destinationStop,
+    fareAmount,
+    distanceKm = 1.5,
+    isOutside = false,
+    pickupLat = null,
+    pickupLng = null,
+    destLat = null,
+    destLng = null,
+    isActive = 1,
+    isBidirectional = true
+  }) {
     const p = (pickupStop || '').trim();
     const d = (destinationStop || '').trim();
     if (!p || !d) return null;
@@ -114,35 +143,44 @@ const FareModel = {
     const fare = parseFloat(fareAmount);
     const dist = parseFloat(distanceKm);
     const act = isActive ? 1 : 0;
+    const outsideFlag = isOutside ? 1 : 0;
 
-    const upsertSingle = async (from, to) => {
+    const upsertSingle = async (from, to, fLat, fLng, tLat, tLng) => {
       const existing = await db.queryOne(
         `SELECT id FROM route_fares WHERE LOWER(TRIM(pickup_stop)) = LOWER(TRIM(?)) AND LOWER(TRIM(destination_stop)) = LOWER(TRIM(?)) LIMIT 1`,
         [from, to]
       );
       if (existing && existing.id) {
         await db.query(
-          `UPDATE route_fares SET fare_amount = ?, distance_km = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-          [fare, dist, act, existing.id]
+          `UPDATE route_fares 
+           SET fare_amount = ?, distance_km = ?, is_outside = ?, 
+               pickup_latitude = COALESCE(?, pickup_latitude), pickup_longitude = COALESCE(?, pickup_longitude),
+               destination_latitude = COALESCE(?, destination_latitude), destination_longitude = COALESCE(?, destination_longitude),
+               is_active = ?, updated_at = CURRENT_TIMESTAMP 
+           WHERE id = ?`,
+          [fare, dist, outsideFlag, fLat, fLng, tLat, tLng, act, existing.id]
         );
       } else {
         await db.query(
-          `INSERT INTO route_fares (pickup_stop, destination_stop, fare_amount, distance_km, is_active) VALUES (?, ?, ?, ?, ?)`,
-          [from, to, fare, dist, act]
+          `INSERT INTO route_fares 
+           (pickup_stop, destination_stop, fare_amount, distance_km, is_outside, pickup_latitude, pickup_longitude, destination_latitude, destination_longitude, is_active) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [from, to, fare, dist, outsideFlag, fLat, fLng, tLat, tLng, act]
         );
       }
     };
 
     routeFaresCache = null;
-    await upsertSingle(p, d);
+    await upsertSingle(p, d, pickupLat, pickupLng, destLat, destLng);
     if (isBidirectional) {
-      await upsertSingle(d, p);
+      // Automatic vice-versa reverse pair
+      await upsertSingle(d, p, destLat, destLng, pickupLat, pickupLng);
     }
 
     return this.findRouteFare(p, d);
   },
 
-  async updateRouteFareById(id, { fareAmount, distanceKm, isActive }) {
+  async updateRouteFareById(id, { fareAmount, distanceKm, isActive, isOutside, pickupLat, pickupLng, destLat, destLng }) {
     routeFaresCache = null;
     const target = await db.queryOne('SELECT * FROM route_fares WHERE id = ?', [id]);
     if (!target) return null;
@@ -150,21 +188,28 @@ const FareModel = {
     const fare = fareAmount !== undefined ? parseFloat(fareAmount) : parseFloat(target.fare_amount);
     const dist = distanceKm !== undefined ? parseFloat(distanceKm) : parseFloat(target.distance_km);
     const act = isActive !== undefined ? (isActive ? 1 : 0) : target.is_active;
+    const outside = isOutside !== undefined ? (isOutside ? 1 : 0) : target.is_outside;
 
     await db.query(
       `UPDATE route_fares 
-       SET fare_amount = ?, distance_km = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP 
+       SET fare_amount = ?, distance_km = ?, is_active = ?, is_outside = ?,
+           pickup_latitude = COALESCE(?, pickup_latitude), pickup_longitude = COALESCE(?, pickup_longitude),
+           destination_latitude = COALESCE(?, destination_latitude), destination_longitude = COALESCE(?, destination_longitude),
+           updated_at = CURRENT_TIMESTAMP 
        WHERE id = ?`,
-      [fare, dist, act, id]
+      [fare, dist, act, outside, pickupLat, pickupLng, destLat, destLng, id]
     );
 
     // Also update reverse direction if exists
     if (target.pickup_stop && target.destination_stop) {
       await db.query(
         `UPDATE route_fares 
-         SET fare_amount = ?, distance_km = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP 
+         SET fare_amount = ?, distance_km = ?, is_active = ?, is_outside = ?,
+             pickup_latitude = COALESCE(?, pickup_latitude), pickup_longitude = COALESCE(?, pickup_longitude),
+             destination_latitude = COALESCE(?, destination_latitude), destination_longitude = COALESCE(?, destination_longitude),
+             updated_at = CURRENT_TIMESTAMP 
          WHERE LOWER(TRIM(pickup_stop)) = LOWER(TRIM(?)) AND LOWER(TRIM(destination_stop)) = LOWER(TRIM(?))`,
-        [fare, dist, act, target.destination_stop, target.pickup_stop]
+        [fare, dist, act, outside, destLat, destLng, pickupLat, pickupLng, target.destination_stop, target.pickup_stop]
       );
     }
 

@@ -22,6 +22,9 @@ router.patch('/fare-settings/:vehicleType', AdminController.updateFareConfigurat
 router.get('/route-fares', AdminController.getRouteFares);
 router.post('/route-fares', AdminController.saveRouteFare);
 router.delete('/route-fares/:id', AdminController.deleteRouteFare);
+router.get('/outside-route-fares', AdminController.getOutsideRouteFares);
+router.post('/outside-route-fares', AdminController.saveOutsideRouteFare);
+router.delete('/outside-route-fares/:id', AdminController.deleteOutsideRouteFare);
 router.get('/split-rules', AdminController.getSplitRules);
 router.post('/split-rules', AdminController.createSplitRule);
 router.patch('/split-rules/:id', AdminController.updateSplitRule);

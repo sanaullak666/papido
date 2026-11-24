@@ -89,10 +89,32 @@ const RideService = {
 
     const isOutsideRide = Boolean(isOutside);
 
-    // If outside ride, it will go to admin for custom quoting & dispatch
+    // Automated Outside Ride Processing: Checks Route-Based Fares or Dynamic Formula
     if (isOutsideRide) {
       const rideCode = this.generateRideCode();
       const otp = this.generateOTP();
+
+      // 1. Calculate distance & duration
+      const distKm = calculateDistance(pickupLatitude, pickupLongitude, destinationLatitude, destinationLongitude);
+      const durMin = calculateDuration(distKm, vehicleType);
+
+      // 2. Automated Fare Calculation (Route-based or Dynamic distance)
+      const fareEstimation = await FareService.calculateEstimatedFare(
+        distKm,
+        durMin,
+        vehicleType,
+        pickupAddress,
+        destinationAddress,
+        false
+      );
+
+      const calculatedFare = parseFloat(fareEstimation?.estimatedFare || 0);
+
+      // Automated dispatch status
+      const hasAutoFare = calculatedFare > 0;
+      const targetStatus = hasAutoFare
+        ? (isScheduledTrip ? 'SCHEDULED' : 'REQUESTED')
+        : 'PENDING_ADMIN_QUOTE';
 
       const ride = await RideModel.create({
         rideCode,
@@ -107,34 +129,42 @@ const RideService = {
         destinationAddress,
         destinationLatitude,
         destinationLongitude,
-        estimatedDistance: 0,
-        estimatedDuration: 0,
-        estimatedFare: 0,
+        estimatedDistance: distKm,
+        estimatedDuration: durMin,
+        estimatedFare: calculatedFare,
         otp,
-        status: 'PENDING_ADMIN_QUOTE',
+        status: targetStatus,
         paymentMethod,
         femaleRiderOnly,
         isDoubleRide: false,
         isOutside: true,
         isScheduled: isScheduledTrip,
-        scheduledTime: normalizedScheduledTime
+        scheduledTime: normalizedScheduledTime,
+        isDispatched: hasAutoFare ? 1 : 0
       });
 
+      if (hasAutoFare) {
+        await db.query('UPDATE rides SET final_fare = ? WHERE id = ?', [calculatedFare, ride.id]);
+        ride.final_fare = calculatedFare;
+      }
+
       // Notify customer
-      const notifTitle = isScheduledTrip ? 'Outside Trip Pre-Booked' : 'Outside Ride Submitted';
+      const notifTitle = isScheduledTrip ? 'Outside Trip Pre-Booked' : 'Outside Ride Confirmed';
       const notifMsg = isScheduledTrip
-        ? `Your outside pre-booked trip ${rideCode} for ${normalizedScheduledTime} has been submitted to Dispatch. Admin will review the route to set the fare & dispatch.`
-        : `Your outside ride ${rideCode} has been sent to Dispatch. Admin will review the route to set the fare & dispatch.`;
+        ? `Your outside pre-booked trip ${rideCode} for ${normalizedScheduledTime} is confirmed with fare ₹${calculatedFare}.`
+        : (hasAutoFare
+            ? `Your outside ride ${rideCode} is confirmed with fare ₹${calculatedFare}. Searching for nearby riders!`
+            : `Your outside ride ${rideCode} has been sent to Dispatch. Admin will review the route to set the fare & dispatch.`);
 
       await NotificationModel.create({
         userId: customerId,
         title: notifTitle,
         message: notifMsg,
-        type: 'OUTSIDE_RIDE_PENDING_QUOTE',
-        data: { rideId: ride.id, rideCode, isOutside: true, isScheduled: isScheduledTrip, scheduledTime: normalizedScheduledTime }
+        type: hasAutoFare ? 'OUTSIDE_RIDE_CONFIRMED' : 'OUTSIDE_RIDE_PENDING_QUOTE',
+        data: { rideId: ride.id, rideCode, isOutside: true, fare: calculatedFare, isScheduled: isScheduledTrip, scheduledTime: normalizedScheduledTime }
       });
 
-      // Notify Admin via Socket.IO
+      // Notify Admin & Riders via Socket.IO
       if (socketManager) {
         const UserModel = require('../models/user.model');
         const customer = await UserModel.findById(customerId);
@@ -153,6 +183,8 @@ const RideService = {
           scheduled_time: normalizedScheduledTime,
           vehicleType: vehicleType || 'BIKE',
           vehicle_type: vehicleType || 'BIKE',
+          estimatedFare: calculatedFare,
+          status: targetStatus,
           requestedAt: ride.requested_at || new Date().toISOString()
         });
 
@@ -164,24 +196,51 @@ const RideService = {
             pickup_address: ride.pickup_address,
             destination_address: ride.destination_address,
             scheduled_time: normalizedScheduledTime,
-            estimated_fare: 0,
+            estimated_fare: calculatedFare,
+            final_fare: calculatedFare,
+            total_fare: calculatedFare,
             vehicle_type: ride.vehicle_type,
             female_rider_only: ride.female_rider_only,
-            status: 'PENDING_ADMIN_QUOTE',
+            status: targetStatus,
             is_outside: 1,
-            is_scheduled: 1
+            is_scheduled: 1,
+            is_dispatched: hasAutoFare ? 1 : 0
           };
           socketManager.io.to(`user_${customerId}`).emit('ride:scheduled_created', scheduledPayload);
           socketManager.io.emit('ride:scheduled_updated', scheduledPayload);
+          if (hasAutoFare) {
+            socketManager.io.emit('ride:new_scheduled_booking', scheduledPayload);
+          }
+        } else if (hasAutoFare) {
+          // Automated immediate dispatch to riders
+          let nearbyRiders = await RiderModel.findNearbyOnlineRiders(
+            pickupLatitude,
+            pickupLongitude,
+            vehicleType,
+            25.0 // Expanded radius for outside trips
+          );
+          if (femaleRiderOnly) {
+            nearbyRiders = nearbyRiders.filter(r => r.gender === 'FEMALE');
+          }
+
+          socketManager.broadcastNewRideRequest(ride, nearbyRiders);
+
+          socketManager.io.to(`user_${customerId}`).emit('ride:status_change', {
+            rideId: ride.id,
+            rideCode: ride.ride_code,
+            status: 'REQUESTED',
+            ride,
+            timestamp: new Date().toISOString()
+          });
         }
       }
 
       await AuditModel.log({
         userId: customerId,
-        action: 'OUTSIDE_RIDE_REQUESTED',
+        action: hasAutoFare ? 'OUTSIDE_RIDE_AUTO_DISPATCHED' : 'OUTSIDE_RIDE_REQUESTED',
         entityType: 'RIDE',
         entityId: ride.id,
-        details: { rideCode, isOutside: true, isScheduled: isScheduledTrip, scheduledTime: normalizedScheduledTime }
+        details: { rideCode, fare: calculatedFare, isOutside: true, isScheduled: isScheduledTrip, scheduledTime: normalizedScheduledTime }
       });
 
       return ride;

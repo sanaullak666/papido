@@ -29,13 +29,40 @@ import {
   ArrowRight,
   Calendar,
   Zap,
-  X
+  X,
+  Plus,
+  Trash2,
+  Tag,
+  Check
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import StatusBadge from '../components/ui/StatusBadge';
 import DataTable from '../components/ui/DataTable';
 import EmptyState from '../components/ui/EmptyState';
+
+const CAMPUS_GATES = [
+  'Campus Gate 1 (Main Entrance)',
+  'Campus Gate 2 (Beach Road Gate / ECR)',
+  'Silver Jubilee Campus (SJC)',
+  'University Health Centre Outpost',
+  'Girls Hostel',
+  'Boys Hostel',
+  'Central Library',
+  'Science Block / Departments'
+];
+
+const PRESET_DESTINATIONS = [
+  { name: 'Rock Beach / Promenade', dist: '13.8', fare: '165.00' },
+  { name: 'White Town (Heritage)', dist: '13.8', fare: '165.00' },
+  { name: 'Puducherry Railway Station', dist: '14.5', fare: '175.00' },
+  { name: 'JIPMER Hospital', dist: '11.2', fare: '135.00' },
+  { name: 'Auroville Visitors Centre', dist: '8.4', fare: '100.00' },
+  { name: 'ECR Bus Stop', dist: '4.2', fare: '50.00' },
+  { name: 'New Bus Stand (Orleanpet)', dist: '14.0', fare: '170.00' },
+  { name: 'Providence Mall / INOX', dist: '13.5', fare: '160.00' },
+  { name: 'Paradise Beach / Chunnambar', dist: '22.0', fare: '270.00' }
+];
 
 export function formatScheduledDateTime(val) {
   if (!val) return 'Date/Time not specified';
@@ -58,7 +85,19 @@ export function formatScheduledDateTime(val) {
 }
 
 export function OutsideTripsView() {
-  const [activeTab, setActiveTab] = useState('pending'); // 'pending' or 'history'
+  const [activeTab, setActiveTab] = useState('stops'); // 'stops', 'pending', or 'history'
+  const [outsideRoutes, setOutsideRoutes] = useState([]);
+  const [loadingRoutes, setLoadingRoutes] = useState(false);
+  const [showAddRoute, setShowAddRoute] = useState(false);
+  const [savingRoute, setSavingRoute] = useState(false);
+  const [newOutsideRoute, setNewOutsideRoute] = useState({
+    pickupStop: 'Campus Gate 1 (Main Entrance)',
+    destinationStop: '',
+    fareAmount: '165.00',
+    distanceKm: '13.8',
+    isBidirectional: true
+  });
+
   const [pendingRides, setPendingRides] = useState([]);
   const [selectedRideId, setSelectedRideId] = useState(null);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
@@ -100,13 +139,72 @@ export function OutsideTripsView() {
   const [formData, setFormData] = useState({});
   const [submittingId, setSubmittingId] = useState(null);
 
+  const fetchOutsideRoutes = async () => {
+    try {
+      setLoadingRoutes(true);
+      const res = await apiRequest('/admin/outside-route-fares');
+      setOutsideRoutes(res.data || []);
+    } catch (err) {
+      console.warn('Failed to fetch outside routes', err);
+    } finally {
+      setLoadingRoutes(false);
+    }
+  };
+
+  const handleSaveOutsideRoute = async (e) => {
+    e?.preventDefault();
+    if (!newOutsideRoute.pickupStop || !newOutsideRoute.destinationStop || !newOutsideRoute.fareAmount) {
+      setError('Please select campus pickup gate, enter outside destination stop, and specify the fare amount.');
+      return;
+    }
+    try {
+      setSavingRoute(true);
+      setError(null);
+      await apiRequest('/admin/outside-route-fares', 'POST', {
+        pickupStop: newOutsideRoute.pickupStop,
+        destinationStop: newOutsideRoute.destinationStop,
+        fareAmount: parseFloat(newOutsideRoute.fareAmount),
+        distanceKm: parseFloat(newOutsideRoute.distanceKm || 12.0),
+        isBidirectional: true
+      });
+      setSuccessMsg(`Outside route "${newOutsideRoute.pickupStop} ⇄ ${newOutsideRoute.destinationStop}" saved & vice-versa synced!`);
+      setTimeout(() => setSuccessMsg(null), 4000);
+      setShowAddRoute(false);
+      setNewOutsideRoute({
+        pickupStop: 'Campus Gate 1 (Main Entrance)',
+        destinationStop: '',
+        fareAmount: '165.00',
+        distanceKm: '13.8',
+        isBidirectional: true
+      });
+      await fetchOutsideRoutes();
+    } catch (err) {
+      setError(err.message || 'Failed to save outside route.');
+    } finally {
+      setSavingRoute(false);
+    }
+  };
+
+  const handleDeleteOutsideRoute = async (id) => {
+    if (!window.confirm('Delete this outside route and its reverse vice-versa pair?')) return;
+    try {
+      await apiRequest(`/admin/outside-route-fares/${id}`, 'DELETE');
+      setSuccessMsg('Outside route & reverse pair deleted successfully.');
+      setTimeout(() => setSuccessMsg(null), 4000);
+      await fetchOutsideRoutes();
+    } catch (err) {
+      setError(err.message || 'Failed to delete outside route.');
+    }
+  };
+
   const fetchData = async (isBackground = false) => {
     try {
       if (!isBackground) setLoading(true);
       setError(null);
       const [ridesRes, ridersRes] = await Promise.all([
         apiRequest('/admin/outside-rides'),
-        apiRequest('/admin/active-riders')
+        apiRequest('/admin/active-riders'),
+        fetchOutsideRoutes()
       ]);
 
       const pending = ridesRes.data?.pending || (Array.isArray(ridesRes.data) ? ridesRes.data : []);
@@ -143,6 +241,7 @@ export function OutsideTripsView() {
 
   useEffect(() => {
     fetchData(false);
+    fetchOutsideRoutes();
     const interval = setInterval(() => fetchData(true), 3000);
     return () => {
       clearInterval(interval);
@@ -325,11 +424,20 @@ export function OutsideTripsView() {
         <div className="ot-tab-switch">
           <button
             type="button"
+            onClick={() => setActiveTab('stops')}
+            className={`ot-tab-btn ${activeTab === 'stops' ? 'is-active ot-tab-btn--amber' : ''}`}
+          >
+            <Tag size={15} />
+            <span>Outside Stops &amp; Fares</span>
+            <span className="ot-tab-count">{outsideRoutes.length}</span>
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveTab('pending')}
             className={`ot-tab-btn ${activeTab === 'pending' ? 'is-active' : ''}`}
           >
             <Globe size={15} />
-            <span>Dispatch Queue</span>
+            <span>Live Dispatch Queue</span>
             <span className="ot-tab-count">{pendingRides.length}</span>
           </button>
           <button
@@ -345,11 +453,14 @@ export function OutsideTripsView() {
 
         <button
           type="button"
-          onClick={() => fetchData(false)}
+          onClick={() => {
+            fetchData(false);
+            fetchOutsideRoutes();
+          }}
           className="ot-refresh-btn"
         >
           <RefreshCw size={14} className={loading ? 'ot-spin' : ''} />
-          <span>Refresh Queue</span>
+          <span>Refresh</span>
         </button>
       </div>
 
@@ -366,6 +477,200 @@ export function OutsideTripsView() {
         <div className="ot-alert ot-alert--success ot-slide-down">
           <CheckCircle size={18} />
           <span>{successMsg}</span>
+        </div>
+      )}
+
+      {/* ============================================================
+          OUTSIDE STOPS & FARES MANAGER TAB
+          ============================================================ */}
+      {activeTab === 'stops' && (
+        <div className="ot-stops-panel ot-fade-up">
+          <div className="ot-stops-head">
+            <div>
+              <div className="ot-stops-title">
+                <Tag size={18} color="#EA580C" />
+                <span>Outside City Stops &amp; Fare Management</span>
+              </div>
+              <p className="ot-stops-sub">
+                Pre-configure approved flat fares between campus gates and outside city destinations. Fares are automatically mirrored in both directions (vice-versa).
+              </p>
+            </div>
+            <button
+              type="button"
+              className="ot-btn-add-stop"
+              onClick={() => setShowAddRoute(!showAddRoute)}
+            >
+              <Plus size={15} />
+              <span>{showAddRoute ? 'Hide Form' : 'Add Outside Route'}</span>
+            </button>
+          </div>
+
+          {/* Add Outside Route Form */}
+          {showAddRoute && (
+            <form onSubmit={handleSaveOutsideRoute} className="ot-stops-form-box ot-slide-down">
+              <div className="ot-stops-form-grid">
+                {/* Campus Origin Dropdown */}
+                <div className="ot-form-group">
+                  <label className="ot-form-label">Pickup Campus Gate (Origin)</label>
+                  <select
+                    className="ot-form-select"
+                    value={newOutsideRoute.pickupStop}
+                    onChange={(e) => setNewOutsideRoute({ ...newOutsideRoute, pickupStop: e.target.value })}
+                    required
+                  >
+                    {CAMPUS_GATES.map((gate) => (
+                      <option key={gate} value={gate}>{gate}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Outside Destination Stop */}
+                <div className="ot-form-group">
+                  <label className="ot-form-label">Outside Destination Stop</label>
+                  <input
+                    type="text"
+                    list="preset-outside-stops"
+                    className="ot-form-input"
+                    value={newOutsideRoute.destinationStop}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const preset = PRESET_DESTINATIONS.find(p => p.name.toLowerCase() === val.toLowerCase());
+                      if (preset) {
+                        setNewOutsideRoute({
+                          ...newOutsideRoute,
+                          destinationStop: preset.name,
+                          fareAmount: preset.fare,
+                          distanceKm: preset.dist
+                        });
+                      } else {
+                        setNewOutsideRoute({ ...newOutsideRoute, destinationStop: val });
+                      }
+                    }}
+                    placeholder="e.g. Rock Beach / Promenade"
+                    required
+                  />
+                  <datalist id="preset-outside-stops">
+                    {PRESET_DESTINATIONS.map(p => (
+                      <option key={p.name} value={p.name}>{p.name} (~₹{p.fare})</option>
+                    ))}
+                  </datalist>
+                </div>
+
+                {/* Fixed Fare (₹) */}
+                <div className="ot-form-group">
+                  <label className="ot-form-label">Approved Fare (₹)</label>
+                  <input
+                    type="number"
+                    step="1"
+                    className="ot-form-input"
+                    value={newOutsideRoute.fareAmount}
+                    onChange={(e) => setNewOutsideRoute({ ...newOutsideRoute, fareAmount: e.target.value })}
+                    placeholder="165.00"
+                    required
+                  />
+                </div>
+
+                {/* Distance (km) */}
+                <div className="ot-form-group">
+                  <label className="ot-form-label">Estimated Distance (km)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    className="ot-form-input"
+                    value={newOutsideRoute.distanceKm}
+                    onChange={(e) => setNewOutsideRoute({ ...newOutsideRoute, distanceKm: e.target.value })}
+                    placeholder="13.8"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Automatic Vice-Versa Banner */}
+              <div className="ot-viceversa-banner">
+                <Check size={16} />
+                <span>
+                  <strong>Automatic Vice-Versa Enabled:</strong> Saving this route will automatically register both 
+                  <em> "{newOutsideRoute.pickupStop} ➔ {newOutsideRoute.destinationStop || 'Destination'}" </em> and the reverse 
+                  <em> "{newOutsideRoute.destinationStop || 'Destination'} ➔ {newOutsideRoute.pickupStop}" </em> with the same ₹{newOutsideRoute.fareAmount} fare!
+                </span>
+              </div>
+
+              <div className="ot-form-actions">
+                <Button type="button" variant="outline" size="sm" onClick={() => setShowAddRoute(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" variant="primary" size="sm" disabled={savingRoute}>
+                  {savingRoute ? 'Saving Route...' : 'Save & Sync Vice-Versa'}
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {/* Outside Routes Table */}
+          <div className="ot-stops-table-wrap">
+            {loadingRoutes ? (
+              <div style={{ padding: '24px', textAlign: 'center', color: '#78716C' }}>
+                Loading outside route configurations...
+              </div>
+            ) : outsideRoutes.length === 0 ? (
+              <EmptyState
+                icon={Route}
+                title="No Outside Stops Configured"
+                description="Add your first outside stop to provide automated, pre-approved fares for students traveling between campus and the city."
+              />
+            ) : (
+              <table className="ot-stops-table">
+                <thead>
+                  <tr>
+                    <th>Route (Origin ➔ Destination)</th>
+                    <th>Fixed Fare</th>
+                    <th>Distance</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {outsideRoutes.map((r) => (
+                    <tr key={r.id}>
+                      <td>
+                        <div style={{ fontWeight: 700, color: '#1C1917' }}>{r.pickup_stop}</div>
+                        <div style={{ fontSize: '11px', color: '#78716C', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <ArrowRight size={11} color="#EA580C" /> {r.destination_stop}
+                        </div>
+                      </td>
+                      <td>
+                        <strong style={{ color: '#047857', fontSize: '15px' }}>
+                          ₹{parseFloat(r.fare_amount).toFixed(2)}
+                        </strong>
+                      </td>
+                      <td style={{ color: '#78716C', fontWeight: 600 }}>
+                        {r.distance_km} km
+                      </td>
+                      <td>
+                        <span className="ot-badge-viceversa-pill">
+                          ⇄ Two-Way Auto
+                        </span>
+                      </td>
+                      <td>
+                        <StatusBadge status={r.is_active ? 'ACTIVE' : 'INACTIVE'} size="sm" />
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <button
+                          type="button"
+                          className="ot-action-delete-btn"
+                          title="Delete route and vice-versa reverse pair"
+                          onClick={() => handleDeleteOutsideRoute(r.id)}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
       )}
 

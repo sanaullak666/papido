@@ -16,6 +16,15 @@ const CustomerController = {
     }
   },
 
+  async getOutsideDestinations(req, res, next) {
+    try {
+      const destinations = await FareModel.getOutsideDestinations();
+      return success(res, 'Outside destinations fetched successfully.', destinations);
+    } catch (err) {
+      next(err);
+    }
+  },
+
   async estimateFare(req, res, next) {
     try {
       const pLat = req.body.pickupLatitude || req.body.pickupLat;
@@ -200,7 +209,7 @@ const CustomerController = {
       const responseMessage = isScheduledTrip
         ? `Ride pre-booked successfully for ${normalizedScheduledTime || 'scheduled time'}.`
         : (outsideTrip
-            ? 'Outside trip submitted to Dispatch. Admin is setting the fare & assigning a rider.'
+            ? `Outside trip confirmed with fare ₹${ride.estimated_fare || ride.final_fare || 0}. Searching for nearby riders!`
             : 'Ride requested successfully. Searching for nearby riders.');
 
       return success(res, responseMessage, ride, 201);

@@ -1,26 +1,29 @@
 import React from 'react';
 import { Compass, Navigation } from 'lucide-react';
 
-export function OutsideRoutePreviewCard({ destination, pickup = 'Campus Gate 1 (Main Entrance)' }) {
+export function OutsideRoutePreviewCard({ destination, pickup = 'Campus Gate 1 (Main Entrance)', customFare = null, customDist = null }) {
   // Real formula-based estimate based on standard ₹12/km inter-city dispatch rate
   const getDestinationEstimate = (dest) => {
+    if (customFare && customDist) {
+      return { dist: `${customDist} km`, fare: `₹${customFare}` };
+    }
     const d = (dest || '').toLowerCase();
     if (d.includes('beach') || d.includes('promenade') || d.includes('white town')) {
-      return { dist: '13.8 km', fare: '₹165' };
+      return { dist: '13.8 km', fare: customFare ? `₹${customFare}` : '₹165' };
     }
     if (d.includes('jipmer')) {
-      return { dist: '11.2 km', fare: '₹135' };
+      return { dist: '11.2 km', fare: customFare ? `₹${customFare}` : '₹135' };
     }
     if (d.includes('station') || d.includes('railway')) {
-      return { dist: '14.5 km', fare: '₹175' };
+      return { dist: '14.5 km', fare: customFare ? `₹${customFare}` : '₹175' };
     }
     if (d.includes('auroville')) {
-      return { dist: '8.4 km', fare: '₹100' };
+      return { dist: '8.4 km', fare: customFare ? `₹${customFare}` : '₹100' };
     }
     if (d.includes('ecr')) {
-      return { dist: '4.2 km', fare: '₹50' };
+      return { dist: '4.2 km', fare: customFare ? `₹${customFare}` : '₹50' };
     }
-    return { dist: '12.0 km', fare: '₹145' };
+    return { dist: customDist ? `${customDist} km` : '12.0 km', fare: customFare ? `₹${customFare}` : '₹145' };
   };
 
   const estimate = getDestinationEstimate(destination);

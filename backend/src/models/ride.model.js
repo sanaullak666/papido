@@ -74,7 +74,8 @@ const RideModel = {
     isDoubleRide = false,
     isOutside = false,
     isScheduled = false,
-    scheduledTime = null
+    scheduledTime = null,
+    isDispatched = false
   }) {
     const isActuallyScheduled = Boolean(
       isScheduled === true || isScheduled === 'true' || isScheduled === 1 ||
@@ -96,7 +97,7 @@ const RideModel = {
         otp, status, payment_method, female_rider_only, is_double_ride, is_outside,
         is_scheduled, scheduled_time, is_dispatched,
         payment_status, requested_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'PENDING', CURRENT_TIMESTAMP)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', CURRENT_TIMESTAMP)`,
       [
         rideCode, customerId, vehicleType,
         pickupAddress, pickupLatitude, pickupLongitude,
@@ -104,7 +105,7 @@ const RideModel = {
         destinationAddress, destinationLatitude, destinationLongitude,
         estimatedDistance, estimatedDuration, estimatedFare,
         otp, finalStatus, paymentMethod, femaleRiderOnly ? 1 : 0, isDoubleRide ? 1 : 0, isOutside ? 1 : 0,
-        isActuallyScheduled ? 1 : 0, finalScheduledTime
+        isActuallyScheduled ? 1 : 0, finalScheduledTime, isDispatched ? 1 : 0
       ]
     );
     return this.findById(result.insertId);

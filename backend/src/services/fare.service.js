@@ -23,7 +23,8 @@ const FareService = {
           estimatedFare: fare,
           minimumFare: fare,
           isRouteBased: true,
-          routeName: `${routeFare.pickup_stop} ➔ ${routeFare.destination_stop}`
+          routeName: `${routeFare.pickup_stop} ➔ ${routeFare.destination_stop}`,
+          isOutside: Boolean(routeFare.is_outside)
         };
       }
     }
@@ -46,17 +47,15 @@ const FareService = {
         estimatedFare: baseFare,
         minimumFare: baseFare,
         isRouteBased: false,
-        routeName: null
+        routeName: null,
+        isOutside: false
       };
     }
 
     // Outside Campus Policy: Double rides are strictly forbidden for outside-campus trips
-    let isOutside = false;
+    let isOutside = Boolean(baseResult.isOutside);
 
-    if (baseResult.isRouteBased) {
-      // Admin preset routes in database are inside campus by definition
-      isOutside = false;
-    } else {
+    if (!baseResult.isRouteBased) {
       const pLower = (pickupAddress || '').toLowerCase();
       const dLower = (destinationAddress || '').toLowerCase();
       
@@ -69,6 +68,22 @@ const FareService = {
 
       if (isExplicitOutside || distanceKm > 6.0) {
         isOutside = true;
+      }
+
+      if (isOutside) {
+        // Dynamic distance-based formula fallback (@ ₹12/km with zero surge)
+        const baseKm = 2.0;
+        const startFare = 30.0;
+        const perKmRate = 12.0;
+        const returnAllowance = 15.0;
+        const extraKm = Math.max(0, distanceKm - baseKm);
+        const computedFare = Math.round(startFare + (extraKm * perKmRate) + returnAllowance);
+        const finalOutsideFare = Math.max(40.0, computedFare);
+
+        baseResult.estimatedFare = finalOutsideFare;
+        baseResult.baseFare = finalOutsideFare;
+        baseResult.minimumFare = finalOutsideFare;
+        baseResult.isOutside = true;
       }
     }
 

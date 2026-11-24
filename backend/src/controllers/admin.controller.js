@@ -271,8 +271,96 @@ const AdminController = {
    */
   async getRouteFares(req, res, next) {
     try {
-      const routes = await FareModel.getAllRouteFares();
+      const routes = await FareModel.getAllRouteFares({ isOutside: false });
       return success(res, 'Campus route fares fetched.', routes);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
+   * Outside City Route Fares
+   */
+  async getOutsideRouteFares(req, res, next) {
+    try {
+      const routes = await FareModel.getOutsideRouteFares();
+      return success(res, 'Outside route fares fetched successfully.', routes);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async saveOutsideRouteFare(req, res, next) {
+    try {
+      const {
+        id,
+        pickupStop,
+        destinationStop,
+        fareAmount,
+        distanceKm,
+        pickupLat,
+        pickupLng,
+        destLat,
+        destLng,
+        isActive,
+        isBidirectional
+      } = req.body;
+
+      let result;
+      if (id) {
+        result = await FareModel.updateRouteFareById(id, {
+          fareAmount,
+          distanceKm,
+          isActive,
+          isOutside: true,
+          pickupLat,
+          pickupLng,
+          destLat,
+          destLng
+        });
+      } else {
+        if (!pickupStop || !destinationStop || fareAmount === undefined) {
+          return error(res, 'Pickup stop, outside destination stop, and fare amount are required.', 400);
+        }
+        result = await FareModel.upsertRouteFare({
+          pickupStop,
+          destinationStop,
+          fareAmount,
+          distanceKm: distanceKm || 12.0,
+          isOutside: true,
+          pickupLat: pickupLat || 12.0228681,
+          pickupLng: pickupLng || 79.8509415,
+          destLat: destLat || null,
+          destLng: destLng || null,
+          isActive: isActive !== undefined ? isActive : 1,
+          isBidirectional: isBidirectional !== false // Automatically adds vice-versa reverse pair
+        });
+      }
+
+      const socketManager = req.app.get('socketManager');
+      if (socketManager) {
+        socketManager.io.emit('fare:outside_routes_updated');
+        socketManager.io.emit('fare:routes_updated');
+      }
+
+      return success(res, id ? 'Outside route fare updated successfully.' : 'Outside route fare & vice-versa reverse pair saved successfully.', result, id ? 200 : 201);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async deleteOutsideRouteFare(req, res, next) {
+    try {
+      const id = req.params.id;
+      await FareModel.deleteRouteFare(id);
+
+      const socketManager = req.app.get('socketManager');
+      if (socketManager) {
+        socketManager.io.emit('fare:outside_routes_updated');
+        socketManager.io.emit('fare:routes_updated');
+      }
+
+      return success(res, 'Outside route fare and vice-versa reverse pair deleted successfully.');
     } catch (err) {
       next(err);
     }

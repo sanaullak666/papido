@@ -227,6 +227,11 @@ async function bootstrapMysqlSchema(targetPool) {
         destination_stop VARCHAR(150) NOT NULL,
         fare_amount DECIMAL(10, 2) NOT NULL,
         distance_km DECIMAL(5, 2) DEFAULT 1.50,
+        is_outside BOOLEAN DEFAULT FALSE,
+        pickup_latitude DECIMAL(10, 8) DEFAULT NULL,
+        pickup_longitude DECIMAL(11, 8) DEFAULT NULL,
+        destination_latitude DECIMAL(10, 8) DEFAULT NULL,
+        destination_longitude DECIMAL(11, 8) DEFAULT NULL,
         is_active BOOLEAN DEFAULT TRUE,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         UNIQUE KEY uq_route_stops (pickup_stop, destination_stop)
@@ -578,7 +583,14 @@ async function ensureDatabaseSchemaMigrations(targetPool) {
     "ALTER TABLE daily_shift_settlements ADD COLUMN gateway VARCHAR(50) DEFAULT 'UPI' AFTER gateway_payment_id;",
     'ALTER TABLE daily_shift_settlements ADD COLUMN checkout_url VARCHAR(500) DEFAULT NULL AFTER gateway;',
     'ALTER TABLE daily_shift_settlements ADD COLUMN paid_at DATETIME DEFAULT NULL AFTER submitted_at;',
-    'ALTER TABLE daily_shift_settlements ADD COLUMN payment_attempts INT DEFAULT 0 AFTER paid_at;'
+    'ALTER TABLE daily_shift_settlements ADD COLUMN payment_attempts INT DEFAULT 0 AFTER paid_at;',
+
+    /* --- Route Fares Outside Expansion --- */
+    'ALTER TABLE route_fares ADD COLUMN is_outside BOOLEAN DEFAULT FALSE AFTER distance_km;',
+    'ALTER TABLE route_fares ADD COLUMN pickup_latitude DECIMAL(10, 8) DEFAULT NULL AFTER is_outside;',
+    'ALTER TABLE route_fares ADD COLUMN pickup_longitude DECIMAL(11, 8) DEFAULT NULL AFTER pickup_latitude;',
+    'ALTER TABLE route_fares ADD COLUMN destination_latitude DECIMAL(10, 8) DEFAULT NULL AFTER pickup_longitude;',
+    'ALTER TABLE route_fares ADD COLUMN destination_longitude DECIMAL(11, 8) DEFAULT NULL AFTER destination_latitude;'
   ];
 
   for (const sql of migrations) {
@@ -678,9 +690,31 @@ async function ensureDatabaseSchemaMigrations(targetPool) {
 
     for (const r of defaultRoutes) {
       await targetPool.query(`
-        INSERT IGNORE INTO route_fares (pickup_stop, destination_stop, fare_amount, distance_km, is_active)
-        VALUES (?, ?, ?, ?, 1)
+        INSERT IGNORE INTO route_fares (pickup_stop, destination_stop, fare_amount, distance_km, is_outside, is_active)
+        VALUES (?, ?, ?, ?, 0, 1)
       `, [r.pickup, r.dest, r.fare, r.dist]);
+    }
+
+    const defaultOutsideRoutes = [
+      { pickup: 'Campus Gate 1 (Main Entrance)', dest: 'Rock Beach / Promenade', fare: 165.00, dist: 13.8, pLat: 12.0228681, pLng: 79.8509415, dLat: 11.9338, dLng: 79.8359 },
+      { pickup: 'Campus Gate 1 (Main Entrance)', dest: 'Puducherry Railway Station', fare: 175.00, dist: 14.5, pLat: 12.0228681, pLng: 79.8509415, dLat: 11.9288, dLng: 79.8286 },
+      { pickup: 'Campus Gate 1 (Main Entrance)', dest: 'JIPMER Hospital', fare: 135.00, dist: 11.2, pLat: 12.0228681, pLng: 79.8509415, dLat: 11.9546, dLng: 79.7997 },
+      { pickup: 'Campus Gate 1 (Main Entrance)', dest: 'Auroville Visitors Centre', fare: 100.00, dist: 8.4, pLat: 12.0228681, pLng: 79.8509415, dLat: 12.0069, dLng: 79.8105 },
+      { pickup: 'Campus Gate 1 (Main Entrance)', dest: 'ECR Bus Stop', fare: 50.00, dist: 4.2, pLat: 12.0228681, pLng: 79.8509415, dLat: 12.0235, dLng: 79.8512 },
+      { pickup: 'Campus Gate 1 (Main Entrance)', dest: 'White Town (Heritage)', fare: 165.00, dist: 13.8, pLat: 12.0228681, pLng: 79.8509415, dLat: 11.9333, dLng: 79.8333 }
+    ];
+
+    for (const r of defaultOutsideRoutes) {
+      // 1. Campus -> Outside
+      await targetPool.query(`
+        INSERT IGNORE INTO route_fares (pickup_stop, destination_stop, fare_amount, distance_km, is_outside, pickup_latitude, pickup_longitude, destination_latitude, destination_longitude, is_active)
+        VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, 1)
+      `, [r.pickup, r.dest, r.fare, r.dist, r.pLat, r.pLng, r.dLat, r.dLng]);
+      // 2. Vice-versa: Outside -> Campus
+      await targetPool.query(`
+        INSERT IGNORE INTO route_fares (pickup_stop, destination_stop, fare_amount, distance_km, is_outside, pickup_latitude, pickup_longitude, destination_latitude, destination_longitude, is_active)
+        VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, 1)
+      `, [r.dest, r.pickup, r.fare, r.dist, r.dLat, r.dLng, r.pLat, r.pLng]);
     }
   } catch (_) {}
 }

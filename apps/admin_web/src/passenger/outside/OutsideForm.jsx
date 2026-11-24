@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Compass, MapPin, Search, X,
-  Luggage, Send, CheckCircle2, ChevronRight, Lock
+  Luggage, Send, CheckCircle2, ChevronRight, Lock, Tag
 } from 'lucide-react';
+import { apiRequest } from '../../api';
 
 const QUICK_PICK_DESTS = [
-  { name: 'White Town (Heritage)', lat: 11.9333, lng: 79.8333, icon: '🏛️' },
-  { name: 'Rock Beach / Promenade', lat: 11.9338, lng: 79.8359, icon: '🌊' },
-  { name: 'JIPMER Hospital', lat: 11.9546, lng: 79.7997, icon: '🏥' },
-  { name: 'Puducherry Railway Station', lat: 11.9288, lng: 79.8286, icon: '🚂' },
-  { name: 'Auroville Visitors Centre', lat: 12.0069, lng: 79.8105, icon: '🌳' },
-  { name: 'ECR Bus Stop', lat: 12.0235, lng: 79.8512, icon: '🚌' }
+  { name: 'White Town (Heritage)', lat: 11.9333, lng: 79.8333, fare: 165, icon: '🏛️' },
+  { name: 'Rock Beach / Promenade', lat: 11.9338, lng: 79.8359, fare: 165, icon: '🌊' },
+  { name: 'JIPMER Hospital', lat: 11.9546, lng: 79.7997, fare: 135, icon: '🏥' },
+  { name: 'Puducherry Railway Station', lat: 11.9288, lng: 79.8286, fare: 175, icon: '🚂' },
+  { name: 'Auroville Visitors Centre', lat: 12.0069, lng: 79.8105, fare: 100, icon: '🌳' },
+  { name: 'ECR Bus Stop', lat: 12.0235, lng: 79.8512, fare: 50, icon: '🚌' }
 ];
 
 const GATES = [
@@ -42,12 +43,58 @@ export function OutsideForm({
   const [pickupCoords, setPickupCoords] = useState({ lat: 12.0228681, lng: 79.8509415 });
   const [gateIndex, setGateIndex] = useState(0);
 
+  const [adminOutsideStops, setAdminOutsideStops] = useState([]);
+  const [matchedFare, setMatchedFare] = useState(null);
+
   const [departureSchedule, setDepartureSchedule] = useState('immediate'); // 'immediate' or 'scheduled'
   const [scheduledDate, setScheduledDate] = useState(() => getTomorrowDateStr());
   const [scheduledTime, setScheduledTime] = useState('09:30');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Fetch admin configured outside destinations
+  useEffect(() => {
+    let isMounted = true;
+    const loadOutsideDestinations = async () => {
+      try {
+        const res = await apiRequest('/customer/outside-destinations', 'GET', null, token);
+        if (isMounted && res.data && Array.isArray(res.data) && res.data.length > 0) {
+          setAdminOutsideStops(res.data);
+        }
+      } catch (err) {
+        console.warn('Could not load outside destinations', err);
+      }
+    };
+    loadOutsideDestinations();
+    return () => { isMounted = false; };
+  }, [token]);
+
+  // Match destination with pre-approved fare
+  useEffect(() => {
+    if (!destination || !destination.trim()) {
+      setMatchedFare(null);
+      return;
+    }
+    const dLower = destination.trim().toLowerCase();
+    const listToSearch = adminOutsideStops.length > 0 ? adminOutsideStops : QUICK_PICK_DESTS;
+    const matched = listToSearch.find(s => 
+      s.name.toLowerCase() === dLower ||
+      dLower.includes(s.name.toLowerCase()) ||
+      s.name.toLowerCase().includes(dLower)
+    );
+    if (matched) {
+      setMatchedFare(parseFloat(matched.fare_amount || matched.fare));
+      if (!destinationCoords && (matched.lat || matched.latitude)) {
+        setDestinationCoords({
+          lat: parseFloat(matched.lat || matched.latitude),
+          lng: parseFloat(matched.lng || matched.longitude)
+        });
+      }
+    } else {
+      setMatchedFare(null);
+    }
+  }, [destination, adminOutsideStops]);
 
   const cycleGate = () => {
     const nextIdx = (gateIndex + 1) % GATES.length;
@@ -150,9 +197,16 @@ export function OutsideForm({
 
       {/* STEP 2: Drop Destination */}
       <div className="flex flex-col gap-2">
-        <label className="font-label-md uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5 font-bold">
-          <span className="w-2.5 h-2.5 rounded-full bg-primary" />
-          Drop Destination
+        <label className="font-label-md uppercase tracking-wider text-on-surface-variant flex items-center justify-between font-bold">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-primary" />
+            Drop Destination
+          </span>
+          {matchedFare && (
+            <span className="text-emerald-700 font-bold text-xs bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-300">
+              Approved Fare: ₹{matchedFare.toFixed(2)}
+            </span>
+          )}
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-primary">
@@ -176,6 +230,7 @@ export function OutsideForm({
               onClick={() => {
                 setDestination('');
                 setDestinationCoords(null);
+                setMatchedFare(null);
               }}
             >
               <X size={18} />
@@ -183,23 +238,70 @@ export function OutsideForm({
           )}
         </div>
 
-        {/* Quick-Pick Chips */}
+        {/* Display Pre-Approved Price Notification */}
+        {matchedFare && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '10px 14px',
+            background: 'rgba(4, 120, 87, 0.08)',
+            border: '1px solid rgba(4, 120, 87, 0.25)',
+            borderRadius: '10px',
+            marginTop: '4px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <CheckCircle2 size={16} color="#047857" />
+              <span style={{ fontSize: '13px', fontWeight: 700, color: '#065F46' }}>
+                Approved Outside Route · Instant Dispatch
+              </span>
+            </div>
+            <span style={{ fontSize: '15px', fontWeight: 800, color: '#047857' }}>
+              ₹{matchedFare.toFixed(2)}
+            </span>
+          </div>
+        )}
+
+        {/* Quick-Pick Outside Stops (Loaded from Admin Settings) */}
         <div className="flex flex-col gap-1.5 mt-1">
-          <span className="font-label-sm text-outline font-semibold uppercase tracking-wider text-[11px]">
-            Popular destinations outside campus
+          <span className="font-label-sm text-outline font-semibold uppercase tracking-wider text-[11px] flex items-center gap-1">
+            <Tag size={12} color="#EA580C" />
+            Configured Outside Destinations &amp; Approved Fares
           </span>
           <div className="flex flex-wrap gap-2 pt-1">
-            {QUICK_PICK_DESTS.map((item) => {
-              const isSelected = destination === item.name;
+            {(adminOutsideStops.length > 0 ? adminOutsideStops : QUICK_PICK_DESTS).map((item) => {
+              const itemName = item.name || item.destination_stop;
+              const isSelected = destination.toLowerCase().includes(itemName.toLowerCase()) || itemName.toLowerCase().includes(destination.toLowerCase());
+              const fareVal = item.fare_amount || item.fare;
+              const itemIcon = item.icon || (itemName.toLowerCase().includes('beach') ? '🌊' : itemName.toLowerCase().includes('station') ? '🚂' : itemName.toLowerCase().includes('hospital') ? '🏥' : itemName.toLowerCase().includes('auroville') ? '🌳' : '🏛️');
+
               return (
                 <button
-                  key={item.name}
+                  key={itemName}
                   type="button"
                   className={`ps-quick-chip ${isSelected ? 'is-selected' : ''}`}
-                  onClick={() => handleSelectQuickPick(item)}
+                  onClick={() => handleSelectQuickPick({
+                    name: itemName,
+                    lat: parseFloat(item.lat || item.destination_latitude || 11.9338),
+                    lng: parseFloat(item.lng || item.destination_longitude || 79.8359),
+                    fare: fareVal
+                  })}
                 >
-                  <span>{item.icon}</span>
-                  <span>{item.name}</span>
+                  <span>{itemIcon}</span>
+                  <span>{itemName}</span>
+                  {fareVal && (
+                    <span style={{
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      color: isSelected ? '#FFFFFF' : '#047857',
+                      background: isSelected ? 'rgba(255,255,255,0.25)' : 'rgba(4,120,87,0.12)',
+                      padding: '1px 6px',
+                      borderRadius: '4px',
+                      marginLeft: '4px'
+                    }}>
+                      ₹{parseFloat(fareVal).toFixed(0)}
+                    </span>
+                  )}
                 </button>
               );
             })}

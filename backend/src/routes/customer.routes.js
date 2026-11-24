@@ -14,6 +14,7 @@ router.get('/rides/check-availability', CustomerController.checkPreferenceAvaila
 router.post('/rides', CustomerController.requestRide);
 router.post('/outside-rides', CustomerController.requestRide);
 router.get('/outside-rides', CustomerController.getMyRides);
+router.get('/outside-destinations', CustomerController.getOutsideDestinations);
 router.get('/pending-penalty', CustomerController.getPendingPenalty);
 router.post('/penalties/:id/claim-paid', CustomerController.claimPenaltyPaid);
 router.get('/flash-free-ride/active', CustomerController.getActiveFlashFreeRide);
