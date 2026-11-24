@@ -59,13 +59,49 @@ const FareModel = {
   },
 
   async getOutsideDestinations() {
-    return db.query(`
-      SELECT id, destination_stop as name, destination_latitude as lat, destination_longitude as lng,
-             pickup_stop, fare_amount, distance_km
+    const rows = await db.query(`
+      SELECT id, pickup_stop, destination_stop, destination_latitude as lat, destination_longitude as lng,
+             fare_amount, distance_km
       FROM route_fares 
       WHERE is_outside = 1 AND is_active = 1
-      ORDER BY fare_amount ASC, destination_stop ASC
+      ORDER BY fare_amount ASC, id ASC
     `);
+
+    const campusKeywords = ['gate', 'hostel', 'sjc', 'library', 'campus', 'entrance', 'outpost'];
+    const destinationsMap = new Map();
+
+    for (const r of rows) {
+      const destLower = (r.destination_stop || '').toLowerCase();
+      const pickLower = (r.pickup_stop || '').toLowerCase();
+
+      const destIsCampus = campusKeywords.some(k => destLower.includes(k));
+      const pickIsCampus = campusKeywords.some(k => pickLower.includes(k));
+
+      let outsideName = r.destination_stop;
+      let outsideLat = r.lat;
+      let outsideLng = r.lng;
+
+      if (destIsCampus && !pickIsCampus) {
+        outsideName = r.pickup_stop;
+      } else if (!destIsCampus) {
+        outsideName = r.destination_stop;
+      }
+
+      if (outsideName && !destinationsMap.has(outsideName.toLowerCase())) {
+        destinationsMap.set(outsideName.toLowerCase(), {
+          id: r.id,
+          name: outsideName,
+          pickup_stop: r.pickup_stop,
+          destination_stop: r.destination_stop,
+          lat: outsideLat,
+          lng: outsideLng,
+          fare_amount: parseFloat(r.fare_amount),
+          distance_km: r.distance_km
+        });
+      }
+    }
+
+    return Array.from(destinationsMap.values());
   },
 
   async findRouteFare(pickupStop, destinationStop) {

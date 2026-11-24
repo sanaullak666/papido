@@ -694,28 +694,8 @@ async function ensureDatabaseSchemaMigrations(targetPool) {
         VALUES (?, ?, ?, ?, 0, 1)
       `, [r.pickup, r.dest, r.fare, r.dist]);
     }
-
-    const defaultOutsideRoutes = [
-      { pickup: 'Campus Gate 1 (Main Entrance)', dest: 'Rock Beach / Promenade', fare: 165.00, dist: 13.8, pLat: 12.0228681, pLng: 79.8509415, dLat: 11.9338, dLng: 79.8359 },
-      { pickup: 'Campus Gate 1 (Main Entrance)', dest: 'Puducherry Railway Station', fare: 175.00, dist: 14.5, pLat: 12.0228681, pLng: 79.8509415, dLat: 11.9288, dLng: 79.8286 },
-      { pickup: 'Campus Gate 1 (Main Entrance)', dest: 'JIPMER Hospital', fare: 135.00, dist: 11.2, pLat: 12.0228681, pLng: 79.8509415, dLat: 11.9546, dLng: 79.7997 },
-      { pickup: 'Campus Gate 1 (Main Entrance)', dest: 'Auroville Visitors Centre', fare: 100.00, dist: 8.4, pLat: 12.0228681, pLng: 79.8509415, dLat: 12.0069, dLng: 79.8105 },
-      { pickup: 'Campus Gate 1 (Main Entrance)', dest: 'ECR Bus Stop', fare: 50.00, dist: 4.2, pLat: 12.0228681, pLng: 79.8509415, dLat: 12.0235, dLng: 79.8512 },
-      { pickup: 'Campus Gate 1 (Main Entrance)', dest: 'White Town (Heritage)', fare: 165.00, dist: 13.8, pLat: 12.0228681, pLng: 79.8509415, dLat: 11.9333, dLng: 79.8333 }
-    ];
-
-    for (const r of defaultOutsideRoutes) {
-      // 1. Campus -> Outside
-      await targetPool.query(`
-        INSERT IGNORE INTO route_fares (pickup_stop, destination_stop, fare_amount, distance_km, is_outside, pickup_latitude, pickup_longitude, destination_latitude, destination_longitude, is_active)
-        VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, 1)
-      `, [r.pickup, r.dest, r.fare, r.dist, r.pLat, r.pLng, r.dLat, r.dLng]);
-      // 2. Vice-versa: Outside -> Campus
-      await targetPool.query(`
-        INSERT IGNORE INTO route_fares (pickup_stop, destination_stop, fare_amount, distance_km, is_outside, pickup_latitude, pickup_longitude, destination_latitude, destination_longitude, is_active)
-        VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, 1)
-      `, [r.dest, r.pickup, r.fare, r.dist, r.dLat, r.dLng, r.pLat, r.pLng]);
-    }
+    // Outside routes are 100% manually added and priced by the Admin in Admin Panel.
+    // No automatic default outside routes are seeded.
   } catch (_) {}
 }
 

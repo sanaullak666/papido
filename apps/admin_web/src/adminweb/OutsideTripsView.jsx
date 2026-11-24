@@ -33,7 +33,9 @@ import {
   Plus,
   Trash2,
   Tag,
-  Check
+  Check,
+  Edit2,
+  Save
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
@@ -90,6 +92,7 @@ export function OutsideTripsView() {
   const [loadingRoutes, setLoadingRoutes] = useState(false);
   const [showAddRoute, setShowAddRoute] = useState(false);
   const [savingRoute, setSavingRoute] = useState(false);
+  const [editingRoute, setEditingRoute] = useState(null);
   const [newOutsideRoute, setNewOutsideRoute] = useState({
     pickupStop: 'Campus Gate 1 (Main Entrance)',
     destinationStop: '',
@@ -194,6 +197,23 @@ export function OutsideTripsView() {
       await fetchOutsideRoutes();
     } catch (err) {
       setError(err.message || 'Failed to delete outside route.');
+    }
+  };
+
+  const handleSaveEditRoute = async (routeData) => {
+    try {
+      await apiRequest('/admin/outside-route-fares', 'POST', {
+        id: routeData.id,
+        fareAmount: parseFloat(routeData.fare_amount),
+        distanceKm: parseFloat(routeData.distance_km || 12.0),
+        isActive: routeData.is_active !== undefined ? routeData.is_active : 1
+      });
+      setSuccessMsg('Outside route fare and distance updated successfully!');
+      setTimeout(() => setSuccessMsg(null), 4000);
+      setEditingRoute(null);
+      await fetchOutsideRoutes();
+    } catch (err) {
+      setError(err.message || 'Failed to update route.');
     }
   };
 
@@ -629,42 +649,105 @@ export function OutsideTripsView() {
                   </tr>
                 </thead>
                 <tbody>
-                  {outsideRoutes.map((r) => (
-                    <tr key={r.id}>
-                      <td>
-                        <div style={{ fontWeight: 700, color: '#1C1917' }}>{r.pickup_stop}</div>
-                        <div style={{ fontSize: '11px', color: '#78716C', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <ArrowRight size={11} color="#EA580C" /> {r.destination_stop}
-                        </div>
-                      </td>
-                      <td>
-                        <strong style={{ color: '#047857', fontSize: '15px' }}>
-                          ₹{parseFloat(r.fare_amount).toFixed(2)}
-                        </strong>
-                      </td>
-                      <td style={{ color: '#78716C', fontWeight: 600 }}>
-                        {r.distance_km} km
-                      </td>
-                      <td>
-                        <span className="ot-badge-viceversa-pill">
-                          ⇄ Two-Way Auto
-                        </span>
-                      </td>
-                      <td>
-                        <StatusBadge status={r.is_active ? 'ACTIVE' : 'INACTIVE'} size="sm" />
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        <button
-                          type="button"
-                          className="ot-action-delete-btn"
-                          title="Delete route and vice-versa reverse pair"
-                          onClick={() => handleDeleteOutsideRoute(r.id)}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {outsideRoutes.map((r) => {
+                    const isEditing = editingRoute?.id === r.id;
+                    const current = isEditing ? editingRoute : r;
+
+                    return (
+                      <tr key={r.id}>
+                        <td>
+                          <div style={{ fontWeight: 700, color: '#1C1917' }}>{r.pickup_stop}</div>
+                          <div style={{ fontSize: '11px', color: '#78716C', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <ArrowRight size={11} color="#EA580C" /> {r.destination_stop}
+                          </div>
+                        </td>
+                        <td>
+                          {isEditing ? (
+                            <div className="ot-inline-fare">
+                              <span>₹</span>
+                              <input
+                                type="number"
+                                step="1"
+                                className="ot-inline-input ot-inline-input--fare"
+                                value={current.fare_amount}
+                                onChange={(e) => setEditingRoute({ ...editingRoute, fare_amount: e.target.value })}
+                              />
+                            </div>
+                          ) : (
+                            <strong style={{ color: '#047857', fontSize: '15px' }}>
+                              ₹{parseFloat(r.fare_amount).toFixed(2)}
+                            </strong>
+                          )}
+                        </td>
+                        <td>
+                          {isEditing ? (
+                            <input
+                              type="number"
+                              step="0.1"
+                              className="ot-inline-input"
+                              value={current.distance_km}
+                              onChange={(e) => setEditingRoute({ ...editingRoute, distance_km: e.target.value })}
+                            />
+                          ) : (
+                            <span style={{ color: '#78716C', fontWeight: 600 }}>
+                              {r.distance_km} km
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          <span className="ot-badge-viceversa-pill">
+                            ⇄ Two-Way Auto
+                          </span>
+                        </td>
+                        <td>
+                          <StatusBadge status={r.is_active ? 'ACTIVE' : 'INACTIVE'} size="sm" />
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <div className="ot-row-actions">
+                            {isEditing ? (
+                              <>
+                                <button
+                                  type="button"
+                                  className="ot-icon-btn ot-icon-btn--success"
+                                  title="Save route changes"
+                                  onClick={() => handleSaveEditRoute(editingRoute)}
+                                >
+                                  <Save size={13} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="ot-icon-btn"
+                                  title="Cancel edit"
+                                  onClick={() => setEditingRoute(null)}
+                                >
+                                  <X size={13} />
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  className="ot-icon-btn"
+                                  title="Edit fare and distance"
+                                  onClick={() => setEditingRoute({ ...r })}
+                                >
+                                  <Edit2 size={13} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="ot-icon-btn ot-icon-btn--danger"
+                                  title="Delete route and vice-versa reverse pair"
+                                  onClick={() => handleDeleteOutsideRoute(r.id)}
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             )}

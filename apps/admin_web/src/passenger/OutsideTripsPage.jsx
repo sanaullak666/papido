@@ -11,8 +11,8 @@ export function OutsideTripsPage() {
   const { token } = useAuth();
   const { setActiveRide, setStatusMessage, pendingPenalty, fetchScheduledRides } = usePassenger();
 
-  const [destination, setDestination] = useState('Rock Beach / Promenade');
-  const [destinationCoords, setDestinationCoords] = useState({ lat: 11.9338, lng: 79.8359 });
+  const [destination, setDestination] = useState('');
+  const [destinationCoords, setDestinationCoords] = useState(null);
 
   const handleSelectRecentOrQuick = (destName, coords) => {
     setDestination(destName);

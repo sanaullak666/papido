@@ -349,6 +349,69 @@
   background: #DC2626;
   color: #FFFFFF;
 }
+
+/* Inline Route Editing */
+.ot-inline-input {
+  width: 70px;
+  padding: 4px 8px;
+  border: 1.5px solid #EA580C;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  outline: none;
+  background: #FFF;
+}
+.ot-inline-input--fare {
+  width: 85px;
+}
+.ot-inline-fare {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  color: #047857;
+}
+.ot-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.ot-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #E7E5E4;
+  background: #FFFFFF;
+  color: #78716C;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+.ot-icon-btn:hover {
+  background: #F5F5F4;
+  color: #1C1917;
+}
+.ot-icon-btn--success {
+  border-color: #A7F3D0;
+  background: #ECFDF5;
+  color: #047857;
+}
+.ot-icon-btn--success:hover {
+  background: #D1FAE5;
+  color: #065F46;
+}
+.ot-icon-btn--danger {
+  border-color: #FECACA;
+  background: #FEF2F2;
+  color: #DC2626;
+}
+.ot-icon-btn--danger:hover {
+  background: #FEE2E2;
+  color: #B91C1C;
+}
 .ot-tab-btn:focus-visible {
   outline: 2px solid #EA580C;
   outline-offset: 2px;

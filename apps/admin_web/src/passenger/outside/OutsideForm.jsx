@@ -16,15 +16,6 @@ const ALL_CAMPUS_GATES = [
   { name: 'Central Library', lat: 12.0245, lng: 79.8532 }
 ];
 
-const QUICK_PICK_DESTS = [
-  { name: 'White Town (Heritage)', lat: 11.9333, lng: 79.8333, fare: 165, icon: '🏛️' },
-  { name: 'Rock Beach / Promenade', lat: 11.9338, lng: 79.8359, fare: 165, icon: '🌊' },
-  { name: 'JIPMER Hospital', lat: 11.9546, lng: 79.7997, fare: 135, icon: '🏥' },
-  { name: 'Puducherry Railway Station', lat: 11.9288, lng: 79.8286, fare: 175, icon: '🚂' },
-  { name: 'Auroville Visitors Centre', lat: 12.0069, lng: 79.8105, fare: 100, icon: '🌳' },
-  { name: 'ECR Bus Stop', lat: 12.0235, lng: 79.8512, fare: 50, icon: '🚌' }
-];
-
 const GATES = [
   'Campus Gate 1 (Main Entrance)',
   'Campus Gate 2 (Beach Road Gate / ECR)',
@@ -108,14 +99,14 @@ export function OutsideForm({
   // Combined stops for suggestions: Campus Gates + Admin Configured Outside Stops
   const allKnownStops = [
     ...ALL_CAMPUS_GATES.map(g => ({ name: g.name, lat: g.lat, lng: g.lng, type: 'CAMPUS' })),
-    ...(adminOutsideStops.length > 0 ? adminOutsideStops.map(s => ({
+    ...adminOutsideStops.map(s => ({
       name: s.name,
       lat: parseFloat(s.lat || 11.9338),
       lng: parseFloat(s.lng || 79.8359),
       fare: parseFloat(s.fare_amount),
       dist: s.distance_km,
       type: 'OUTSIDE'
-    })) : QUICK_PICK_DESTS.map(q => ({ ...q, type: 'OUTSIDE' })))
+    }))
   ];
 
   const findStopCoords = (name) => {
@@ -126,7 +117,7 @@ export function OutsideForm({
     return null;
   };
 
-  // Match route (pickup <-> destination) with pre-approved fare
+  // Match route (pickup <-> destination) with pre-approved fare strictly from admin configurations
   useEffect(() => {
     if (!pickup || !destination) {
       setMatchedFare(null);
@@ -135,8 +126,7 @@ export function OutsideForm({
     const pLower = pickup.trim().toLowerCase();
     const dLower = destination.trim().toLowerCase();
 
-    const listToSearch = adminOutsideStops.length > 0 ? adminOutsideStops : QUICK_PICK_DESTS;
-    const matched = listToSearch.find(s => {
+    const matched = adminOutsideStops.find(s => {
       const sName = (s.name || s.destination_stop || '').toLowerCase();
       // Forward: pickup is campus, destination is outside spot
       // Reverse: pickup is outside spot, destination is campus
@@ -526,50 +516,63 @@ export function OutsideForm({
           </div>
         )}
 
-        {/* Quick-Pick Outside Stops (Loaded from Admin Settings) */}
+        {/* Quick-Pick Outside Stops (Loaded strictly from Admin configurations) */}
         <div className="flex flex-col gap-1.5 mt-1">
           <span className="font-label-sm text-outline font-semibold uppercase tracking-wider text-[11px] flex items-center gap-1">
             <Tag size={12} color="#EA580C" />
             Configured Outside Destinations &amp; Approved Fares
           </span>
-          <div className="flex flex-wrap gap-2 pt-1">
-            {(adminOutsideStops.length > 0 ? adminOutsideStops : QUICK_PICK_DESTS).map((item) => {
-              const itemName = item.name || item.destination_stop;
-              const isSelected = destination.toLowerCase().includes(itemName.toLowerCase()) || itemName.toLowerCase().includes(destination.toLowerCase());
-              const fareVal = item.fare_amount || item.fare;
-              const itemIcon = item.icon || (itemName.toLowerCase().includes('beach') ? '🌊' : itemName.toLowerCase().includes('station') ? '🚂' : itemName.toLowerCase().includes('hospital') ? '🏥' : itemName.toLowerCase().includes('auroville') ? '🌳' : '🏛️');
+          {adminOutsideStops.length === 0 ? (
+            <div style={{
+              padding: '10px 14px',
+              borderRadius: '10px',
+              background: 'rgba(120, 113, 108, 0.08)',
+              fontSize: '12px',
+              color: '#78716C',
+              fontStyle: 'italic'
+            }}>
+              No outside routes added by admin yet. Admin will configure outside stops and fixed fares.
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2 pt-1">
+              {adminOutsideStops.map((item) => {
+                const itemName = item.name || item.destination_stop;
+                const isSelected = destination.toLowerCase().includes(itemName.toLowerCase()) || itemName.toLowerCase().includes(destination.toLowerCase());
+                const fareVal = item.fare_amount || item.fare;
+                const itemIcon = item.icon || (itemName.toLowerCase().includes('beach') ? '🌊' : itemName.toLowerCase().includes('station') ? '🚂' : itemName.toLowerCase().includes('hospital') ? '🏥' : itemName.toLowerCase().includes('auroville') ? '🌳' : '🏛️');
 
-              return (
-                <button
-                  key={itemName}
-                  type="button"
-                  className={`ps-quick-chip ${isSelected ? 'is-selected' : ''}`}
-                  onClick={() => handleSelectQuickPick({
-                    name: itemName,
-                    lat: parseFloat(item.lat || item.destination_latitude || 11.9338),
-                    lng: parseFloat(item.lng || item.destination_longitude || 79.8359),
-                    fare: fareVal
-                  })}
-                >
-                  <span>{itemIcon}</span>
-                  <span>{itemName}</span>
-                  {fareVal && (
-                    <span style={{
-                      fontSize: '11px',
-                      fontWeight: 800,
-                      color: isSelected ? '#FFFFFF' : '#047857',
-                      background: isSelected ? 'rgba(255,255,255,0.25)' : 'rgba(4,120,87,0.12)',
-                      padding: '1px 6px',
-                      borderRadius: '4px',
-                      marginLeft: '4px'
-                    }}>
-                      ₹{parseFloat(fareVal).toFixed(0)}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+                return (
+                  <button
+                    key={itemName}
+                    type="button"
+                    className={`ps-quick-chip ${isSelected ? 'is-selected' : ''}`}
+                    onClick={() => handleSelectQuickPick({
+                      name: itemName,
+                      lat: parseFloat(item.lat || item.destination_latitude || 11.9338),
+                      lng: parseFloat(item.lng || item.destination_longitude || 79.8359),
+                      fare: fareVal
+                    })}
+                  >
+                    <span>{itemIcon}</span>
+                    <span>{itemName}</span>
+                    {fareVal && (
+                      <span style={{
+                        fontSize: '11px',
+                        fontWeight: 800,
+                        color: isSelected ? '#FFFFFF' : '#047857',
+                        background: isSelected ? 'rgba(255,255,255,0.25)' : 'rgba(4,120,87,0.12)',
+                        padding: '1px 6px',
+                        borderRadius: '4px',
+                        marginLeft: '4px'
+                      }}>
+                        ₹{parseFloat(fareVal).toFixed(0)}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
