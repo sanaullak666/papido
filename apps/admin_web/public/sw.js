@@ -21,8 +21,8 @@ self.addEventListener('push', (event) => {
   const title = data.title || '🔔 PAPIDO RIDE ALERT';
   const options = {
     body: data.body || 'New ride request waiting for acceptance!',
-    icon: '/favicon.ico',
-    badge: '/favicon.ico',
+    icon: '/papidologo.jpeg',
+    badge: '/papidologo.jpeg',
     tag: data.tag || 'papido-ride-alert',
     renotify: true,
     requireInteraction: true,

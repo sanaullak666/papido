@@ -4,12 +4,13 @@ export const getSocketUrl = () => {
     return import.meta.env.VITE_SOCKET_URL;
   }
   if (typeof window !== 'undefined') {
-    // Vercel serverless functions do not support persistent WebSockets; avoid failing polling loops
-    if (window.location.hostname.includes('vercel.app')) {
+    const host = window.location.hostname;
+    // Vercel serverless deployments do not support persistent WebSockets; avoid failing polling/WS loops
+    if (host.includes('vercel.app') || host === 'papido.online' || host === 'www.papido.online') {
       return null;
     }
-    // When accessing from a mobile phone or local network IP, use current origin
-    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    // When accessing from a local network IP, use current origin
+    if (host !== 'localhost' && host !== '127.0.0.1') {
       return window.location.origin;
     }
   }
@@ -145,7 +146,8 @@ export async function uploadFile(file, token = null, maxKb = null) {
   }
 
   const query = maxKb ? `?maxKb=${maxKb}` : '';
-  const res = await fetch(`${BASE_URL}/upload/file${query}`, {
+  const endpoint = storedToken ? '/upload/file' : '/upload/registration-doc';
+  const res = await fetch(`${BASE_URL}${endpoint}${query}`, {
     method: 'POST',
     headers,
     body: formData

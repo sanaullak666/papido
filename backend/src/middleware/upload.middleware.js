@@ -33,19 +33,17 @@ const storage = multer.diskStorage({
   }
 });
 
-// File Filter: Allow Images (JPG, PNG, WEBP) and PDFs up to 1MB
+// File Filter: Allow Images (JPG, PNG, WEBP) and PDFs verified by magic bytes
 const fileFilter = (req, file, cb) => {
   const allowedMimeTypes = [
     'image/jpeg',
     'image/jpg',
     'image/png',
     'image/webp',
-    'image/heic',
-    'image/heif',
     'application/pdf'
   ];
 
-  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.pdf'];
+  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.pdf'];
   const ext = path.extname(file.originalname).toLowerCase();
 
   if (allowedMimeTypes.includes(file.mimetype) && allowedExtensions.includes(ext)) {

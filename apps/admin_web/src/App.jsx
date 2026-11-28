@@ -1,24 +1,33 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useAuth } from './context/AuthContext';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { LandingView } from './shared/LandingView';
 import { LoginView } from './shared/LoginView';
-import { AdminLoginView } from './adminweb/AdminLoginView';
+import { NotFoundView } from './shared/NotFoundView';
 import { PassengerRouter } from './passenger/PassengerRouter';
 import { RiderRouter } from './rider/RiderRouter';
-import { DashboardView } from './adminweb/DashboardView';
-import { OutsideTripsView } from './adminweb/OutsideTripsView';
-import { CustomersView } from './adminweb/CustomersView';
-import { RidersView } from './adminweb/RidersView';
-import { RidesView } from './adminweb/RidesView';
-import { FareSettingsView } from './adminweb/FareSettingsView';
-import { PaymentsView } from './adminweb/PaymentsView';
-import { ReportsView } from './adminweb/ReportsView';
-import { DailySettlementsView } from './adminweb/DailySettlementsView';
-import { CoreRegisterView } from './rider/CoreRegisterView';
-import { CoreTeamView } from './adminweb/CoreTeamView';
-import { ManageRegistrationsView } from './adminweb/ManageRegistrationsView';
+
+// Route-based lazy loading for heavy admin views
+const DashboardView = lazy(() => import('./adminweb/DashboardView').then(m => ({ default: m.DashboardView })));
+const OutsideTripsView = lazy(() => import('./adminweb/OutsideTripsView').then(m => ({ default: m.OutsideTripsView })));
+const CustomersView = lazy(() => import('./adminweb/CustomersView').then(m => ({ default: m.CustomersView })));
+const RidersView = lazy(() => import('./adminweb/RidersView').then(m => ({ default: m.RidersView })));
+const RidesView = lazy(() => import('./adminweb/RidesView').then(m => ({ default: m.RidesView })));
+const FareSettingsView = lazy(() => import('./adminweb/FareSettingsView').then(m => ({ default: m.FareSettingsView })));
+const PaymentsView = lazy(() => import('./adminweb/PaymentsView').then(m => ({ default: m.PaymentsView })));
+const ReportsView = lazy(() => import('./adminweb/ReportsView').then(m => ({ default: m.ReportsView })));
+const DailySettlementsView = lazy(() => import('./adminweb/DailySettlementsView').then(m => ({ default: m.DailySettlementsView })));
+const CoreTeamView = lazy(() => import('./adminweb/CoreTeamView').then(m => ({ default: m.CoreTeamView })));
+const ManageRegistrationsView = lazy(() => import('./adminweb/ManageRegistrationsView').then(m => ({ default: m.ManageRegistrationsView })));
+const CoreRegisterView = lazy(() => import('./rider/CoreRegisterView').then(m => ({ default: m.CoreRegisterView })));
+const AdminLoginView = lazy(() => import('./adminweb/AdminLoginView').then(m => ({ default: m.AdminLoginView })));
+
+const ViewLoader = () => (
+  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px', color: '#10b981' }}>
+    <div style={{ width: '32px', height: '32px', border: '3px solid rgba(16,185,129,0.2)', borderTopColor: '#10b981', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+  </div>
+);
 import { useSocket } from './context/SocketContext';
 import { alertManager } from './utils/alertManager';
 import { apiRequest } from './api';
@@ -284,9 +293,11 @@ export function App() {
   // ============================================================
   if (currentPath === '/register/core' || currentPath.startsWith('/register/core') || currentPath === '/core-register') {
     return (
-      <CoreRegisterView
-        onGoToLogin={() => navigateTo('/login')}
-      />
+      <Suspense fallback={<div style={{ minHeight: '100vh', background: '#090d16' }} />}>
+        <CoreRegisterView
+          onGoToLogin={() => navigateTo('/login')}
+        />
+      </Suspense>
     );
   }
 
@@ -301,10 +312,12 @@ export function App() {
       return null;
     }
     return (
-      <AdminLoginView
-        onGoToUserPortal={() => navigateTo('/login')}
-        onLoginSuccess={() => navigateTo('/admin/dashboard')}
-      />
+      <Suspense fallback={<div style={{ minHeight: '100vh', background: '#090d16' }} />}>
+        <AdminLoginView
+          onGoToUserPortal={() => navigateTo('/login')}
+          onLoginSuccess={() => navigateTo('/admin/dashboard')}
+        />
+      </Suspense>
     );
   }
 
@@ -316,52 +329,11 @@ export function App() {
   if (currentPath.startsWith('/admin')) {
     if (!adminUser) {
       return (
-        <div style={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: '#090d16',
-          color: '#f8fafc',
-          flexDirection: 'column',
-          padding: '24px',
-          textAlign: 'center',
-          fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-        }}>
-          <div style={{
-            fontSize: '76px',
-            fontWeight: '900',
-            lineHeight: '1',
-            marginBottom: '16px',
-            background: 'linear-gradient(135deg, #10b981, #059669)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent'
-          }}>
-            404
-          </div>
-          <h1 style={{ fontSize: '24px', fontWeight: '700', margin: '0 0 8px', color: '#f1f5f9' }}>
-            Page Not Found
-          </h1>
-          <p style={{ fontSize: '15px', color: '#94a3b8', maxWidth: '420px', margin: '0 0 28px', lineHeight: '1.6' }}>
-            The page you are looking for doesn't exist, has been removed, or is not accessible.
-          </p>
-          <button
-            onClick={() => navigateTo('/')}
-            style={{
-              background: '#10b981',
-              color: '#064e3b',
-              border: 'none',
-              padding: '12px 28px',
-              borderRadius: '12px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              fontSize: '15px',
-              boxShadow: '0 4px 14px rgba(16, 185, 129, 0.3)'
-            }}
-          >
-            Go to Home
-          </button>
-        </div>
+        <NotFoundView
+          onGoHome={() => navigateTo('/')}
+          user={user}
+          adminUser={adminUser}
+        />
       );
     }
 
@@ -430,17 +402,19 @@ export function App() {
           />
 
           <div className="content-body" key={refreshKey}>
-            {currentTab === 'dashboard' && <DashboardView />}
-            {currentTab === 'daily-settlements' && <DailySettlementsView />}
-            {currentTab === 'outside-trips' && <OutsideTripsView />}
-            {currentTab === 'core-team' && <CoreTeamView />}
-            {currentTab === 'customers' && <CustomersView />}
-            {currentTab === 'registrations' && <ManageRegistrationsView />}
-            {currentTab === 'riders' && <RidersView />}
-            {currentTab === 'rides' && <RidesView />}
-            {currentTab === 'fares' && <FareSettingsView />}
-            {currentTab === 'payments' && <PaymentsView />}
-            {currentTab === 'reports' && <ReportsView />}
+            <Suspense fallback={<ViewLoader />}>
+              {currentTab === 'dashboard' && <DashboardView />}
+              {currentTab === 'daily-settlements' && <DailySettlementsView />}
+              {currentTab === 'outside-trips' && <OutsideTripsView />}
+              {currentTab === 'core-team' && <CoreTeamView />}
+              {currentTab === 'customers' && <CustomersView />}
+              {currentTab === 'registrations' && <ManageRegistrationsView />}
+              {currentTab === 'riders' && <RidersView />}
+              {currentTab === 'rides' && <RidesView />}
+              {currentTab === 'fares' && <FareSettingsView />}
+              {currentTab === 'payments' && <PaymentsView />}
+              {currentTab === 'reports' && <ReportsView />}
+            </Suspense>
           </div>
         </main>
       </div>
@@ -516,7 +490,17 @@ export function App() {
           </div>
         );
       }
-      return <PassengerRouter />;
+      if (isPassengerRoute(currentPath) || currentPath === '/' || currentPath === '/welcome') {
+        return <PassengerRouter />;
+      }
+      return (
+        <NotFoundView
+          onGoHome={() => navigateTo('/')}
+          user={user}
+          adminUser={adminUser}
+          onGoDashboard={() => navigateTo('/passenger')}
+        />
+      );
     }
 
     // 3b. Strict Role Enforcement: Driver (RIDER)
@@ -571,7 +555,17 @@ export function App() {
           </div>
         );
       }
-      return <RiderRouter />;
+      if (isDriverRoute(currentPath) || currentPath === '/' || currentPath === '/welcome') {
+        return <RiderRouter />;
+      }
+      return (
+        <NotFoundView
+          onGoHome={() => navigateTo('/')}
+          user={user}
+          adminUser={adminUser}
+          onGoDashboard={() => navigateTo('/driver/radar')}
+        />
+      );
     }
 
     // Fallback: If user role is unrecognized, terminate session immediately
@@ -580,18 +574,36 @@ export function App() {
   }
 
   // ============================================================
-  // 4. AUTHENTICATION (Not Logged In)
+  // 4. AUTHENTICATION & UNMATCHED ROUTES (Not Logged In)
   // ============================================================
+  const cleanUnauth = (currentPath || '').toLowerCase().replace(/\/+$/, '') || '/';
+  if (
+    cleanUnauth === '/login' ||
+    cleanUnauth === '/register' ||
+    cleanUnauth === '/signup' ||
+    isPassengerRoute(cleanUnauth) ||
+    isDriverRoute(cleanUnauth)
+  ) {
+    return (
+      <LoginView
+        onGoToHome={() => navigateTo('/')}
+        onLoginSuccess={(loggedInUser) => {
+          const dest = loggedInUser?.role === 'RIDER' ? '/rider' : (loggedInUser?.role === 'ADMIN' ? '/admin/dashboard' : '/passenger');
+          if (window.location.pathname !== dest) {
+            window.history.replaceState({}, '', dest);
+          }
+          setCurrentPath(dest);
+        }}
+      />
+    );
+  }
+
+  // Any unmatched or non-existent path renders a clean 404 screen
   return (
-    <LoginView
-      onGoToHome={() => navigateTo('/')}
-      onLoginSuccess={(loggedInUser) => {
-        const dest = loggedInUser?.role === 'RIDER' ? '/rider' : (loggedInUser?.role === 'ADMIN' ? '/admin/dashboard' : '/passenger');
-        if (window.location.pathname !== dest) {
-          window.history.replaceState({}, '', dest);
-        }
-        setCurrentPath(dest);
-      }}
+    <NotFoundView
+      onGoHome={() => navigateTo('/')}
+      user={user}
+      adminUser={adminUser}
     />
   );
 }

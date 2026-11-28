@@ -11,7 +11,7 @@
   --pap-orange-gradient: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
   --pap-card: #FFFFFF; --pap-cream: #FFFFFF; --pap-cream-tint: #F1ECE4;
   --pap-border: #E7E0D5; --pap-border-soft: #F0EAE0;
-  --pap-ink: #0C0A09; --pap-ink-soft: #57534E; --pap-muted: #8B8377;
+  --pap-ink: #0C0A09; --pap-ink-soft: #57534E; --pap-muted: #5F584F;
   --r-sm: 10px; --r-md: 14px; --r-lg: 18px; --r-xl: 28px;
   --shadow-card: 0 1px 2px rgba(12,10,9,.04), 0 24px 60px -28px rgba(12,10,9,.28);
   --shadow-btn: 0 12px 28px -10px rgba(234,88,12,.7);
@@ -34,12 +34,13 @@
 }
 .papido-auth-page.theme-modern-split .papido-hero-logo { width: 46px; height: 46px; border-radius: 14px; object-fit: cover; box-shadow: 0 10px 24px -8px rgba(234,88,12,.55); }
 .papido-auth-page.theme-modern-split .papido-hero-brand-name { font-family: 'Outfit', sans-serif; font-weight: 800; letter-spacing: .05em; font-size: 22px; color: #0C0A09; }
-.papido-auth-page.theme-modern-split .papido-hero-brand-sub { color: #8B8377; font-weight: 500; }
-.papido-auth-page.theme-modern-split .papido-card-head h2 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 26px; letter-spacing: -0.03em; color: #0C0A09; line-height: 1.15; }
-.papido-auth-page.theme-modern-split .papido-card-head p { color: #6B645D; font-size: 14px; line-height: 1.55; }
+.papido-auth-page.theme-modern-split .papido-hero-brand-sub { color: #5F584F; font-weight: 500; }
+.papido-auth-page.theme-modern-split .papido-card-head h1,
+.papido-auth-page.theme-modern-split .papido-card-head h2 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 26px; letter-spacing: -0.03em; color: #0C0A09; line-height: 1.15; margin: 0; }
+.papido-auth-page.theme-modern-split .papido-card-head p { color: #57534E; font-size: 14px; line-height: 1.55; }
 
 /* ---------- 3. Role switch (ink pill) ---------- */
-.papido-auth-page.theme-modern-split .papido-role-label { color: #8B8377; letter-spacing: .1em; }
+.papido-auth-page.theme-modern-split .papido-role-label { color: #5F584F; letter-spacing: .1em; }
 .papido-auth-page.theme-modern-split .papido-role-track { background: #F1ECE4; border: 1px solid #ECE7DF; border-radius: 999px; }
 .papido-auth-page.theme-modern-split .papido-role-slider { background: #0C0A09; border-radius: 999px; box-shadow: 0 8px 18px -8px rgba(12,10,9,.6); }
 .papido-auth-page.theme-modern-split .papido-role-tab { border-radius: 999px; color: #57534E; }
@@ -67,19 +68,19 @@
 
 /* ---------- 5. Buttons ---------- */
 .papido-auth-page.theme-modern-split .papido-primary-btn {
-  border-radius: 999px; min-height: 52px; background: #EA580C; background-image: none; font-weight: 700; font-size: 15px;
-  box-shadow: 0 12px 28px -10px rgba(234,88,12,.7); transition: transform .2s, background .2s, box-shadow .2s;
+  border-radius: 999px; min-height: 52px; background: #C2410C; background-image: none; font-weight: 700; font-size: 15px;
+  box-shadow: 0 12px 28px -10px rgba(194,65,12,.7); transition: transform .2s, background .2s, box-shadow .2s;
 }
-.papido-auth-page.theme-modern-split .papido-primary-btn:hover:not(:disabled) { background: #C2410C; transform: translateY(-2px); }
+.papido-auth-page.theme-modern-split .papido-primary-btn:hover:not(:disabled) { background: #9A3412; transform: translateY(-2px); }
 .papido-auth-page.theme-modern-split .papido-primary-btn:disabled { background: #F5B791; box-shadow: none; }
 .papido-auth-page.theme-modern-split .papido-ghost-btn { border-radius: 999px; background: #fff; border: 1px solid #E7E0D5; color: #1C1917; font-weight: 700; }
 .papido-auth-page.theme-modern-split .papido-ghost-btn:hover { border-color: #FDBA74; background: #FFF1E6; color: #C2410C; }
-.papido-auth-page.theme-modern-split .papido-text-link { color: #EA580C; }
+.papido-auth-page.theme-modern-split .papido-text-link { color: #C2410C; }
 .papido-auth-page.theme-modern-split .papido-subtle-btn { color: #57534E; }
-.papido-auth-page.theme-modern-split .papido-subtle-btn strong { color: #EA580C; }
+.papido-auth-page.theme-modern-split .papido-subtle-btn strong { color: #C2410C; }
 .papido-auth-page.theme-modern-split .pap-back-btn { color: #57534E; font-weight: 600; }
-.papido-auth-page.theme-modern-split .pap-back-btn:hover { color: #EA580C; }
-.papido-auth-page.theme-modern-split .papido-auth-divider span { color: #A39A90; }
+.papido-auth-page.theme-modern-split .pap-back-btn:hover { color: #C2410C; }
+.papido-auth-page.theme-modern-split .papido-auth-divider span { color: #5F584F; }
 .papido-auth-page.theme-modern-split .papido-duo-btn { border-radius: 999px; background: #fff; border: 1px solid #E7E0D5; }
 .papido-auth-page.theme-modern-split .papido-duo-btn.is-active { background: #0C0A09; border-color: #0C0A09; color: #fff; }
 .papido-auth-page.theme-modern-split .papido-pwd-pill { border-radius: 999px; }

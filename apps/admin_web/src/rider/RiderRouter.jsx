@@ -45,10 +45,6 @@ export function RiderRouter() {
     }
   }, [user, logout]);
 
-  if (user && user.role !== 'RIDER') {
-    return null;
-  }
-
   useEffect(() => {
     const handlePopState = () => {
       setCurrentTab(getRiderTabFromPath(window.location.pathname));
@@ -65,6 +61,10 @@ export function RiderRouter() {
       window.history.replaceState({}, '', TAB_TO_PATH[tab] || '/driver/radar');
     }
   }, []);
+
+  if (user && user.role !== 'RIDER') {
+    return null;
+  }
 
   const handleTabChange = (tabId) => {
     setCurrentTab(tabId);

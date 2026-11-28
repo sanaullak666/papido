@@ -171,8 +171,8 @@ const AuthService = {
   async login({ email, password, expectedRole = null }) {
     const cleanIdentifier = (email || '').trim().toLowerCase();
     let user = await UserModel.findByEmail(cleanIdentifier);
-    if (!user && expectedRole === ROLES.ADMIN && (cleanIdentifier === 'admin' || cleanIdentifier === 'pupapido' || cleanIdentifier === 'master' || cleanIdentifier === 'admin@papido.com')) {
-      user = await UserModel.findByEmail('pupapido@gmail.com');
+    if (!user && expectedRole === ROLES.ADMIN && env.MASTER_ADMIN?.EMAIL && (cleanIdentifier === 'admin' || cleanIdentifier === 'master')) {
+      user = await UserModel.findByEmail(env.MASTER_ADMIN.EMAIL);
     }
     if (!user) {
       const cleanPhone = cleanIdentifier.replace(/\D/g, '');
@@ -294,8 +294,13 @@ const AuthService = {
     if (!currentPassword || !newPassword) {
       throw new Error('Current password and new password are required.');
     }
-    if (newPassword.length < 6) {
-      throw new Error('New password must be at least 6 characters long.');
+    if (
+      newPassword.length < 8 ||
+      !/[A-Z]/.test(newPassword) ||
+      !/[0-9]/.test(newPassword) ||
+      !/[^A-Za-z0-9]/.test(newPassword)
+    ) {
+      throw new Error('New password must be at least 8 characters and include an uppercase letter, a number, and a special character.');
     }
 
     const fullUser = await db.queryOne('SELECT * FROM users WHERE id = ?', [userId]);

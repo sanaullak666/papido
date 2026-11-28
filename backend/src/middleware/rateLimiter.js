@@ -2,13 +2,7 @@ const rateLimit = require('express-rate-limit');
 const env = require('../config/environment');
 
 const isLocalOrTest = (req) => {
-  return (
-    process.env.NODE_ENV === 'test' ||
-    req.ip === '127.0.0.1' ||
-    req.ip === '::1' ||
-    req.ip === '::ffff:127.0.0.1' ||
-    req.hostname === 'localhost'
-  );
+  return process.env.NODE_ENV === 'test';
 };
 
 const generalLimiter = rateLimit({

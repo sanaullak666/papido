@@ -31,10 +31,6 @@ export function PassengerRouter() {
     }
   }, [user, logout]);
 
-  if (user && user.role !== 'CUSTOMER') {
-    return null;
-  }
-
   useEffect(() => {
     const handlePopState = () => {
       setCurrentPath(window.location.pathname);
@@ -42,6 +38,10 @@ export function PassengerRouter() {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+
+  if (user && user.role !== 'CUSTOMER') {
+    return null;
+  }
 
   return (
     <PassengerLayout currentTab={currentTab}>

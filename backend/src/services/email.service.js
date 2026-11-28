@@ -1,8 +1,18 @@
+const crypto = require('crypto');
 const db = require('../config/database');
 const UserModel = require('../models/user.model');
 const bcrypt = require('bcryptjs');
 const logger = require('../utils/logger');
 const env = require('../config/environment');
+
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 class EmailService {
   /**
@@ -15,8 +25,8 @@ class EmailService {
       throw new Error('No account found with this email address.');
     }
 
-    // Generate secure 6-digit numeric OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    // Generate cryptographically secure 6-digit numeric OTP
+    const otp = crypto.randomInt(100000, 1000000).toString();
 
     // Invalidate previous unused OTPs for this email
     await db.query('UPDATE password_resets SET used = 1 WHERE email = ? AND used = 0', [cleanEmail]);
@@ -34,9 +44,9 @@ class EmailService {
       logger.info(`[PASSWORD RESET OTP] Dispatched to registered email for: ${cleanEmail}`);
     }
 
-    // Nodemailer dispatch using configured Gmail App Password
-    const smtpUser = env.SMTP?.USER || process.env.SMTP_USER || 'pupapido@gmail.com';
-    const smtpPass = (env.SMTP?.PASS || process.env.SMTP_PASS || 'plfilaeftmkzgkzm').replace(/\s+/g, '');
+    // Nodemailer dispatch using configured SMTP environment credentials (no hardcoded fallback)
+    const smtpUser = env.SMTP?.USER || '';
+    const smtpPass = (env.SMTP?.PASS || '').replace(/\s+/g, '');
 
     if (smtpUser && smtpPass) {
       try {
@@ -94,18 +104,33 @@ class EmailService {
     const cleanEmail = email.trim().toLowerCase();
     const cleanOtp = otp.trim();
 
-    const record = await db.queryOne(
-      'SELECT * FROM password_resets WHERE email = ? AND otp = ? AND used = 0 ORDER BY id DESC LIMIT 1',
-      [cleanEmail, cleanOtp]
+    const latestRecord = await db.queryOne(
+      'SELECT * FROM password_resets WHERE email = ? AND used = 0 ORDER BY id DESC LIMIT 1',
+      [cleanEmail]
     );
 
-    if (!record) {
+    if (!latestRecord) {
+      throw new Error('Invalid OTP code. Please check and try again.');
+    }
+
+    if (Number(latestRecord.attempts || 0) >= 5) {
+      await db.query('UPDATE password_resets SET used = 1 WHERE id = ?', [latestRecord.id]).catch(() => {});
+      throw new Error('Too many failed OTP attempts. Please request a new verification code.');
+    }
+
+    if (latestRecord.otp !== cleanOtp) {
+      try {
+        await db.query('UPDATE password_resets SET attempts = COALESCE(attempts, 0) + 1 WHERE id = ?', [latestRecord.id]);
+        if (Number(latestRecord.attempts || 0) + 1 >= 5) {
+          await db.query('UPDATE password_resets SET used = 1 WHERE id = ?', [latestRecord.id]);
+        }
+      } catch (_) {}
       throw new Error('Invalid OTP code. Please check and try again.');
     }
 
     const validRecord = await db.queryOne(
       'SELECT id FROM password_resets WHERE id = ? AND expires_at >= NOW()',
-      [record.id]
+      [latestRecord.id]
     );
 
     if (!validRecord) {
@@ -119,8 +144,14 @@ class EmailService {
    * Resets password using valid OTP
    */
   static async resetPasswordWithOtp(email, otp, newPassword) {
-    if (!newPassword || newPassword.length < 6) {
-      throw new Error('New password must be at least 6 characters long.');
+    if (
+      !newPassword ||
+      newPassword.length < 8 ||
+      !/[A-Z]/.test(newPassword) ||
+      !/[0-9]/.test(newPassword) ||
+      !/[^A-Za-z0-9]/.test(newPassword)
+    ) {
+      throw new Error('New password must be at least 8 characters and include an uppercase letter, a number, and a special character.');
     }
 
     // Verify OTP validity
@@ -195,8 +226,8 @@ class EmailService {
       throw new Error('Your account is currently inactive. Please contact support.');
     }
 
-    // Generate secure 6-digit numeric OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    // Generate cryptographically secure 6-digit numeric OTP
+    const otp = crypto.randomInt(100000, 1000000).toString();
 
     // Invalidate prior unused OTPs for this phone or email
     await db.query(
@@ -217,9 +248,9 @@ class EmailService {
       logger.info(`[LOGIN OTP] Verification code dispatched for +91 ${cleanPhone}`);
     }
 
-    // Send email via Nodemailer
-    const smtpUser = env.SMTP?.USER || process.env.SMTP_USER || 'pupapido@gmail.com';
-    const smtpPass = (env.SMTP?.PASS || process.env.SMTP_PASS || 'plfilaeftmkzgkzm').replace(/\s+/g, '');
+    // Send email via Nodemailer using configured SMTP environment credentials
+    const smtpUser = env.SMTP?.USER || '';
+    const smtpPass = (env.SMTP?.PASS || '').replace(/\s+/g, '');
 
     if (smtpUser && smtpPass) {
       try {
@@ -300,11 +331,26 @@ class EmailService {
     const isMasterDemo = (process.env.NODE_ENV !== 'production' && process.env.ALLOW_DEMO_OTP === 'true') && cleanOtp === '123456';
     if (!isMasterDemo) {
       const record = await db.queryOne(
-        'SELECT * FROM login_otps WHERE (phone = ? OR email = ?) AND otp = ? AND used = 0 ORDER BY id DESC LIMIT 1',
-        [cleanPhone, user.email, cleanOtp]
+        'SELECT * FROM login_otps WHERE (phone = ? OR email = ?) AND used = 0 ORDER BY id DESC LIMIT 1',
+        [cleanPhone, user.email]
       );
 
       if (!record) {
+        throw new Error('Invalid verification code. Please check your email and try again.');
+      }
+
+      if (Number(record.attempts || 0) >= 5) {
+        await db.query('UPDATE login_otps SET used = 1 WHERE id = ?', [record.id]).catch(() => {});
+        throw new Error('Too many failed verification attempts. Please request a new code.');
+      }
+
+      if (record.otp !== cleanOtp) {
+        try {
+          await db.query('UPDATE login_otps SET attempts = COALESCE(attempts, 0) + 1 WHERE id = ?', [record.id]);
+          if (Number(record.attempts || 0) + 1 >= 5) {
+            await db.query('UPDATE login_otps SET used = 1 WHERE id = ?', [record.id]);
+          }
+        } catch (_) {}
         throw new Error('Invalid verification code. Please check your email and try again.');
       }
 
@@ -374,7 +420,9 @@ class EmailService {
     otp = ''
   }) {
     const isLogin = type === 'LOGIN_OTP';
-    const displayName = user?.name ? user.name.trim() : (isLogin ? 'Student / Driver' : 'Campus Member');
+    const rawDisplayName = user?.name ? user.name.trim() : (isLogin ? 'Student / Driver' : 'Campus Member');
+    const displayName = escapeHtml(rawDisplayName);
+    const safeCleanEmail = escapeHtml(cleanEmail);
     const roleName = user?.role === 'RIDER' ? 'Rider' : (user?.role === 'ADMIN' ? 'Administrator' : 'Passenger');
     
     // Clean, consistent optical spacing between digits for high readability
@@ -419,7 +467,7 @@ class EmailService {
          </tr>
          <tr>
            <td style="padding: 6px 0; font-size: 13px; color: #64748B; border-top: 1px solid #F1F5F9; font-weight: 500;">Account Email</td>
-           <td style="padding: 6px 0; font-size: 13px; color: #0F172A; font-weight: 600; border-top: 1px solid #F1F5F9;">${cleanEmail}</td>
+           <td style="padding: 6px 0; font-size: 13px; color: #0F172A; font-weight: 600; border-top: 1px solid #F1F5F9;">${safeCleanEmail}</td>
          </tr>
          <tr>
            <td style="padding: 6px 0; font-size: 13px; color: #64748B; border-top: 1px solid #F1F5F9; font-weight: 500;">Security Token</td>

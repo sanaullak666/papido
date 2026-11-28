@@ -667,7 +667,7 @@ export function OutsideTripsView() {
                                 <button
                                   type="button"
                                   className="ot-icon-btn ot-icon-btn--success"
-                                  title="Save route changes"
+                                  title="Save route changes" aria-label="Save route changes"
                                   onClick={() => handleSaveEditRoute(editingRoute)}
                                 >
                                   <Save size={13} />
@@ -675,7 +675,7 @@ export function OutsideTripsView() {
                                 <button
                                   type="button"
                                   className="ot-icon-btn"
-                                  title="Cancel edit"
+                                  title="Cancel edit" aria-label="Cancel editing route"
                                   onClick={() => setEditingRoute(null)}
                                 >
                                   <X size={13} />
@@ -686,7 +686,7 @@ export function OutsideTripsView() {
                                 <button
                                   type="button"
                                   className="ot-icon-btn"
-                                  title="Edit fare and distance"
+                                  title="Edit fare and distance" aria-label="Edit route fare and distance"
                                   onClick={() => setEditingRoute({ ...r })}
                                 >
                                   <Edit2 size={13} />
@@ -694,7 +694,7 @@ export function OutsideTripsView() {
                                 <button
                                   type="button"
                                   className="ot-icon-btn ot-icon-btn--danger"
-                                  title="Delete route and vice-versa reverse pair"
+                                  title="Delete route and vice-versa reverse pair" aria-label="Delete route"
                                   onClick={() => handleDeleteOutsideRoute(r.id)}
                                 >
                                   <Trash2 size={13} />

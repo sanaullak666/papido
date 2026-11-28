@@ -2,6 +2,7 @@ const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const env = require('../config/environment');
 const { SOCKET_EVENTS, ROLES } = require('../config/constants');
+const { isOriginAllowed } = require('../config/cors');
 const RiderModel = require('../models/rider.model');
 const RideModel = require('../models/ride.model');
 const PushService = require('../services/push.service');
@@ -11,7 +12,12 @@ class SocketManager {
   constructor(httpServer) {
     this.io = new Server(httpServer, {
       cors: {
-        origin: '*', // Allow mobile apps, Flutter web, Vite frontend
+        origin: (origin, callback) => {
+          if (isOriginAllowed(origin)) {
+            return callback(null, true);
+          }
+          return callback(new Error(`CORS policy: origin ${origin} not allowed by WebSocket gateway.`));
+        },
         methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
         credentials: true
       },
@@ -26,30 +32,46 @@ class SocketManager {
     this.setupEventHandlers();
   }
 
-  setupRedisAdapter() {
-    if (env.REDIS_URL) {
-      try {
-        const { createAdapter } = require('@socket.io/redis-adapter');
-        const Redis = require('ioredis');
-        const pubClient = new Redis(env.REDIS_URL, {
-          maxRetriesPerRequest: 3,
-          enableReadyCheck: false
-        });
-        const subClient = pubClient.duplicate();
-
-        pubClient.on('error', (err) => logger.warn(`[Redis Adapter Pub] Error: ${err.message}`));
-        subClient.on('error', (err) => logger.warn(`[Redis Adapter Sub] Error: ${err.message}`));
-
-        pubClient.on('connect', () => logger.info('[Redis Adapter] PubClient connected to Redis cluster.'));
-        subClient.on('connect', () => logger.info('[Redis Adapter] SubClient connected to Redis cluster.'));
-
-        this.io.adapter(createAdapter(pubClient, subClient));
-        logger.info('[SocketManager] Attached @socket.io/redis-adapter for horizontal multi-instance scaling.');
-      } catch (redisErr) {
-        logger.warn(`[SocketManager] Could not attach Redis adapter: ${redisErr.message}. Operating in single-instance mode.`);
-      }
-    } else {
+  async setupRedisAdapter() {
+    if (!env.REDIS_URL || !env.REDIS_URL.trim()) {
       logger.info('[SocketManager] Operating in single-instance in-memory mode (REDIS_URL not set).');
+      return;
+    }
+
+    try {
+      const { createAdapter } = require('@socket.io/redis-adapter');
+      const Redis = require('ioredis');
+
+      const redisOptions = {
+        lazyConnect: true,
+        connectTimeout: 4000,
+        maxRetriesPerRequest: 1,
+        enableReadyCheck: false,
+        retryStrategy: (times) => {
+          if (times > 2) {
+            return null; // Stop reconnecting after 2 attempts to prevent infinite crash-loops
+          }
+          return Math.min(times * 150, 1000);
+        }
+      };
+
+      const pubClient = new Redis(env.REDIS_URL, redisOptions);
+      const subClient = new Redis(env.REDIS_URL, redisOptions);
+
+      // Attach non-fatal error listeners before connecting
+      pubClient.on('error', (err) => logger.warn(`[Redis Adapter Pub] Connection notice: ${err.message}`));
+      subClient.on('error', (err) => logger.warn(`[Redis Adapter Sub] Connection notice: ${err.message}`));
+
+      // Attempt async connection with timeout
+      await Promise.all([
+        pubClient.connect(),
+        subClient.connect()
+      ]);
+
+      this.io.adapter(createAdapter(pubClient, subClient));
+      logger.info('[SocketManager] Attached @socket.io/redis-adapter for horizontal multi-instance scaling.');
+    } catch (redisErr) {
+      logger.warn(`[SocketManager] Redis adapter unavailable: ${redisErr.message}. Operating in single-instance in-memory mode.`);
     }
   }
 
@@ -208,8 +230,8 @@ class SocketManager {
               socket.emit('error', { message: 'Unauthorized ride room access' });
             }
           } else {
-            // Guest or simulator fallback
-            socket.join(`ride_${rideId}`);
+            logger.warn(`Unauthenticated attempt to join ride room ride_${rideId} rejected for socket ${socket.id}`);
+            socket.emit('error', { message: 'Authentication required to join ride room' });
           }
         } catch (err) {
           logger.error('Error in join_ride authorization', { error: err.message, rideId });
@@ -225,44 +247,44 @@ class SocketManager {
       // Rider live location update (GPS ping) with coordinate and role validation
       socket.on(SOCKET_EVENTS.RIDER_LOCATION_UPDATE, async (data) => {
         try {
-          const riderId = socket.user?.id || data.riderId;
-          const lat = parseFloat(data.latitude);
-          const lng = parseFloat(data.longitude);
-          const rideId = data.rideId;
+          if (!socket.user || (socket.user.role || '').toUpperCase() !== 'RIDER') {
+            logger.warn(`Unauthorized rider location update rejected for socket ${socket.id}`);
+            return;
+          }
+
+          const riderId = socket.user.id;
+          const lat = parseFloat(data?.latitude);
+          const lng = parseFloat(data?.longitude);
+          const rideId = data?.rideId;
 
           // Coordinate boundary validation (-90 to 90 lat, -180 to 180 lng)
           if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-            logger.warn(`Rejected invalid coordinates from rider ${riderId}: (${data.latitude}, ${data.longitude})`);
+            logger.warn(`Rejected invalid coordinates from rider ${riderId}: (${data?.latitude}, ${data?.longitude})`);
             return;
           }
 
-          // Verify rider role if authenticated
-          if (socket.user && socket.user.role && socket.user.role !== 'RIDER') {
-            logger.warn(`Non-rider user ${socket.user.id} attempted to publish rider location`);
-            return;
-          }
+          // Update database coordinates
+          await RiderModel.updateLocation(riderId, lat, lng);
 
-          if (riderId) {
-            // Update database coordinates
-            await RiderModel.updateLocation(riderId, lat, lng);
+          const payload = {
+            riderId,
+            rideId: rideId || null,
+            latitude: lat,
+            longitude: lng,
+            heading: typeof data.heading === 'number' ? data.heading : 0,
+            speed: typeof data.speed === 'number' ? data.speed : 0,
+            accuracy: typeof data.accuracy === 'number' ? data.accuracy : 10,
+            recordedAt: data.recordedAt || new Date().toISOString(),
+            timestamp: new Date().toISOString()
+          };
 
-            const payload = {
-              riderId,
-              rideId: rideId || null,
-              latitude: lat,
-              longitude: lng,
-              heading: typeof data.heading === 'number' ? data.heading : 0,
-              speed: typeof data.speed === 'number' ? data.speed : 0,
-              accuracy: typeof data.accuracy === 'number' ? data.accuracy : 10,
-              recordedAt: data.recordedAt || new Date().toISOString(),
-              timestamp: new Date().toISOString()
-            };
+          // Broadcast to Admin
+          this.io.to('role_ADMIN').emit('admin:rider_location', payload);
 
-            // Broadcast to Admin
-            this.io.to('role_ADMIN').emit('admin:rider_location', payload);
-
-            // Broadcast to Ride room if rider is on an active ride
-            if (rideId) {
+          // Broadcast to Ride room if rider is assigned to that ride
+          if (rideId) {
+            const ride = await RideModel.findById(rideId);
+            if (ride && Number(ride.rider_id) === Number(riderId)) {
               this.io.to(`ride_${rideId}`).emit(SOCKET_EVENTS.RIDE_LOCATION_TRACK, payload);
             }
           }
@@ -274,12 +296,14 @@ class SocketManager {
       // Rider online/offline toggle via socket
       socket.on(SOCKET_EVENTS.RIDER_STATUS_TOGGLE, async (data) => {
         try {
-          const riderId = socket.user?.id || data.riderId;
-          const isOnline = !!data.isOnline;
-          if (riderId) {
-            await RiderModel.updateOnlineStatus(riderId, isOnline);
-            this.io.to('role_ADMIN').emit('admin:rider_status_changed', { riderId, isOnline });
+          if (!socket.user || (socket.user.role || '').toUpperCase() !== 'RIDER') {
+            logger.warn(`Unauthorized rider status toggle rejected for socket ${socket.id}`);
+            return;
           }
+          const riderId = socket.user.id;
+          const isOnline = Boolean(data?.isOnline);
+          await RiderModel.updateOnlineStatus(riderId, isOnline);
+          this.io.to('role_ADMIN').emit('admin:rider_status_changed', { riderId, isOnline });
         } catch (err) {
           logger.error('Error toggling rider online status via socket', { error: err.message });
         }
@@ -288,25 +312,36 @@ class SocketManager {
       // Real-time Chat / Quick Preset Message between Passenger and Driver
       socket.on('ride:send_message', async (data) => {
         try {
-          const { rideId, message, senderRole, senderName } = data;
-          if (rideId && message) {
-            const payload = {
-              rideId,
-              message,
-              senderId: socket.user?.id || null,
-              senderRole: senderRole || socket.user?.role || 'USER',
-              senderName: senderName || socket.user?.name || 'User',
-              timestamp: new Date().toISOString()
-            };
-
-            this.io.to(`ride_${rideId}`).emit('ride:new_message', payload);
-
-            const ride = await RideModel.findById(rideId);
-            if (ride) {
-              if (ride.customer_id) this.io.to(`user_${ride.customer_id}`).emit('ride:new_message', payload);
-              if (ride.rider_id) this.io.to(`user_${ride.rider_id}`).emit('ride:new_message', payload);
-            }
+          if (!socket.user) {
+            logger.warn(`Unauthenticated ride:send_message rejected for socket ${socket.id}`);
+            return;
           }
+          const { rideId, message } = data || {};
+          if (!rideId || !message) return;
+
+          const ride = await RideModel.findById(rideId);
+          if (!ride) return;
+
+          const uid = Number(socket.user.id);
+          const role = (socket.user.role || '').toUpperCase();
+          const isParticipant = uid === Number(ride.customer_id) || uid === Number(ride.rider_id) || role === 'ADMIN';
+          if (!isParticipant) {
+            logger.warn(`Unauthorized ride:send_message on ride ${rideId} by user ${uid}`);
+            return;
+          }
+
+          const payload = {
+            rideId,
+            message: String(message).slice(0, 500),
+            senderId: socket.user.id,
+            senderRole: role || 'USER',
+            senderName: socket.user.name || 'User',
+            timestamp: new Date().toISOString()
+          };
+
+          this.io.to(`ride_${rideId}`).emit('ride:new_message', payload);
+          if (ride.customer_id) this.io.to(`user_${ride.customer_id}`).emit('ride:new_message', payload);
+          if (ride.rider_id) this.io.to(`user_${ride.rider_id}`).emit('ride:new_message', payload);
         } catch (err) {
           logger.error('Error broadcasting ride message', { error: err.message });
         }
@@ -443,12 +478,14 @@ class SocketManager {
     // If accepted by any rider, notify all other riders so it's dismissed from their radar
     // If cancelled, broadcast cancellation to driver, ride room, and all riders
     if (status === 'CANCELLED') {
-      this.io.to('role_RIDER').emit('ride:cancelled', payload);
+      this.io.to('role_RIDER').emit('ride:cancelled', { rideId: ride.id, id: ride.id, rideCode: ride.ride_code || ride.rideCode, status, timestamp: payload.timestamp });
       this.io.to(`ride_${ride.id}`).emit('ride:cancelled', payload);
       if (ride.rider_id) {
         this.io.to(`user_${ride.rider_id}`).emit('ride:cancelled', payload);
       }
-      this.io.emit('ride:cancelled', payload);
+      if (ride.customer_id) {
+        this.io.to(`user_${ride.customer_id}`).emit('ride:cancelled', payload);
+      }
     }
 
     // Notify Ride Room & Active Listeners
@@ -539,7 +576,6 @@ class SocketManager {
       amount: penalty.amount,
       customerId: penalty.customer_id,
       customerName: penalty.customer_name,
-      customerPhone: penalty.customer_phone,
       riderId: penalty.rider_id,
       status: penalty.status,
       timestamp: new Date().toISOString()
@@ -549,7 +585,6 @@ class SocketManager {
       this.io.to(`user_${penalty.rider_id}`).emit('penalty:payment_claimed', payload);
       this.io.to(`rider_${penalty.rider_id}`).emit('penalty:payment_claimed', payload);
     }
-    this.io.to('role_RIDER').emit('penalty:payment_claimed', payload);
     this.io.to('role_ADMIN').emit('admin:penalty_claimed', payload);
   }
 
@@ -578,9 +613,7 @@ class SocketManager {
       this.io.to(`user_${penalty.rider_id}`).emit('penalty:status_update', payload);
       this.io.to(`rider_${penalty.rider_id}`).emit('penalty:status_update', payload);
     }
-    this.io.to('role_CUSTOMER').emit('penalty:status_update', payload);
     this.io.to('role_ADMIN').emit('admin:penalty_status_update', payload);
-    this.io.emit('penalty:status_update', payload);
   }
 }
 

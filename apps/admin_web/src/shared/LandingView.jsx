@@ -148,6 +148,7 @@ export function LandingView({ onGoToLogin, onGoToRegister, onGoToRiderLogin }) {
       </header>
 
       {/* HERO */}
+      <main>
       <section className="pm-hero" id="top">
         <div className="pm-glow" aria-hidden="true" />
         <div className="pm-wrap pm-hero-grid">
@@ -283,7 +284,7 @@ export function LandingView({ onGoToLogin, onGoToRegister, onGoToRiderLogin }) {
             ].map(([Icon, t, b], i) => (
               <article key={t} className="pm-tile pm-tile--sm pm-reveal" style={{ '--d': `${(i + 2) * 70}ms` }}>
                 <span className="pm-ico pm-ico--sm"><Icon size={18} /></span>
-                <h4>{t}</h4>
+                <h3>{t}</h3>
                 <p>{b}</p>
               </article>
             ))}
@@ -322,7 +323,7 @@ export function LandingView({ onGoToLogin, onGoToRegister, onGoToRiderLogin }) {
             ].map(([Icon, t, b], i) => (
               <article key={t} className="pm-safe pm-reveal" style={{ '--d': `${i * 60}ms` }}>
                 <Icon size={20} />
-                <div><h4>{t}</h4><p>{b}</p></div>
+                <div><h3>{t}</h3><p>{b}</p></div>
               </article>
             ))}
           </div>
@@ -347,6 +348,7 @@ export function LandingView({ onGoToLogin, onGoToRegister, onGoToRiderLogin }) {
           </div>
         </div>
       </section>
+      </main>
 
       {/* FOOTER */}
       <footer className="pm-foot">
@@ -370,7 +372,6 @@ export function LandingView({ onGoToLogin, onGoToRegister, onGoToRiderLogin }) {
               target="_blank"
               rel="noopener noreferrer"
               className="pm-foot-wa-badge"
-              aria-label={`Official WhatsApp support: ${WHATSAPP_DISPLAY}`}
             >
               <span className="pm-foot-wa-icon"><WhatsAppIcon size={18} /></span>
               <span className="pm-foot-wa-copy">
@@ -390,7 +391,6 @@ export function LandingView({ onGoToLogin, onGoToRegister, onGoToRiderLogin }) {
           target="_blank"
           rel="noopener noreferrer"
           className="pm-float-wa"
-          aria-label={`Chat with Papido on WhatsApp (${WHATSAPP_DISPLAY})`}
           title={`Chat on WhatsApp ${WHATSAPP_DISPLAY}`}
         >
           <span className="pm-float-wa-pulse" aria-hidden="true" />

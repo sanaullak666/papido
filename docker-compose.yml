@@ -32,8 +32,9 @@ services:
       - DB_USER=${DB_USER:-root}
       - DB_PASSWORD=${DB_PASSWORD:-root}
       - DB_NAME=${DB_NAME:-papido_db}
-      - JWT_SECRET=papido_super_secure_jwt_secret_key_2026_production_ready_xyz987
-      - CLIENT_URL=http://localhost:5173
+      - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in environment}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in environment}
+      - CLIENT_URL=${CLIENT_URL:-http://localhost:5173}
       - REDIS_URL=${REDIS_URL}
     networks:
       - papido_network
@@ -58,7 +59,7 @@ services:
     container_name: papido_mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-papido_local_dev_pw}
       MYSQL_DATABASE: papido_db
     ports:
       - "3306:3306"

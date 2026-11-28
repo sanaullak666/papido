@@ -704,15 +704,15 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess, onGoToHome }) {
         {/* ==================================================
             CENTRAL AUTH CARD (STANDALONE LOGIN PAGE)
            ================================================== */}
-        <section className="papido-auth-wrapper">
+        <main className="papido-auth-wrapper">
           <div className="papido-auth-card papido-fade-up">
 
             {/* Papido Brand Header */}
             <div className="papido-card-brand-header">
-              <button type="button" className="papido-brand-pill papido-brand-pill--link" onClick={handleGoHome} title="Go to Papido Homepage" aria-label="Go to Papido Homepage">
+              <button type="button" className="papido-brand-pill papido-brand-pill--link" onClick={handleGoHome} title="Go to Papido Homepage">
                 <img
                   src="/papidologo.jpeg"
-                  alt="Papido"
+                  alt=""
                   className="papido-hero-logo"
                 />
                 <div className="papido-brand-texts">
@@ -785,7 +785,7 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess, onGoToHome }) {
             {screen === SCREEN.PHONE && (
               <div className={`${screenClass} pap-screen--phone`}>
                 <div className="papido-card-head">
-                  <h2>Enter your mobile number</h2>
+                  <h1>Enter your mobile number</h1>
                   <p>
                     We'll send a 6-digit verification code to your registered email address.
                   </p>
@@ -794,7 +794,7 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess, onGoToHome }) {
                 <form onSubmit={handleSendOtp} className="papido-form">
 
                   <div className="papido-field-group">
-                    <label className="papido-input-label">Mobile Number</label>
+                    <label htmlFor="papido-login-phone" className="papido-input-label">Mobile Number</label>
                     <div className="papido-phone-shell">
                       <div className="papido-country-chip">
                         <span className="papido-flag">🇮🇳</span>
@@ -806,6 +806,8 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess, onGoToHome }) {
                         autoFocus
                         maxLength={10}
                         className="papido-phone-input"
+                        id="papido-login-phone"
+                        aria-label="Mobile Number"
                         placeholder="98765 43210"
                         value={phone}
                         onChange={(e) => {
@@ -971,7 +973,7 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess, onGoToHome }) {
 
                 <form onSubmit={handlePasswordLogin} className="papido-form">
                   <div className="papido-field-group">
-                    <label className="papido-input-label">Email Address</label>
+                    <label htmlFor="papido-login-email" className="papido-input-label">Email Address</label>
                     <div className="papido-input-shell">
                       <Mail size={16} className="papido-input-lead-icon" />
                       <input
@@ -979,6 +981,8 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess, onGoToHome }) {
                         required
                         autoFocus
                         className="papido-form-input"
+                        id="papido-login-email"
+                        aria-label="Email Address"
                         placeholder="student@pondiuni.ac.in"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -988,7 +992,7 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess, onGoToHome }) {
 
                   <div className="papido-field-group">
                     <div className="papido-label-split">
-                      <label className="papido-input-label">Password</label>
+                      <label htmlFor="papido-login-password" className="papido-input-label">Password</label>
                       <button
                         type="button"
                         className="papido-text-link"
@@ -1003,6 +1007,8 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess, onGoToHome }) {
                         type={showPassword ? 'text' : 'password'}
                         required
                         className="papido-form-input"
+                        id="papido-login-password"
+                        aria-label="Password"
                         placeholder="••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
@@ -1010,6 +1016,7 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess, onGoToHome }) {
                       <button
                         type="button"
                         className="papido-trail-btn"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
                         onClick={() => setShowPassword((v) => !v)}
                       >
                         {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
@@ -1053,7 +1060,7 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess, onGoToHome }) {
                 </button>
 
                 <div className="papido-card-head">
-                  <h2>Create your account</h2>
+                  <h1>Create your account</h1>
                 </div>
 
                 {isRegistrationBlocked && (
@@ -1102,10 +1109,11 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess, onGoToHome }) {
                   </div>
 
                   <div className="papido-field-group">
-                    <label className="papido-input-label">Full Name</label>
+                    <label htmlFor="papido-reg-name" className="papido-input-label">Full Name</label>
                     <div className="papido-input-shell">
                       <User size={16} className="papido-input-lead-icon" />
                       <input
+                        id="papido-reg-name"
                         type="text"
                         required
                         className="papido-form-input"
@@ -1118,10 +1126,11 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess, onGoToHome }) {
                   </div>
 
                   <div className="papido-field-group">
-                    <label className="papido-input-label">Email</label>
+                    <label htmlFor="papido-reg-email" className="papido-input-label">Email</label>
                     <div className="papido-input-shell">
                       <Mail size={16} className="papido-input-lead-icon" />
                       <input
+                        id="papido-reg-email"
                         type="email"
                         required
                         className="papido-form-input"
@@ -1133,13 +1142,14 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess, onGoToHome }) {
                   </div>
 
                   <div className="papido-field-group">
-                    <label className="papido-input-label">Mobile Number</label>
+                    <label htmlFor="papido-reg-phone" className="papido-input-label">Mobile Number</label>
                     <div className="papido-phone-shell">
                       <div className="papido-country-chip">
                         <span className="papido-flag">🇮🇳</span>
                         <span className="papido-code">+91</span>
                       </div>
                       <input
+                        id="papido-reg-phone"
                         type="tel"
                         inputMode="numeric"
                         maxLength={10}
@@ -1275,12 +1285,13 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess, onGoToHome }) {
                   )}
 
                   <div className="papido-field-group">
-                    <label className="papido-input-label">
+                    <label htmlFor="papido-reg-password" className="papido-input-label">
                       Password (min 8 characters)
                     </label>
                     <div className="papido-input-shell">
                       <Lock size={16} className="papido-input-lead-icon" />
                       <input
+                        id="papido-reg-password"
                         type={showRegPassword ? 'text' : 'password'}
                         required
                         className="papido-form-input"
@@ -1464,7 +1475,7 @@ export function LoginView({ onGoToAdminPortal, onLoginSuccess, onGoToHome }) {
               </div>
             )}
           </div>
-        </section>
+        </main>
       </div>
     </div>
   );

@@ -295,7 +295,7 @@ export function OutsideForm({
               <button
                 type="button"
                 className="ps-pill-clear-btn"
-                title="Clear pickup"
+                title="Clear pickup" aria-label="Clear pickup stop"
                 onClick={() => {
                   setPickup('');
                   setPickupCoords(null);
@@ -309,6 +309,7 @@ export function OutsideForm({
                 type="button"
                 className="ps-pill-clear-btn"
                 title="Browse stops"
+                aria-label="Browse pickup stops"
                 onClick={() => setPickupMenuOpen(!pickupMenuOpen)}
               >
                 <ChevronDown size={16} />
@@ -438,7 +439,7 @@ export function OutsideForm({
               <button
                 type="button"
                 className="ps-pill-clear-btn"
-                title="Clear destination"
+                title="Clear destination" aria-label="Clear destination stop"
                 onClick={() => {
                   setDestination('');
                   setDestinationCoords(null);
@@ -453,6 +454,7 @@ export function OutsideForm({
                 type="button"
                 className="ps-pill-clear-btn"
                 title="Browse stops"
+                aria-label="Browse destination stops"
                 onClick={() => setDestMenuOpen(!destMenuOpen)}
               >
                 <ChevronDown size={16} />

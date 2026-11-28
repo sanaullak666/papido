@@ -1,3 +1,7 @@
+const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
+const env = require('../config/environment');
+const UserModel = require('../models/user.model');
 const AuthService = require('../services/auth.service');
 const { success, error } = require('../utils/response');
 
@@ -129,7 +133,7 @@ const AuthController = {
     try {
       const { name, email, phone, gender, password, inviteCode } = req.body;
 
-      // Verify authorization: either authenticated ADMIN or valid invite code
+      // Verify authorization: either authenticated ADMIN or configured invite code
       const authHeader = req.headers.authorization;
       let isAdmin = false;
       if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -137,26 +141,52 @@ const AuthController = {
           const token = authHeader.split(' ')[1];
           const decoded = jwt.verify(token, env.JWT.SECRET);
           const caller = await UserModel.findById(decoded.id);
-          if (caller && caller.role === 'ADMIN') {
+          if (caller && caller.role === 'ADMIN' && caller.status === 'ACTIVE') {
             isAdmin = true;
           }
         } catch (_) {}
       }
 
-      const validInviteCode = process.env.CORE_INVITE_CODE || 'PAPIDO_CORE_FLEET';
+      const validInviteCode = env.CORE_INVITE_CODE || '';
       const providedCode = String(inviteCode || req.query?.code || '').trim();
+      let codeMatches = false;
+      if (validInviteCode && providedCode) {
+        const expectedBuf = Buffer.from(validInviteCode, 'utf8');
+        const providedBuf = Buffer.from(providedCode, 'utf8');
+        if (expectedBuf.length === providedBuf.length) {
+          codeMatches = crypto.timingSafeEqual(expectedBuf, providedBuf);
+        }
+      }
 
-      if (!isAdmin && (!providedCode || providedCode !== validInviteCode)) {
-        return error(res, 'Access Denied: A valid Core Team invitation code is required to register.', 403);
+      if (!isAdmin && !codeMatches) {
+        return error(res, 'Access Denied: Administrator authentication or a valid Core Team invitation code is required to register.', 403);
+      }
+
+      if (!isAdmin) {
+        const SettingsModel = require('../models/settings.model');
+        const isWeb = req.headers['x-client-platform'] === 'web' ||
+          Boolean(req.body && (req.body.platform === 'WEB' || req.body.isWeb === true)) ||
+          Boolean(req.headers.origin || req.headers.referer);
+        const regCheck = await SettingsModel.checkRegistrationAllowed({
+          role: 'RIDER',
+          isWeb
+        });
+        if (!regCheck.allowed) {
+          return error(res, regCheck.message, 403);
+        }
       }
 
       if (!name || !email || !phone || !password) {
         return error(res, 'Name, email, phone, and password are required to register as a Core Team member.', 400);
       }
 
-      const cleanName = String(name).trim();
+      const cleanName = String(name).replace(/<[^>]*>?/gm, '').trim().toUpperCase();
       const cleanEmail = String(email).trim().toLowerCase();
       const cleanPhone = String(phone).trim().replace(/\D/g, '');
+
+      if (cleanName.length < 2) {
+        return error(res, 'Full Name must be at least 2 characters.', 400);
+      }
 
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
         return error(res, 'Please provide a valid email address.', 400);
@@ -166,8 +196,14 @@ const AuthController = {
         return error(res, 'Please provide a valid 10-digit mobile number.', 400);
       }
 
-      if (String(password).length < 6) {
-        return error(res, 'Password must be at least 6 characters long.', 400);
+      const passStr = String(password);
+      if (
+        passStr.length < 8 ||
+        !/[A-Z]/.test(passStr) ||
+        !/[0-9]/.test(passStr) ||
+        !/[^A-Za-z0-9]/.test(passStr)
+      ) {
+        return error(res, 'Password must be at least 8 characters and include an uppercase letter, a number, and a special character.', 400);
       }
 
       const validGender = ['MALE', 'FEMALE', 'OTHER'].includes((gender || '').toUpperCase())

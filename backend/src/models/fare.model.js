@@ -206,7 +206,6 @@ const FareModel = {
       }
     };
 
-    routeFaresCache = null;
     await upsertSingle(p, d, pickupLat, pickupLng, destLat, destLng);
     if (isBidirectional) {
       // Automatic vice-versa reverse pair
@@ -217,7 +216,6 @@ const FareModel = {
   },
 
   async updateRouteFareById(id, { fareAmount, distanceKm, isActive, isOutside, pickupLat, pickupLng, destLat, destLng }) {
-    routeFaresCache = null;
     const target = await db.queryOne('SELECT * FROM route_fares WHERE id = ?', [id]);
     if (!target) return null;
 
@@ -253,7 +251,6 @@ const FareModel = {
   },
 
   async deleteRouteFare(id) {
-    routeFaresCache = null;
     const target = await db.queryOne('SELECT * FROM route_fares WHERE id = ?', [id]);
     if (target && target.pickup_stop && target.destination_stop) {
       await db.query(

@@ -20,11 +20,20 @@ import {
 
 export function CoreRegisterView({ onGoToLogin }) {
   const { login } = useAuth();
+  const initialInviteCode = (() => {
+    try {
+      return new URLSearchParams(window.location.search).get('code') || '';
+    } catch (_) {
+      return '';
+    }
+  })();
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     gender: 'MALE',
+    inviteCode: initialInviteCode,
     password: '',
     confirmPassword: ''
   });
@@ -62,8 +71,13 @@ export function CoreRegisterView({ onGoToLogin }) {
       return;
     }
 
-    if (formData.password.length < 6) {
-      setErrorMsg('PASSWORD MUST BE AT LEAST 6 CHARACTERS LONG.');
+    if (
+      formData.password.length < 8 ||
+      !/[A-Z]/.test(formData.password) ||
+      !/[0-9]/.test(formData.password) ||
+      !/[^A-Za-z0-9]/.test(formData.password)
+    ) {
+      setErrorMsg('PASSWORD MUST BE AT LEAST 8 CHARACTERS WITH AN UPPERCASE LETTER, NUMBER, AND SPECIAL CHARACTER.');
       return;
     }
 
@@ -72,30 +86,32 @@ export function CoreRegisterView({ onGoToLogin }) {
       return;
     }
 
+    if (!formData.inviteCode.trim()) {
+      setErrorMsg('CORE TEAM INVITATION CODE IS REQUIRED.');
+      return;
+    }
+
     try {
       setLoading(true);
-      const urlCode = new URLSearchParams(window.location.search).get('code');
-      const res = await apiRequest('/auth/register-core', 'POST', {
+      await apiRequest('/auth/register-core', 'POST', {
         name,
         email,
         phone,
         gender: formData.gender,
         password: formData.password,
-        inviteCode: urlCode || 'PAPIDO_CORE_FLEET'
+        inviteCode: formData.inviteCode.trim()
       });
 
-      setSuccessMsg('Welcome to Papido Core Team! Logging you in...');
+      setSuccessMsg('Welcome to Papido Core Team! Signing you in...');
 
-      if (res.data?.tokens?.accessToken && res.data?.user) {
-        setTimeout(() => {
-          login(res.data.user, res.data.tokens.accessToken);
-          window.location.pathname = '/';
-        }, 1200);
-      } else {
+      try {
+        await login(email, formData.password, 'RIDER');
+        window.location.replace('/driver/radar');
+      } catch (_) {
         setTimeout(() => {
           if (onGoToLogin) onGoToLogin();
           else window.location.pathname = '/login';
-        }, 1500);
+        }, 1200);
       }
     } catch (err) {
       setErrorMsg(err.message || 'Failed to register core member account.');
@@ -163,10 +179,11 @@ export function CoreRegisterView({ onGoToLogin }) {
 
         <form onSubmit={handleSubmit} className="cr-form">
           <div className="cr-field">
-            <label className="cr-label">FULL NAME *</label>
+            <label htmlFor="cr-name" className="cr-label">FULL NAME *</label>
             <div className="cr-input-wrap">
               <User size={16} className="cr-input-icon" />
               <input
+                id="cr-name"
                 type="text"
                 required
                 placeholder="E.G. SANAULLA KHAN"
@@ -179,10 +196,11 @@ export function CoreRegisterView({ onGoToLogin }) {
 
           <div className="cr-grid-2">
             <div className="cr-field">
-              <label className="cr-label">PHONE NUMBER *</label>
+              <label htmlFor="cr-phone" className="cr-label">PHONE NUMBER *</label>
               <div className="cr-input-wrap">
                 <Phone size={16} className="cr-input-icon" />
                 <input
+                  id="cr-phone"
                   type="tel"
                   required
                   maxLength={10}
@@ -195,8 +213,10 @@ export function CoreRegisterView({ onGoToLogin }) {
             </div>
 
             <div className="cr-field">
-              <label className="cr-label">Gender</label>
+              <label htmlFor="cr-gender" className="cr-label">Gender</label>
               <select
+                id="cr-gender"
+                aria-label="Gender"
                 value={formData.gender}
                 onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                 className="cr-input cr-input--select"
@@ -209,10 +229,11 @@ export function CoreRegisterView({ onGoToLogin }) {
           </div>
 
           <div className="cr-field">
-            <label className="cr-label">Email Address *</label>
+            <label htmlFor="cr-email" className="cr-label">Email Address *</label>
             <div className="cr-input-wrap">
               <Mail size={16} className="cr-input-icon" />
               <input
+                id="cr-email"
                 type="email"
                 required
                 placeholder="name@gmail.com"
@@ -223,15 +244,34 @@ export function CoreRegisterView({ onGoToLogin }) {
             </div>
           </div>
 
+          {!initialInviteCode && (
+            <div className="cr-field">
+              <label htmlFor="cr-invite-code" className="cr-label">Core Invite Code *</label>
+              <div className="cr-input-wrap">
+                <ShieldCheck size={16} className="cr-input-icon" />
+                <input
+                  id="cr-invite-code"
+                  type="text"
+                  required
+                  placeholder="Enter admin invite code"
+                  value={formData.inviteCode}
+                  onChange={(e) => setFormData({ ...formData, inviteCode: e.target.value })}
+                  className="cr-input"
+                />
+              </div>
+            </div>
+          )}
+
           <div className="cr-grid-2">
             <div className="cr-field">
-              <label className="cr-label">Password *</label>
+              <label htmlFor="cr-password" className="cr-label">Password *</label>
               <div className="cr-input-wrap">
                 <Lock size={16} className="cr-input-icon" />
                 <input
+                  id="cr-password"
                   type={showPassword ? 'text' : 'password'}
                   required
-                  placeholder="Enter password"
+                  placeholder="Min 8 chars"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   className="cr-input cr-input--with-trail"
@@ -248,13 +288,14 @@ export function CoreRegisterView({ onGoToLogin }) {
             </div>
 
             <div className="cr-field">
-              <label className="cr-label">Confirm Password *</label>
+              <label htmlFor="cr-confirm-password" className="cr-label">Confirm Password *</label>
               <div className="cr-input-wrap">
                 <Lock size={16} className="cr-input-icon" />
                 <input
+                  id="cr-confirm-password"
                   type={showConfirmPassword ? 'text' : 'password'}
                   required
-                  placeholder="Confirm password"
+                  placeholder="Re-enter"
                   value={formData.confirmPassword}
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                   className="cr-input cr-input--with-trail"

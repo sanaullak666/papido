@@ -943,6 +943,9 @@ const RideService = {
   async toggleWaiting(rideId, riderId, isWaiting, manualWaitingMinutes = null) {
     const ride = await RideModel.findById(rideId);
     if (!ride) throw new Error('Ride not found.');
+    if (Number(ride.rider_id) !== Number(riderId)) {
+      throw new Error('Unauthorized rider.');
+    }
     if (ride.status !== RIDE_STATUS.STARTED) {
       throw new Error(`Waiting timer can only be started after the trip is STARTED with OTP verification (Current status: ${ride.status}).`);
     }
@@ -1005,46 +1008,83 @@ const RideService = {
     // 1. Calculate dynamic split rules
     const split = await FareService.calculateFareSplit(finalFare);
 
-    // 2. Mark ride completed in database
-    const updatedRide = await RideModel.updateStatus(rideId, RIDE_STATUS.COMPLETED, {
-      finalFare,
-      paymentStatus: 'PAID'
+    // 2-5. Execute completion, payment, earning, and ride count updates atomically
+    const { updatedRide, payment, earning } = await db.transaction(async (tx) => {
+      const updateRes = await tx.query(
+        `UPDATE rides
+         SET status = ?, completed_at = CURRENT_TIMESTAMP, is_waiting = 0, waiting_started_at = NULL,
+             final_fare = COALESCE(?, estimated_fare), payment_status = ?
+         WHERE id = ? AND status = ?`,
+        [RIDE_STATUS.COMPLETED, finalFare, 'PAID', rideId, RIDE_STATUS.STARTED]
+      );
+
+      if (!updateRes || updateRes.affectedRows === 0) {
+        throw new Error('Ride completion conflict: ride is no longer in STARTED state.');
+      }
+
+      const freshRide = await tx.queryOne(
+        `SELECT r.*,
+                c.name as customer_name, c.phone as customer_phone, c.gender as customer_gender,
+                rd.name as rider_name, rd.phone as rider_phone, rd.gender as rider_gender,
+                COALESCE(rp.is_core_member, rd.is_core_member, 0) as rider_is_core,
+                rp.vehicle_type, rp.vehicle_number, rp.vehicle_model
+         FROM rides r
+         LEFT JOIN users c ON r.customer_id = c.id
+         LEFT JOIN users rd ON r.rider_id = rd.id
+         LEFT JOIN rider_profiles rp ON rd.id = rp.user_id
+         WHERE r.id = ?`,
+        [rideId]
+      );
+
+      let txPayment = await tx.queryOne('SELECT * FROM payments WHERE ride_id = ? ORDER BY id DESC LIMIT 1', [rideId]);
+      if (txPayment) {
+        await tx.query(
+          `UPDATE payments SET amount = ?, payment_method = ?, payment_status = ? WHERE id = ?`,
+          [finalFare, ride.payment_method || 'CASH', 'COMPLETED', txPayment.id]
+        );
+        txPayment = await tx.queryOne('SELECT * FROM payments WHERE id = ?', [txPayment.id]);
+      } else {
+        const payRes = await tx.query(
+          `INSERT INTO payments (ride_id, customer_id, rider_id, amount, payment_method, payment_status, transaction_reference, gateway, currency)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [rideId, ride.customer_id, riderId, finalFare, ride.payment_method || 'CASH', 'COMPLETED', `TXN-${Date.now()}-${ride.ride_code}`, ride.payment_method || 'CASH', 'INR']
+        );
+        txPayment = await tx.queryOne('SELECT * FROM payments WHERE id = ?', [payRes.insertId]);
+      }
+
+      let txEarning = await tx.queryOne('SELECT * FROM rider_earnings WHERE ride_id = ? LIMIT 1', [rideId]);
+      if (!txEarning) {
+        try {
+          const earnRes = await tx.query(
+            `INSERT INTO rider_earnings
+             (rider_id, ride_id, total_fare, rider_earning, company_earning, controller_earning, applied_rule_description, gross_fare, platform_fee, controller_fee, net_earning)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              riderId, rideId, finalFare, split.riderEarning, split.companyEarning, split.controllerEarning,
+              split.appliedRuleDescription, finalFare, split.companyEarning, split.controllerEarning, split.riderEarning
+            ]
+          );
+          txEarning = await tx.queryOne('SELECT * FROM rider_earnings WHERE id = ?', [earnRes.insertId]);
+        } catch (earnErr) {
+          if (earnErr.message && (earnErr.message.includes('gross_fare') || earnErr.message.includes('Unknown column'))) {
+            const earnRes = await tx.query(
+              `INSERT INTO rider_earnings
+               (rider_id, ride_id, total_fare, rider_earning, company_earning, controller_earning, applied_rule_description)
+               VALUES (?, ?, ?, ?, ?, ?, ?)`,
+              [riderId, rideId, finalFare, split.riderEarning, split.companyEarning, split.controllerEarning, split.appliedRuleDescription]
+            );
+            txEarning = await tx.queryOne('SELECT * FROM rider_earnings WHERE id = ?', [earnRes.insertId]);
+          } else {
+            throw earnErr;
+          }
+        }
+      }
+
+      await tx.query('UPDATE rider_profiles SET total_rides = COALESCE(total_rides, 0) + 1 WHERE user_id = ?', [riderId]);
+      await tx.query('UPDATE customer_profiles SET total_rides = COALESCE(total_rides, 0) + 1 WHERE user_id = ?', [ride.customer_id]);
+
+      return { updatedRide: freshRide, payment: txPayment, earning: txEarning };
     });
-
-    // 3. Record payment ledger entry (reuse if already recorded)
-    let payment = await PaymentModel.findByRideId(rideId);
-    if (!payment) {
-      payment = await PaymentModel.create({
-        rideId,
-        customerId: ride.customer_id,
-        amount: finalFare,
-        paymentMethod: ride.payment_method || 'CASH',
-        paymentStatus: 'COMPLETED',
-        transactionReference: `TXN-${Date.now()}-${ride.ride_code}`
-      });
-    }
-
-    // 4. Record rider earnings ledger entry
-    let earning = null;
-    try {
-      earning = await EarningModel.recordEarning({
-        riderId,
-        rideId,
-        totalFare: finalFare,
-        riderEarning: split.riderEarning,
-        companyEarning: split.companyEarning,
-        controllerEarning: split.controllerEarning,
-        appliedRuleDescription: split.appliedRuleDescription
-      });
-    } catch (err) {
-      console.warn('[RideService] Notice recording earning:', err.message);
-    }
-
-    // 5. Update user statistics
-    await Promise.all([
-      RiderModel.incrementRideCount(riderId),
-      CustomerModel.incrementRideCount(ride.customer_id)
-    ]);
 
     // 6. Send notifications
     await NotificationModel.create({

@@ -63,7 +63,7 @@ async function initializeDatabase() {
   if (env.DB.SSL || (env.DB.HOST && (env.DB.HOST.includes('tidbcloud.com') || env.DB.HOST.includes('aws.')))) {
     poolConfig.ssl = {
       minVersion: 'TLSv1.2',
-      rejectUnauthorized: false
+      rejectUnauthorized: true
     };
   }
 
@@ -482,14 +482,18 @@ async function bootstrapMysqlSchema(targetPool) {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
 
-    // Check if master admin exists
+    // Seed master admin only when configured via environment variables (no hardcoded credentials)
     const [rows] = await targetPool.query('SELECT COUNT(*) as count FROM users');
     if (rows[0].count === 0) {
-      const hash = await bcrypt.hash('Papido@669669#', 10);
-      await targetPool.query(`
-        INSERT INTO users (id, name, email, phone, gender, password_hash, role, status, is_core_member)
-        VALUES (1, 'Papido Master Admin', 'pupapido@gmail.com', '+919876543210', 'OTHER', ?, 'ADMIN', 'ACTIVE', 1)
-      `, [hash]);
+      if (env.MASTER_ADMIN.EMAIL && env.MASTER_ADMIN.PASSWORD) {
+        const hash = await bcrypt.hash(env.MASTER_ADMIN.PASSWORD, 10);
+        await targetPool.query(`
+          INSERT INTO users (id, name, email, phone, gender, password_hash, role, status, is_core_member)
+          VALUES (1, 'Papido Master Admin', ?, '+919876543210', 'OTHER', ?, 'ADMIN', 'ACTIVE', 1)
+        `, [env.MASTER_ADMIN.EMAIL, hash]);
+      } else {
+        console.warn('[Database] No users found and MASTER_ADMIN_EMAIL / MASTER_ADMIN_PASSWORD not configured; skipping default admin seed.');
+      }
 
       await targetPool.query(`
         INSERT INTO fare_configurations (vehicle_type, base_fare, base_distance_km, per_km_fare, per_minute_fare, minimum_fare, cancellation_fee, is_active)
@@ -590,7 +594,9 @@ async function ensureDatabaseSchemaMigrations(targetPool) {
     'ALTER TABLE route_fares ADD COLUMN pickup_latitude DECIMAL(10, 8) DEFAULT NULL AFTER is_outside;',
     'ALTER TABLE route_fares ADD COLUMN pickup_longitude DECIMAL(11, 8) DEFAULT NULL AFTER pickup_latitude;',
     'ALTER TABLE route_fares ADD COLUMN destination_latitude DECIMAL(10, 8) DEFAULT NULL AFTER pickup_longitude;',
-    'ALTER TABLE route_fares ADD COLUMN destination_longitude DECIMAL(11, 8) DEFAULT NULL AFTER destination_latitude;'
+    'ALTER TABLE route_fares ADD COLUMN destination_longitude DECIMAL(11, 8) DEFAULT NULL AFTER destination_latitude;',
+    'ALTER TABLE password_resets ADD COLUMN attempts INT NOT NULL DEFAULT 0;',
+    'ALTER TABLE login_otps ADD COLUMN attempts INT NOT NULL DEFAULT 0;'
   ];
 
   for (const sql of migrations) {
@@ -879,36 +885,34 @@ async function ensureSettlementsSchema(targetPool) {
 }
 
 /**
- * Ensures Master Admin account exists with pupapido@gmail.com and password Papido@669669#
+ * Seeds initial Master Admin account only if no ADMIN exists and env credentials are configured.
+ * Never overwrites an existing administrator's password on startup.
  */
 async function ensureMasterAdmin(targetPool) {
   try {
-    const bcrypt = require('bcryptjs');
-    const adminEmail = 'pupapido@gmail.com';
-    const adminPassword = 'Papido@669669#';
-    const adminHash = await bcrypt.hash(adminPassword, 10);
-
-    const [existing] = await targetPool.query(
-      'SELECT id FROM users WHERE LOWER(email) = ? OR LOWER(email) = ? OR id = 1',
-      [adminEmail, 'admin@papido.com']
+    const [existingAdmins] = await targetPool.query(
+      "SELECT id, email FROM users WHERE role = 'ADMIN' LIMIT 1"
     );
 
-    if (existing && existing.length > 0) {
-      await targetPool.query(
-        `UPDATE users 
-         SET email = ?, password_hash = ?, role = 'ADMIN', status = 'ACTIVE', is_core_member = 1, name = 'Papido Master Admin'
-         WHERE id = ?`,
-        [adminEmail, adminHash, existing[0].id]
-      );
-      console.log(`[Database] Master Admin account confirmed (${adminEmail}).`);
-    } else {
-      await targetPool.query(
-        `INSERT INTO users (id, name, email, phone, gender, password_hash, role, status, is_core_member)
-         VALUES (1, 'Papido Master Admin', ?, '+919876543210', 'OTHER', ?, 'ADMIN', 'ACTIVE', 1)`,
-        [adminEmail, adminHash]
-      );
-      console.log(`[Database] Clean Master Admin initialized with ${adminEmail}`);
+    if (existingAdmins && existingAdmins.length > 0) {
+      return;
     }
+
+    const adminEmail = env.MASTER_ADMIN?.EMAIL;
+    const adminPassword = env.MASTER_ADMIN?.PASSWORD;
+    if (!adminEmail || !adminPassword) {
+      console.warn('[Database] No ADMIN user found; set MASTER_ADMIN_EMAIL and MASTER_ADMIN_PASSWORD to bootstrap initial admin.');
+      return;
+    }
+
+    const bcrypt = require('bcryptjs');
+    const adminHash = await bcrypt.hash(adminPassword, 10);
+    await targetPool.query(
+      `INSERT INTO users (name, email, phone, gender, password_hash, role, status, is_core_member)
+       VALUES ('Papido Master Admin', ?, '+919876543210', 'OTHER', ?, 'ADMIN', 'ACTIVE', 1)`,
+      [adminEmail, adminHash]
+    );
+    console.log(`[Database] Initial Master Admin initialized for ${adminEmail}`);
   } catch (err) {
     console.warn('[Database] Master admin init notice:', err.message);
   }

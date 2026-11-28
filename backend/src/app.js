@@ -18,18 +18,19 @@ const pushRoutes = require('./routes/push.routes');
 const paymentRoutes = require('./routes/payment.routes');
 const path = require('path');
 
+const { expressCorsOptions } = require('./config/cors');
+
 const app = express();
+
+// Enable reverse proxy trust (Nginx, Cloudflare, AWS ALB, Render, Heroku)
+app.set('trust proxy', 1);
 
 // Security Headers & CORS
 app.use(helmet({
   crossOriginResourcePolicy: false
 }));
 
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key']
-}));
+app.use(cors(expressCorsOptions));
 
 // Serve static uploaded documents
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -90,7 +91,7 @@ app.get('/download/app.apk', (req, res) => {
     res.setHeader('Content-Type', 'application/vnd.android.package-archive');
     return res.sendFile(apkPath);
   }
-  return res.status(404).send('APK is currently building or not found at ' + apkPath + '. Please refresh in a moment.');
+  return res.status(404).send('Android APK package is not available on this server.');
 });
 
 // Simple web download page for mobile browser

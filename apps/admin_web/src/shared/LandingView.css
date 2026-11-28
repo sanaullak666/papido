@@ -2,8 +2,8 @@
 .pm-page {
   --ink: #0c0a09; --ink-2: #1c1917; --ink-3: #292524;
   --paper: #ffffff; --soft: #faf8f5; --line: #ece7df;
-  --txt: #1c1917; --mut: #6b645d;
-  --brand: #f97316; --brand-2: #ea580c; --brand-soft: #fff1e6;
+  --txt: #1c1917; --mut: #5f584f;
+  --brand: #f97316; --brand-2: #c2410c; --brand-soft: #fff1e6;
   --ok: #10b981;
   --f-head: 'Outfit', system-ui, sans-serif;
   --f-body: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -22,8 +22,8 @@
 .pm-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 600 14px var(--f-body);
   padding: 10px 18px; border-radius: 999px; border: 1px solid transparent; cursor: pointer; transition: transform .2s, box-shadow .2s, background .2s; }
 .pm-btn:focus-visible, .pm-link:focus-visible, .pm-page a:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
-.pm-btn--solid { background: var(--brand); color: #fff; box-shadow: 0 8px 24px -8px rgba(249,115,22,.7); }
-.pm-btn--solid:hover { background: var(--brand-2); transform: translateY(-2px); }
+.pm-btn--solid { background: var(--brand-2); color: #fff; box-shadow: 0 8px 24px -8px rgba(234,88,12,.7); }
+.pm-btn--solid:hover { background: #9a3412; transform: translateY(-2px); }
 .pm-btn--glass { background: rgba(255,255,255,.08); color: #fff; border-color: rgba(255,255,255,.18); backdrop-filter: blur(8px); }
 .pm-btn--glass:hover { background: rgba(255,255,255,.16); transform: translateY(-2px); }
 .pm-btn--line { background: transparent; border-color: var(--line); color: var(--txt); }
@@ -61,9 +61,9 @@
 .pm-links a:hover { opacity: 1; }
 .pm-nav-cta { display: flex; gap: 10px; align-items: center; }
 .pm-nav-mobile-right { display: none; align-items: center; gap: 10px; margin-left: auto; }
-.pm-btn--mobile-signin { padding: 8px 15px; font-size: 13px; border-radius: 999px; }
+.pm-btn--mobile-signin { padding: 8px 14px; font-size: 13px; border-radius: 999px; white-space: nowrap; flex-shrink: 0; }
 .pm-burger { display: none; margin-left: auto; background: none; border: 0; color: inherit; cursor: pointer; padding: 6px; }
-.pm-drawer { display: flex; flex-direction: column; gap: 4px; padding: 8px 24px 20px; background: var(--ink); border-top: 1px solid rgba(255,255,255,.08); }
+.pm-drawer { position: fixed; inset: 66px 0 0 0; z-index: 1001; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding: 12px 24px 32px; background: var(--ink); border-top: 1px solid rgba(255,255,255,.08); }
 .pm-drawer a { padding: 12px 0; font-weight: 500; border-bottom: 1px solid rgba(255,255,255,.07); }
 .pm-drawer .pm-btn { margin-top: 10px; }
 .pm-drawer .pm-drawer-signin {
@@ -102,14 +102,14 @@
 .pm-stats dd { margin: 2px 0 0; font-size: 13px; color: rgba(255,255,255,.55); }
 
 /* Hero visual */
-.pm-hero-vis { position: relative; min-height: 440px; }
+.pm-hero-vis { position: relative; min-height: 500px; padding-bottom: 84px; }
 .pm-card { position: absolute; background: #fff; color: var(--txt); border-radius: 24px; box-shadow: 0 40px 80px -20px rgba(0,0,0,.6); }
-.pm-card--ride { inset: 0 0 auto 8%; padding: 14px; animation: pmFloat 7s ease-in-out infinite; }
+.pm-card--ride { position: relative; margin-left: 8%; padding: 14px; animation: pmFloat 7s ease-in-out infinite; }
 .pm-map { position: relative; height: 190px; border-radius: 16px; overflow: hidden;
   background: linear-gradient(135deg, #fef3e7, #fde4cc);
   background-image: linear-gradient(rgba(234,88,12,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(234,88,12,.07) 1px, transparent 1px);
   background-size: 28px 28px; }
-.pm-map svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.pm-map > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .pm-route { fill: none; stroke: var(--brand-2); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 6 9; animation: pmDash 1.4s linear infinite; }
 @keyframes pmDash { to { stroke-dashoffset: -30; } }
 .pm-pin { position: absolute; width: 16px; height: 16px; border-radius: 50%; border: 4px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
@@ -123,11 +123,11 @@
 .pm-rate { margin-left: auto; display: inline-flex; gap: 4px; align-items: center; font-weight: 700; font-size: 13px; color: #b45309; background: #fef3c7; padding: 4px 9px; border-radius: 999px; }
 .pm-otp { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-radius: 14px; background: var(--ink); color: #fff; font-size: 13px; }
 .pm-otp b { font: 700 20px var(--f-head); letter-spacing: .25em; color: #fdba74; }
-.pm-card--fare { left: 0; bottom: 20px; padding: 18px 22px; display: grid; gap: 2px; animation: pmFloat 6s ease-in-out -2s infinite; }
+.pm-card--fare { left: 0; bottom: 0; padding: 14px 20px; display: grid; gap: 2px; animation: pmFloat 6s ease-in-out -2s infinite; }
 .pm-card--fare small { color: var(--mut); font-size: 12px; }
-.pm-card--fare strong { font: 800 34px var(--f-head); }
-.pm-card--fare span { display: inline-flex; gap: 4px; align-items: center; font-size: 12px; font-weight: 600; color: var(--ok); }
-.pm-card--ok { right: 0; bottom: 70px; padding: 12px 18px; display: inline-flex; gap: 8px; align-items: center; font-size: 13px; font-weight: 700; color: #047857; animation: pmFloat 8s ease-in-out -4s infinite; }
+.pm-card--fare strong { font: 800 32px var(--f-head); }
+.pm-card--fare span { display: inline-flex; gap: 4px; align-items: center; font-size: 12px; font-weight: 600; color: #047857; }
+.pm-card--ok { right: 0; bottom: 16px; padding: 12px 18px; display: inline-flex; gap: 8px; align-items: center; font-size: 13px; font-weight: 700; color: #047857; animation: pmFloat 8s ease-in-out -4s infinite; }
 @keyframes pmFloat { 50% { transform: translateY(-12px); } }
 
 /* Sections */
@@ -158,7 +158,8 @@
 .pm-tile--dark { grid-column: span 2; grid-row: span 2; background: var(--ink); color: #fff; border-color: var(--ink); display: flex; flex-direction: column; }
 .pm-tile--sm { grid-column: span 1; }
 .pm-tile--lg h3, .pm-tile--dark h3 { font-size: clamp(24px, 2.6vw, 32px); margin: 14px 0 20px; }
-.pm-tile--sm h4 { font-size: 17px; margin-bottom: 6px; }
+.pm-tile--sm h3 { font-size: 17px; margin-bottom: 6px; }
+.pm-safe h3 { font-size: 17px; margin-bottom: 4px; }
 .pm-tag { align-self: flex-start; font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 999px; background: var(--ink); color: #fff; }
 .pm-tag--dark { background: var(--brand); }
 .pm-ticks { list-style: none; margin: 0 0 24px; padding: 0; display: grid; gap: 12px; font-size: 15px; }
@@ -293,7 +294,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.72);
   margin-bottom: 12px;
 }
 .pm-foot-nav-col nav {
@@ -374,7 +375,7 @@
   padding-top: 28px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.68);
 }
 
 /* Floating WhatsApp Button */
@@ -466,18 +467,15 @@
   .pm-card--ride { left: 0; }
   .pm-cta { border-radius: 24px; padding: 64px 20px; }
   .pm-float-wa-wrap {
-    bottom: 20px;
+    bottom: 16px;
     right: 16px;
   }
   .pm-float-wa {
-    padding: 11px 16px 11px 12px;
-    gap: 8px;
+    padding: 12px;
+    gap: 0;
   }
-  .pm-float-wa-sub {
+  .pm-float-wa-text {
     display: none;
-  }
-  .pm-float-wa-num {
-    font-size: 13.5px;
   }
   .pm-hero-wa-bar {
     justify-content: center;

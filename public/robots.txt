@@ -1,4 +1,8 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /adminlogin
+Disallow: /api/
 
 Sitemap: https://www.papido.online/sitemap.xml
